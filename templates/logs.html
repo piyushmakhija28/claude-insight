@@ -13,11 +13,14 @@
                 <p class="text-muted mt-2">View and analyze system logs in real-time</p>
             </div>
             <div class="d-flex gap-2">
+                <a href="{{ url_for('export_logs') }}" class="btn btn-success">
+                    <i class="fas fa-download me-2"></i>Export to CSV
+                </a>
                 <button class="btn btn-outline-primary" onclick="refreshLogs()">
                     <i class="fas fa-sync-alt me-2"></i>Refresh
                 </button>
                 <button class="btn btn-primary" onclick="downloadLogs()">
-                    <i class="fas fa-download me-2"></i>Download
+                    <i class="fas fa-download me-2"></i>Download Raw
                 </button>
             </div>
         </div>

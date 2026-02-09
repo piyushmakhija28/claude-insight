@@ -1,0 +1,525 @@
+{% extends "base.html" %}
+
+{% block title %}Settings - Claude Monitoring System{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h2 class="mb-0">
+            <i class="fas fa-cog me-2"></i>Settings & Preferences
+        </h2>
+        <p class="text-muted mt-2">Customize your monitoring dashboard experience</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8 mx-auto">
+        <!-- Success/Error Messages -->
+        <div id="alertContainer"></div>
+
+        <!-- Display Settings -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white border-0 pt-4 pb-3">
+                <h5 class="mb-0">
+                    <i class="fas fa-desktop me-2"></i>Display Settings
+                </h5>
+            </div>
+            <div class="card-body p-4">
+                <!-- Auto-Refresh Interval -->
+                <div class="mb-4">
+                    <label for="refreshInterval" class="form-label fw-bold">
+                        <i class="fas fa-sync-alt me-2 text-primary"></i>Auto-Refresh Interval
+                    </label>
+                    <select class="form-select" id="refreshInterval">
+                        <option value="disabled">Disabled</option>
+                        <option value="30" selected>30 seconds</option>
+                        <option value="60">60 seconds (1 minute)</option>
+                        <option value="120">120 seconds (2 minutes)</option>
+                        <option value="300">300 seconds (5 minutes)</option>
+                    </select>
+                    <small class="text-muted d-block mt-2">
+                        <i class="fas fa-info-circle"></i>
+                        Controls how often the dashboard refreshes automatically
+                    </small>
+                </div>
+
+                <!-- Theme Preference -->
+                <div class="mb-4">
+                    <label for="themePreference" class="form-label fw-bold">
+                        <i class="fas fa-palette me-2 text-primary"></i>Theme Preference
+                    </label>
+                    <select class="form-select" id="themePreference">
+                        <option value="light" selected>Light Mode</option>
+                        <option value="dark">Dark Mode (Coming Soon)</option>
+                        <option value="auto">Auto (System Default)</option>
+                    </select>
+                    <small class="text-muted d-block mt-2">
+                        <i class="fas fa-info-circle"></i>
+                        Dark mode will be available in a future update
+                    </small>
+                </div>
+
+                <!-- Default Page -->
+                <div class="mb-4">
+                    <label for="defaultPage" class="form-label fw-bold">
+                        <i class="fas fa-home me-2 text-primary"></i>Default Page on Login
+                    </label>
+                    <select class="form-select" id="defaultPage">
+                        <option value="dashboard" selected>Dashboard</option>
+                        <option value="comparison">Cost Comparison</option>
+                        <option value="policies">Policies</option>
+                        <option value="logs">Logs</option>
+                        <option value="sessions">Sessions</option>
+                    </select>
+                    <small class="text-muted d-block mt-2">
+                        <i class="fas fa-info-circle"></i>
+                        Choose which page to display after logging in
+                    </small>
+                </div>
+
+                <!-- Dashboard Layout -->
+                <div class="mb-0">
+                    <label for="dashboardDensity" class="form-label fw-bold">
+                        <i class="fas fa-th me-2 text-primary"></i>Dashboard Density
+                    </label>
+                    <select class="form-select" id="dashboardDensity">
+                        <option value="comfortable" selected>Comfortable</option>
+                        <option value="compact">Compact</option>
+                        <option value="spacious">Spacious</option>
+                    </select>
+                    <small class="text-muted d-block mt-2">
+                        <i class="fas fa-info-circle"></i>
+                        Adjust spacing and card sizes on the dashboard
+                    </small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Notification Settings -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white border-0 pt-4 pb-3">
+                <h5 class="mb-0">
+                    <i class="fas fa-bell me-2"></i>Notification Preferences
+                </h5>
+            </div>
+            <div class="card-body p-4">
+                <div class="alert alert-info mb-4">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <strong>Coming Soon:</strong> Browser notifications for system alerts and policy violations.
+                </div>
+
+                <!-- Enable Notifications -->
+                <div class="form-check form-switch mb-3">
+                    <input class="form-check-input" type="checkbox" id="enableNotifications" disabled>
+                    <label class="form-check-label" for="enableNotifications">
+                        <strong>Enable Browser Notifications</strong>
+                        <small class="d-block text-muted">Receive alerts for critical system events</small>
+                    </label>
+                </div>
+
+                <!-- Error Alerts -->
+                <div class="form-check form-switch mb-3">
+                    <input class="form-check-input" type="checkbox" id="notifyErrors" disabled>
+                    <label class="form-check-label" for="notifyErrors">
+                        <strong>Error Alerts</strong>
+                        <small class="d-block text-muted">Get notified when errors occur</small>
+                    </label>
+                </div>
+
+                <!-- Policy Violations -->
+                <div class="form-check form-switch mb-3">
+                    <input class="form-check-input" type="checkbox" id="notifyPolicyViolations" disabled>
+                    <label class="form-check-label" for="notifyPolicyViolations">
+                        <strong>Policy Violations</strong>
+                        <small class="d-block text-muted">Alert when policies are violated</small>
+                    </label>
+                </div>
+
+                <!-- Health Score Drops -->
+                <div class="form-check form-switch mb-0">
+                    <input class="form-check-input" type="checkbox" id="notifyHealthScore" disabled>
+                    <label class="form-check-label" for="notifyHealthScore">
+                        <strong>Health Score Drops</strong>
+                        <small class="d-block text-muted">Notify when system health drops below threshold</small>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Data & Export Settings -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white border-0 pt-4 pb-3">
+                <h5 class="mb-0">
+                    <i class="fas fa-database me-2"></i>Data & Export
+                </h5>
+            </div>
+            <div class="card-body p-4">
+                <!-- Data Retention -->
+                <div class="mb-4">
+                    <label for="dataRetention" class="form-label fw-bold">
+                        <i class="fas fa-calendar-alt me-2 text-primary"></i>Log Retention Period
+                    </label>
+                    <select class="form-select" id="dataRetention">
+                        <option value="7">7 days</option>
+                        <option value="30" selected>30 days</option>
+                        <option value="60">60 days</option>
+                        <option value="90">90 days</option>
+                        <option value="180">180 days</option>
+                    </select>
+                    <small class="text-muted d-block mt-2">
+                        <i class="fas fa-info-circle"></i>
+                        How long to keep historical log data
+                    </small>
+                </div>
+
+                <!-- Export Format -->
+                <div class="mb-4">
+                    <label for="exportFormat" class="form-label fw-bold">
+                        <i class="fas fa-file-export me-2 text-primary"></i>Default Export Format
+                    </label>
+                    <select class="form-select" id="exportFormat">
+                        <option value="csv" selected>CSV (Comma Separated)</option>
+                        <option value="json">JSON</option>
+                        <option value="xlsx">Excel (Coming Soon)</option>
+                    </select>
+                    <small class="text-muted d-block mt-2">
+                        <i class="fas fa-info-circle"></i>
+                        Preferred format for exported data
+                    </small>
+                </div>
+
+                <!-- Include Headers -->
+                <div class="form-check form-switch mb-0">
+                    <input class="form-check-input" type="checkbox" id="exportHeaders" checked>
+                    <label class="form-check-label" for="exportHeaders">
+                        <strong>Include Headers in Exports</strong>
+                        <small class="d-block text-muted">Add column headers to CSV exports</small>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Advanced Settings -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white border-0 pt-4 pb-3">
+                <h5 class="mb-0">
+                    <i class="fas fa-sliders-h me-2"></i>Advanced Settings
+                </h5>
+            </div>
+            <div class="card-body p-4">
+                <!-- Show Debug Info -->
+                <div class="form-check form-switch mb-3">
+                    <input class="form-check-input" type="checkbox" id="showDebugInfo">
+                    <label class="form-check-label" for="showDebugInfo">
+                        <strong>Show Debug Information</strong>
+                        <small class="d-block text-muted">Display additional technical details in the UI</small>
+                    </label>
+                </div>
+
+                <!-- API Response Time -->
+                <div class="form-check form-switch mb-3">
+                    <input class="form-check-input" type="checkbox" id="showApiTime">
+                    <label class="form-check-label" for="showApiTime">
+                        <strong>Show API Response Times</strong>
+                        <small class="d-block text-muted">Display how long API calls take</small>
+                    </label>
+                </div>
+
+                <!-- Compact Navigation -->
+                <div class="form-check form-switch mb-0">
+                    <input class="form-check-input" type="checkbox" id="compactNav">
+                    <label class="form-check-label" for="compactNav">
+                        <strong>Compact Navigation</strong>
+                        <small class="d-block text-muted">Use a smaller navigation bar</small>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                    <div>
+                        <button type="button" class="btn btn-primary btn-lg" onclick="saveSettings()">
+                            <i class="fas fa-save me-2"></i>Save Settings
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary btn-lg" onclick="resetSettings()">
+                            <i class="fas fa-undo me-2"></i>Reset to Defaults
+                        </button>
+                    </div>
+                    <button type="button" class="btn btn-outline-danger" onclick="clearAllData()">
+                        <i class="fas fa-trash-alt me-2"></i>Clear All Data
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- System Info -->
+        <div class="card border-0 shadow-sm bg-light">
+            <div class="card-body p-4">
+                <div class="row text-center">
+                    <div class="col-md-4 mb-3 mb-md-0">
+                        <div class="text-muted small">Version</div>
+                        <div class="fw-bold">v2.0</div>
+                    </div>
+                    <div class="col-md-4 mb-3 mb-md-0">
+                        <div class="text-muted small">Last Updated</div>
+                        <div class="fw-bold" id="lastSaved">Never</div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-muted small">Settings Status</div>
+                        <div class="fw-bold">
+                            <span class="badge bg-success" id="settingsStatus">
+                                <i class="fas fa-check"></i> Saved
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Settings management
+let currentSettings = {};
+
+document.addEventListener('DOMContentLoaded', function() {
+    loadSettings();
+});
+
+function loadSettings() {
+    // Load settings from localStorage
+    const savedSettings = localStorage.getItem('claudeMonitorSettings');
+    if (savedSettings) {
+        currentSettings = JSON.parse(savedSettings);
+        applySettings(currentSettings);
+
+        // Update last saved time
+        if (currentSettings.lastSaved) {
+            document.getElementById('lastSaved').textContent = new Date(currentSettings.lastSaved).toLocaleString();
+        }
+    } else {
+        // Load defaults
+        currentSettings = getDefaultSettings();
+    }
+}
+
+function getDefaultSettings() {
+    return {
+        refreshInterval: '30',
+        themePreference: 'light',
+        defaultPage: 'dashboard',
+        dashboardDensity: 'comfortable',
+        enableNotifications: false,
+        notifyErrors: false,
+        notifyPolicyViolations: false,
+        notifyHealthScore: false,
+        dataRetention: '30',
+        exportFormat: 'csv',
+        exportHeaders: true,
+        showDebugInfo: false,
+        showApiTime: false,
+        compactNav: false,
+        lastSaved: null
+    };
+}
+
+function applySettings(settings) {
+    // Apply each setting to the form
+    document.getElementById('refreshInterval').value = settings.refreshInterval || '30';
+    document.getElementById('themePreference').value = settings.themePreference || 'light';
+    document.getElementById('defaultPage').value = settings.defaultPage || 'dashboard';
+    document.getElementById('dashboardDensity').value = settings.dashboardDensity || 'comfortable';
+    document.getElementById('dataRetention').value = settings.dataRetention || '30';
+    document.getElementById('exportFormat').value = settings.exportFormat || 'csv';
+    document.getElementById('exportHeaders').checked = settings.exportHeaders !== false;
+    document.getElementById('showDebugInfo').checked = settings.showDebugInfo === true;
+    document.getElementById('showApiTime').checked = settings.showApiTime === true;
+    document.getElementById('compactNav').checked = settings.compactNav === true;
+}
+
+function collectSettings() {
+    return {
+        refreshInterval: document.getElementById('refreshInterval').value,
+        themePreference: document.getElementById('themePreference').value,
+        defaultPage: document.getElementById('defaultPage').value,
+        dashboardDensity: document.getElementById('dashboardDensity').value,
+        enableNotifications: document.getElementById('enableNotifications').checked,
+        notifyErrors: document.getElementById('notifyErrors').checked,
+        notifyPolicyViolations: document.getElementById('notifyPolicyViolations').checked,
+        notifyHealthScore: document.getElementById('notifyHealthScore').checked,
+        dataRetention: document.getElementById('dataRetention').value,
+        exportFormat: document.getElementById('exportFormat').value,
+        exportHeaders: document.getElementById('exportHeaders').checked,
+        showDebugInfo: document.getElementById('showDebugInfo').checked,
+        showApiTime: document.getElementById('showApiTime').checked,
+        compactNav: document.getElementById('compactNav').checked,
+        lastSaved: new Date().toISOString()
+    };
+}
+
+function saveSettings() {
+    currentSettings = collectSettings();
+
+    // Save to localStorage
+    localStorage.setItem('claudeMonitorSettings', JSON.stringify(currentSettings));
+
+    // Update last saved time
+    document.getElementById('lastSaved').textContent = new Date(currentSettings.lastSaved).toLocaleString();
+
+    // Show success message
+    showAlert('success', 'Settings saved successfully!');
+
+    // Update status badge
+    const statusBadge = document.getElementById('settingsStatus');
+    statusBadge.innerHTML = '<i class="fas fa-check"></i> Saved';
+    statusBadge.className = 'badge bg-success';
+}
+
+function resetSettings() {
+    if (confirm('Are you sure you want to reset all settings to their default values?')) {
+        currentSettings = getDefaultSettings();
+        applySettings(currentSettings);
+        localStorage.removeItem('claudeMonitorSettings');
+
+        document.getElementById('lastSaved').textContent = 'Never';
+        showAlert('info', 'Settings reset to defaults. Click "Save Settings" to apply.');
+
+        // Update status badge
+        const statusBadge = document.getElementById('settingsStatus');
+        statusBadge.innerHTML = '<i class="fas fa-exclamation-circle"></i> Unsaved';
+        statusBadge.className = 'badge bg-warning';
+    }
+}
+
+function clearAllData() {
+    if (confirm('Are you sure you want to clear ALL stored data? This action cannot be undone and will:\n\n- Clear all settings\n- Clear browser cache\n- Reset all preferences\n\nYou will need to reconfigure your settings.')) {
+        // Clear localStorage
+        localStorage.clear();
+
+        // Reset form
+        currentSettings = getDefaultSettings();
+        applySettings(currentSettings);
+        document.getElementById('lastSaved').textContent = 'Never';
+
+        showAlert('warning', 'All data has been cleared. Please reconfigure your settings.');
+
+        // Update status badge
+        const statusBadge = document.getElementById('settingsStatus');
+        statusBadge.innerHTML = '<i class="fas fa-exclamation-circle"></i> Reset';
+        statusBadge.className = 'badge bg-danger';
+    }
+}
+
+function showAlert(type, message) {
+    const alertContainer = document.getElementById('alertContainer');
+    const alertHtml = `
+        <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+            <i class="fas ${getAlertIcon(type)} me-2"></i>
+            <strong>${message}</strong>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    `;
+    alertContainer.innerHTML = alertHtml;
+
+    // Auto-dismiss after 5 seconds
+    setTimeout(() => {
+        const alert = alertContainer.querySelector('.alert');
+        if (alert) {
+            alert.classList.remove('show');
+            setTimeout(() => {
+                alertContainer.innerHTML = '';
+            }, 150);
+        }
+    }, 5000);
+}
+
+function getAlertIcon(type) {
+    const icons = {
+        'success': 'fa-check-circle',
+        'danger': 'fa-exclamation-circle',
+        'warning': 'fa-exclamation-triangle',
+        'info': 'fa-info-circle'
+    };
+    return icons[type] || 'fa-info-circle';
+}
+
+// Detect unsaved changes
+document.querySelectorAll('input, select').forEach(element => {
+    element.addEventListener('change', function() {
+        const statusBadge = document.getElementById('settingsStatus');
+        if (statusBadge.classList.contains('bg-success')) {
+            statusBadge.innerHTML = '<i class="fas fa-exclamation-circle"></i> Unsaved';
+            statusBadge.className = 'badge bg-warning';
+        }
+    });
+});
+</script>
+
+<style>
+.form-label {
+    color: #1e293b;
+    margin-bottom: 0.75rem;
+}
+
+.form-select,
+.form-check-input {
+    cursor: pointer;
+}
+
+.form-select:focus,
+.form-check-input:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 0.25rem rgba(102, 126, 234, 0.25);
+}
+
+.form-check-input:checked {
+    background-color: #667eea;
+    border-color: #667eea;
+}
+
+.form-check-input:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    padding: 0.75rem 1.5rem;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+}
+
+.btn-outline-secondary:hover {
+    background-color: #f8f9fa;
+    border-color: #dee2e6;
+}
+
+.btn-outline-danger:hover {
+    background-color: #ef4444;
+    border-color: #ef4444;
+}
+
+.card {
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.alert {
+    border-radius: 12px;
+    border: none;
+}
+
+@media (max-width: 768px) {
+    .btn-lg {
+        padding: 0.5rem 1rem;
+        font-size: 1rem;
+    }
+}
+</style>
+{% endblock %}

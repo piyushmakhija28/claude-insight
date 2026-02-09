@@ -3,9 +3,11 @@ Claude Monitoring System
 A professional dashboard for monitoring Claude Memory System v2.0
 """
 
-from flask import Flask, render_template, request, redirect, url_for, session, jsonify
+from flask import Flask, render_template, request, redirect, url_for, session, jsonify, Response
 from functools import wraps
 import os
+import csv
+import io
 from datetime import datetime
 from utils.metrics import MetricsCollector
 from utils.log_parser import LogParser
@@ -179,6 +181,129 @@ def end_session():
         return jsonify({'success': True, 'session': ended_session})
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/settings')
+@login_required
+def settings():
+    """Settings page"""
+    return render_template('settings.html')
+
+@app.route('/api/export/sessions')
+@login_required
+def export_sessions():
+    """Export session history to CSV"""
+    try:
+        sessions_history = session_tracker.get_sessions_history()
+
+        # Create CSV in memory
+        output = io.StringIO()
+        writer = csv.writer(output)
+
+        # Write headers
+        writer.writerow(['Session ID', 'Start Time', 'End Time', 'Duration (min)', 'Commands', 'Tokens Used', 'Cost ($)', 'Status'])
+
+        # Write data
+        for sess in sessions_history:
+            writer.writerow([
+                sess.get('session_id', 'N/A'),
+                sess.get('start_time', 'N/A'),
+                sess.get('end_time', 'N/A'),
+                sess.get('duration_minutes', 0),
+                sess.get('commands_executed', 0),
+                sess.get('tokens_used', 0),
+                sess.get('estimated_cost', 0),
+                sess.get('status', 'N/A')
+            ])
+
+        # Create response
+        response = Response(output.getvalue(), mimetype='text/csv')
+        response.headers['Content-Disposition'] = f'attachment; filename=claude_sessions_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv'
+
+        return response
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/export/metrics')
+@login_required
+def export_metrics():
+    """Export current metrics to CSV"""
+    try:
+        system_health = metrics.get_system_health()
+        daemon_status = metrics.get_daemon_status()
+
+        # Create CSV in memory
+        output = io.StringIO()
+        writer = csv.writer(output)
+
+        # Write headers
+        writer.writerow(['Metric', 'Value', 'Status', 'Timestamp'])
+
+        # Write system health data
+        writer.writerow(['Health Score', system_health.get('health_score', 0), 'N/A', datetime.now().isoformat()])
+        writer.writerow(['Memory Usage', system_health.get('memory_usage', 0), 'N/A', datetime.now().isoformat()])
+        writer.writerow(['Active Daemons', len([d for d in daemon_status if d.get('status') == 'running']), 'N/A', datetime.now().isoformat()])
+        writer.writerow(['Total Daemons', len(daemon_status), 'N/A', datetime.now().isoformat()])
+
+        # Write daemon status
+        writer.writerow([])
+        writer.writerow(['Daemon Name', 'Status', 'PID', 'Uptime'])
+        for daemon in daemon_status:
+            writer.writerow([
+                daemon.get('name', 'N/A'),
+                daemon.get('status', 'N/A'),
+                daemon.get('pid', 'N/A'),
+                daemon.get('uptime', 'N/A')
+            ])
+
+        # Create response
+        response = Response(output.getvalue(), mimetype='text/csv')
+        response.headers['Content-Disposition'] = f'attachment; filename=claude_metrics_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv'
+
+        return response
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/export/logs')
+@login_required
+def export_logs():
+    """Export logs to CSV"""
+    try:
+        recent_activity = log_parser.get_recent_activity(limit=1000)
+
+        # Create CSV in memory
+        output = io.StringIO()
+        writer = csv.writer(output)
+
+        # Write headers
+        writer.writerow(['Timestamp', 'Level', 'Policy', 'Action', 'Message'])
+
+        # Write log data
+        for activity in recent_activity:
+            writer.writerow([
+                activity.get('timestamp', 'N/A'),
+                activity.get('level', 'N/A'),
+                activity.get('policy', 'N/A'),
+                activity.get('action', 'N/A'),
+                activity.get('message', 'N/A')
+            ])
+
+        # Create response
+        response = Response(output.getvalue(), mimetype='text/csv')
+        response.headers['Content-Disposition'] = f'attachment; filename=claude_logs_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv'
+
+        return response
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.errorhandler(404)
+def page_not_found(e):
+    """Handle 404 errors"""
+    return render_template('404.html'), 404
+
+@app.errorhandler(500)
+def internal_server_error(e):
+    """Handle 500 errors"""
+    return render_template('500.html'), 500
 
 @app.template_filter('format_datetime')
 def format_datetime(value):

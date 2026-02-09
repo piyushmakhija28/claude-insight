@@ -199,8 +199,11 @@
 <div class="row mb-4">
     <div class="col-12">
         <div class="card">
-            <div class="card-header">
-                <i class="fas fa-list"></i> Recent Sessions (Last 10)
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="fas fa-list"></i> Recent Sessions (Last 10)</span>
+                <a href="{{ url_for('export_sessions') }}" class="btn btn-sm btn-success">
+                    <i class="fas fa-download"></i> Export to CSV
+                </a>
             </div>
             <div class="card-body">
                 <div class="table-responsive">
