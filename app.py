@@ -10,6 +10,7 @@ from datetime import datetime
 from utils.metrics import MetricsCollector
 from utils.log_parser import LogParser
 from utils.policy_checker import PolicyChecker
+from utils.session_tracker import SessionTracker
 
 app = Flask(__name__)
 app.secret_key = 'claude-monitoring-system-secret-key-2026'
@@ -18,6 +19,7 @@ app.secret_key = 'claude-monitoring-system-secret-key-2026'
 metrics = MetricsCollector()
 log_parser = LogParser()
 policy_checker = PolicyChecker()
+session_tracker = SessionTracker()
 
 # Login credentials
 USERNAME = 'admin'
@@ -143,6 +145,38 @@ def restart_daemon(daemon_name):
     try:
         result = metrics.restart_daemon(daemon_name)
         return jsonify({'success': True, 'message': f'Daemon {daemon_name} restarted successfully'})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/sessions')
+@login_required
+def sessions():
+    """Sessions tracking page"""
+    current_session = session_tracker.update_session_metrics()
+    sessions_history = session_tracker.get_sessions_history()
+    last_session = session_tracker.get_last_session()
+
+    # Compare current with last
+    comparison = None
+    if last_session:
+        comparison = session_tracker.compare_sessions(last_session, current_session)
+
+    summary = session_tracker.get_all_sessions_summary()
+
+    return render_template('sessions.html',
+                         current_session=current_session,
+                         last_session=last_session,
+                         sessions_history=sessions_history[-10:],  # Last 10 sessions
+                         comparison=comparison,
+                         summary=summary)
+
+@app.route('/api/session/end', methods=['POST'])
+@login_required
+def end_session():
+    """API endpoint to end current session"""
+    try:
+        ended_session = session_tracker.end_current_session()
+        return jsonify({'success': True, 'session': ended_session})
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
 

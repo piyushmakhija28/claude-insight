@@ -220,6 +220,11 @@
                         </a>
                     </li>
                     <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'sessions' %}active{% endif %}" href="{{ url_for('sessions') }}">
+                            <i class="fas fa-history"></i> Sessions
+                        </a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('logout') }}">
                             <i class="fas fa-sign-out-alt"></i> Logout
                         </a>
@@ -238,7 +243,13 @@
 
     {% if session.logged_in %}
     <div class="footer">
-        <p>Claude Monitoring System v2.0 | Made with <i class="fas fa-heart text-danger"></i> for Claude Memory System</p>
+        <p>
+            <strong>Claude Monitoring System v2.0</strong><br>
+            Developed with <i class="fas fa-heart text-danger pulse"></i> by <strong>TechDeveloper</strong><br>
+            <a href="https://www.techdeveloper.in" target="_blank" style="color: white; text-decoration: none;">
+                <i class="fas fa-globe"></i> www.techdeveloper.in
+            </a>
+        </p>
     </div>
     {% endif %}
 
