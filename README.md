@@ -2,7 +2,14 @@
 
 **Professional Dashboard for Claude Memory System**
 
+[![GitHub](https://img.shields.io/badge/GitHub-claude--monitoring--system-blue?logo=github)](https://github.com/piyushmakhija28/claude-monitoring-system)
+[![Python](https://img.shields.io/badge/Python-3.7+-blue?logo=python)](https://www.python.org/)
+[![Flask](https://img.shields.io/badge/Flask-3.0-green?logo=flask)](https://flask.palletsprojects.com/)
+[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 A comprehensive, real-time monitoring and analytics dashboard for the Claude Memory System v2.0. Track system health, analyze costs, monitor policies, and optimize performance - all from one beautiful interface.
+
+**Developed by [TechDeveloper](https://www.techdeveloper.in)** 💻
 
 ---
 
@@ -60,6 +67,21 @@ The Claude Memory System v2.0 is a sophisticated automation framework with 15 po
 - Error trend analysis
 - Top issues identification
 
+### 5. **Session Tracking** ⭐ NEW
+- **Unique Session IDs** - Each session gets a unique identifier
+- **Current Session Monitoring** - Real-time metrics for active session
+- **Session History** - Last 10 completed sessions
+- **Session Comparison** - Compare current vs last session
+- **Metrics Tracking**:
+  - Policies hit
+  - Context optimizations
+  - Failures prevented
+  - Model switches
+  - Tokens used
+  - Errors encountered
+- **Duration Tracking** - Monitor how long each session lasts
+- **End Session** - Manually end and save session data
+
 ---
 
 ## 🚀 How to Run
@@ -72,7 +94,13 @@ The Claude Memory System v2.0 is a sophisticated automation framework with 15 po
 
 ### Installation
 
-1. **Clone/Download the repository**
+1. **Clone the repository from GitHub**
+   ```bash
+   git clone https://github.com/piyushmakhija28/claude-monitoring-system.git
+   cd claude-monitoring-system
+   ```
+
+   Or download directly:
    ```bash
    cd C:\Users\techd\Documents\workspace-spring-tool-suite-4-4.27.0-new
    cd claude-monitoring-system
