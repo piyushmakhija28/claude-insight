@@ -20,6 +20,7 @@ from utils.session_tracker import SessionTracker
 from utils.history_tracker import HistoryTracker
 from utils.notification_manager import NotificationManager
 from utils.alert_sender import AlertSender
+from utils.community_widgets import CommunityWidgetsManager
 from flasgger import Swagger, swag_from
 from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment
@@ -60,6 +61,7 @@ session_tracker = SessionTracker()
 history_tracker = HistoryTracker()
 notification_manager = NotificationManager()
 alert_sender = AlertSender()
+community_widgets_manager = CommunityWidgetsManager()
 
 # User database (in production, use a proper database)
 # Password: 'admin' (hashed with bcrypt)
@@ -677,6 +679,202 @@ def save_custom_widget():
             'success': True,
             'message': 'Widget saved successfully',
             'widget': widget
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/community-marketplace')
+@login_required
+def community_marketplace():
+    """
+    Community Widget Marketplace
+    ---
+    tags:
+      - Community
+    responses:
+      200:
+        description: Community marketplace page
+    """
+    return render_template('community-marketplace.html')
+
+@app.route('/api/community-widgets', methods=['GET'])
+@login_required
+def get_community_widgets():
+    """
+    Get all community widgets
+    ---
+    tags:
+      - Community
+    responses:
+      200:
+        description: List of community widgets
+    """
+    try:
+        widgets = community_widgets_manager.get_all_widgets()
+        return jsonify({
+            'success': True,
+            'widgets': widgets,
+            'count': len(widgets)
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/community-widgets/stats', methods=['GET'])
+@login_required
+def get_community_stats():
+    """
+    Get community marketplace statistics
+    ---
+    tags:
+      - Community
+    responses:
+      200:
+        description: Marketplace statistics
+    """
+    try:
+        stats = community_widgets_manager.get_stats()
+        return jsonify({
+            'success': True,
+            'stats': stats
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/community-widgets/publish', methods=['POST'])
+@login_required
+def publish_widget():
+    """
+    Publish widget to community
+    ---
+    tags:
+      - Community
+    parameters:
+      - name: body
+        in: body
+        required: true
+        schema:
+          type: object
+          properties:
+            name:
+              type: string
+              description: Widget name
+            description:
+              type: string
+              description: Widget description
+            category:
+              type: string
+              description: Widget category
+            version:
+              type: string
+              description: Widget version
+            tags:
+              type: array
+              description: Widget tags
+            author:
+              type: string
+              description: Author name
+            widget_data:
+              type: object
+              description: Widget data/definition
+    responses:
+      200:
+        description: Widget published successfully
+    """
+    try:
+        data = request.get_json()
+
+        required_fields = ['name', 'description', 'category', 'widget_data']
+        for field in required_fields:
+            if not data.get(field):
+                return jsonify({'success': False, 'message': f'{field} is required'}), 400
+
+        widget = community_widgets_manager.publish_widget(data)
+
+        return jsonify({
+            'success': True,
+            'message': 'Widget published to community successfully',
+            'widget': widget
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/community-widgets/<widget_id>/download', methods=['GET'])
+@login_required
+def download_community_widget(widget_id):
+    """
+    Download a community widget
+    ---
+    tags:
+      - Community
+    parameters:
+      - name: widget_id
+        in: path
+        type: string
+        required: true
+        description: Widget ID
+    responses:
+      200:
+        description: Widget data for download
+    """
+    try:
+        widget = community_widgets_manager.get_widget_by_id(widget_id)
+
+        if not widget:
+            return jsonify({'success': False, 'message': 'Widget not found'}), 404
+
+        # Increment download count
+        community_widgets_manager.increment_downloads(widget_id)
+
+        return jsonify({
+            'success': True,
+            'name': widget['name'],
+            'widget_data': widget['widget_data']
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/community-widgets/<widget_id>/rate', methods=['POST'])
+@login_required
+def rate_community_widget(widget_id):
+    """
+    Rate a community widget
+    ---
+    tags:
+      - Community
+    parameters:
+      - name: widget_id
+        in: path
+        type: string
+        required: true
+        description: Widget ID
+      - name: body
+        in: body
+        required: true
+        schema:
+          type: object
+          properties:
+            rating:
+              type: integer
+              description: Rating value (1-5)
+    responses:
+      200:
+        description: Rating submitted successfully
+    """
+    try:
+        data = request.get_json()
+        rating = data.get('rating')
+
+        if not rating or not (1 <= rating <= 5):
+            return jsonify({'success': False, 'message': 'Rating must be between 1 and 5'}), 400
+
+        success = community_widgets_manager.add_rating(widget_id, rating)
+
+        if not success:
+            return jsonify({'success': False, 'message': 'Widget not found'}), 404
+
+        return jsonify({
+            'success': True,
+            'message': 'Rating submitted successfully'
         })
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
@@ -1909,16 +2107,19 @@ thread.start()
 if __name__ == '__main__':
     print("""
     ============================================================
-    Claude Monitoring System v2.7 (Widget Builder Edition)
+    Claude Monitoring System v2.8 (Community Edition)
     ============================================================
 
     Dashboard URL: http://localhost:5000
     API Docs: http://localhost:5000/api/docs
     Widget Builder: http://localhost:5000/widget-builder
+    Community: http://localhost:5000/community-marketplace
     Username: admin
     Password: admin
 
     Features:
+    ✓ Community widget marketplace with sharing
+    ✓ Publish, browse, rate widgets (5-star system)
     ✓ Advanced widget builder with drag-and-drop
     ✓ 15+ component library (charts, metrics, tables)
     ✓ Live preview canvas with visual editor
@@ -1926,10 +2127,8 @@ if __name__ == '__main__':
     ✓ Smart alert rules (quiet hours, rate limiting)
     ✓ Browser push notifications & alert history
     ✓ Custom dashboard themes (6 themes)
-    ✓ Widget marketplace with 9+ widgets
     ✓ Mobile-optimized responsive design
     ✓ Real-time WebSocket updates (10s interval)
-    ✓ Advanced analytics with Excel/PDF export
 
     Starting server...
     ============================================================

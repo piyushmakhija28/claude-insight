@@ -1,4 +1,4 @@
-# 🤖 Claude Monitoring System v2.7 🚀
+# 🤖 Claude Monitoring System v2.8 🚀
 
 **Professional Real-time Analytics Dashboard for Claude Memory System**
 
@@ -12,6 +12,76 @@ A comprehensive, real-time monitoring and analytics dashboard for the Claude Mem
 **🎁 COMPLETE PACKAGE**: This repo includes **everything you need** - the monitoring dashboard + all Claude Memory System v2.0 files (24 automation scripts + 15 policies + complete documentation). Just clone, setup, and start using!
 
 **Developed by [TechDeveloper](https://www.techdeveloper.in)** 💻
+
+---
+
+## 🆕 What's New in v2.8 (Feb 2026) - Community Marketplace Edition 🌐👥
+
+### **Widget Sharing and Community Marketplace** 🌐👥 NEW!
+- **Community Platform** - Share widgets with the global community
+- **Browse & Discover**:
+  - 📊 Widget gallery with beautiful cards
+  - 🔍 Advanced search functionality
+  - 🏷️ Filter by category (Charts, Metrics, Tables, Dashboard, Monitoring)
+  - ⭐ Sort by: Most Recent, Popular, Rating, Downloads
+  - 🌟 Rating filter (5★, 4+★, 3+★)
+- **Publish Widgets**:
+  - 📤 Upload widget JSON files
+  - 📝 Rich descriptions and metadata
+  - 🏷️ Categorization system
+  - 🔖 Tagging for discoverability
+  - 📷 Screenshot uploads (optional)
+  - 👤 Author attribution
+  - 📜 MIT License agreement
+  - 🔢 Version tracking
+- **Widget Details Page**:
+  - 📋 Full widget information
+  - 📊 Stats (downloads, ratings, reviews)
+  - ⭐ 5-star rating system
+  - 👤 Author profile
+  - 🏷️ Tags and category
+  - 📅 Publish date and version
+  - 💬 Review count
+  - 👁️ Preview (coming soon)
+- **Rating & Reviews**:
+  - ⭐ Rate widgets 1-5 stars
+  - 📊 Average rating display
+  - 💬 Review count tracking
+  - 🔢 Individual rating history
+- **Download & Install**:
+  - 💾 One-click download as JSON
+  - 📊 Download counter
+  - 🔄 Import into Widget Builder
+  - 📥 Install directly to dashboard
+- **Community Statistics**:
+  - 📈 Total widgets published
+  - 📥 Total downloads across community
+  - 👥 Total contributors
+  - ⭐ Average rating across all widgets
+  - 📊 Category distribution
+- **Search & Filter**:
+  - 🔍 Real-time search (name, description, tags)
+  - 📂 Category filter
+  - ⭐ Rating filter
+  - 🔄 Sort options
+  - 🔁 Reset filters
+- **My Widgets**:
+  - 📁 View your published widgets
+  - 📊 Track performance
+  - ✏️ Manage your contributions
+- **Data Storage**:
+  - 💾 Stored in `~/.claude/memory/community/widgets.json`
+  - 📊 JSON-based widget repository
+  - 🔄 Auto-sync on publish/rate/download
+
+**Use Cases:**
+- ✅ Share your custom widgets with the community
+- ✅ Discover widgets created by others
+- ✅ Build a library of reusable components
+- ✅ Rate and review community widgets
+- ✅ Track widget popularity and downloads
+- ✅ Find inspiration for your own widgets
+- ✅ Contribute to the Claude monitoring ecosystem
 
 ---
 
@@ -1041,9 +1111,15 @@ Terminal-style log viewer with search, filters, and syntax highlighting.
 | `/api/alert-thresholds` | GET/POST | Get or set alert thresholds |
 | `/api/check-alerts` | GET | Check current alerts against thresholds |
 | `/widgets` | GET | Widget marketplace page |
-| `/widget-builder` | GET | **NEW** Advanced widget builder with visual editor |
+| `/widget-builder` | GET | Advanced widget builder with visual editor |
+| `/community-marketplace` | GET | **NEW** Community widget marketplace |
 | `/notifications` | GET | Notifications history page |
-| `/api/widgets/save` | POST | **NEW** Save custom widget from builder |
+| `/api/widgets/save` | POST | Save custom widget from builder |
+| `/api/community-widgets` | GET | **NEW** Get all community widgets |
+| `/api/community-widgets/stats` | GET | **NEW** Get marketplace statistics |
+| `/api/community-widgets/publish` | POST | **NEW** Publish widget to community |
+| `/api/community-widgets/<id>/download` | GET | **NEW** Download community widget |
+| `/api/community-widgets/<id>/rate` | POST | **NEW** Rate a community widget |
 | `/api/widgets/install` | POST | **NEW** Install a widget from marketplace |
 | `/api/widgets/installed` | GET | **NEW** Get list of installed widgets |
 | `/api/widgets/create` | POST | **NEW** Create custom widget |
@@ -1175,9 +1251,10 @@ Login: admin / admin
 - [ ] Multi-user support with roles & permissions
 - [ ] Slack/Discord webhook notifications
 - [ ] Integration with monitoring tools (Datadog, New Relic, etc.)
-- [ ] Widget sharing and community marketplace
 - [ ] Real-time collaboration on widget building
 - [ ] Widget version control and history
+- [ ] Widget comments and discussions
+- [ ] Featured/trending widgets section
 - [ ] AI-powered anomaly detection
 - [ ] Predictive analytics and forecasting
 - [ ] Custom alert routing and escalation
@@ -1186,12 +1263,19 @@ Login: admin / admin
 
 **Made with ❤️ for Claude Memory System**
 
-Version: 2.7 (Advanced Widget Builder Edition) 🎨✨
+Version: 2.8 (Community Marketplace Edition) 🌐👥
 Last Updated: 2026-02-10
 Developer: TechDeveloper (www.techdeveloper.in)
 Powered by: Claude Sonnet 4.5
 
-**New in v2.7:**
+**New in v2.8:**
+- 🌐 Community widget marketplace for sharing
+- 📤 Publish widgets to global community
+- ⭐ Rating and review system (5-star)
+- 📥 Browse, search, and download community widgets
+- 📊 Community statistics dashboard
+
+**From v2.7:**
 - 🎨 Advanced widget builder with drag-and-drop interface
 - 🧩 15+ component library (charts, metrics, tables, content)
 - 🔴 Live preview canvas with real-time editing

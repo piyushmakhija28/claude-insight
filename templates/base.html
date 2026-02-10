@@ -506,7 +506,7 @@
                         </a>
                     </li>
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle {% if request.endpoint in ['widgets', 'widget_builder'] %}active{% endif %}"
+                        <a class="nav-link dropdown-toggle {% if request.endpoint in ['widgets', 'widget_builder', 'community_marketplace'] %}active{% endif %}"
                            href="#" id="widgetsDropdown" role="button" data-bs-toggle="dropdown">
                             <i class="fas fa-puzzle-piece"></i> Widgets
                         </a>
@@ -516,6 +516,10 @@
                             </a></li>
                             <li><a class="dropdown-item" href="{{ url_for('widget_builder') }}">
                                 <i class="fas fa-magic me-2"></i>Builder
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{{ url_for('community_marketplace') }}">
+                                <i class="fas fa-users me-2"></i>Community
                             </a></li>
                         </ul>
                     </li>
