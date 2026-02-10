@@ -282,6 +282,182 @@
         [data-theme="dark"] .metric-box:hover {
             background: #475569;
         }
+
+        /* Notification Badge */
+        .notification-badge {
+            position: absolute;
+            top: 5px;
+            right: -5px;
+            font-size: 0.7rem;
+            padding: 2px 5px;
+            border-radius: 10px;
+        }
+
+        /* Mobile Responsive Styles */
+        @media (max-width: 991px) {
+            .navbar-brand {
+                font-size: 1.2rem;
+            }
+
+            .navbar-brand i {
+                font-size: 1.5rem;
+            }
+
+            h2 {
+                font-size: 1.5rem;
+            }
+
+            .card {
+                margin-bottom: 1rem;
+            }
+
+            .btn-group {
+                flex-wrap: wrap;
+            }
+
+            .btn-sm {
+                font-size: 0.8rem;
+                padding: 0.25rem 0.5rem;
+            }
+
+            .table {
+                font-size: 0.85rem;
+            }
+
+            .display-4 {
+                font-size: 2rem;
+            }
+
+            .modal-dialog {
+                margin: 0.5rem;
+            }
+
+            /* Stack cards vertically on mobile */
+            .col-md-6, .col-md-4, .col-md-3 {
+                margin-bottom: 1rem;
+            }
+
+            /* Responsive navigation */
+            .nav-link {
+                padding: 0.5rem 1rem;
+            }
+
+            /* Chart responsiveness */
+            canvas {
+                max-height: 250px !important;
+            }
+
+            /* Touch-friendly buttons */
+            .btn {
+                min-height: 44px;
+                min-width: 44px;
+            }
+
+            /* Responsive tables */
+            .table-responsive {
+                font-size: 0.85rem;
+            }
+
+            /* Activity feed on mobile */
+            .activity-item {
+                padding: 0.75rem;
+            }
+
+            /* Sidebar for mobile */
+            .offcanvas {
+                max-width: 280px;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .container {
+                padding-left: 0.75rem;
+                padding-right: 0.75rem;
+            }
+
+            h2 {
+                font-size: 1.25rem;
+            }
+
+            .btn-group {
+                width: 100%;
+            }
+
+            .btn-group .btn {
+                flex: 1;
+            }
+
+            /* Stack metric cards */
+            .row > [class*='col-'] {
+                padding-left: 0.5rem;
+                padding-right: 0.5rem;
+            }
+
+            /* Smaller cards on mobile */
+            .card-body {
+                padding: 1rem;
+            }
+
+            /* Responsive badge */
+            .badge {
+                font-size: 0.7rem;
+            }
+
+            /* Hide text on small screens, keep icons */
+            .nav-link span {
+                display: none;
+            }
+
+            /* Full width modals on mobile */
+            .modal-dialog {
+                max-width: 100%;
+                margin: 0;
+                height: 100vh;
+            }
+
+            .modal-content {
+                height: 100%;
+                border-radius: 0;
+            }
+        }
+
+        /* Touch device optimizations */
+        @media (hover: none) and (pointer: coarse) {
+            .btn, .nav-link, .list-group-item, .card {
+                cursor: pointer;
+                -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
+            }
+
+            /* Larger touch targets */
+            .form-check-input, .form-range {
+                min-height: 24px;
+                min-width: 24px;
+            }
+
+            /* Prevent text selection on double-tap */
+            .card, .btn, .badge {
+                -webkit-user-select: none;
+                user-select: none;
+            }
+        }
+
+        /* Landscape mobile */
+        @media (max-width: 900px) and (orientation: landscape) {
+            .navbar {
+                padding: 0.5rem 0;
+            }
+
+            body {
+                padding-top: 56px;
+            }
+
+            .navbar.fixed-top {
+                position: fixed;
+                top: 0;
+                width: 100%;
+                z-index: 1030;
+            }
+        }
     </style>
 
     {% block extra_css %}{% endblock %}
@@ -330,8 +506,19 @@
                         </a>
                     </li>
                     <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'widgets' %}active{% endif %}" href="{{ url_for('widgets') }}">
+                            <i class="fas fa-puzzle-piece"></i> Widgets
+                        </a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link {% if request.endpoint == 'settings' %}active{% endif %}" href="{{ url_for('settings') }}">
                             <i class="fas fa-cog"></i> Settings
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'notifications' %}active{% endif %}" href="{{ url_for('notifications') }}">
+                            <i class="fas fa-bell"></i>
+                            <span class="badge bg-danger notification-badge" id="notificationBadge" style="display: none;">0</span>
                         </a>
                     </li>
                     <li class="nav-item">

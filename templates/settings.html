@@ -95,6 +95,119 @@
             </div>
         </div>
 
+        <!-- Custom Dashboard Themes -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white border-0 pt-4 pb-3">
+                <h5 class="mb-0">
+                    <i class="fas fa-palette me-2"></i>Custom Dashboard Themes
+                </h5>
+            </div>
+            <div class="card-body p-4">
+                <p class="text-muted mb-4">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Choose a color scheme for your dashboard. Theme preference is saved automatically.
+                </p>
+
+                <div class="row g-3" id="themeGallery">
+                    <!-- Default Theme -->
+                    <div class="col-md-4">
+                        <div class="theme-card" data-theme="default" onclick="selectTheme('default')">
+                            <div class="theme-preview">
+                                <div class="theme-color" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);"></div>
+                                <div class="theme-color" style="background: #f8f9fa;"></div>
+                                <div class="theme-color" style="background: #ffffff;"></div>
+                            </div>
+                            <div class="theme-info">
+                                <h6 class="mb-1"><i class="fas fa-check-circle text-primary me-2"></i>Default</h6>
+                                <small class="text-muted">Purple gradient with light background</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Dark Theme -->
+                    <div class="col-md-4">
+                        <div class="theme-card" data-theme="dark" onclick="selectTheme('dark')">
+                            <div class="theme-preview">
+                                <div class="theme-color" style="background: #1e293b;"></div>
+                                <div class="theme-color" style="background: #334155;"></div>
+                                <div class="theme-color" style="background: #64748b;"></div>
+                            </div>
+                            <div class="theme-info">
+                                <h6 class="mb-1"><i class="fas fa-moon text-dark me-2"></i>Dark</h6>
+                                <small class="text-muted">Dark slate with high contrast</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Blue Theme -->
+                    <div class="col-md-4">
+                        <div class="theme-card" data-theme="blue" onclick="selectTheme('blue')">
+                            <div class="theme-preview">
+                                <div class="theme-color" style="background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);"></div>
+                                <div class="theme-color" style="background: #dbeafe;"></div>
+                                <div class="theme-color" style="background: #ffffff;"></div>
+                            </div>
+                            <div class="theme-info">
+                                <h6 class="mb-1"><i class="fas fa-water text-primary me-2"></i>Blue</h6>
+                                <small class="text-muted">Ocean blue with light tones</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Purple Theme -->
+                    <div class="col-md-4">
+                        <div class="theme-card" data-theme="purple" onclick="selectTheme('purple')">
+                            <div class="theme-preview">
+                                <div class="theme-color" style="background: linear-gradient(135deg, #a855f7 0%, #7c3aed 100%);"></div>
+                                <div class="theme-color" style="background: #f3e8ff;"></div>
+                                <div class="theme-color" style="background: #ffffff;"></div>
+                            </div>
+                            <div class="theme-info">
+                                <h6 class="mb-1"><i class="fas fa-star text-purple me-2"></i>Purple</h6>
+                                <small class="text-muted">Royal purple with soft accents</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Green Theme -->
+                    <div class="col-md-4">
+                        <div class="theme-card" data-theme="green" onclick="selectTheme('green')">
+                            <div class="theme-preview">
+                                <div class="theme-color" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);"></div>
+                                <div class="theme-color" style="background: #d1fae5;"></div>
+                                <div class="theme-color" style="background: #ffffff;"></div>
+                            </div>
+                            <div class="theme-info">
+                                <h6 class="mb-1"><i class="fas fa-leaf text-success me-2"></i>Green</h6>
+                                <small class="text-muted">Fresh green with natural feel</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Orange Theme -->
+                    <div class="col-md-4">
+                        <div class="theme-card" data-theme="orange" onclick="selectTheme('orange')">
+                            <div class="theme-preview">
+                                <div class="theme-color" style="background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);"></div>
+                                <div class="theme-color" style="background: #fed7aa;"></div>
+                                <div class="theme-color" style="background: #ffffff;"></div>
+                            </div>
+                            <div class="theme-info">
+                                <h6 class="mb-1"><i class="fas fa-fire text-warning me-2"></i>Orange</h6>
+                                <small class="text-muted">Warm orange with energetic vibe</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-3">
+                    <span class="badge bg-success" id="themeStatus" style="display: none;">
+                        <i class="fas fa-check me-1"></i>Theme applied successfully
+                    </span>
+                </div>
+            </div>
+        </div>
+
         <!-- Notification Settings -->
         <div class="card border-0 shadow-sm mb-4">
             <div class="card-header bg-white border-0 pt-4 pb-3">
@@ -399,7 +512,7 @@
                 <div class="row text-center">
                     <div class="col-md-4 mb-3 mb-md-0">
                         <div class="text-muted small">Version</div>
-                        <div class="fw-bold">v2.3</div>
+                        <div class="fw-bold">v2.5</div>
                     </div>
                     <div class="col-md-4 mb-3 mb-md-0">
                         <div class="text-muted small">Last Updated</div>
@@ -732,6 +845,97 @@ function changePassword(event) {
         showAlert('danger', 'An error occurred while changing password');
     });
 }
+
+// Theme selection function
+function selectTheme(themeName) {
+    // Save theme to server
+    fetch('/api/themes', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ theme: themeName })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Remove active class from all theme cards
+            document.querySelectorAll('.theme-card').forEach(card => {
+                card.classList.remove('active');
+            });
+
+            // Add active class to selected theme
+            const selectedCard = document.querySelector(`[data-theme="${themeName}"]`);
+            if (selectedCard) {
+                selectedCard.classList.add('active');
+            }
+
+            // Show success message
+            const statusBadge = document.getElementById('themeStatus');
+            statusBadge.style.display = 'inline-block';
+            setTimeout(() => {
+                statusBadge.style.display = 'none';
+            }, 3000);
+
+            // Apply theme to current page
+            applyThemeColors(themeName);
+        }
+    })
+    .catch(error => {
+        console.error('Error saving theme:', error);
+        showAlert('danger', 'Failed to save theme preference');
+    });
+}
+
+// Apply theme colors to page
+function applyThemeColors(themeName) {
+    const themes = {
+        'default': {
+            primary: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            background: '#f8f9fa'
+        },
+        'dark': {
+            primary: '#1e293b',
+            background: '#334155'
+        },
+        'blue': {
+            primary: 'linear-gradient(135deg, #3b82f6 0%, #1e40af 100%)',
+            background: '#dbeafe'
+        },
+        'purple': {
+            primary: 'linear-gradient(135deg, #a855f7 0%, #7c3aed 100%)',
+            background: '#f3e8ff'
+        },
+        'green': {
+            primary: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+            background: '#d1fae5'
+        },
+        'orange': {
+            primary: 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)',
+            background: '#fed7aa'
+        }
+    };
+
+    const theme = themes[themeName] || themes['default'];
+
+    // Apply to primary buttons
+    document.querySelectorAll('.btn-primary').forEach(btn => {
+        btn.style.background = theme.primary;
+    });
+
+    // Save to localStorage for persistence
+    localStorage.setItem('selectedTheme', themeName);
+}
+
+// Load saved theme on page load
+document.addEventListener('DOMContentLoaded', function() {
+    const savedTheme = localStorage.getItem('selectedTheme') || 'default';
+    const savedCard = document.querySelector(`[data-theme="${savedTheme}"]`);
+    if (savedCard) {
+        savedCard.classList.add('active');
+    }
+    applyThemeColors(savedTheme);
+});
 </script>
 
 <style>
@@ -795,6 +999,69 @@ function changePassword(event) {
     .btn-lg {
         padding: 0.5rem 1rem;
         font-size: 1rem;
+    }
+}
+
+/* Theme Gallery Styles */
+.theme-card {
+    border: 3px solid transparent;
+    border-radius: 12px;
+    padding: 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.theme-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+}
+
+.theme-card.active {
+    border-color: #667eea;
+    box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+}
+
+.theme-preview {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    height: 80px;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.theme-color {
+    flex: 1;
+    transition: transform 0.3s ease;
+}
+
+.theme-card:hover .theme-color {
+    transform: scale(1.05);
+}
+
+.theme-info h6 {
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.theme-info small {
+    font-size: 0.85rem;
+}
+
+#themeStatus {
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
     }
 }
 </style>

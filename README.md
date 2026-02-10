@@ -1,4 +1,4 @@
-# 🤖 Claude Monitoring System v2.4 🚀
+# 🤖 Claude Monitoring System v2.5 🚀
 
 **Professional Real-time Analytics Dashboard for Claude Memory System**
 
@@ -12,6 +12,94 @@ A comprehensive, real-time monitoring and analytics dashboard for the Claude Mem
 **🎁 COMPLETE PACKAGE**: This repo includes **everything you need** - the monitoring dashboard + all Claude Memory System v2.0 files (24 automation scripts + 15 policies + complete documentation). Just clone, setup, and start using!
 
 **Developed by [TechDeveloper](https://www.techdeveloper.in)** 💻
+
+---
+
+## 🆕 What's New in v2.5 (Feb 2026) - Mobile & Notifications Edition 📱🔔
+
+### **Browser Push Notifications** 🔔 NEW!
+- **Real-time Alerts** - Get instant browser notifications for critical events
+- **Notification Permission** - Browser asks for permission on first load
+- **Smart Notifications** - Only notifies for critical and warning alerts
+- **Notification History** - Complete history of all notifications
+- **Mark as Read** - Individual or bulk mark as read
+- **Notification Trends** - 30-day trend chart showing alert patterns
+- **Stats Dashboard** - Total, critical, warning, and info counts
+- **Auto-Check** - Polls for new alerts every 30 seconds
+- **Persistent Storage** - Stores last 500 notifications in memory
+
+### **Alert History and Trends** 📊 NEW!
+- **Dedicated Notifications Page** - `/notifications` route with full history
+- **Unread Badge** - Notification bell shows unread count
+- **30-Day Trends Chart** - Visual timeline of notification patterns
+- **Stats Cards** - Overview of alerts by severity (Critical/Warning/Info)
+- **By-Day Breakdown** - See which days had most alerts
+- **By-Type Analysis** - Which alert types trigger most frequently
+- **Search & Filter** - Find specific notifications quickly
+- **Read/Unread States** - Visual distinction with styling
+
+### **Custom Dashboard Themes** 🎨 NEW!
+- **6 Beautiful Themes** - Choose from multiple color schemes
+- **Theme Gallery** - Visual preview cards with 3-color swatches
+- **Instant Apply** - Themes apply immediately without page reload
+- **Persistent Storage** - Theme preference saved in session
+- **Available Themes**:
+  - 🟣 **Default** - Purple gradient with light background
+  - ⚫ **Dark** - Dark slate with high contrast
+  - 🔵 **Blue** - Ocean blue with light tones
+  - 🟣 **Purple** - Royal purple with soft accents
+  - 🟢 **Green** - Fresh green with natural feel
+  - 🟠 **Orange** - Warm orange with energetic vibe
+- **Theme Preview** - See colors before applying
+- **Success Feedback** - Confirmation when theme is applied
+
+### **Widget Marketplace** 🧩 NEW!
+- **Dedicated Marketplace** - Browse and install dashboard widgets
+- **9 Pre-built Widgets**:
+  - 🩺 Health Score Meter (Featured)
+  - 📈 Error Trends Chart (Popular)
+  - 💰 Cost Tracker
+  - 🛡️ Policy Monitor (Featured)
+  - 🔔 Live Alert Feed
+  - 💾 Context Monitor (Popular)
+  - ⏱️ Session Timeline
+  - 🥧 Model Distribution Pie Chart
+  - ⚡ Quick Actions
+- **Widget Categories** - Filter by Metrics, Charts, Alerts, Tools
+- **Install/Uninstall** - One-click widget management
+- **My Widgets** - View all installed widgets
+- **Custom Widget Creator** - Build your own widgets
+- **Widget Stats** - See install counts and ratings
+- **Custom Widget Fields**:
+  - Name, Description, Category
+  - Icon (Font Awesome), Color
+  - Optional API data source
+- **Persistent Install List** - Remembers installed widgets
+
+### **Mobile-Optimized Responsive Design** 📱 NEW!
+- **100% Mobile-Friendly** - Fully optimized for all devices
+- **Responsive Breakpoints**:
+  - 🖥️ **Desktop** - Full layout (>992px)
+  - 📱 **Tablet** - Adapted layout (768px-991px)
+  - 📱 **Mobile** - Single column layout (<768px)
+  - 📱 **Small Mobile** - Optimized for smallest screens (<576px)
+- **Touch Optimizations**:
+  - 44px minimum touch targets
+  - Larger form controls (24px)
+  - Tap highlight effects
+  - Touch-friendly spacing
+- **Mobile Features**:
+  - Collapsible navigation menu
+  - Stacked cards on small screens
+  - Responsive charts (max 250px height)
+  - Full-width modals on mobile
+  - Horizontal scroll for tables
+  - Optimized font sizes
+  - Landscape mode support
+- **Performance**:
+  - Lightweight CSS (no frameworks needed)
+  - Fast rendering on mobile devices
+  - Smooth animations and transitions
 
 ---
 
@@ -863,10 +951,21 @@ Terminal-style log viewer with search, filters, and syntax highlighting.
 | `/api/daemon/restart/<name>` | POST | Restart daemon |
 | `/api/comparison` | GET | Get comparison data (JSON) |
 | `/api/widget-preferences` | GET/POST | Get or save widget preferences |
-| `/api/export/excel/<type>` | GET | **NEW** Export to Excel (sessions/metrics/logs/analytics) |
-| `/api/export/pdf/<type>` | GET | **NEW** Export to PDF (sessions/metrics/logs/analytics) |
-| `/api/alert-thresholds` | GET/POST | **NEW** Get or set alert thresholds |
-| `/api/check-alerts` | GET | **NEW** Check current alerts against thresholds |
+| `/api/export/excel/<type>` | GET | Export to Excel (sessions/metrics/logs/analytics) |
+| `/api/export/pdf/<type>` | GET | Export to PDF (sessions/metrics/logs/analytics) |
+| `/api/alert-thresholds` | GET/POST | Get or set alert thresholds |
+| `/api/check-alerts` | GET | Check current alerts against thresholds |
+| `/widgets` | GET | **NEW** Widget marketplace page |
+| `/notifications` | GET | **NEW** Notifications history page |
+| `/api/widgets/install` | POST | **NEW** Install a widget from marketplace |
+| `/api/widgets/installed` | GET | **NEW** Get list of installed widgets |
+| `/api/widgets/create` | POST | **NEW** Create custom widget |
+| `/api/widgets/uninstall` | POST | **NEW** Uninstall a widget |
+| `/api/notifications` | GET | **NEW** Get notifications with filters |
+| `/api/notifications/<id>/read` | POST | **NEW** Mark notification as read |
+| `/api/notifications/mark-all-read` | POST | **NEW** Mark all notifications as read |
+| `/api/notification-trends` | GET | **NEW** Get notification trends (30 days) |
+| `/api/themes` | GET/POST | **NEW** Get or set dashboard theme |
 
 ### **WebSocket Events** (Real-time)
 
@@ -986,22 +1085,28 @@ Login: admin / admin
 - [ ] Multi-user support with roles & permissions
 - [ ] Slack/Discord webhook notifications
 - [ ] Integration with monitoring tools (Datadog, New Relic, etc.)
-- [ ] Browser push notifications
-- [ ] Alert history and trends
-- [ ] Custom dashboard themes
-- [ ] Widget marketplace
-- [ ] Mobile-optimized responsive design
+- [ ] Advanced widget builder with visual editor
+- [ ] Widget sharing and community marketplace
+- [ ] AI-powered anomaly detection
+- [ ] Predictive analytics and forecasting
+- [ ] Custom alert routing and escalation
 
 ---
 
 **Made with ❤️ for Claude Memory System**
 
-Version: 2.4 (Analytics Edition) 📊
+Version: 2.5 (Mobile & Notifications Edition) 📱🔔
 Last Updated: 2026-02-10
 Developer: TechDeveloper (www.techdeveloper.in)
 Powered by: Claude Sonnet 4.5
 
-**New in v2.4:**
+**New in v2.5:**
+- 🔔 Browser push notifications & alert history
+- 🎨 Custom dashboard themes (6 themes)
+- 🧩 Widget marketplace with 9+ widgets
+- 📱 Mobile-optimized responsive design
+
+**From v2.4:**
 - 📄 Export to Excel/PDF formats
 - 📈 Advanced analytics dashboard
 - 🔔 Custom alert thresholds

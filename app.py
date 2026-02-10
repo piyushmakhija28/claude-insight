@@ -18,6 +18,7 @@ from utils.log_parser import LogParser
 from utils.policy_checker import PolicyChecker
 from utils.session_tracker import SessionTracker
 from utils.history_tracker import HistoryTracker
+from utils.notification_manager import NotificationManager
 from flasgger import Swagger, swag_from
 from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment
@@ -56,6 +57,7 @@ log_parser = LogParser()
 policy_checker = PolicyChecker()
 session_tracker = SessionTracker()
 history_tracker = HistoryTracker()
+notification_manager = NotificationManager()
 
 # User database (in production, use a proper database)
 # Password: 'admin' (hashed with bcrypt)
@@ -533,7 +535,274 @@ def settings():
         'context_usage': 85,
         'daemon_down': True
     })
-    return render_template('settings.html', alert_thresholds=alert_thresholds)
+
+    # Get current theme
+    current_theme = session.get('dashboard_theme', 'default')
+
+    return render_template('settings.html',
+                         alert_thresholds=alert_thresholds,
+                         current_theme=current_theme)
+
+@app.route('/api/themes', methods=['GET', 'POST'])
+@login_required
+def dashboard_themes():
+    """
+    Get or set dashboard theme
+    ---
+    tags:
+      - Themes
+    parameters:
+      - name: body
+        in: body
+        required: false
+        schema:
+          type: object
+          properties:
+            theme:
+              type: string
+              description: Theme name (default/dark/blue/purple/green/orange)
+    responses:
+      200:
+        description: Theme saved or retrieved
+    """
+    if request.method == 'POST':
+        try:
+            data = request.get_json()
+            theme = data.get('theme', 'default')
+            session['dashboard_theme'] = theme
+            return jsonify({'success': True, 'message': 'Theme saved', 'theme': theme})
+        except Exception as e:
+            return jsonify({'success': False, 'message': str(e)}), 500
+    else:
+        theme = session.get('dashboard_theme', 'default')
+        return jsonify({'success': True, 'theme': theme})
+
+@app.route('/widgets')
+@login_required
+def widgets():
+    """
+    Widget Marketplace
+    ---
+    tags:
+      - Widgets
+    responses:
+      200:
+        description: Widget marketplace page
+    """
+    return render_template('widgets.html')
+
+@app.route('/api/widgets/install', methods=['POST'])
+@login_required
+def install_widget():
+    """
+    Install a widget
+    ---
+    tags:
+      - Widgets
+    parameters:
+      - name: body
+        in: body
+        required: true
+        schema:
+          type: object
+          properties:
+            widget_id:
+              type: string
+              description: Widget ID to install
+    responses:
+      200:
+        description: Widget installed successfully
+    """
+    try:
+        data = request.get_json()
+        widget_id = data.get('widget_id')
+
+        if not widget_id:
+            return jsonify({'success': False, 'message': 'Widget ID is required'}), 400
+
+        # Get installed widgets from session
+        installed_widgets = session.get('installed_widgets', [])
+
+        # Check if already installed
+        if widget_id in installed_widgets:
+            return jsonify({'success': False, 'message': 'Widget already installed'})
+
+        # Add to installed list
+        installed_widgets.append(widget_id)
+        session['installed_widgets'] = installed_widgets
+
+        return jsonify({
+            'success': True,
+            'message': 'Widget installed successfully',
+            'widget_id': widget_id
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/widgets/installed')
+@login_required
+def get_installed_widgets():
+    """
+    Get installed widgets
+    ---
+    tags:
+      - Widgets
+    responses:
+      200:
+        description: List of installed widgets
+    """
+    installed_widgets = session.get('installed_widgets', [])
+
+    # Widget metadata (simplified)
+    widget_metadata = {
+        'health-score-meter': {'name': 'Health Score Meter', 'category': 'metrics'},
+        'error-trends-chart': {'name': 'Error Trends', 'category': 'charts'},
+        'cost-tracker': {'name': 'Cost Tracker', 'category': 'metrics'},
+        'policy-monitor': {'name': 'Policy Monitor', 'category': 'metrics'},
+        'alert-feed': {'name': 'Live Alert Feed', 'category': 'alerts'},
+        'context-monitor': {'name': 'Context Monitor', 'category': 'tools'},
+        'session-timeline': {'name': 'Session Timeline', 'category': 'tools'},
+        'model-distribution': {'name': 'Model Distribution', 'category': 'charts'},
+        'quick-actions': {'name': 'Quick Actions', 'category': 'tools'}
+    }
+
+    widgets = []
+    for widget_id in installed_widgets:
+        if widget_id in widget_metadata:
+            widget = widget_metadata[widget_id].copy()
+            widget['id'] = widget_id
+            widgets.append(widget)
+
+    return jsonify({
+        'success': True,
+        'widgets': widgets,
+        'count': len(widgets)
+    })
+
+@app.route('/api/widgets/create', methods=['POST'])
+@login_required
+def create_custom_widget():
+    """
+    Create a custom widget
+    ---
+    tags:
+      - Widgets
+    parameters:
+      - name: body
+        in: body
+        required: true
+        schema:
+          type: object
+          properties:
+            name:
+              type: string
+              description: Widget name
+            description:
+              type: string
+              description: Widget description
+            category:
+              type: string
+              description: Widget category
+            icon:
+              type: string
+              description: Font Awesome icon class
+            color:
+              type: string
+              description: Widget color
+            data_source:
+              type: string
+              description: API endpoint for data
+    responses:
+      200:
+        description: Custom widget created successfully
+    """
+    try:
+        data = request.get_json()
+
+        required_fields = ['name', 'description', 'category', 'icon', 'color']
+        for field in required_fields:
+            if not data.get(field):
+                return jsonify({'success': False, 'message': f'{field} is required'}), 400
+
+        # Get custom widgets from session
+        custom_widgets = session.get('custom_widgets', [])
+
+        # Generate widget ID
+        widget_id = f"custom-{len(custom_widgets) + 1}"
+
+        widget = {
+            'id': widget_id,
+            'name': data['name'],
+            'description': data['description'],
+            'category': data['category'],
+            'icon': data['icon'],
+            'color': data['color'],
+            'data_source': data.get('data_source', ''),
+            'created_at': datetime.now().isoformat()
+        }
+
+        custom_widgets.append(widget)
+        session['custom_widgets'] = custom_widgets
+
+        # Auto-install the custom widget
+        installed_widgets = session.get('installed_widgets', [])
+        installed_widgets.append(widget_id)
+        session['installed_widgets'] = installed_widgets
+
+        return jsonify({
+            'success': True,
+            'message': 'Custom widget created successfully',
+            'widget': widget
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/widgets/uninstall', methods=['POST'])
+@login_required
+def uninstall_widget():
+    """
+    Uninstall a widget
+    ---
+    tags:
+      - Widgets
+    parameters:
+      - name: body
+        in: body
+        required: true
+        schema:
+          type: object
+          properties:
+            widget_id:
+              type: string
+              description: Widget ID to uninstall
+    responses:
+      200:
+        description: Widget uninstalled successfully
+    """
+    try:
+        data = request.get_json()
+        widget_id = data.get('widget_id')
+
+        if not widget_id:
+            return jsonify({'success': False, 'message': 'Widget ID is required'}), 400
+
+        # Get installed widgets from session
+        installed_widgets = session.get('installed_widgets', [])
+
+        if widget_id not in installed_widgets:
+            return jsonify({'success': False, 'message': 'Widget not installed'})
+
+        # Remove from installed list
+        installed_widgets.remove(widget_id)
+        session['installed_widgets'] = installed_widgets
+
+        return jsonify({
+            'success': True,
+            'message': 'Widget uninstalled successfully',
+            'widget_id': widget_id
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
 
 @app.route('/analytics')
 @login_required
@@ -1143,6 +1412,16 @@ def check_alerts():
                 'threshold': thresholds.get('error_count')
             })
 
+        # Create notifications for new alerts
+        for alert in alerts:
+            notification_manager.add_notification(
+                notification_type=alert['type'],
+                title=f"{alert['severity'].upper()}: {alert['type'].replace('_', ' ').title()}",
+                message=alert['message'],
+                severity=alert['severity'],
+                data=alert
+            )
+
         return jsonify({
             'success': True,
             'alert_count': len(alerts),
@@ -1152,6 +1431,128 @@ def check_alerts():
 
     except Exception as e:
         print(f"Error checking alerts: {e}")
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/notifications')
+@login_required
+def notifications():
+    """
+    Notifications page
+    ---
+    tags:
+      - Notifications
+    responses:
+      200:
+        description: Notifications page
+    """
+    recent_notifications = notification_manager.get_recent_notifications(limit=50)
+    unread_count = notification_manager.get_unread_count()
+    trends = notification_manager.get_notification_trends(days=30)
+
+    return render_template('notifications.html',
+                         notifications=recent_notifications,
+                         unread_count=unread_count,
+                         trends=trends)
+
+@app.route('/api/notifications')
+@login_required
+def api_notifications():
+    """
+    Get notifications
+    ---
+    tags:
+      - Notifications
+    parameters:
+      - name: limit
+        in: query
+        type: integer
+        default: 50
+        description: Number of notifications to return
+    responses:
+      200:
+        description: Notifications list
+    """
+    try:
+        limit = request.args.get('limit', 50, type=int)
+        notifications = notification_manager.get_recent_notifications(limit=limit)
+        unread_count = notification_manager.get_unread_count()
+
+        return jsonify({
+            'success': True,
+            'notifications': notifications,
+            'unread_count': unread_count
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/notifications/<notification_id>/read', methods=['POST'])
+@login_required
+def mark_notification_read(notification_id):
+    """
+    Mark notification as read
+    ---
+    tags:
+      - Notifications
+    parameters:
+      - name: notification_id
+        in: path
+        type: string
+        required: true
+    responses:
+      200:
+        description: Notification marked as read
+    """
+    try:
+        notification_manager.mark_as_read(notification_id)
+        return jsonify({'success': True, 'message': 'Notification marked as read'})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/notifications/mark-all-read', methods=['POST'])
+@login_required
+def mark_all_notifications_read():
+    """
+    Mark all notifications as read
+    ---
+    tags:
+      - Notifications
+    responses:
+      200:
+        description: All notifications marked as read
+    """
+    try:
+        notification_manager.mark_all_as_read()
+        return jsonify({'success': True, 'message': 'All notifications marked as read'})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/notification-trends')
+@login_required
+def api_notification_trends():
+    """
+    Get notification trends
+    ---
+    tags:
+      - Notifications
+    parameters:
+      - name: days
+        in: query
+        type: integer
+        default: 30
+        description: Number of days to analyze
+    responses:
+      200:
+        description: Notification trends
+    """
+    try:
+        days = request.args.get('days', 30, type=int)
+        trends = notification_manager.get_notification_trends(days=days)
+
+        return jsonify({
+            'success': True,
+            'trends': trends
+        })
+    except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
 
 @app.errorhandler(404)
@@ -1258,7 +1659,7 @@ thread.start()
 if __name__ == '__main__':
     print("""
     ============================================================
-    Claude Monitoring System v2.3 (Real-time Edition)
+    Claude Monitoring System v2.5 (Mobile & Notifications Edition)
     ============================================================
 
     Dashboard URL: http://localhost:5000
@@ -1267,11 +1668,14 @@ if __name__ == '__main__':
     Password: admin
 
     Features:
+    ✓ Browser push notifications & alert history
+    ✓ Custom dashboard themes (6 themes)
+    ✓ Widget marketplace with 9+ widgets
+    ✓ Mobile-optimized responsive design
     ✓ Real-time WebSocket updates (10s interval)
+    ✓ Advanced analytics with Excel/PDF export
     ✓ Swagger API documentation
     ✓ Change password functionality
-    ✓ Extended historical data (7/30/60/90 days)
-    ✓ Custom dashboard widgets
 
     Starting server...
     ============================================================
