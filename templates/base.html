@@ -496,6 +496,11 @@
                         </a>
                     </li>
                     <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'predictive_analytics_page' %}active{% endif %}" href="{{ url_for('predictive_analytics_page') }}">
+                            <i class="fas fa-chart-line"></i> Forecasting
+                        </a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link {% if request.endpoint == 'policies' %}active{% endif %}" href="{{ url_for('policies') }}">
                             <i class="fas fa-shield-alt"></i> Policies
                         </a>

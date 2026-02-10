@@ -22,6 +22,7 @@ from utils.notification_manager import NotificationManager
 from utils.alert_sender import AlertSender
 from utils.community_widgets import CommunityWidgetsManager
 from utils.anomaly_detector import AnomalyDetector
+from utils.predictive_analytics import PredictiveAnalytics
 from flasgger import Swagger, swag_from
 from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment
@@ -64,6 +65,7 @@ notification_manager = NotificationManager()
 alert_sender = AlertSender()
 community_widgets_manager = CommunityWidgetsManager()
 anomaly_detector = AnomalyDetector()
+predictive_analytics = PredictiveAnalytics()
 
 # User database (in production, use a proper database)
 # Password: 'admin' (hashed with bcrypt)
@@ -2225,6 +2227,210 @@ def resolve_anomaly(anomaly_id):
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
 
+# ============================================================
+# Predictive Analytics Routes
+# ============================================================
+
+@app.route('/predictive-analytics')
+@login_required
+def predictive_analytics_page():
+    """
+    Predictive Analytics Dashboard
+    ---
+    tags:
+      - Predictive Analytics
+    responses:
+      200:
+        description: Predictive analytics dashboard page
+    """
+    # Generate sample data for demonstration
+    import random
+    for i in range(100):
+        predictive_analytics.add_metric_point('health_score', 70 + random.randint(-10, 20))
+        predictive_analytics.add_metric_point('context_usage', 50 + random.randint(-20, 30))
+        predictive_analytics.add_metric_point('error_count', random.randint(0, 15))
+        predictive_analytics.add_metric_point('cost', 10 + random.uniform(-3, 5))
+        predictive_analytics.add_metric_point('response_time', 200 + random.randint(-50, 100))
+
+    return render_template('predictive-analytics.html')
+
+@app.route('/api/forecast/summary')
+@login_required
+def forecast_summary():
+    """
+    Get forecast summary for all metrics
+    ---
+    tags:
+      - Predictive Analytics
+    responses:
+      200:
+        description: Forecast summary
+        schema:
+          type: object
+          properties:
+            success:
+              type: boolean
+            summary:
+              type: object
+    """
+    try:
+        summary = predictive_analytics.get_forecast_summary()
+        return jsonify({
+            'success': True,
+            'summary': summary
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/forecast/insights')
+@login_required
+def forecast_insights():
+    """
+    Get predictive insights and recommendations
+    ---
+    tags:
+      - Predictive Analytics
+    responses:
+      200:
+        description: Predictive insights
+        schema:
+          type: object
+          properties:
+            success:
+              type: boolean
+            insights:
+              type: object
+    """
+    try:
+        insights = predictive_analytics.generate_forecast_insights()
+        return jsonify({
+            'success': True,
+            'insights': insights
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/forecast/metric/<metric_name>')
+@login_required
+def forecast_metric(metric_name):
+    """
+    Get forecast for a specific metric
+    ---
+    tags:
+      - Predictive Analytics
+    parameters:
+      - name: metric_name
+        in: path
+        type: string
+        required: true
+        description: Metric name to forecast
+      - name: periods
+        in: query
+        type: integer
+        default: 24
+        description: Number of periods to forecast
+      - name: method
+        in: query
+        type: string
+        default: ensemble
+        enum: [ensemble, linear, exponential, moving_average, seasonal]
+        description: Forecasting method
+    responses:
+      200:
+        description: Forecast data
+        schema:
+          type: object
+    """
+    try:
+        periods = request.args.get('periods', 24, type=int)
+        method = request.args.get('method', 'ensemble')
+
+        forecast_result = predictive_analytics.forecast_metric(
+            metric_name,
+            periods=periods,
+            method=method
+        )
+
+        return jsonify(forecast_result)
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/forecast/capacity-predictions')
+@login_required
+def capacity_predictions():
+    """
+    Get capacity breach predictions
+    ---
+    tags:
+      - Predictive Analytics
+    parameters:
+      - name: horizon
+        in: query
+        type: integer
+        default: 168
+        description: Hours to look ahead (default 1 week)
+    responses:
+      200:
+        description: Capacity predictions
+        schema:
+          type: object
+          properties:
+            success:
+              type: boolean
+            predictions:
+              type: array
+    """
+    try:
+        horizon = request.args.get('horizon', 168, type=int)
+
+        predictions = []
+
+        # Check capacity for key metrics
+        thresholds = {
+            'context_usage': 85,
+            'error_count': 50,
+            'cost': 100
+        }
+
+        for metric_name, threshold in thresholds.items():
+            result = predictive_analytics.predict_capacity_breach(
+                metric_name,
+                threshold,
+                horizon=horizon
+            )
+
+            if result['success'] and result.get('will_breach'):
+                predictions.append(result)
+
+        return jsonify({
+            'success': True,
+            'predictions': predictions,
+            'horizon_hours': horizon
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/forecast/train-models', methods=['POST'])
+@login_required
+def train_forecast_models():
+    """
+    Train/retrain forecasting models
+    ---
+    tags:
+      - Predictive Analytics
+    responses:
+      200:
+        description: Models trained successfully
+    """
+    try:
+        # Future: Implement model training
+        return jsonify({
+            'success': True,
+            'message': 'Model training scheduled (placeholder for future ML models)'
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
 @app.errorhandler(404)
 def page_not_found(e):
     """Handle 404 errors"""
@@ -2329,7 +2535,7 @@ thread.start()
 if __name__ == '__main__':
     print("""
     ============================================================
-    Claude Monitoring System v2.9 (AI Detection Edition)
+    Claude Monitoring System v2.10 (Forecasting Edition)
     ============================================================
 
     Dashboard URL: http://localhost:5000
@@ -2337,15 +2543,19 @@ if __name__ == '__main__':
     Widget Builder: http://localhost:5000/widget-builder
     Community: http://localhost:5000/community-marketplace
     AI Detection: http://localhost:5000/anomaly-detection
+    Forecasting: http://localhost:5000/predictive-analytics
     Username: admin
     Password: admin
 
     Features:
+    ✓ Predictive analytics & forecasting (5 algorithms)
+    ✓ Time series forecasting with confidence intervals
+    ✓ Capacity breach predictions & planning
+    ✓ Ensemble method (weighted average)
+    ✓ Linear regression, exponential smoothing
+    ✓ Moving average, seasonal pattern detection
     ✓ AI-powered anomaly detection (6 ML algorithms)
-    ✓ Z-score, IQR, Moving Avg, Exp. Smoothing detection
-    ✓ Spike detection & trend analysis
-    ✓ AI insights & recommendations
-    ✓ Confidence scoring & severity calculation
+    ✓ Spike detection, trend analysis & insights
     ✓ Community widget marketplace with sharing
     ✓ Advanced widget builder with drag-and-drop
     ✓ Email & SMS alerts for critical issues

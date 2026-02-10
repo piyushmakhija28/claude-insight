@@ -1,6 +1,6 @@
-# 🤖 Claude Monitoring System v2.9 🚀
+# 🤖 Claude Monitoring System v2.10 🚀
 
-**Professional Real-time Analytics Dashboard for Claude Memory System with AI-Powered Anomaly Detection**
+**Professional Real-time Analytics Dashboard for Claude Memory System with AI-Powered Anomaly Detection & Predictive Forecasting**
 
 [![GitHub](https://img.shields.io/badge/GitHub-claude--monitoring--system-blue?logo=github)](https://github.com/piyushmakhija28/claude-monitoring-system)
 [![Python](https://img.shields.io/badge/Python-3.7+-blue?logo=python)](https://www.python.org/)
@@ -12,6 +12,114 @@ A comprehensive, real-time monitoring and analytics dashboard for the Claude Mem
 **🎁 COMPLETE PACKAGE**: This repo includes **everything you need** - the monitoring dashboard + all Claude Memory System v2.0 files (24 automation scripts + 15 policies + complete documentation). Just clone, setup, and start using!
 
 **Developed by [TechDeveloper](https://www.techdeveloper.in)** 💻
+
+---
+
+## 🆕 What's New in v2.10 (Feb 2026) - Forecasting Edition 📈🔮
+
+### **Predictive Analytics & Forecasting Engine** 📈🔮 NEW!
+- **Time Series Forecasting** - Predict future metric values:
+  - 📊 **Health Score**: Predict system health trends
+  - 🧠 **Context Usage**: Forecast context utilization
+  - ❌ **Error Count**: Predict error occurrence patterns
+  - 💰 **Cost**: Forecast API costs and spending
+  - ⏱️ **Response Time**: Predict performance trends
+- **5 Forecasting Algorithms**:
+  - 📈 **Linear Regression**: Trend-based prediction using least squares
+  - 🎯 **Exponential Smoothing**: Weighted historical data prediction
+  - 📊 **Moving Average**: Sliding window trend analysis
+  - 📅 **Seasonal Patterns**: Hourly/daily pattern detection
+  - 🎨 **Ensemble Method**: Combines all methods (weighted average)
+- **Confidence Intervals**:
+  - 📊 Upper and lower bounds for predictions
+  - 🎯 Prediction uncertainty visualization
+  - 📈 Wider intervals for longer-term forecasts
+  - ✅ Statistical confidence scoring
+- **Forecast Horizons**:
+  - ⏰ **24 Hours**: Short-term predictions
+  - 📅 **72 Hours**: Medium-term planning (3 days)
+  - 📆 **7 Days**: Long-term capacity planning (168 hours)
+  - ⚙️ Customizable forecast periods
+- **Capacity Breach Predictions**:
+  - 🚨 **Threshold Monitoring**: Predict when metrics will breach limits
+  - ⏰ **Time to Breach**: Hours until capacity issues
+  - 🎯 **Urgency Classification**: Critical (<24h), High (<72h), Medium (<1 week)
+  - 💡 **Recommendations**: Actionable advice based on predictions
+  - 📊 **Proactive Alerts**: Get warned before issues occur
+- **Predictive Insights**:
+  - 💡 **Trend Analysis**: Detect increasing/decreasing patterns
+  - 📊 **Pattern Recognition**: Identify metric behavior changes
+  - 🎯 **Priority Scoring**: Critical, high, medium insights
+  - 💬 **Recommendations**: AI-generated actionable advice
+  - 📈 **24-hour Trends**: Immediate predictions
+- **Interactive Dashboard**:
+  - 📊 **Forecast Charts**: Visual predictions with confidence bands
+  - 📈 **Historical + Predicted**: Seamless timeline visualization
+  - 🎨 **Color-coded Metrics**: Easy-to-read charts
+  - 🔄 **Auto-refresh**: Updates every 5 minutes
+  - 📱 **Responsive Design**: Mobile-friendly interface
+- **Forecast Summary Cards**:
+  - 📊 Current value vs predicted value
+  - 📈 Trend indicators (increasing/decreasing/stable)
+  - 🎯 Confidence percentage
+  - 🎨 Color-coded by metric type
+- **Ensemble Forecasting**:
+  - 🎯 Weighted combination of all methods
+  - 📊 Dynamic weight adjustment based on accuracy
+  - ✅ Higher confidence through consensus
+  - 📈 R-squared calculation for linear regression
+- **Capacity Planning**:
+  - 📊 Predict resource exhaustion
+  - ⏰ Time-to-breach calculations
+  - 💡 Proactive recommendations
+  - 🎯 Threshold-based alerting
+- **Data Collection**:
+  - 💾 Stores up to 1,000 data points per metric
+  - 📊 Real-time metric tracking
+  - 🔄 Continuous learning from new data
+  - 📈 Historical pattern analysis
+  - 🗄️ Stored in `~/.claude/memory/forecasts/`
+- **Forecasting Methods Detail**:
+  - **Linear Regression**: Best for steady trends, calculates slope and R²
+  - **Exponential Smoothing**: Good for recent trend emphasis (α=0.3)
+  - **Moving Average**: Smooth out noise with 5-period window
+  - **Seasonal**: Detects hourly/daily patterns (24-hour cycles)
+  - **Ensemble**: Combines all with weighted average for robustness
+
+**Technical Features:**
+- ✅ NumPy-powered statistical calculations
+- ✅ Multi-algorithm ensemble approach
+- ✅ Confidence interval calculation
+- ✅ JSON-based data persistence
+- ✅ RESTful API endpoints
+- ✅ Swagger API documentation
+- ✅ Real-time metric collection
+
+**Use Cases:**
+- ✅ Predict future system behavior
+- ✅ Plan capacity before breaches occur
+- ✅ Identify trends early
+- ✅ Optimize resource allocation
+- ✅ Prevent downtime proactively
+- ✅ Make data-driven decisions
+- ✅ Budget and cost forecasting
+- ✅ Performance planning
+
+**API Endpoints:**
+- `GET /predictive-analytics` - Forecasting dashboard
+- `GET /api/forecast/summary` - Forecast summary for all metrics
+- `GET /api/forecast/insights` - Predictive insights and recommendations
+- `GET /api/forecast/metric/<name>` - Forecast specific metric (supports periods, method params)
+- `GET /api/forecast/capacity-predictions` - Capacity breach predictions
+- `POST /api/forecast/train-models` - Train/retrain models (future enhancement)
+
+**Forecast Chart Features:**
+- 📊 Historical data (solid line)
+- 📈 Predicted values (dashed line)
+- 📉 Confidence intervals (shaded area)
+- 🎯 Trend indicators
+- 📱 Interactive tooltips
+- 🔄 Real-time updates
 
 ---
 
