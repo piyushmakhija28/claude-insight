@@ -593,6 +593,94 @@ def widgets():
     """
     return render_template('widgets.html')
 
+@app.route('/widget-builder')
+@login_required
+def widget_builder():
+    """
+    Advanced Widget Builder
+    ---
+    tags:
+      - Widgets
+    responses:
+      200:
+        description: Widget builder page with visual editor
+    """
+    return render_template('widget-builder.html')
+
+@app.route('/api/widgets/save', methods=['POST'])
+@login_required
+def save_custom_widget():
+    """
+    Save custom widget from builder
+    ---
+    tags:
+      - Widgets
+    parameters:
+      - name: body
+        in: body
+        required: true
+        schema:
+          type: object
+          properties:
+            name:
+              type: string
+              description: Widget name
+            components:
+              type: array
+              description: Widget components
+            config:
+              type: object
+              description: Widget configuration
+            html:
+              type: string
+              description: Widget HTML
+            css:
+              type: string
+              description: Widget CSS
+            js:
+              type: string
+              description: Widget JavaScript
+    responses:
+      200:
+        description: Widget saved successfully
+    """
+    try:
+        data = request.get_json()
+
+        required_fields = ['name', 'html']
+        for field in required_fields:
+            if not data.get(field):
+                return jsonify({'success': False, 'message': f'{field} is required'}), 400
+
+        # Get custom widgets from session
+        custom_widgets = session.get('custom_widgets_advanced', [])
+
+        # Generate widget ID
+        widget_id = f"advanced-{len(custom_widgets) + 1}"
+
+        widget = {
+            'id': widget_id,
+            'name': data['name'],
+            'components': data.get('components', []),
+            'config': data.get('config', {}),
+            'html': data['html'],
+            'css': data.get('css', ''),
+            'js': data.get('js', ''),
+            'created_at': datetime.now().isoformat(),
+            'updated_at': datetime.now().isoformat()
+        }
+
+        custom_widgets.append(widget)
+        session['custom_widgets_advanced'] = custom_widgets
+
+        return jsonify({
+            'success': True,
+            'message': 'Widget saved successfully',
+            'widget': widget
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
 @app.route('/api/widgets/install', methods=['POST'])
 @login_required
 def install_widget():
@@ -1821,15 +1909,19 @@ thread.start()
 if __name__ == '__main__':
     print("""
     ============================================================
-    Claude Monitoring System v2.6 (Email & SMS Alerts Edition)
+    Claude Monitoring System v2.7 (Widget Builder Edition)
     ============================================================
 
     Dashboard URL: http://localhost:5000
     API Docs: http://localhost:5000/api/docs
+    Widget Builder: http://localhost:5000/widget-builder
     Username: admin
     Password: admin
 
     Features:
+    ✓ Advanced widget builder with drag-and-drop
+    ✓ 15+ component library (charts, metrics, tables)
+    ✓ Live preview canvas with visual editor
     ✓ Email & SMS alerts for critical issues
     ✓ Smart alert rules (quiet hours, rate limiting)
     ✓ Browser push notifications & alert history
@@ -1838,8 +1930,6 @@ if __name__ == '__main__':
     ✓ Mobile-optimized responsive design
     ✓ Real-time WebSocket updates (10s interval)
     ✓ Advanced analytics with Excel/PDF export
-    ✓ Swagger API documentation
-    ✓ Change password functionality
 
     Starting server...
     ============================================================

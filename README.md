@@ -1,4 +1,4 @@
-# 🤖 Claude Monitoring System v2.6 🚀
+# 🤖 Claude Monitoring System v2.7 🚀
 
 **Professional Real-time Analytics Dashboard for Claude Memory System**
 
@@ -12,6 +12,61 @@ A comprehensive, real-time monitoring and analytics dashboard for the Claude Mem
 **🎁 COMPLETE PACKAGE**: This repo includes **everything you need** - the monitoring dashboard + all Claude Memory System v2.0 files (24 automation scripts + 15 policies + complete documentation). Just clone, setup, and start using!
 
 **Developed by [TechDeveloper](https://www.techdeveloper.in)** 💻
+
+---
+
+## 🆕 What's New in v2.7 (Feb 2026) - Advanced Widget Builder Edition 🎨✨
+
+### **Advanced Widget Builder with Visual Editor** 🎨✨ NEW!
+- **Drag-and-Drop Interface** - Build widgets visually without writing code
+- **Component Library** - 15+ pre-built components:
+  - 📊 **Charts**: Line, Bar, Pie, Doughnut
+  - 📈 **Metrics**: Metric Cards, Gauges, Progress Bars, Stat Numbers
+  - 📋 **Lists & Tables**: Data Tables, Lists, Timelines
+  - 📝 **Content**: Headings, Text Blocks, Badges, Icons
+  - 💻 **Advanced**: Custom HTML, Iframes
+- **Live Canvas** - Real-time preview as you build
+- **Property Editor** - Visual controls for all component properties:
+  - Title, Colors (background, text)
+  - Padding, Border radius
+  - Width, Height
+  - Custom styles
+- **Data Source Integration**:
+  - Connect to live APIs
+  - Built-in data sources (metrics, daemons, notifications)
+  - Custom API endpoints
+  - Auto-refresh intervals
+  - Test connection feature
+- **Code Editor** - Advanced users can edit HTML/CSS/JS directly
+- **Widget Templates** - Quick start with pre-built layouts:
+  - 🩺 Health Monitor
+  - 📈 Trends Dashboard
+  - 🖥️ Status Board
+  - 📊 Analytics Panel
+- **Canvas Tools**:
+  - Undo/Redo functionality
+  - Clear canvas
+  - Component sorting (drag to reorder)
+  - Delete components
+  - Select and edit
+- **Save & Export**:
+  - Save custom widgets to session
+  - Export as JSON file
+  - Import widget definitions
+  - Share with team
+- **Professional UI**:
+  - 3-panel layout (Components | Canvas | Properties)
+  - Tabbed interface for organization
+  - Responsive design
+  - Smooth animations
+  - Visual feedback
+
+**Use Cases:**
+- ✅ Create custom dashboard widgets without coding
+- ✅ Build company-specific monitoring panels
+- ✅ Design KPI dashboards for different teams
+- ✅ Prototype widget ideas quickly
+- ✅ Customize visualizations for specific metrics
 
 ---
 
@@ -985,8 +1040,10 @@ Terminal-style log viewer with search, filters, and syntax highlighting.
 | `/api/export/pdf/<type>` | GET | Export to PDF (sessions/metrics/logs/analytics) |
 | `/api/alert-thresholds` | GET/POST | Get or set alert thresholds |
 | `/api/check-alerts` | GET | Check current alerts against thresholds |
-| `/widgets` | GET | **NEW** Widget marketplace page |
-| `/notifications` | GET | **NEW** Notifications history page |
+| `/widgets` | GET | Widget marketplace page |
+| `/widget-builder` | GET | **NEW** Advanced widget builder with visual editor |
+| `/notifications` | GET | Notifications history page |
+| `/api/widgets/save` | POST | **NEW** Save custom widget from builder |
 | `/api/widgets/install` | POST | **NEW** Install a widget from marketplace |
 | `/api/widgets/installed` | GET | **NEW** Get list of installed widgets |
 | `/api/widgets/create` | POST | **NEW** Create custom widget |
@@ -1118,8 +1175,9 @@ Login: admin / admin
 - [ ] Multi-user support with roles & permissions
 - [ ] Slack/Discord webhook notifications
 - [ ] Integration with monitoring tools (Datadog, New Relic, etc.)
-- [ ] Advanced widget builder with visual editor
 - [ ] Widget sharing and community marketplace
+- [ ] Real-time collaboration on widget building
+- [ ] Widget version control and history
 - [ ] AI-powered anomaly detection
 - [ ] Predictive analytics and forecasting
 - [ ] Custom alert routing and escalation
@@ -1128,12 +1186,19 @@ Login: admin / admin
 
 **Made with ❤️ for Claude Memory System**
 
-Version: 2.6 (Email & SMS Alerts Edition) 📧📱
+Version: 2.7 (Advanced Widget Builder Edition) 🎨✨
 Last Updated: 2026-02-10
 Developer: TechDeveloper (www.techdeveloper.in)
 Powered by: Claude Sonnet 4.5
 
-**New in v2.6:**
+**New in v2.7:**
+- 🎨 Advanced widget builder with drag-and-drop interface
+- 🧩 15+ component library (charts, metrics, tables, content)
+- 🔴 Live preview canvas with real-time editing
+- 💾 Save/export custom widgets
+- 📋 Pre-built templates for quick start
+
+**From v2.6:**
 - 📧 Email alerts via SMTP (Gmail, Outlook, custom)
 - 📱 SMS alerts via Twilio
 - 🎯 Smart alert rules (severity, types, quiet hours, rate limiting)
