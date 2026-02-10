@@ -282,6 +282,25 @@ def api_recent_errors():
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
+@app.route('/api/comparison')
+@login_required
+def api_comparison():
+    """API endpoint for comparison data"""
+    try:
+        comparison_data = metrics.get_cost_comparison()
+        optimization_impact = metrics.get_optimization_impact()
+
+        return jsonify({
+            'success': True,
+            'comparison': comparison_data,
+            'impact': optimization_impact
+        })
+    except Exception as e:
+        print(f"Error in api_comparison: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 @app.route('/api/metrics/live')
 @login_required
 def live_metrics():

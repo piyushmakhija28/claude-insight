@@ -582,17 +582,31 @@ function showError(message) {
 
 // Initialize Historical Charts
 function initializeHistoricalCharts() {
-    const chartData = {{ chart_data | tojson }};
+    try {
+        const chartData = {{ chart_data | tojson | safe }};
 
-    if (!chartData || !chartData.dates || chartData.dates.length === 0) {
-        console.warn('No historical data available');
-        return;
-    }
+        if (!chartData || !chartData.dates || chartData.dates.length === 0) {
+            console.warn('No historical data available');
+            // Hide chart containers or show placeholder
+            const chartContainers = document.querySelectorAll('.col-md-6 canvas');
+            chartContainers.forEach(canvas => {
+                const parent = canvas.parentElement;
+                if (parent) {
+                    parent.innerHTML = `
+                        <div class="text-center text-muted py-4">
+                            <i class="fas fa-chart-line fa-2x mb-2"></i>
+                            <p class="small">No historical data available yet</p>
+                        </div>
+                    `;
+                }
+            });
+            return;
+        }
 
-    const labels = chartData.dates.map(date => {
-        const d = new Date(date);
-        return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-    });
+        const labels = chartData.dates.map(date => {
+            const d = new Date(date);
+            return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        });
 
     // Common chart options
     const commonOptions = {
@@ -619,95 +633,126 @@ function initializeHistoricalCharts() {
     };
 
     // Health Score Chart
-    new Chart(document.getElementById('healthScoreChart').getContext('2d'), {
-        type: 'line',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: 'Health Score',
-                data: chartData.health_scores,
-                borderColor: 'rgb(16, 185, 129)',
-                backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                tension: 0.4,
-                fill: true,
-                pointRadius: 4,
-                pointHoverRadius: 6
-            }]
-        },
-        options: {
-            ...commonOptions,
-            scales: {
-                ...commonOptions.scales,
-                y: {
-                    ...commonOptions.scales.y,
-                    max: 100
+    try {
+        const healthCanvas = document.getElementById('healthScoreChart');
+        if (healthCanvas) {
+            new Chart(healthCanvas.getContext('2d'), {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Health Score',
+                        data: chartData.health_scores || [],
+                        borderColor: 'rgb(16, 185, 129)',
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        tension: 0.4,
+                        fill: true,
+                        pointRadius: 4,
+                        pointHoverRadius: 6
+                    }]
+                },
+                options: {
+                    ...commonOptions,
+                    scales: {
+                        ...commonOptions.scales,
+                        y: {
+                            ...commonOptions.scales.y,
+                            max: 100
+                        }
+                    }
                 }
-            }
+            });
         }
-    });
+    } catch (error) {
+        console.error('Error creating health score chart:', error);
+    }
 
     // Errors Chart
-    new Chart(document.getElementById('errorsChart').getContext('2d'), {
-        type: 'bar',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: 'Errors',
-                data: chartData.errors,
-                backgroundColor: 'rgba(239, 68, 68, 0.7)',
-                borderColor: 'rgb(239, 68, 68)',
-                borderWidth: 1
-            }]
-        },
-        options: commonOptions
-    });
+    try {
+        const errorsCanvas = document.getElementById('errorsChart');
+        if (errorsCanvas) {
+            new Chart(errorsCanvas.getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Errors',
+                        data: chartData.errors || [],
+                        backgroundColor: 'rgba(239, 68, 68, 0.7)',
+                        borderColor: 'rgb(239, 68, 68)',
+                        borderWidth: 1
+                    }]
+                },
+                options: commonOptions
+            });
+        }
+    } catch (error) {
+        console.error('Error creating errors chart:', error);
+    }
 
     // Policy Hits Chart
-    new Chart(document.getElementById('policyHitsChart').getContext('2d'), {
-        type: 'line',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: 'Policy Hits',
-                data: chartData.policy_hits,
-                borderColor: 'rgb(99, 102, 241)',
-                backgroundColor: 'rgba(99, 102, 241, 0.1)',
-                tension: 0.4,
-                fill: true,
-                pointRadius: 4,
-                pointHoverRadius: 6
-            }]
-        },
-        options: commonOptions
-    });
+    try {
+        const policyCanvas = document.getElementById('policyHitsChart');
+        if (policyCanvas) {
+            new Chart(policyCanvas.getContext('2d'), {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Policy Hits',
+                        data: chartData.policy_hits || [],
+                        borderColor: 'rgb(99, 102, 241)',
+                        backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                        tension: 0.4,
+                        fill: true,
+                        pointRadius: 4,
+                        pointHoverRadius: 6
+                    }]
+                },
+                options: commonOptions
+            });
+        }
+    } catch (error) {
+        console.error('Error creating policy hits chart:', error);
+    }
 
     // Context Usage Chart
-    new Chart(document.getElementById('contextUsageChart').getContext('2d'), {
-        type: 'line',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: 'Context Usage %',
-                data: chartData.context_usage,
-                borderColor: 'rgb(245, 158, 11)',
-                backgroundColor: 'rgba(245, 158, 11, 0.1)',
-                tension: 0.4,
-                fill: true,
-                pointRadius: 4,
-                pointHoverRadius: 6
-            }]
-        },
-        options: {
-            ...commonOptions,
-            scales: {
-                ...commonOptions.scales,
-                y: {
-                    ...commonOptions.scales.y,
-                    max: 100
+    try {
+        const contextCanvas = document.getElementById('contextUsageChart');
+        if (contextCanvas) {
+            new Chart(contextCanvas.getContext('2d'), {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Context Usage %',
+                        data: chartData.context_usage || [],
+                        borderColor: 'rgb(245, 158, 11)',
+                        backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                        tension: 0.4,
+                        fill: true,
+                        pointRadius: 4,
+                        pointHoverRadius: 6
+                    }]
+                },
+                options: {
+                    ...commonOptions,
+                    scales: {
+                        ...commonOptions.scales,
+                        y: {
+                            ...commonOptions.scales.y,
+                            max: 100
+                        }
+                    }
                 }
-            }
+            });
         }
-    });
+    } catch (error) {
+        console.error('Error creating context usage chart:', error);
+    }
+    } catch (error) {
+        console.error('Error initializing historical charts:', error);
+    }
 }
 
 // Call this after page loads

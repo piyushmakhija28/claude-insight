@@ -199,33 +199,67 @@ document.addEventListener('DOMContentLoaded', function() {
 
 function loadComparisonData() {
     fetch('/api/comparison')
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
         .then(data => {
-            updateSummaryCards(data);
-            updateBeforeAfterCharts(data);
-            updateSavingsChart(data);
-            updateTokenBreakdown(data);
-            updateOptimizationImpact(data);
-            updateComparisonTable(data);
+            if (!data.success) {
+                throw new Error(data.error || 'Failed to load comparison data');
+            }
+
+            // Extract comparison and impact data
+            const comparison = data.comparison || {};
+            const impact = data.impact || {};
+
+            // Combine into single object for easier access
+            const combinedData = {
+                ...comparison,
+                ...impact,
+                comparison: comparison,
+                impact: impact
+            };
+
+            updateSummaryCards(combinedData);
+            updateBeforeAfterCharts(combinedData);
+            updateSavingsChart(combinedData);
+            updateTokenBreakdown(combinedData);
+            updateOptimizationImpact(combinedData);
+            updateComparisonTable(combinedData);
         })
         .catch(error => {
             console.error('Error loading comparison data:', error);
-            showError('Failed to load comparison data');
+            showError('Failed to load comparison data: ' + error.message);
         });
 }
 
 function updateSummaryCards(data) {
-    // Total Savings
-    const totalSavings = data.total_savings || 0;
-    document.getElementById('totalSavings').innerHTML = `$${totalSavings.toFixed(2)}`;
+    try {
+        const savings = data.savings || {};
+        const impact = data.impact || {};
 
-    // Token Reduction
-    const tokenReduction = data.token_reduction_percent || 0;
-    document.getElementById('tokenReduction').innerHTML = `${tokenReduction.toFixed(1)}%`;
+        // Total Savings
+        const totalSavings = savings.cost || 0;
+        const savingsEl = document.getElementById('totalSavings');
+        if (savingsEl) {
+            savingsEl.innerHTML = `$${totalSavings.toFixed(2)}`;
+        }
 
-    // Response Time
-    const responseTime = data.response_time_improvement || 0;
-    document.getElementById('responseTime').innerHTML = `${responseTime.toFixed(1)}%`;
+        // Token Reduction
+        const tokenReduction = savings.percent || 0;
+        const tokenEl = document.getElementById('tokenReduction');
+        if (tokenEl) {
+            tokenEl.innerHTML = `${tokenReduction.toFixed(1)}%`;
+        }
+
+        // Total Optimizations (use as response time metric)
+        const totalOpts = impact.total_optimizations || 0;
+        const responseEl = document.getElementById('responseTime');
+        if (responseEl) {
+            responseEl.innerHTML = `${totalOpts}`;
+        }
 
     // Efficiency Score
     const efficiency = data.efficiency_score || 0;
