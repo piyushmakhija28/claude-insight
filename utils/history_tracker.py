@@ -72,12 +72,12 @@ class HistoryTracker:
             # Add new entry
             history['daily_metrics'].append(metric_entry)
 
-        # Keep only last 30 days
+        # Keep only last 90 days
         history['daily_metrics'] = sorted(
             history['daily_metrics'],
             key=lambda x: x['date'],
             reverse=True
-        )[:30]
+        )[:90]
 
         history['last_updated'] = datetime.now().isoformat()
         self.save_history(history)

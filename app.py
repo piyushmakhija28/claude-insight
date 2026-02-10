@@ -72,6 +72,22 @@ def logout():
 @login_required
 def dashboard():
     """Main dashboard"""
+    # Get time range from query parameter (default: 7 days)
+    days = request.args.get('days', 7, type=int)
+    # Validate days parameter
+    if days not in [7, 30, 60, 90]:
+        days = 7
+
+    # Get widget preferences from session (default: all enabled)
+    widget_prefs = session.get('widget_preferences', {
+        'system_health': True,
+        'daemon_status': True,
+        'policy_status': True,
+        'recent_activity': True,
+        'historical_charts': True,
+        'recent_errors': True
+    })
+
     # Get all metrics
     system_health = metrics.get_system_health()
     daemon_status = metrics.get_daemon_status()
@@ -98,9 +114,9 @@ def dashboard():
         import traceback
         traceback.print_exc()
 
-    # Get historical data
-    chart_data = history_tracker.get_chart_data(days=7)
-    summary_stats = history_tracker.get_summary_stats(days=7)
+    # Get historical data for selected time range
+    chart_data = history_tracker.get_chart_data(days=days)
+    summary_stats = history_tracker.get_summary_stats(days=days)
 
     return render_template('dashboard.html',
                          system_health=system_health,
@@ -108,7 +124,9 @@ def dashboard():
                          policy_status=policy_status,
                          recent_activity=recent_activity,
                          chart_data=chart_data,
-                         summary_stats=summary_stats)
+                         summary_stats=summary_stats,
+                         selected_days=days,
+                         widget_preferences=widget_prefs)
 
 @app.route('/comparison')
 @login_required
@@ -469,6 +487,29 @@ def export_logs():
         return response
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/widget-preferences', methods=['GET', 'POST'])
+@login_required
+def widget_preferences():
+    """Get or update widget preferences"""
+    if request.method == 'POST':
+        try:
+            data = request.get_json()
+            session['widget_preferences'] = data.get('preferences', {})
+            return jsonify({'success': True, 'message': 'Preferences saved'})
+        except Exception as e:
+            return jsonify({'success': False, 'message': str(e)}), 500
+    else:
+        # GET request - return current preferences
+        prefs = session.get('widget_preferences', {
+            'system_health': True,
+            'daemon_status': True,
+            'policy_status': True,
+            'recent_activity': True,
+            'historical_charts': True,
+            'recent_errors': True
+        })
+        return jsonify({'success': True, 'preferences': prefs})
 
 @app.errorhandler(404)
 def page_not_found(e):

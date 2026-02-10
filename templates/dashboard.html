@@ -10,6 +10,9 @@
                 <i class="fas fa-tachometer-alt me-2"></i>System Dashboard
             </h2>
             <div class="d-flex gap-2">
+                <button class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#widgetCustomizeModal">
+                    <i class="fas fa-cog me-2"></i>Customize
+                </button>
                 <a href="{{ url_for('export_metrics') }}" class="btn btn-success">
                     <i class="fas fa-download me-2"></i>Export Metrics
                 </a>
@@ -25,7 +28,8 @@
 </div>
 
 <!-- System Health Metrics -->
-<div class="row mb-4">
+{% if widget_preferences.get('system_health', True) %}
+<div class="row mb-4" id="systemHealthWidget">
     <div class="col-md-3">
         <div class="card border-0 shadow-sm h-100">
             <div class="card-body text-center">
@@ -73,6 +77,7 @@
         </div>
     </div>
 </div>
+{% endif %}
 
 <!-- Live Metrics and Activity Feed -->
 <div class="row mb-4">
@@ -88,7 +93,8 @@
             </div>
         </div>
     </div>
-    <div class="col-md-4">
+    {% if widget_preferences.get('recent_activity', True) %}
+    <div class="col-md-4" id="recentActivityWidget">
         <div class="card border-0 shadow-sm h-100">
             <div class="card-header bg-white border-0 pt-4 pb-3">
                 <h5 class="mb-0">
@@ -105,19 +111,38 @@
             </div>
         </div>
     </div>
+    {% endif %}
 </div>
 
-<!-- 7-Day Historical Trends -->
-<div class="row mb-4">
+<!-- Historical Trends -->
+{% if widget_preferences.get('historical_charts', True) %}
+<div class="row mb-4" id="historicalChartsWidget">
     <div class="col-12">
         <div class="card border-0 shadow-sm">
             <div class="card-header bg-white border-0 pt-4 pb-3">
-                <div class="d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">
-                        <i class="fas fa-chart-area me-2"></i>7-Day Historical Trends
+                <div class="d-flex justify-content-between align-items-center flex-wrap">
+                    <h5 class="mb-2 mb-md-0">
+                        <i class="fas fa-chart-area me-2"></i>Historical Trends
                     </h5>
+
+                    <!-- Time Range Filter -->
+                    <div class="btn-group" role="group" aria-label="Time range filter">
+                        <a href="?days=7" class="btn btn-sm btn-outline-primary {{ 'active' if selected_days == 7 else '' }}">
+                            7 Days
+                        </a>
+                        <a href="?days=30" class="btn btn-sm btn-outline-primary {{ 'active' if selected_days == 30 else '' }}">
+                            30 Days
+                        </a>
+                        <a href="?days=60" class="btn btn-sm btn-outline-primary {{ 'active' if selected_days == 60 else '' }}">
+                            60 Days
+                        </a>
+                        <a href="?days=90" class="btn btn-sm btn-outline-primary {{ 'active' if selected_days == 90 else '' }}">
+                            90 Days
+                        </a>
+                    </div>
+
                     <span class="badge bg-info">
-                        <i class="fas fa-calendar-alt me-1"></i>Last 7 Days
+                        <i class="fas fa-calendar-alt me-1"></i>Last {{ selected_days }} Days
                     </span>
                 </div>
             </div>
@@ -180,6 +205,7 @@
         </div>
     </div>
 </div>
+{% endif %}
 
 <!-- Policy Status Cards -->
 <div class="row mb-4">
@@ -237,6 +263,100 @@
                         <p>Loading errors...</p>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Widget Customization Modal -->
+<div class="modal fade" id="widgetCustomizeModal" tabindex="-1" aria-labelledby="widgetCustomizeModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="widgetCustomizeModalLabel">
+                    <i class="fas fa-cog me-2"></i>Customize Dashboard Widgets
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted small mb-3">
+                    <i class="fas fa-info-circle me-1"></i>
+                    Select which widgets you want to display on your dashboard
+                </p>
+
+                <div class="list-group">
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <i class="fas fa-heartbeat text-success me-2"></i>
+                            <strong>System Health</strong>
+                            <br><small class="text-muted">Health score, daemons, context usage</small>
+                        </div>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="widget_system_health" checked>
+                        </div>
+                    </div>
+
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <i class="fas fa-server text-primary me-2"></i>
+                            <strong>Daemon Status</strong>
+                            <br><small class="text-muted">Status of all running daemons</small>
+                        </div>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="widget_daemon_status" checked>
+                        </div>
+                    </div>
+
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <i class="fas fa-shield-alt text-info me-2"></i>
+                            <strong>Policy Status</strong>
+                            <br><small class="text-muted">Active policies and their status</small>
+                        </div>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="widget_policy_status" checked>
+                        </div>
+                    </div>
+
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <i class="fas fa-chart-area text-warning me-2"></i>
+                            <strong>Historical Charts</strong>
+                            <br><small class="text-muted">7/30/60/90 day trend charts</small>
+                        </div>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="widget_historical_charts" checked>
+                        </div>
+                    </div>
+
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <i class="fas fa-list text-secondary me-2"></i>
+                            <strong>Recent Activity</strong>
+                            <br><small class="text-muted">Recent system activities and logs</small>
+                        </div>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="widget_recent_activity" checked>
+                        </div>
+                    </div>
+
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <i class="fas fa-exclamation-triangle text-danger me-2"></i>
+                            <strong>Recent Errors</strong>
+                            <br><small class="text-muted">Latest system errors</small>
+                        </div>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="widget_recent_errors" checked>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="saveWidgetPreferences()">
+                    <i class="fas fa-save me-2"></i>Save Preferences
+                </button>
             </div>
         </div>
     </div>
@@ -765,6 +885,110 @@ window.addEventListener('beforeunload', function() {
     if (autoRefreshInterval) {
         clearInterval(autoRefreshInterval);
     }
+});
+
+// Widget Customization Functions
+function loadWidgetPreferences() {
+    fetch('/api/widget-preferences')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const prefs = data.preferences;
+
+                // Update checkboxes in modal
+                document.getElementById('widget_system_health').checked = prefs.system_health !== false;
+                document.getElementById('widget_daemon_status').checked = prefs.daemon_status !== false;
+                document.getElementById('widget_policy_status').checked = prefs.policy_status !== false;
+                document.getElementById('widget_historical_charts').checked = prefs.historical_charts !== false;
+                document.getElementById('widget_recent_activity').checked = prefs.recent_activity !== false;
+                document.getElementById('widget_recent_errors').checked = prefs.recent_errors !== false;
+            }
+        })
+        .catch(error => {
+            console.error('Error loading widget preferences:', error);
+        });
+}
+
+function saveWidgetPreferences() {
+    const preferences = {
+        system_health: document.getElementById('widget_system_health').checked,
+        daemon_status: document.getElementById('widget_daemon_status').checked,
+        policy_status: document.getElementById('widget_policy_status').checked,
+        historical_charts: document.getElementById('widget_historical_charts').checked,
+        recent_activity: document.getElementById('widget_recent_activity').checked,
+        recent_errors: document.getElementById('widget_recent_errors').checked
+    };
+
+    fetch('/api/widget-preferences', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ preferences: preferences })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Close modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('widgetCustomizeModal'));
+            modal.hide();
+
+            // Show success message
+            showToast('Success', 'Widget preferences saved successfully!', 'success');
+
+            // Reload page to apply changes
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
+        } else {
+            showToast('Error', 'Failed to save preferences: ' + data.message, 'danger');
+        }
+    })
+    .catch(error => {
+        console.error('Error saving widget preferences:', error);
+        showToast('Error', 'Failed to save preferences', 'danger');
+    });
+}
+
+function showToast(title, message, type) {
+    // Create toast container if it doesn't exist
+    let toastContainer = document.getElementById('toastContainer');
+    if (!toastContainer) {
+        toastContainer = document.createElement('div');
+        toastContainer.id = 'toastContainer';
+        toastContainer.className = 'toast-container position-fixed bottom-0 end-0 p-3';
+        toastContainer.style.zIndex = '11';
+        document.body.appendChild(toastContainer);
+    }
+
+    const toastId = 'toast_' + Date.now();
+    const bgClass = type === 'success' ? 'bg-success' : (type === 'danger' ? 'bg-danger' : 'bg-info');
+
+    const toastHtml = `
+        <div id="${toastId}" class="toast align-items-center text-white ${bgClass} border-0" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="d-flex">
+                <div class="toast-body">
+                    <strong>${title}</strong><br>${message}
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        </div>
+    `;
+
+    toastContainer.insertAdjacentHTML('beforeend', toastHtml);
+    const toastElement = document.getElementById(toastId);
+    const toast = new bootstrap.Toast(toastElement, { delay: 3000 });
+    toast.show();
+
+    // Remove toast after it's hidden
+    toastElement.addEventListener('hidden.bs.toast', function() {
+        toastElement.remove();
+    });
+}
+
+// Load widget preferences when modal is opened
+document.getElementById('widgetCustomizeModal')?.addEventListener('show.bs.modal', function() {
+    loadWidgetPreferences();
 });
 </script>
 

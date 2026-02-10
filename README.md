@@ -1,4 +1,4 @@
-# 🤖 Claude Monitoring System v2.0
+# 🤖 Claude Monitoring System v2.2
 
 **Professional Dashboard for Claude Memory System**
 
@@ -15,33 +15,38 @@ A comprehensive, real-time monitoring and analytics dashboard for the Claude Mem
 
 ---
 
-## 🆕 What's New in v2.1 (Feb 2026)
+## 🆕 What's New in v2.2 (Feb 2026)
 
-### **Dark Mode** 🌙
-- Complete light/dark theme toggle with smooth transitions
-- Quick toggle icon in navbar (moon/sun)
-- Auto mode with system preference detection
-- All components styled for both themes
+### **Extended Historical Data** 📊
+- **7/30/60/90 days** time range selection
+- Interactive filter buttons on dashboard
+- Visual comparison across different time periods
+- 90-day data retention (upgraded from 30 days)
+- Dynamic chart titles showing selected range
+- Summary statistics adapt to selected time range
 
-### **7-Day Historical Trends** 📊
-- Interactive charts showing health score, errors, policy hits, and context usage
-- Summary statistics with trend indicators (↑ up, ↓ down, ➖ stable)
-- Automatic daily metrics tracking
-- 30-day history retention
+### **Custom Dashboard Widgets** 🎨
+- **Customize Your Dashboard** - Show/hide any widget
+- **6 Customizable Widgets**:
+  - System Health Metrics
+  - Daemon Status
+  - Policy Status
+  - Historical Charts
+  - Recent Activity
+  - Recent Errors
+- **Persistent Preferences** - Your choices are saved in session
+- **One-Click Customization** - Modal interface with toggle switches
+- **Instant Apply** - Changes apply immediately after save
 
-### **Enhanced Search** 🔍
-- Real-time search in Sessions table
-- Filter by status (Active/Completed/Ended)
-- Highlight matching results
-- Live result count
+### **From v2.1:**
+- ✅ Dark Mode toggle with system preference detection
+- ✅ 7-Day Historical Trends with interactive charts
+- ✅ Enhanced Search in Sessions table
+- ✅ Export to CSV for all data types
+- ✅ Professional error pages (404, 500)
+- ✅ Settings page with preferences
 
-### **Complete Package** 🎁
-- All features from v2.0 PLUS new enhancements
-- Professional error pages (404, 500)
-- Settings page with preferences
-- Export to CSV for all data types
-
-[See Full Enhancement Details](#-recent-updates-v21---feb-2026)
+[See Full Enhancement Details](#-recent-updates-v22---feb-2026)
 
 ---
 
@@ -69,6 +74,85 @@ python app.py
 
 ---
 
+## 🎨 Using New Features (v2.2)
+
+### **Extended Historical Data (7/30/60/90 Days)**
+
+The Historical Trends section now supports multiple time ranges:
+
+1. **Access**: Navigate to Dashboard
+2. **Select Time Range**: Click one of the filter buttons:
+   - **7 Days** - Last week's data (default)
+   - **30 Days** - Last month's data
+   - **60 Days** - Last 2 months' data
+   - **90 Days** - Last 3 months' data
+3. **View Charts**: All 4 charts update automatically:
+   - Health Score Trend
+   - Errors Over Time
+   - Policy Hits
+   - Context Usage
+4. **Summary Stats**: Statistics box shows averages for selected period
+
+**Benefits:**
+- ✅ Identify long-term trends
+- ✅ Compare performance across months
+- ✅ Spot seasonal patterns
+- ✅ Better capacity planning
+
+### **Custom Dashboard Widgets**
+
+Personalize your dashboard by showing/hiding widgets:
+
+1. **Open Customization**:
+   - Click **"Customize"** button in dashboard header
+   - Modal opens with all available widgets
+
+2. **Available Widgets** (6 total):
+   - 🩺 **System Health** - Health score, daemons, policies, hits
+   - 🖥️ **Daemon Status** - Status of all 8 daemons
+   - 🛡️ **Policy Status** - Active policies cards
+   - 📊 **Historical Charts** - Trend charts (with time range filters)
+   - 📝 **Recent Activity** - Activity feed
+   - ⚠️ **Recent Errors** - Latest errors
+
+3. **Toggle Widgets**:
+   - Use switches to enable/disable each widget
+   - See real-time preview of your layout
+
+4. **Save Preferences**:
+   - Click **"Save Preferences"** button
+   - Dashboard reloads with your custom layout
+   - Preferences persist across sessions
+
+**Use Cases:**
+- ✅ **Focus Mode** - Hide unnecessary widgets for specific tasks
+- ✅ **Executive View** - Show only high-level health metrics
+- ✅ **Developer View** - Show errors, activity, and daemon status
+- ✅ **Analyst View** - Focus on historical charts and trends
+
+**Example Layouts:**
+
+**Minimal (Executive):**
+- ✅ System Health
+- ✅ Historical Charts
+- ❌ Daemon Status
+- ❌ Policy Status
+- ❌ Recent Activity
+- ❌ Recent Errors
+
+**Full (Developer):**
+- ✅ All widgets enabled (default)
+
+**Troubleshooting Focus:**
+- ✅ System Health
+- ✅ Daemon Status
+- ✅ Recent Activity
+- ✅ Recent Errors
+- ❌ Policy Status
+- ❌ Historical Charts
+
+---
+
 ## 🌟 Why This Was Built
 
 The Claude Memory System v2.0 is a sophisticated automation framework with 15 policies, 8 daemons, and multiple optimization systems. However, monitoring all these components required:
@@ -90,13 +174,17 @@ The Claude Memory System v2.0 is a sophisticated automation framework with 15 po
 
 ## ✨ Features
 
-### 1. **Main Dashboard**
+### 1. **Main Dashboard** ⭐ ENHANCED
 - System health score (0-100%)
 - Real-time daemon status (8/8 running)
 - Active policies count
 - Recent activity feed
 - Policy hit statistics
 - Live metrics with auto-refresh
+- **NEW**: Extended historical data (7/30/60/90 days)
+- **NEW**: Custom widget visibility controls
+- **NEW**: Customize button in header
+- **NEW**: Persistent widget preferences
 
 ### 2. **Cost Comparison**
 - **Before vs After** optimization comparison
@@ -385,13 +473,15 @@ Terminal-style log viewer with search, filters, and syntax highlighting.
 | `/` | GET | Redirect to dashboard or login |
 | `/login` | GET/POST | Login page |
 | `/logout` | GET | Logout user |
-| `/dashboard` | GET | Main dashboard |
+| `/dashboard` | GET | Main dashboard (supports `?days=7/30/60/90`) |
 | `/comparison` | GET | Cost comparison page |
 | `/policies` | GET | Policies status page |
 | `/logs` | GET | Log analyzer page |
 | `/api/logs/analyze` | POST | Analyze log file |
 | `/api/metrics/live` | GET | Get live metrics (JSON) |
 | `/api/daemon/restart/<name>` | POST | Restart daemon |
+| `/api/comparison` | GET | Get comparison data (JSON) |
+| `/api/widget-preferences` | GET/POST | Get or save widget preferences |
 
 ---
 
@@ -456,9 +546,17 @@ Login: admin / admin
 
 ---
 
-## 🎯 Recent Updates (v2.1 - Feb 2026)
+## 🎯 Recent Updates (v2.2 - Feb 2026)
 
-**✅ Just Added:**
+**✅ Just Added (v2.2):**
+- ✅ **Extended Historical Data** - 7/30/60/90 days time range selection with interactive filters
+- ✅ **Custom Dashboard Widgets** - Show/hide any of 6 widgets, persistent preferences
+- ✅ **90-Day Data Retention** - Upgraded from 30 days for long-term trend analysis
+- ✅ **Widget Customization Modal** - Beautiful modal interface with toggle switches
+- ✅ **Dynamic Charts** - Charts adapt to selected time range automatically
+- ✅ **API Enhancements** - New endpoints for comparison data and widget preferences
+
+**✅ From v2.1:**
 - ✅ **Dark Mode Toggle** - Complete light/dark theme with smooth transitions
 - ✅ **7-Day Historical Charts** - Health score, errors, policy hits, and context usage trends
 - ✅ **Enhanced Search** - Search and filter in Sessions table with live results
@@ -468,20 +566,19 @@ Login: admin / admin
 
 **🔮 Future Enhancements:**
 - [ ] Email/SMS alerts for critical issues
-- [ ] Extended historical data (30/60/90 days)
-- [ ] Custom dashboard widgets
 - [ ] Mobile app
 - [ ] Multi-user support with roles & permissions
 - [ ] Slack/Discord webhook notifications
 - [ ] Real-time WebSocket updates
 - [ ] API documentation with Swagger
 - [ ] Change password functionality
+- [ ] Drag-and-drop widget reordering
 
 ---
 
 **Made with ❤️ for Claude Memory System**
 
-Version: 2.1 (Enhanced Edition)
-Last Updated: 2026-02-09
+Version: 2.2 (Advanced Edition)
+Last Updated: 2026-02-10
 Developer: TechDeveloper (www.techdeveloper.in)
 Powered by: Claude Sonnet 4.5
