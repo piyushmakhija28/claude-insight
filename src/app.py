@@ -13,22 +13,31 @@ import bcrypt
 import threading
 import time
 from datetime import datetime
-from utils.metrics import MetricsCollector
-from utils.log_parser import LogParser
-from utils.policy_checker import PolicyChecker
-from utils.session_tracker import SessionTracker
+# Import monitoring services
+from services.monitoring.metrics_collector import MetricsCollector
+from services.monitoring.log_parser import LogParser
+from services.monitoring.policy_checker import PolicyChecker
+from services.monitoring.session_tracker import SessionTracker
+from services.monitoring.memory_system_monitor import MemorySystemMonitor
+
+# Import AI services
+from services.ai.anomaly_detector import AnomalyDetector
+from services.ai.predictive_analytics import PredictiveAnalytics
+
+# Import widget services
+from services.widgets.community_manager import CommunityWidgetsManager
+from services.widgets.version_manager import WidgetVersionManager
+from services.widgets.comments_manager import WidgetCommentsManager
+from services.widgets.collaboration_manager import CollaborationSessionManager
+from services.widgets.trending_calculator import TrendingCalculator
+
+# Import notification services
+from services.notifications.notification_manager import NotificationManager
+from services.notifications.alert_sender import AlertSender
+from services.notifications.alert_routing import AlertRoutingEngine
+
+# Import utilities
 from utils.history_tracker import HistoryTracker
-from utils.notification_manager import NotificationManager
-from utils.alert_sender import AlertSender
-from utils.community_widgets import CommunityWidgetsManager
-from utils.anomaly_detector import AnomalyDetector
-from utils.predictive_analytics import PredictiveAnalytics
-from utils.alert_routing import AlertRoutingEngine
-from utils.memory_system_monitor import MemorySystemMonitor
-from utils.widget_version_manager import WidgetVersionManager
-from utils.widget_comments_manager import WidgetCommentsManager
-from utils.collaboration_manager import CollaborationSessionManager
-from utils.trending_calculator import TrendingCalculator
 from flasgger import Swagger, swag_from
 from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment
