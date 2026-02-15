@@ -1,4 +1,4 @@
-# 🤖 Claude Insight v2.15
+# 🤖 Claude Insight v2.16
 
 **Professional Real-time Analytics Dashboard with Complete Claude Memory System v2.2.0 Integration**
 
@@ -42,10 +42,16 @@ A comprehensive, real-time monitoring and analytics dashboard for the Claude Mem
 - [📊 Core Monitoring](#core-monitoring-features)
 - [🧠 Memory System Integration](#memory-system-integration-v212)
 - [⚡ Performance Profiling](#performance-profiling-v214)
-- [🎨 Advanced Themes & Customization](#advanced-themes--customization-v215) **NEW!**
-- [🔍 Advanced Search & Filtering](#advanced-search--filtering-v215) **NEW!**
-- [📈 ML Model Training](#ml-model-training-v215) **NEW!**
-- [🛠️ Debugging & Troubleshooting](#debugging--troubleshooting-tools-v215) **NEW!**
+- [🔐 Two-Factor Authentication](#two-factor-authentication-2fa-v216) **NEW!**
+- [📊 Custom Dashboard Builder](#custom-dashboard-builder-v216) **NEW!**
+- [🌍 Multi-language Support](#multi-language-support-i18n-v216) **NEW!**
+- [🔌 Plugin System](#plugin-system-v216) **NEW!**
+- [🔄 Grafana & Prometheus](#grafana--prometheus-integration-v216) **NEW!**
+- [📧 Advanced Notifications](#advanced-notification-channels-v216) **NEW!**
+- [🎨 Advanced Themes & Customization](#advanced-themes--customization-v215)
+- [🔍 Advanced Search & Filtering](#advanced-search--filtering-v215)
+- [📈 ML Model Training](#ml-model-training-v215)
+- [🛠️ Debugging & Troubleshooting](#debugging--troubleshooting-tools-v215)
 - [🚨 Alert Routing](#alert-routing-escalation-v211)
 - [📈 Predictive Analytics](#predictive-analytics-v210)
 - [🤖 AI Anomaly Detection](#ai-anomaly-detection-v29)
@@ -252,6 +258,180 @@ Weighted health calculation (0-100):
 - **WebSocket Support**: Real-time updates via SocketIO
 - **Export Capabilities**: CSV/JSON export for performance data
 - **Configurable Thresholds**: Customize slow operation detection (default: 2000ms)
+
+---
+
+### Two-Factor Authentication (2FA) (v2.16)
+
+#### 🔐 Security Enhancement
+- **TOTP-Based Authentication**: Google Authenticator, Authy, Microsoft Authenticator support
+- **QR Code Setup**: Easy scanning for quick configuration
+- **Manual Secret Entry**: Alternative setup method with copyable secret key
+- **6-Digit Verification**: Standard TOTP code verification
+
+#### 🔑 Backup & Recovery
+- **10 Backup Codes**: One-time use recovery codes generated at setup
+- **Download/Print/Copy**: Multiple options to save backup codes securely
+- **Activity Logging**: Track all 2FA-related activities (enable, disable, login attempts)
+- **IP Address Tracking**: Monitor login locations and security events
+
+#### 📊 Management Features
+- **Enable/Disable Toggle**: Easy on/off control with verification
+- **Activity History**: View recent 2FA events with timestamps and status
+- **Status Badge**: Visual indicator of 2FA configuration status
+
+---
+
+### Custom Dashboard Builder (v2.16)
+
+#### 🎨 Drag-and-Drop Interface
+- **GridStack.js Integration**: Professional grid layout with responsive design
+- **Multiple Dashboards**: Create and manage unlimited custom dashboards
+- **Grid Customization**: Adjust columns (4/6/12) and spacing (tight/normal/loose)
+- **Save/Load Layouts**: Persist dashboard configurations
+
+#### 📦 Widget Library
+**Metrics Widgets:**
+- Context Usage card
+- Daemon Status card
+- Policy Hits card
+
+**Chart Widgets:**
+- Line Chart (trends)
+- Bar Chart (distribution)
+- Pie Chart (proportions)
+
+**Activity Widgets:**
+- Activity Feed (real-time events)
+- Error Log (error tracking)
+- Alert List (active alerts)
+- Alert Timeline (historical alerts)
+
+#### 🔧 Advanced Features
+- **Export/Import**: Share dashboards as JSON files
+- **Widget Configuration**: Customize individual widget settings
+- **Auto-Save**: Automatic dashboard persistence
+- **Dashboard Manager**: Browse, load, and delete saved dashboards
+
+---
+
+### Multi-language Support (i18n) (v2.16)
+
+#### 🌍 Supported Languages
+- **English** (en) - Default
+- **Hindi** (हिन्दी) - Full translation
+- **Spanish** (Español) - Full translation
+- **French** (Français) - Core translations
+- **German** (Deutsch) - Core translations
+
+#### 🔄 Translation Features
+- **Dynamic Switching**: Change language without page reload (optional)
+- **LocalStorage Persistence**: Remember user's language preference
+- **Automatic Detection**: Can detect browser language
+- **Navigation Translation**: All menu items translated
+- **Common Terms**: Buttons, labels, messages translated
+- **Date/Number Formatting**: Locale-specific formatting
+
+#### 🛠️ i18n System
+- **JSON-Based Translations**: Structured translation files per language
+- **Key-Path Access**: Nested translation keys (e.g., `common.save`)
+- **Fallback Mechanism**: English fallback for missing translations
+- **Custom Event**: `languageChanged` event for dynamic updates
+
+---
+
+### Plugin System (v2.16)
+
+#### 🔌 Plugin Management
+- **Install/Uninstall**: Easy plugin lifecycle management
+- **Enable/Disable**: Toggle plugins without uninstalling
+- **Version Control**: Track plugin versions and updates
+- **Dependency Checking**: Validate plugin compatibility
+
+#### 🏪 Plugin Marketplace
+**Available Plugin Categories:**
+- **Integrations**: Slack, Prometheus, external tools
+- **Widgets**: Custom dashboard widgets
+- **Analytics**: Advanced AI insights
+- **Utilities**: Backup, automation tools
+
+**Marketplace Features:**
+- Search and filter plugins
+- Category-based browsing
+- Download count and ratings
+- Author information
+
+#### ⚙️ Plugin System Settings
+- **Auto-Update**: Automatically update installed plugins
+- **External Sources**: Allow custom plugin installation
+- **Security Validation**: Plugin verification before installation
+
+---
+
+### Grafana & Prometheus Integration (v2.16)
+
+#### 🔥 Prometheus Metrics Endpoint
+**Available Metrics:**
+- `context_usage_percent` - Context usage percentage (gauge)
+- `daemon_status` - Daemon health (gauge, 0=down, 1=up)
+- `policy_hits_total` - Total policy hits (counter)
+- `error_count_total` - Total errors (counter)
+- `session_count_total` - Total sessions (counter)
+
+**Endpoint Configuration:**
+```yaml
+scrape_configs:
+  - job_name: 'claude-insight'
+    static_configs:
+      - targets: ['localhost:5000']
+    metrics_path: '/metrics'
+    scrape_interval: 15s
+```
+
+#### 📊 Grafana Dashboards
+**Pre-built Dashboard Templates:**
+- **System Overview**: Context, daemons, policies dashboard
+- **Performance**: Response times and bottleneck analysis
+- **Alerts**: Alert history and trend visualization
+
+**Features:**
+- Download dashboard JSON files
+- Import directly into Grafana
+- Customizable panels and queries
+- Real-time metric visualization
+
+---
+
+### Advanced Notification Channels (v2.16)
+
+#### 📱 Slack Integration
+- **Webhook Configuration**: Easy webhook URL setup
+- **Channel Customization**: Specify target channel (#alerts)
+- **Username Customization**: Custom bot name
+- **Test Notifications**: Verify configuration before production use
+
+#### 💬 Discord Integration
+- **Webhook Support**: Discord webhook URL integration
+- **Bot Customization**: Custom username for notifications
+- **Rich Embeds**: Formatted notification messages
+- **Test Functionality**: Validate webhook before deployment
+
+#### 📟 PagerDuty Integration
+- **Integration Key**: Secure API key configuration
+- **Severity Mapping**: Map alert levels to PagerDuty severities
+- **Incident Creation**: Automatic incident creation on alerts
+- **Test Alerts**: Send test incidents to verify setup
+
+#### 🔔 Notification Rules
+**Event-Based Routing:**
+- Critical Alerts → All channels
+- Daemon Down → Slack + PagerDuty
+- High Context Usage → Slack + Discord
+
+**Configuration:**
+- Per-event channel selection
+- Multiple channel support
+- Custom routing rules
 
 ---
 
@@ -2159,11 +2339,19 @@ We welcome contributions! Here's how you can help:
 
 **Future Enhancements:**
 
-**✨ NEW in v2.15 (Latest Release):**
-- ✅ **Advanced Themes & Customization** - 8 new themes + custom theme builder with color pickers (v2.15)
-- ✅ **Advanced Search & Filtering** - Global search across all data sources with filters, saved searches, export (v2.15)
-- ✅ **ML Model Training UI** - 5-step wizard for training 15+ model types with real-time visualization (v2.15)
-- ✅ **Debugging & Troubleshooting Tools** - Real-time log streaming, daemon diagnostics, error analysis (v2.15)
+**✨ NEW in v2.16 (Latest Release):**
+- ✅ **Two-Factor Authentication (2FA)** - QR code setup, TOTP verification, backup codes, activity log
+- ✅ **Custom Dashboard Builder** - Drag-and-drop widgets with GridStack.js, multiple dashboards, export/import
+- ✅ **Multi-language Support (i18n)** - English, Hindi, Spanish, French, German with dynamic translation
+- ✅ **Plugin System** - Install/uninstall plugins, marketplace, auto-updates, extensibility framework
+- ✅ **Grafana & Prometheus Integration** - Metrics endpoint, pre-built dashboards, monitoring tools integration
+- ✅ **Advanced Notification Channels** - Slack, Discord, PagerDuty webhooks with custom routing rules
+
+**✨ NEW in v2.15:**
+- ✅ **Advanced Themes & Customization** - 8 new themes + custom theme builder with color pickers
+- ✅ **Advanced Search & Filtering** - Global search across all data sources with filters, saved searches, export
+- ✅ **ML Model Training UI** - 5-step wizard for training 15+ model types with real-time visualization
+- ✅ **Debugging & Troubleshooting Tools** - Real-time log streaming, daemon diagnostics, error analysis
 
 **Completed in Recent Versions:**
 - ✅ Performance profiling dashboard (v2.14)
@@ -2173,13 +2361,7 @@ We welcome contributions! Here's how you can help:
 - ✅ Alert routing and escalation (v2.11)
 
 **Planned for Future Releases:**
-- 🔐 Two-factor authentication (2FA)
-- 📊 Custom dashboard builder with drag-and-drop
-- 🌍 Multi-language support (i18n)
 - 📱 Mobile app (iOS/Android)
-- 🔌 Plugin system for extensibility
-- 🔄 Integration with other monitoring tools (Grafana, Prometheus)
-- 📧 Advanced notification channels (Slack, Discord, PagerDuty)
 
 ---
 

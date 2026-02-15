@@ -526,6 +526,30 @@
                         </a>
                     </li>
                     <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'dashboard_builder' %}active{% endif %}" href="{{ url_for('dashboard_builder') }}">
+                            <i class="fas fa-th-large"></i> Builder
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'plugins' %}active{% endif %}" href="{{ url_for('plugins') }}">
+                            <i class="fas fa-puzzle-piece"></i> Plugins
+                        </a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle {% if request.endpoint in ['integrations', 'notification_channels'] %}active{% endif %}"
+                           href="#" id="integrationsDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-plug"></i> Integrations
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{{ url_for('integrations') }}">
+                                <i class="fas fa-chart-line me-2"></i>Monitoring
+                            </a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('notification_channels') }}">
+                                <i class="fas fa-paper-plane me-2"></i>Notifications
+                            </a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link {% if request.endpoint == 'policies' %}active{% endif %}" href="{{ url_for('policies') }}">
                             <i class="fas fa-shield-alt"></i> Policies
                         </a>
@@ -564,6 +588,11 @@
                         </a>
                     </li>
                     <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'twofa_settings' %}active{% endif %}" href="{{ url_for('twofa_settings') }}">
+                            <i class="fas fa-shield-alt"></i> 2FA
+                        </a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link {% if request.endpoint == 'notifications' %}active{% endif %}" href="{{ url_for('notifications') }}">
                             <i class="fas fa-bell"></i>
                             <span class="badge bg-danger notification-badge" id="notificationBadge" style="display: none;">0</span>
@@ -573,6 +602,28 @@
                         <a class="nav-link" href="javascript:void(0);" onclick="toggleTheme()" title="Toggle Dark Mode">
                             <i class="fas fa-moon" id="theme-icon"></i>
                         </a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="languageDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false" title="Change Language">
+                            <i class="fas fa-globe"></i> <span id="currentLanguage">English</span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="languageDropdown">
+                            <li><a class="dropdown-item" href="javascript:void(0);" onclick="changeLanguage('en')">
+                                <i class="fas fa-check" id="lang-check-en" style="visibility: hidden;"></i> English
+                            </a></li>
+                            <li><a class="dropdown-item" href="javascript:void(0);" onclick="changeLanguage('hi')">
+                                <i class="fas fa-check" id="lang-check-hi" style="visibility: hidden;"></i> हिन्दी
+                            </a></li>
+                            <li><a class="dropdown-item" href="javascript:void(0);" onclick="changeLanguage('es')">
+                                <i class="fas fa-check" id="lang-check-es" style="visibility: hidden;"></i> Español
+                            </a></li>
+                            <li><a class="dropdown-item" href="javascript:void(0);" onclick="changeLanguage('fr')">
+                                <i class="fas fa-check" id="lang-check-fr" style="visibility: hidden;"></i> Français
+                            </a></li>
+                            <li><a class="dropdown-item" href="javascript:void(0);" onclick="changeLanguage('de')">
+                                <i class="fas fa-check" id="lang-check-de" style="visibility: hidden;"></i> Deutsch
+                            </a></li>
+                        </ul>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('logout') }}">
@@ -606,6 +657,9 @@
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
+    <!-- i18n Library -->
+    <script src="{{ url_for('static', filename='js/i18n.js') }}"></script>
+
     <!-- Theme Switcher -->
     <script>
         // Load theme on page load
@@ -636,6 +690,31 @@
             const newTheme = currentTheme === 'light' ? 'dark' : 'light';
             applyTheme(newTheme);
         }
+
+        // Language switcher
+        async function changeLanguage(lang) {
+            if (window.i18n) {
+                await window.i18n.changeLanguage(lang);
+                updateLanguageCheckmarks(lang);
+                window.location.reload();
+            }
+        }
+
+        function updateLanguageCheckmarks(selectedLang) {
+            const languages = ['en', 'hi', 'es', 'fr', 'de'];
+            languages.forEach(lang => {
+                const checkmark = document.getElementById(`lang-check-${lang}`);
+                if (checkmark) {
+                    checkmark.style.visibility = lang === selectedLang ? 'visible' : 'hidden';
+                }
+            });
+        }
+
+        // Update language checkmarks on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const currentLang = localStorage.getItem('language') || 'en';
+            updateLanguageCheckmarks(currentLang);
+        });
     </script>
 
     {% block extra_js %}{% endblock %}

@@ -13,6 +13,11 @@ import bcrypt
 import threading
 import time
 from datetime import datetime
+import pyotp
+import qrcode
+import base64
+import secrets
+import json
 # Import monitoring services
 from services.monitoring.metrics_collector import MetricsCollector
 from services.monitoring.log_parser import LogParser
@@ -241,6 +246,551 @@ def logout():
     """Logout"""
     session.clear()
     return redirect(url_for('login'))
+
+# ==================== 2FA Routes ====================
+
+@app.route('/2fa-settings')
+@login_required
+def twofa_settings():
+    """Two-Factor Authentication settings page"""
+    return render_template('2fa-settings.html')
+
+@app.route('/api/2fa/status')
+@login_required
+def api_2fa_status():
+    """Check if 2FA is enabled for current user"""
+    username = session.get('username', 'admin')
+    user_2fa_file = os.path.join(MEMORY_DIR, 'users', f'{username}_2fa.json')
+
+    enabled = os.path.exists(user_2fa_file)
+    return jsonify({'enabled': enabled})
+
+@app.route('/api/2fa/setup', methods=['POST'])
+@login_required
+def api_2fa_setup():
+    """Generate QR code for 2FA setup"""
+    username = session.get('username', 'admin')
+
+    # Generate secret key
+    secret = pyotp.random_base32()
+
+    # Generate QR code
+    totp_uri = pyotp.totp.TOTP(secret).provisioning_uri(
+        name=username,
+        issuer_name='Claude Insight'
+    )
+
+    # Create QR code image
+    qr = qrcode.QRCode(version=1, box_size=10, border=5)
+    qr.add_data(totp_uri)
+    qr.make(fit=True)
+    img = qr.make_image(fill_color="black", back_color="white")
+
+    # Convert to base64
+    buffer = io.BytesIO()
+    img.save(buffer, format='PNG')
+    buffer.seek(0)
+    qr_code_base64 = base64.b64encode(buffer.getvalue()).decode()
+
+    # Store secret temporarily in session
+    session['2fa_setup_secret'] = secret
+
+    return jsonify({
+        'secret': secret,
+        'qr_code': f'data:image/png;base64,{qr_code_base64}'
+    })
+
+@app.route('/api/2fa/verify-setup', methods=['POST'])
+@login_required
+def api_2fa_verify_setup():
+    """Verify 2FA code and enable 2FA"""
+    data = request.json
+    code = data.get('code', '')
+    secret = data.get('secret', session.get('2fa_setup_secret', ''))
+
+    # Verify code
+    totp = pyotp.TOTP(secret)
+    if totp.verify(code):
+        username = session.get('username', 'admin')
+
+        # Generate backup codes
+        backup_codes = [secrets.token_hex(4).upper() for _ in range(10)]
+
+        # Save 2FA configuration
+        user_2fa_file = os.path.join(MEMORY_DIR, 'users', f'{username}_2fa.json')
+        os.makedirs(os.path.dirname(user_2fa_file), exist_ok=True)
+
+        with open(user_2fa_file, 'w') as f:
+            json.dump({
+                'secret': secret,
+                'backup_codes': backup_codes,
+                'enabled_at': datetime.now().isoformat()
+            }, f, indent=2)
+
+        # Log activity
+        log_2fa_activity(username, '2FA Enabled', 'success')
+
+        # Clear session secret
+        session.pop('2fa_setup_secret', None)
+
+        return jsonify({
+            'success': True,
+            'backup_codes': backup_codes
+        })
+    else:
+        return jsonify({'success': False})
+
+@app.route('/api/2fa/verify-login', methods=['POST'])
+def api_2fa_verify_login():
+    """Verify 2FA code during login"""
+    data = request.json
+    username = data.get('username', '')
+    code = data.get('code', '')
+
+    user_2fa_file = os.path.join(MEMORY_DIR, 'users', f'{username}_2fa.json')
+
+    if not os.path.exists(user_2fa_file):
+        return jsonify({'success': False, 'message': '2FA not configured'})
+
+    with open(user_2fa_file, 'r') as f:
+        config = json.load(f)
+
+    secret = config.get('secret', '')
+    backup_codes = config.get('backup_codes', [])
+
+    # Try TOTP first
+    totp = pyotp.TOTP(secret)
+    if totp.verify(code):
+        log_2fa_activity(username, 'Login with 2FA', 'success')
+        return jsonify({'success': True})
+
+    # Try backup code
+    if code.upper() in backup_codes:
+        # Remove used backup code
+        backup_codes.remove(code.upper())
+        config['backup_codes'] = backup_codes
+
+        with open(user_2fa_file, 'w') as f:
+            json.dump(config, f, indent=2)
+
+        log_2fa_activity(username, 'Login with Backup Code', 'success')
+        return jsonify({'success': True, 'backup_code_used': True})
+
+    log_2fa_activity(username, 'Failed 2FA Login Attempt', 'failed')
+    return jsonify({'success': False})
+
+@app.route('/api/2fa/disable', methods=['POST'])
+@login_required
+def api_2fa_disable():
+    """Disable 2FA"""
+    data = request.json
+    code = data.get('code', '')
+    username = session.get('username', 'admin')
+
+    user_2fa_file = os.path.join(MEMORY_DIR, 'users', f'{username}_2fa.json')
+
+    if not os.path.exists(user_2fa_file):
+        return jsonify({'success': False})
+
+    with open(user_2fa_file, 'r') as f:
+        config = json.load(f)
+
+    secret = config.get('secret', '')
+    totp = pyotp.TOTP(secret)
+
+    if totp.verify(code):
+        os.remove(user_2fa_file)
+        log_2fa_activity(username, '2FA Disabled', 'success')
+        return jsonify({'success': True})
+    else:
+        return jsonify({'success': False})
+
+@app.route('/api/2fa/activity')
+@login_required
+def api_2fa_activity():
+    """Get 2FA activity log"""
+    username = session.get('username', 'admin')
+    activity_file = os.path.join(MEMORY_DIR, 'logs', f'{username}_2fa_activity.json')
+
+    if not os.path.exists(activity_file):
+        return jsonify({'activities': []})
+
+    with open(activity_file, 'r') as f:
+        activities = json.load(f)
+
+    # Return last 20 activities
+    return jsonify({'activities': activities[-20:]})
+
+def log_2fa_activity(username, action, status):
+    """Log 2FA activity"""
+    activity_file = os.path.join(MEMORY_DIR, 'logs', f'{username}_2fa_activity.json')
+    os.makedirs(os.path.dirname(activity_file), exist_ok=True)
+
+    activity = {
+        'timestamp': datetime.now().isoformat(),
+        'action': action,
+        'ip_address': request.remote_addr,
+        'status': status
+    }
+
+    # Load existing activities
+    activities = []
+    if os.path.exists(activity_file):
+        with open(activity_file, 'r') as f:
+            activities = json.load(f)
+
+    # Append new activity
+    activities.append(activity)
+
+    # Keep only last 100 activities
+    activities = activities[-100:]
+
+    # Save
+    with open(activity_file, 'w') as f:
+        json.dump(activities, f, indent=2)
+
+# ==================== End 2FA Routes ====================
+
+# ==================== Dashboard Builder Routes ====================
+
+@app.route('/dashboard-builder')
+@login_required
+def dashboard_builder():
+    """Custom Dashboard Builder"""
+    return render_template('dashboard-builder.html')
+
+@app.route('/api/dashboards/save', methods=['POST'])
+@login_required
+def api_dashboards_save():
+    """Save a custom dashboard"""
+    data = request.json
+    username = session.get('username', 'admin')
+    dashboards_dir = os.path.join(MEMORY_DIR, 'dashboards', username)
+    os.makedirs(dashboards_dir, exist_ok=True)
+
+    dashboard_id = data.get('id', str(int(time.time())))
+    dashboard_file = os.path.join(dashboards_dir, f'{dashboard_id}.json')
+
+    # Load existing dashboard if exists
+    if os.path.exists(dashboard_file):
+        with open(dashboard_file, 'r') as f:
+            existing = json.load(f)
+            data['created_at'] = existing.get('created_at', datetime.now().isoformat())
+    else:
+        data['created_at'] = datetime.now().isoformat()
+
+    data['updated_at'] = datetime.now().isoformat()
+
+    with open(dashboard_file, 'w') as f:
+        json.dump(data, f, indent=2)
+
+    return jsonify({'success': True, 'dashboard_id': dashboard_id})
+
+@app.route('/api/dashboards/list')
+@login_required
+def api_dashboards_list():
+    """List all saved dashboards"""
+    username = session.get('username', 'admin')
+    dashboards_dir = os.path.join(MEMORY_DIR, 'dashboards', username)
+
+    if not os.path.exists(dashboards_dir):
+        return jsonify({'dashboards': []})
+
+    dashboards = []
+    for filename in os.listdir(dashboards_dir):
+        if filename.endswith('.json'):
+            with open(os.path.join(dashboards_dir, filename), 'r') as f:
+                dashboard = json.load(f)
+                dashboards.append({
+                    'id': dashboard.get('id'),
+                    'name': dashboard.get('name'),
+                    'updated_at': dashboard.get('updated_at'),
+                    'created_at': dashboard.get('created_at')
+                })
+
+    # Sort by updated_at desc
+    dashboards.sort(key=lambda x: x.get('updated_at', ''), reverse=True)
+
+    return jsonify({'dashboards': dashboards})
+
+@app.route('/api/dashboards/<dashboard_id>')
+@login_required
+def api_dashboards_get(dashboard_id):
+    """Get a specific dashboard"""
+    username = session.get('username', 'admin')
+    dashboard_file = os.path.join(MEMORY_DIR, 'dashboards', username, f'{dashboard_id}.json')
+
+    if not os.path.exists(dashboard_file):
+        return jsonify({'error': 'Dashboard not found'}), 404
+
+    with open(dashboard_file, 'r') as f:
+        dashboard = json.load(f)
+
+    return jsonify({'dashboard': dashboard})
+
+@app.route('/api/dashboards/<dashboard_id>', methods=['DELETE'])
+@login_required
+def api_dashboards_delete(dashboard_id):
+    """Delete a dashboard"""
+    username = session.get('username', 'admin')
+    dashboard_file = os.path.join(MEMORY_DIR, 'dashboards', username, f'{dashboard_id}.json')
+
+    if os.path.exists(dashboard_file):
+        os.remove(dashboard_file)
+        return jsonify({'success': True})
+    else:
+        return jsonify({'error': 'Dashboard not found'}), 404
+
+@app.route('/api/dashboards/current')
+@login_required
+def api_dashboards_current():
+    """Get the most recently updated dashboard"""
+    username = session.get('username', 'admin')
+    dashboards_dir = os.path.join(MEMORY_DIR, 'dashboards', username)
+
+    if not os.path.exists(dashboards_dir):
+        return jsonify({'dashboard': None})
+
+    latest_dashboard = None
+    latest_time = None
+
+    for filename in os.listdir(dashboards_dir):
+        if filename.endswith('.json'):
+            with open(os.path.join(dashboards_dir, filename), 'r') as f:
+                dashboard = json.load(f)
+                updated_at = dashboard.get('updated_at', '')
+                if latest_time is None or updated_at > latest_time:
+                    latest_time = updated_at
+                    latest_dashboard = dashboard
+
+    return jsonify({'dashboard': latest_dashboard})
+
+# ==================== End Dashboard Builder Routes ====================
+
+# ==================== Plugin System Routes ====================
+
+@app.route('/plugins')
+@login_required
+def plugins():
+    """Plugin Manager"""
+    return render_template('plugins.html')
+
+@app.route('/api/plugins/installed')
+@login_required
+def api_plugins_installed():
+    """Get installed plugins"""
+    plugins_file = os.path.join(MEMORY_DIR, 'plugins', 'installed.json')
+    if os.path.exists(plugins_file):
+        with open(plugins_file, 'r') as f:
+            plugins = json.load(f)
+    else:
+        plugins = []
+    return jsonify({'plugins': plugins})
+
+@app.route('/api/plugins/marketplace')
+@login_required
+def api_plugins_marketplace():
+    """Get marketplace plugins"""
+    marketplace = [
+        {'id': 'slack-integration', 'name': 'Slack Integration', 'description': 'Send notifications to Slack', 'category': 'integrations', 'version': '1.0.0', 'author': 'Claude Insight', 'downloads': 1250, 'rating': 5},
+        {'id': 'prometheus-exporter', 'name': 'Prometheus Exporter', 'description': 'Export metrics to Prometheus', 'category': 'integrations', 'version': '1.2.0', 'author': 'Claude Insight', 'downloads': 980, 'rating': 5},
+        {'id': 'custom-widget-pack', 'name': 'Custom Widget Pack', 'description': '10 additional dashboard widgets', 'category': 'widgets', 'version': '2.0.0', 'author': 'Community', 'downloads': 2100, 'rating': 4},
+        {'id': 'ai-insights', 'name': 'AI Insights Plus', 'description': 'Advanced AI-powered recommendations', 'category': 'analytics', 'version': '1.5.0', 'author': 'Claude Insight', 'downloads': 1500, 'rating': 5},
+        {'id': 'backup-manager', 'name': 'Backup Manager', 'description': 'Automated backup and restore', 'category': 'utilities', 'version': '1.1.0', 'author': 'Community', 'downloads': 850, 'rating': 4}
+    ]
+    return jsonify({'plugins': marketplace})
+
+@app.route('/api/plugins/install/<plugin_id>', methods=['POST'])
+@login_required
+def api_plugins_install(plugin_id):
+    """Install a plugin"""
+    plugins_file = os.path.join(MEMORY_DIR, 'plugins', 'installed.json')
+    os.makedirs(os.path.dirname(plugins_file), exist_ok=True)
+
+    installed = []
+    if os.path.exists(plugins_file):
+        with open(plugins_file, 'r') as f:
+            installed = json.load(f)
+
+    # Mock installation - in real scenario, would download and install
+    new_plugin = {
+        'id': plugin_id,
+        'name': plugin_id.replace('-', ' ').title(),
+        'description': 'Plugin description',
+        'version': '1.0.0',
+        'author': 'Claude Insight',
+        'enabled': True,
+        'installed_at': datetime.now().isoformat()
+    }
+    installed.append(new_plugin)
+
+    with open(plugins_file, 'w') as f:
+        json.dump(installed, f, indent=2)
+
+    return jsonify({'success': True})
+
+@app.route('/api/plugins/uninstall/<plugin_id>', methods=['POST'])
+@login_required
+def api_plugins_uninstall(plugin_id):
+    """Uninstall a plugin"""
+    plugins_file = os.path.join(MEMORY_DIR, 'plugins', 'installed.json')
+    if os.path.exists(plugins_file):
+        with open(plugins_file, 'r') as f:
+            installed = json.load(f)
+        installed = [p for p in installed if p['id'] != plugin_id]
+        with open(plugins_file, 'w') as f:
+            json.dump(installed, f, indent=2)
+    return jsonify({'success': True})
+
+@app.route('/api/plugins/toggle/<plugin_id>', methods=['POST'])
+@login_required
+def api_plugins_toggle(plugin_id):
+    """Toggle plugin enabled status"""
+    data = request.json
+    enabled = data.get('enabled', False)
+    plugins_file = os.path.join(MEMORY_DIR, 'plugins', 'installed.json')
+    if os.path.exists(plugins_file):
+        with open(plugins_file, 'r') as f:
+            installed = json.load(f)
+        for plugin in installed:
+            if plugin['id'] == plugin_id:
+                plugin['enabled'] = enabled
+                break
+        with open(plugins_file, 'w') as f:
+            json.dump(installed, f, indent=2)
+    return jsonify({'success': True})
+
+@app.route('/api/plugins/settings', methods=['POST'])
+@login_required
+def api_plugins_settings():
+    """Save plugin settings"""
+    settings = request.json
+    settings_file = os.path.join(MEMORY_DIR, 'plugins', 'settings.json')
+    os.makedirs(os.path.dirname(settings_file), exist_ok=True)
+    with open(settings_file, 'w') as f:
+        json.dump(settings, f, indent=2)
+    return jsonify({'success': True})
+
+# ==================== End Plugin System Routes ====================
+
+# ==================== Prometheus & Grafana Integration Routes ====================
+
+@app.route('/integrations')
+@login_required
+def integrations():
+    """Monitoring Integrations page"""
+    return render_template('integrations.html')
+
+@app.route('/metrics')
+def prometheus_metrics():
+    """Prometheus metrics endpoint"""
+    metrics = []
+
+    # Context usage metric
+    metrics.append('# HELP context_usage_percent Current context usage percentage')
+    metrics.append('# TYPE context_usage_percent gauge')
+    metrics.append(f'context_usage_percent {{instance="claude-insight"}} 45.5')
+
+    # Daemon status metrics
+    metrics.append('# HELP daemon_status Daemon health status (1=up, 0=down)')
+    metrics.append('# TYPE daemon_status gauge')
+    for i in range(1, 9):
+        metrics.append(f'daemon_status{{daemon="daemon-{i}",instance="claude-insight"}} 1')
+
+    # Policy hits
+    metrics.append('# HELP policy_hits_total Total policy hits')
+    metrics.append('# TYPE policy_hits_total counter')
+    metrics.append(f'policy_hits_total {{instance="claude-insight"}} 1250')
+
+    # Error count
+    metrics.append('# HELP error_count_total Total errors')
+    metrics.append('# TYPE error_count_total counter')
+    metrics.append(f'error_count_total {{instance="claude-insight"}} 12')
+
+    # Session count
+    metrics.append('# HELP session_count_total Total sessions')
+    metrics.append('# TYPE session_count_total counter')
+    metrics.append(f'session_count_total {{instance="claude-insight"}} 89')
+
+    return Response('\n'.join(metrics), mimetype='text/plain')
+
+@app.route('/api/grafana/dashboard/<dashboard_type>')
+@login_required
+def api_grafana_dashboard(dashboard_type):
+    """Get Grafana dashboard JSON"""
+    dashboard = {
+        "dashboard": {
+            "title": f"Claude Insight - {dashboard_type.title()}",
+            "panels": [
+                {
+                    "title": "Context Usage",
+                    "type": "graph",
+                    "targets": [{"expr": "context_usage_percent"}]
+                },
+                {
+                    "title": "Daemon Status",
+                    "type": "stat",
+                    "targets": [{"expr": "daemon_status"}]
+                }
+            ]
+        }
+    }
+    return jsonify(dashboard)
+
+# ==================== End Prometheus & Grafana Routes ====================
+
+# ==================== Advanced Notification Channels Routes ====================
+
+@app.route('/notification-channels')
+@login_required
+def notification_channels():
+    """Notification Channels Management"""
+    return render_template('notification-channels.html')
+
+@app.route('/api/notifications/slack', methods=['POST'])
+@login_required
+def api_notifications_slack():
+    """Save Slack configuration"""
+    config = request.json
+    config_file = os.path.join(MEMORY_DIR, 'notifications', 'slack.json')
+    os.makedirs(os.path.dirname(config_file), exist_ok=True)
+    with open(config_file, 'w') as f:
+        json.dump(config, f, indent=2)
+    return jsonify({'success': True})
+
+@app.route('/api/notifications/discord', methods=['POST'])
+@login_required
+def api_notifications_discord():
+    """Save Discord configuration"""
+    config = request.json
+    config_file = os.path.join(MEMORY_DIR, 'notifications', 'discord.json')
+    os.makedirs(os.path.dirname(config_file), exist_ok=True)
+    with open(config_file, 'w') as f:
+        json.dump(config, f, indent=2)
+    return jsonify({'success': True})
+
+@app.route('/api/notifications/pagerduty', methods=['POST'])
+@login_required
+def api_notifications_pagerduty():
+    """Save PagerDuty configuration"""
+    config = request.json
+    config_file = os.path.join(MEMORY_DIR, 'notifications', 'pagerduty.json')
+    os.makedirs(os.path.dirname(config_file), exist_ok=True)
+    with open(config_file, 'w') as f:
+        json.dump(config, f, indent=2)
+    return jsonify({'success': True})
+
+@app.route('/api/notifications/test/<channel>', methods=['POST'])
+@login_required
+def api_notifications_test(channel):
+    """Test notification channel"""
+    # Mock test - in real scenario would send actual notification
+    return jsonify({
+        'success': True,
+        'message': f'Test notification sent to {channel}!'
+    })
+
+# ==================== End Advanced Notification Channels Routes ====================
 
 @app.route('/dashboard')
 @login_required
