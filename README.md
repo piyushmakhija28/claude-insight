@@ -1,6 +1,6 @@
-# 🤖 Claude Monitoring System v2.13 🚀
+# 🤖 Claude Monitoring System v2.13
 
-**Professional Real-time Analytics Dashboard with Complete Claude Memory System v2.2.0 Integration, AI-Powered Anomaly Detection, Predictive Forecasting, Custom Alert Routing & Widget Collaboration**
+**Professional Real-time Analytics Dashboard with Complete Claude Memory System v2.2.0 Integration**
 
 [![GitHub](https://img.shields.io/badge/GitHub-claude--monitoring--system-blue?logo=github)](https://github.com/piyushmakhija28/claude-monitoring-system)
 [![Python](https://img.shields.io/badge/Python-3.7+-blue?logo=python)](https://www.python.org/)
@@ -11,13 +11,11 @@ A comprehensive, real-time monitoring and analytics dashboard for the Claude Mem
 
 **🎁 COMPLETE PACKAGE**: This repo includes **everything you need** - the monitoring dashboard + **complete Claude Memory System v2.2.0 files**:
 - ✅ **139 files** - All automation scripts, policies, and documentation
-- ✅ **8 daemons** - Complete daemon monitoring scripts
+- ✅ **8-9 daemons** - Complete daemon monitoring scripts
 - ✅ **81 automation scripts** - Python & Shell scripts for all features
-- ✅ **48 policy files** - All 10 policies + complete documentation
+- ✅ **48 policy files** - All 12 policies + complete documentation
 - ✅ **CLAUDE.md** - Global configuration v2.2.0
 - ✅ **Real-time integration** - Live monitoring of all components
-
-Just clone, setup, and start using!
 
 **Developed by [TechDeveloper](https://www.techdeveloper.in)** 💻
 
@@ -25,458 +23,354 @@ Just clone, setup, and start using!
 
 ## 📑 Table of Contents
 
-### 🚀 Quick Navigation
-
-#### 📚 Documentation & Setup
-- [📚 Claude Memory System Documentation](#claude-memory-system-documentation)
+### 🚀 Getting Started
+- [🎯 Overview](#overview)
+- [✨ Features](#features)
+- [🚀 Quick Start](#quick-start)
 - [📦 What's Included](#whats-included)
-- [🚀 Quick Start Guide](#quick-start-guide)
-- [🔒 Security](#security)
 - [🛠️ Tech Stack](#tech-stack)
-- [📦 Project Structure](#project-structure)
+
+### 📚 Claude Memory System
+- [🧠 Memory System Overview](#claude-memory-system-overview)
+- [📖 Complete Documentation](#complete-documentation)
+- [🤖 System Architecture](#system-architecture)
+- [📜 12 Active Policies](#12-active-policies)
+- [☕ Java Spring Boot Standards](#java-spring-boot-standards)
+- [🔧 Spring Boot Configuration](#spring-boot-configuration)
+
+### 🎨 Dashboard Features
+- [📊 Core Monitoring](#core-monitoring-features)
+- [🧠 Memory System Integration](#memory-system-integration-v212)
+- [🚨 Alert Routing](#alert-routing-escalation-v211)
+- [📈 Predictive Analytics](#predictive-analytics-v210)
+- [🤖 AI Anomaly Detection](#ai-anomaly-detection-v29)
+- [🌐 Community Marketplace](#community-marketplace-v27-v213)
+- [🤝 Widget Collaboration](#widget-collaboration-v213)
+
+### 🔧 Installation & Setup
+- [📥 Installation Guide](#installation-guide)
+- [⚙️ Configuration](#configuration)
+- [🎯 Memory System Setup](#memory-system-setup)
+- [🔄 Running the Application](#running-the-application)
+
+### 📖 Usage & Reference
+- [💡 How to Use](#how-to-use)
+- [🔄 API Reference](#api-reference)
+- [📊 Metrics Tracked](#metrics-tracked)
+- [📁 Project Structure](#project-structure)
+
+### 🛡️ Security & Support
+- [🔒 Security](#security)
+- [🐛 Troubleshooting](#troubleshooting)
+- [🤝 Contributing](#contributing)
 - [📄 License](#license)
 
-#### 🆕 Version History & Features
-- [🆕 v2.13 - Widget Collaboration Edition](#whats-new-in-v213-feb-2026---widget-collaboration-edition-)
-- [🆕 v2.12 - Memory System Integration](#whats-new-in-v212-feb-2026---memory-system-integration-edition-)
-- [🆕 v2.11 - Alert Routing Edition](#whats-new-in-v211-feb-2026---alert-routing-edition-)
-- [🆕 v2.10 - Forecasting Edition](#whats-new-in-v210-feb-2026---forecasting-edition-)
-- [🆕 v2.9 - AI Detection Edition](#whats-new-in-v29-feb-2026---ai-detection-edition-)
-- [🆕 v2.8 - Community Marketplace](#whats-new-in-v28-feb-2026---community-marketplace-edition-)
-- [🆕 v2.7 - Advanced Widget Builder](#whats-new-in-v27-feb-2026---advanced-widget-builder-edition-)
-- [🆕 v2.6 - Email & SMS Alerts](#whats-new-in-v26-feb-2026---email--sms-alerts-edition-)
-- [🆕 v2.5 - Mobile & Notifications](#whats-new-in-v25-feb-2026---mobile--notifications-edition-)
-- [🆕 v2.4 - Analytics Edition](#whats-new-in-v24-feb-2026---analytics-edition-)
+---
 
-#### ✨ Features & Capabilities
-- [✨ Complete Feature Overview](#complete-feature-overview)
-- [✨ Features](#features)
-- [🌟 What Makes This Special?](#what-makes-this-special)
-- [🌟 Why This Was Built](#why-this-was-built)
+## Overview
 
-#### 📊 Usage & Monitoring
-- [📊 What You'll See](#what-youll-see)
-- [🎯 Key Metrics Tracked](#key-metrics-tracked)
-- [💡 How It Works](#how-it-works)
-- [🎨 Using New Features (v2.2)](#using-new-features-v22)
-- [🎨 Using Advanced Features (v2.3)](#using-advanced-features-v23)
-- [🎨 Using Latest Features (v2.4)](#using-latest-features-v24)
+The Claude Monitoring System is a professional-grade dashboard that provides complete visibility into your Claude Memory System v2.2.0 deployment. Monitor daemon health, track policy enforcement, analyze token consumption, detect anomalies, and optimize performance - all in real-time.
 
-#### 🔧 Technical Details
-- [🚀 Complete Setup Guide](#complete-setup-guide)
-- [🔄 API Endpoints](#api-endpoints)
-- [🎨 Screenshots](#screenshots)
+### Why This Was Built
+
+The Claude Memory System v2.2.0 is a powerful automation framework that:
+- Reduces token consumption by 60-80%
+- Prevents repeated failures through self-learning
+- Manages context automatically with intelligent optimization
+- Enforces code standards for Java Spring Boot projects
+- Runs 8-9 background daemons for continuous optimization
+
+**But how do you know it's working?** That's where this monitoring system comes in.
+
+### What Makes This Special
+
+🎯 **Complete Integration**: Direct integration with all Memory System components
+📊 **Real-time Monitoring**: Live updates every 10-30 seconds via WebSocket
+🧠 **AI-Powered**: Machine learning for anomaly detection and forecasting
+🚨 **Smart Alerts**: Custom routing with multi-level escalation
+🌐 **Community Features**: Share widgets, collaborate in real-time
+📈 **Professional UI**: Beautiful, responsive dashboard with 6 themes
+🔒 **Secure**: Authentication, authorization, XSS protection
 
 ---
 
-## 📚 Claude Memory System Documentation
+## Features
 
-**IMPORTANT**: Yeh project mein **complete Claude Memory System v2.2.0 ka documentation** bhi included hai!
+### Core Monitoring Features
 
-### 🗂️ Documentation Location
-
-**👉 [claude-memory-system/](./claude-memory-system/) folder mein complete documentation hai:**
-
-- **📖 [MASTER-README.md](./claude-memory-system/MASTER-README.md)** - Complete consolidated guide (START HERE!)
-  - 14 major sections with 100+ indexed subsections
-  - All policies, Java standards, optimization strategies
-  - Security best practices, database standards
-  - Complete command reference
-
-- **📁 [docs/](./claude-memory-system/docs/)** - Java Spring Boot Documentation (10 files)
-  - Project structure, patterns, conventions
-  - Spring Cloud Config, Secret Management
-  - API design, error handling, security
-  - Logging standards, database optimization
-
-- **📜 [policies/](./claude-memory-system/policies/)** - System Policies (12 files)
-  - Core skills mandate, model selection
-  - Failure prevention, context optimization
-  - Session memory, user preferences
-  - Git auto-commit, testing strategies
-
-### 🎯 What Can You Monitor?
-
-**Is dashboard se aap monitor kar sakte ho:**
-
-1. **📊 Context Usage** - Real-time token consumption tracking
-2. **🤖 Daemon Health** - All 8-9 daemons status (running/stopped)
-3. **🛡️ Failure Prevention** - Knowledge base stats, prevented failures
-4. **🎯 Model Usage** - Haiku/Sonnet/Opus distribution
-5. **💬 User Preferences** - Learned patterns and auto-applied choices
-6. **📈 Optimization Stats** - Token savings, cache hits
-7. **🔍 Session Memory** - Active sessions, storage usage
-8. **⚠️ Alerts** - Context warnings, daemon failures, anomalies
-
-### 🚀 Quick Links
-
-| Resource | Link |
-|----------|------|
-| **Complete Documentation** | [claude-memory-system/MASTER-README.md](./claude-memory-system/MASTER-README.md) |
-| **Java Standards** | [claude-memory-system/docs/](./claude-memory-system/docs/) |
-| **Policies** | [claude-memory-system/policies/](./claude-memory-system/policies/) |
-| **Quick Start** | [claude-memory-system/MEMORY-SYSTEM-QUICKSTART.md](./claude-memory-system/MEMORY-SYSTEM-QUICKSTART.md) |
-| **Architecture** | [claude-memory-system/HOW-IT-WORKS.md](./claude-memory-system/HOW-IT-WORKS.md) |
-
-### 💡 Benefits
-
-**Claude Memory System provides:**
-- ✅ **60-80% token savings** through intelligent optimization
-- ✅ **Self-learning failure prevention** - same error never happens twice
-- ✅ **Automatic model selection** - optimal cost/performance
-- ✅ **100% local persistent memory** - full session continuity
-- ✅ **User preference learning** - stops asking repeated questions
-- ✅ **8-9 background daemons** - continuous optimization
-- ✅ **Java Spring Boot standards** - enforced best practices
-- ✅ **Security best practices** - automatic enforcement
-
-**Is monitoring system se:**
-- ✅ **Real-time visibility** into all Memory System components
-- ✅ **AI-powered anomaly detection** for proactive alerts
-- ✅ **Predictive forecasting** for capacity planning
-- ✅ **Custom alert routing** to notify right people
-- ✅ **Beautiful dashboards** for easy understanding
-- ✅ **Historical analysis** for optimization insights
-
-**Together they make Claude Code intelligent, efficient, and reliable! 🚀**
-
----
-
-## 🆕 What's New in v2.13 (Feb 2026) - Widget Collaboration Edition 🤝✨
-
-### **Widget Collaboration Features** 🤝✨ NEW!
-
-#### **1. Real-time Collaborative Widget Building** 🚀
-- **Multi-user Editing**: Build widgets together in real-time
-  - 👥 **Participant Management**: See who's online, assign colors
-  - 🖱️ **Live Cursors**: Real-time cursor tracking with user names
-  - ⚡ **Operation Sync**: Instant edit synchronization across users
-  - 🔒 **Line Locking**: Prevent conflicts with automatic locking (5-min timeout)
-  - 💬 **Collaboration Chat**: Built-in messaging within sessions
-  - ⏱️ **Session Management**: 2-hour sessions with auto-cleanup
-  - 🎨 **User Colors**: 8 unique colors for visual identification
-  - 🔄 **Auto-reconnect**: Seamless reconnection handling
-
-#### **2. Widget Version Control & History** 📚
-- **Semantic Versioning**: Professional version management (major.minor.patch)
-  - 📊 **Version Timeline**: Visual history of all changes
-  - 🔍 **Diff Viewer**: Line-by-line comparison with syntax highlighting
-  - ↩️ **Rollback**: Restore previous versions with one click
-  - 📝 **Commit Messages**: Descriptive change logs
-  - 🗂️ **Version Snapshots**: Complete state preservation
-  - 🔄 **Auto-versioning**: Automatic version creation on edits
-  - 🎯 **Component Tracking**: Track HTML/CSS/JS changes separately
-
-#### **3. Widget Comments & Discussions** 💬
-- **Threaded Discussions**: Full conversation support
-  - 💭 **Nested Replies**: Multi-level comment threads
-  - 👤 **@Mentions**: Tag and notify other users
-  - 😊 **Reactions**: Emoji reactions (👍, ❤️, etc.)
-  - 🔔 **Real-time Notifications**: Instant mention alerts
-  - ✏️ **Edit/Delete**: Full comment management
-  - 🛡️ **Moderation**: Soft delete with audit trail
-  - 🔒 **XSS Protection**: Sanitized content for security
-
-#### **4. Featured & Trending Widgets** ⭐
-- **Smart Discovery**: Algorithm-based widget recommendations
-  - 📈 **Trending Score**: Weighted scoring algorithm
-    - 40% Downloads
-    - 30% Ratings
-    - 20% Comments
-    - 10% Recency
-  - 🏆 **Featured Carousel**: Admin-curated highlights
-  - ⏰ **Multi-period Trending**: 24h, 7d, 30d views
-  - 📊 **Rank Indicators**: 1st/2nd/3rd badges with trend arrows
-  - 🔄 **Smart Caching**: 60-minute cache for performance
-  - 📉 **Time Decay**: Exponential recency scoring
-  - 🎯 **Category Filters**: Browse by type and timeframe
-
-### **Backend Architecture (Phases 1-2 Complete)** 🏗️
-- ✅ **4 Manager Classes**: Version, Comments, Collaboration, Trending (~1,780 lines)
-- ✅ **22 REST APIs**: Full CRUD for all features
-- ✅ **9 WebSocket Handlers**: Real-time collaboration events
-- ✅ **JSON Storage**: Structured multi-file architecture
-- ✅ **Atomic Operations**: Transaction-safe file writes
-- ✅ **Security**: Authentication, authorization, XSS prevention
-
-### **API Endpoints Added** 📡
-```
-Version Control (7): /api/widgets/<id>/versions/*
-Comments (6): /api/widgets/<id>/comments/*
-Collaboration (4): /api/widgets/<id>/collaborate/*
-Trending (5): /api/widgets/trending, /featured
-```
-
-### **WebSocket Events** ⚡
-```
-collaboration:join, leave, cursor_move, edit, lock_request, chat
-Server broadcasts: user_joined, user_left, cursor_update, operation
-```
-
-**📊 Implementation Status**: Backend Complete (33%) | Frontend UI In Progress (67%)
-
----
-
-## 🆕 What's New in v2.12 (Feb 2026) - Memory System Integration Edition 🧠⚡
-
-### **Complete Claude Memory System v2.2.0 Integration** 🧠⚡ NEW!
-- **8 Daemon Health Monitoring** - Real-time status of all automation daemons:
-  - 🔄 **Context Daemon**: Monitors context usage every 10 minutes
-  - 💾 **Session Auto-Save Daemon**: Auto-saves session state every 15 minutes
-  - 📊 **Preference Tracker Daemon**: Tracks user preferences every 20 minutes
-  - 🎯 **Skill Suggester Daemon**: Suggests relevant skills every 5 minutes
-  - 📝 **Git Auto-Commit Daemon**: Auto-commits changes every 15 minutes
-  - 🗑️ **Session Pruning Daemon**: Prunes old sessions daily
-  - 🔍 **Pattern Detection Daemon**: Detects usage patterns weekly
-  - 🛡️ **Failure Prevention Daemon**: Monitors failures every 6 hours
-  - ✅ **PID Tracking**: Process ID monitoring for each daemon
-  - 📊 **Last Activity**: Timestamp of last daemon activity
-  - 🔴 **Status Indicators**: Running, stopped, error, not_started
-
-- **10 Policy Enforcement Tracking** - Monitor all active policies:
-  - ✅ **Core Skills Mandate**: Enforced execution order
-  - 📊 **Model Selection**: Haiku/Sonnet/Opus usage tracking
-  - 💬 **Proactive Consultation**: User preference learning
-  - 💾 **Session Memory**: Auto-save and restore
-  - 🛡️ **Failure Prevention**: Auto-fix patterns
-  - 📁 **File Management**: Smart file operations
-  - 📝 **Git Auto-Commit**: Automatic commits
-  - 👤 **User Preferences**: Preference storage
-  - 🗑️ **Session Pruning**: Old session cleanup
-  - 🔗 **Context Integration**: Context + session sync
-  - 📈 **Enforcement Metrics**: Times each policy was applied
-  - 📝 **Recent Activity**: Last 10 policy enforcement actions
-
-- **Context Optimization Metrics** - Token and cache efficiency:
-  - 📊 **Cache Statistics**: Cache size and file count
-  - 🎯 **Cache Hit Rate**: Successful cache retrievals
-  - 💾 **Cached Files**: Number of files in cache
-  - 💰 **Token Savings**: Estimated tokens saved (~500 per hit)
-  - ⚡ **Optimizations Applied**: Total optimization count
-  - 📈 **Efficiency Score**: Overall cache effectiveness
-
-- **Failure Prevention Statistics** - Auto-fix tracking:
-  - 🛡️ **Failures Prevented**: Total failures caught
-  - ✅ **Auto-Fixes Applied**: Automatic corrections made
-  - 📚 **Patterns Learned**: Knowledge base size
-  - 🔧 **By Tool**: Breakdown by tool (Bash, Edit, Read, Grep)
-  - 📝 **Recent Fixes**: Last 10 auto-fix applications
-  - 🎯 **Success Rate**: Percentage of prevented failures
-
-- **Model Selection Distribution** - AI model usage analytics:
-  - 🚀 **Haiku Usage**: Fast searches and reads (target: 35-45%)
-  - 🎯 **Sonnet Usage**: Implementation and editing (target: 50-60%)
-  - 🧠 **Opus Usage**: Architecture and planning (target: 3-8%)
-  - 📊 **Total Requests**: Complete request count
-  - 📈 **Usage Percentages**: Distribution visualization
-  - ✅ **Compliance**: Whether usage matches policy targets
-
-- **Session Memory Statistics** - Session tracking and management:
-  - 📊 **Total Sessions**: All project sessions
-  - ✅ **Active Sessions**: Modified in last 7 days
-  - 🗑️ **Pruned Sessions**: Cleaned up sessions
-  - 💾 **Total Size**: Storage used by sessions (MB)
-  - 📈 **Session Activity**: Recent session operations
-  - 🔍 **Session Health**: Storage efficiency
-
-- **Git Auto-Commit Activity** - Automated commit tracking:
-  - 📝 **Total Commits**: All auto-commits made
-  - 📅 **Commits Today**: Today's commit count
-  - 📊 **Commits This Week**: Weekly commit activity
-  - 📝 **Recent Commits**: Last 10 commit messages
-  - ⏱️ **Commit Frequency**: Average commits per day
-  - 🎯 **Commit Patterns**: Timing and trigger analysis
-
-- **System Health Score** - Overall memory system health:
-  - 📊 **Overall Score**: 0-100 health rating
-  - 🔧 **Daemon Health**: Running daemon percentage (40% weight)
-  - 🚨 **Critical Health**: Critical daemon status (30% weight)
-  - 📋 **Policy Activity**: Recent policy usage (20% weight)
-  - 💾 **Cache Efficiency**: Cache effectiveness (10% weight)
-  - ✅ **Health Status**: Healthy (80+), Degraded (60-79), Critical (<60)
-
-- **Dashboard Integration** - Memory stats on main dashboard:
-  - 📊 **Health Cards**: System health overview
-  - 🔧 **Daemon Status Grid**: Visual daemon health
-  - 📋 **Policy Enforcement Chart**: Policy usage over time
-  - 💾 **Cache Performance**: Hit rate visualization
-  - 🎯 **Model Distribution**: Usage pie chart
-  - 📈 **Real-time Updates**: Auto-refresh every 30 seconds
-
-**Technical Implementation:**
-- ✅ Cross-platform daemon monitoring (Windows/Linux/Mac)
-- ✅ psutil for process management
-- ✅ Log file parsing and analysis
-- ✅ JSON-based statistics aggregation
-- ✅ RESTful API for all metrics
-- ✅ Real-time health scoring algorithm
-
-**Use Cases:**
-- ✅ Monitor memory system automation health
-- ✅ Track policy compliance and enforcement
-- ✅ Optimize context usage and token consumption
-- ✅ Ensure daemon uptime and reliability
-- ✅ Analyze model selection patterns
-- ✅ Monitor git automation activity
-- ✅ Track session memory efficiency
-- ✅ Identify system degradation early
-
-**API Endpoints:**
-- `GET /api/memory-system/health` - Complete health statistics
-- `GET /api/memory-system/daemons` - Daemon status details
-- `GET /api/memory-system/policies` - Policy status and activity
-
-**Integration Points:**
-- Main dashboard shows memory system health cards
-- Real-time daemon status monitoring
-- Policy enforcement visualization
-- Context optimization metrics
-- Automatic health alerts when score drops
-
-**Memory System Components Monitored:**
-```
-~/.claude/memory/
-├── logs/                           # All daemon logs
-│   ├── context-daemon.log
-│   ├── session-auto-save-daemon.log
-│   ├── git-auto-commit.log
-│   ├── policy-hits.log
-│   ├── model-usage.log
-│   ├── context-cache.log
-│   └── failures.log
-├── .pids/                          # Daemon PID files
-├── .cache/                         # Context cache
-├── sessions/                       # Project sessions
-├── failure-kb.json                 # Failure patterns
-└── [10 policy files]               # All policies
-```
-
-**Health Score Calculation:**
-- Daemon Health (40%): Running daemons / Total daemons
-- Critical Health (30%): Critical daemons running
-- Policy Activity (20%): Recent policy enforcements
-- Cache Efficiency (10%): Cache hits and usage
-
----
-
-## ✨ Complete Feature Overview
-
-### 🧠 Memory System Integration (v2.12)
-- **8 Daemon Monitoring**: Real-time health tracking of all automation daemons
-- **10 Policy Enforcement**: Track and monitor all active policies
-- **Context Optimization**: Cache statistics, token savings, efficiency metrics
-- **Failure Prevention**: Auto-fix tracking, pattern learning, success rates
-- **Model Selection**: Haiku/Sonnet/Opus usage distribution and compliance
-- **Session Management**: Active sessions, pruning activity, storage metrics
-- **Git Automation**: Auto-commit tracking and activity monitoring
-- **Health Scoring**: 0-100 overall system health with component breakdown
-
-### 🚨 Alert Routing & Escalation (v2.11)
-- **Custom Routing Rules**: Severity, metric, time, and tag-based routing
-- **Multi-Level Escalation**: Up to 3+ levels with configurable timeouts
-- **On-Call Schedules**: Weekly rotation with auto-calculation
-- **Notification Channels**: Email, SMS, Slack, and custom webhooks
-- **Alert Lifecycle**: Create → Route → Notify → Escalate → Acknowledge → Resolve
-
-### 📈 Predictive Analytics (v2.10)
-- **5 Forecasting Algorithms**: Linear regression, exponential smoothing, moving average, seasonal, ensemble
-- **Time Series Forecasting**: Predict future metric values with confidence intervals
-- **Capacity Planning**: Breach prediction with time-to-breach calculations
-- **Forecast Horizons**: 24 hours, 72 hours, 7 days (customizable)
-- **AI Insights**: Trend analysis, pattern recognition, recommendations
-
-### 🧠 AI Anomaly Detection (v2.9)
-- **6 ML Algorithms**: Z-score, IQR, moving average, exponential smoothing, spike, trend
-- **Ensemble Detection**: Anomaly when 2+ algorithms agree
-- **Confidence Scoring**: 0-100% with severity classification
-- **AI Insights**: Pattern-based insights and recommendations
-- **Anomaly Management**: Acknowledge, resolve with notes, full audit trail
-
-### 🌐 Community Features (v2.7-v2.8, v2.13)
-- **Widget Builder**: Drag-and-drop visual editor with 15+ components
-- **Community Marketplace**: Share, browse, rate widgets (5-star system)
-- **Advanced Components**: Charts, metrics, tables, dashboards
-- **Live Preview**: Real-time widget preview canvas
-- **Real-time Collaboration**: Multi-user editing with live cursors (v2.13)
-- **Version Control**: Semantic versioning with diff viewer & rollback (v2.13)
-- **Comments & Discussions**: Threaded comments with @mentions & reactions (v2.13)
-- **Featured & Trending**: Smart widget discovery with weighted scoring (v2.13)
-
-### 📧 Alert System (v2.6)
-- **Email Alerts**: SMTP integration (Gmail, Outlook, custom)
-- **SMS Alerts**: Twilio-powered text notifications
-- **Smart Rules**: Quiet hours, rate limiting, severity filtering
-- **Alert History**: Complete tracking and trends
-
-### 🎨 UI/UX Features (v2.5)
-- **6 Custom Themes**: Light, dark, blue, green, purple, orange
-- **Browser Notifications**: Push notifications for critical events
-- **Alert Trends**: Historical analysis and visualization
-- **Mobile Responsive**: Optimized for all devices
-- **Real-time Updates**: WebSocket updates every 10 seconds
-
-### 📊 Core Monitoring Features
-- **System Health Dashboard**: Real-time health score, daemon status, policy compliance
-- **Cost Analysis**: Model usage distribution, API costs, token consumption
+#### 📊 System Health Dashboard
+- **Real-time Health Score**: 0-100 overall system health with component breakdown
+- **Daemon Status Grid**: Visual health monitoring of all 8-9 daemons
+- **Policy Compliance**: Track enforcement of all 12 active policies
 - **Performance Metrics**: Response times, context usage, error tracking
 - **Session Tracking**: Active sessions, history, incomplete work detection
 - **Export Options**: CSV, Excel, PDF reports
-- **API Documentation**: Complete Swagger/OpenAPI documentation
+
+#### 💰 Cost Analysis
+- **Model Usage Distribution**: Haiku/Sonnet/Opus usage percentages
+- **API Costs**: Token consumption and cost tracking
+- **Optimization Impact**: Token savings and efficiency metrics
+- **Trend Analysis**: Historical cost patterns
+
+#### 📈 Performance Metrics
+- **Response Times**: Average, min, max response times
+- **Context Usage**: Real-time token consumption monitoring
+- **Cache Performance**: Hit rates and efficiency
+- **Error Tracking**: Failure prevention statistics
 
 ---
 
-## 📦 What's Included
+### Memory System Integration (v2.12)
 
-### Memory System Files (139 files in `memory_files/`)
+#### 🔧 8-9 Daemon Health Monitoring
+Real-time status of all automation daemons:
 
-**Daemon Scripts (8):**
-- context-daemon.py
-- session-auto-save-daemon.py
-- preference-tracker-daemon.py
-- skill-auto-suggester.py (skill suggestions)
-- commit-daemon.py
-- session-pruning-daemon.py
-- pattern-detection-daemon.py
-- failure-prevention-daemon.py
+| Daemon | Interval | Purpose |
+|--------|----------|---------|
+| **context-daemon** | 10 min | Monitor context usage |
+| **session-auto-save-daemon** | 15 min | Auto-save sessions |
+| **preference-auto-tracker** | 20 min | Learn user preferences |
+| **skill-auto-suggester** | 5 min | Suggest relevant skills |
+| **commit-daemon** | 15 min | Auto-commit changes |
+| **session-pruning-daemon** | Monthly | Clean old sessions |
+| **pattern-detection-daemon** | Monthly | Detect cross-project patterns |
+| **failure-prevention-daemon** | 6 hours | Learn from failures |
+| **token-optimization-daemon** | 5 min | Continuous optimization (optional) |
 
-**Automation Scripts (81):**
-- Context optimization (cache, estimator, extractor, pruner)
-- Token optimization (AST navigator, file optimizer, summarizer)
-- Failure prevention (detector, learner, pattern extractor)
-- Model selection (enforcer, monitor)
-- Policy enforcement (core skills, consultation tracker)
-- Session management (auto-save, pruning, state)
-- Git automation (auto-commit, detector, triggers)
-- Pattern detection (detect, apply)
-- Health monitoring (daily, weekly, monthly checks)
-- And 60+ more automation scripts
+**Monitoring Features:**
+- ✅ PID tracking for each daemon
+- 📊 Last activity timestamps
+- 🔴 Status indicators (running, stopped, error, not_started)
+- 🔄 Auto-restart detection
+- 📈 Uptime statistics
 
-**Policy Files (48):**
-- 10 Active policies (core-skills, model-selection, consultation, etc.)
-- 38 Documentation files (quick starts, guides, summaries)
-- Complete system documentation
-- Implementation reports
-- Troubleshooting guides
+#### 📜 10 Policy Enforcement Tracking
+Monitor all active policies in real-time:
 
-**Configuration:**
-- CLAUDE.md (Global v2.2.0 configuration)
-- skills-registry.json
-- failure-kb.json
-- Various preference and pattern files
+1. **Core Skills Mandate**: Enforced execution order
+2. **Model Selection**: Haiku/Sonnet/Opus usage tracking
+3. **Proactive Consultation**: User preference learning
+4. **Session Memory**: Auto-save and restore
+5. **Failure Prevention**: Auto-fix patterns
+6. **File Management**: Smart file operations
+7. **Git Auto-Commit**: Automatic commits
+8. **User Preferences**: Preference storage
+9. **Session Pruning**: Old session cleanup
+10. **Context Integration**: Context + session sync
+
+**Tracking Features:**
+- 📈 Enforcement metrics (times each policy applied)
+- 📝 Recent activity (last 10 enforcement actions)
+- ✅ Compliance status
+
+#### 💾 Context Optimization Metrics
+- 📊 **Cache Statistics**: Cache size and file count
+- 🎯 **Cache Hit Rate**: Successful cache retrievals
+- 💰 **Token Savings**: Estimated tokens saved (~500 per hit)
+- ⚡ **Optimizations Applied**: Total optimization count
+- 📈 **Efficiency Score**: Overall cache effectiveness
+
+#### 🛡️ Failure Prevention Statistics
+- **Failures Prevented**: Total failures caught
+- **Auto-Fixes Applied**: Automatic corrections made
+- **Patterns Learned**: Knowledge base size (15+ initial patterns)
+- **By Tool**: Breakdown by tool (Bash, Edit, Read, Grep, Git)
+- **Recent Fixes**: Last 10 auto-fix applications
+- **Success Rate**: Percentage of prevented failures
+
+#### 📊 Model Selection Distribution
+- **Haiku Usage**: Fast searches and reads (target: 35-45%)
+- **Sonnet Usage**: Implementation and editing (target: 50-60%)
+- **Opus Usage**: Architecture and planning (target: 3-8%)
+- **Compliance**: Whether usage matches policy targets
+- **Cost Impact**: Savings from correct model selection
+
+#### 💾 Session Memory Statistics
+- **Total Sessions**: All project sessions
+- **Active Sessions**: Modified in last 7 days
+- **Pruned Sessions**: Cleaned up sessions
+- **Total Size**: Storage used by sessions (MB)
+- **Session Health**: Storage efficiency
+
+#### 📝 Git Auto-Commit Activity
+- **Total Commits**: All auto-commits made
+- **Commits Today**: Today's commit count
+- **Commits This Week**: Weekly commit activity
+- **Recent Commits**: Last 10 commit messages
+- **Commit Frequency**: Average commits per day
+
+#### 🏥 System Health Score
+Weighted health calculation (0-100):
+- 🔧 **Daemon Health** (40%): Running daemon percentage
+- 🚨 **Critical Health** (30%): Critical daemon status
+- 📋 **Policy Activity** (20%): Recent policy usage
+- 💾 **Cache Efficiency** (10%): Cache effectiveness
+
+**Health Status:**
+- ✅ **Healthy** (80+)
+- ⚠️ **Degraded** (60-79)
+- 🔴 **Critical** (<60)
 
 ---
 
-## 🚀 Quick Start Guide
+### Alert Routing & Escalation (v2.11)
 
-### **Get Started in 5 Minutes!** ⏱️
+#### 🚨 Custom Routing Rules
+Route alerts based on multiple criteria:
+- **Severity**: Critical, warning, info
+- **Metric Type**: CPU, memory, context, daemon, policy
+- **Time-based**: Business hours, after hours, weekends
+- **Tag-based**: Environment, service, component
 
-#### 1️⃣ Clone the Repository
+#### 📢 Multi-Level Escalation
+- **Up to 3+ escalation levels** with configurable timeouts
+- **Automatic escalation** if alerts not acknowledged
+- **On-call schedules** with weekly rotation
+- **Auto-calculation** of current on-call personnel
+
+#### 📬 Notification Channels
+- **Email**: SMTP integration (Gmail, Outlook, custom)
+- **SMS**: Twilio-powered text notifications
+- **Slack**: Webhook integration
+- **Custom Webhooks**: Integrate with any system
+
+#### 🔄 Alert Lifecycle
+```
+Create → Route → Notify → Escalate → Acknowledge → Resolve
+```
+
+---
+
+### Predictive Analytics (v2.10)
+
+#### 📈 5 Forecasting Algorithms
+1. **Linear Regression**: Trend-based prediction
+2. **Exponential Smoothing**: Weighted recent data
+3. **Moving Average**: Smoothed historical average
+4. **Seasonal Analysis**: Pattern-based forecasting
+5. **Ensemble Model**: Combined algorithm consensus
+
+#### 🔮 Time Series Forecasting
+- **Predict future metric values** with confidence intervals
+- **Forecast horizons**: 24 hours, 72 hours, 7 days (customizable)
+- **Confidence levels**: 95%, 90%, 80%
+- **Trend detection**: Upward, downward, stable, volatile
+
+#### ⚠️ Capacity Planning
+- **Breach prediction**: Identify when thresholds will be exceeded
+- **Time-to-breach**: Calculate days/hours until capacity limit
+- **Proactive alerts**: Warn before issues occur
+- **Resource recommendations**: Suggest optimization actions
+
+#### 🧠 AI Insights
+- **Trend analysis**: Identify long-term patterns
+- **Pattern recognition**: Detect recurring behaviors
+- **Recommendations**: AI-generated optimization suggestions
+
+---
+
+### AI Anomaly Detection (v2.9)
+
+#### 🤖 6 ML Algorithms
+1. **Z-Score Analysis**: Statistical outlier detection
+2. **IQR Method**: Interquartile range analysis
+3. **Moving Average**: Deviation from rolling average
+4. **Exponential Smoothing**: Weighted deviation detection
+5. **Spike Detection**: Sudden value changes
+6. **Trend Analysis**: Long-term pattern deviations
+
+#### 🎯 Ensemble Detection
+- **Anomaly triggered** when 2+ algorithms agree
+- **Confidence scoring**: 0-100% based on algorithm consensus
+- **Severity classification**: Critical, high, medium, low
+- **False positive reduction**: Through ensemble approach
+
+#### 💡 AI Insights
+- **Pattern-based insights**: "Value 45% above rolling average"
+- **Recommendations**: "Consider scaling resources"
+- **Historical context**: Compare to similar patterns
+
+#### 📊 Anomaly Management
+- **Acknowledge**: Mark anomaly as seen
+- **Resolve**: Close with resolution notes
+- **Audit trail**: Full anomaly lifecycle tracking
+- **Analytics**: Anomaly frequency and trends
+
+---
+
+### Community Marketplace (v2.7-v2.13)
+
+#### 🎨 Advanced Widget Builder
+- **Drag-and-drop editor**: Visual widget creation
+- **15+ components**: Charts, metrics, tables, gauges, dashboards
+- **Live preview**: Real-time widget preview canvas
+- **Code editor**: HTML, CSS, JavaScript with syntax highlighting
+- **Template library**: Pre-built widget templates
+
+#### 🌐 Widget Marketplace
+- **Share widgets**: Publish to community marketplace
+- **Browse catalog**: Discover widgets by category
+- **5-star rating system**: Rate and review widgets
+- **Download tracking**: Monitor widget popularity
+- **Author profiles**: Track creator contributions
+
+---
+
+### Widget Collaboration (v2.13)
+
+#### 🤝 Real-time Collaborative Editing
+- **Multi-user editing**: Build widgets together in real-time
+- **Live cursors**: See other users' cursors with names
+- **Operation sync**: Instant synchronization across users
+- **Line locking**: Prevent conflicts (5-min timeout)
+- **Collaboration chat**: Built-in messaging
+- **Session management**: 2-hour sessions with auto-cleanup
+- **User colors**: 8 unique colors for visual identification
+- **Auto-reconnect**: Seamless reconnection handling
+
+#### 📚 Version Control & History
+- **Semantic versioning**: Professional version management (major.minor.patch)
+- **Version timeline**: Visual history of all changes
+- **Diff viewer**: Line-by-line comparison with syntax highlighting
+- **Rollback**: Restore previous versions with one click
+- **Commit messages**: Descriptive change logs
+- **Auto-versioning**: Automatic version creation on edits
+- **Component tracking**: Track HTML/CSS/JS changes separately
+
+#### 💬 Comments & Discussions
+- **Threaded discussions**: Multi-level comment threads
+- **@Mentions**: Tag and notify other users
+- **Emoji reactions**: 👍, ❤️, etc.
+- **Real-time notifications**: Instant mention alerts
+- **Edit/Delete**: Full comment management
+- **Moderation**: Soft delete with audit trail
+- **XSS protection**: Sanitized content for security
+
+#### ⭐ Featured & Trending Widgets
+- **Trending score algorithm**: Weighted scoring
+  - 40% Downloads
+  - 30% Ratings
+  - 20% Comments
+  - 10% Recency
+- **Featured carousel**: Admin-curated highlights
+- **Multi-period trending**: 24h, 7d, 30d views
+- **Rank indicators**: 1st/2nd/3rd badges with trend arrows
+- **Smart caching**: 60-minute cache for performance
+- **Category filters**: Browse by type and timeframe
+
+---
+
+## Quick Start
+
+### Get Started in 5 Minutes
+
+#### 1. Clone the Repository
 ```bash
 git clone https://github.com/piyushmakhija28/claude-monitoring-system.git
 cd claude-monitoring-system
 ```
 
-#### 2️⃣ Install Dependencies
+#### 2. Install Dependencies
 ```bash
 pip install -r requirements.txt
 ```
@@ -485,1929 +379,1678 @@ pip install -r requirements.txt
 - Flask 3.0 + SocketIO 5.3.6 (Web framework)
 - psutil 5.9.8 (Process monitoring)
 - NumPy 1.24.3 (Statistical analysis)
-- Twilio 8.10.0 (Notifications)
-- + 10 more packages
+- Twilio 8.10.0 (SMS notifications)
+- bcrypt, openpyxl, reportlab, flasgger, etc.
 
-#### 3️⃣ Deploy Memory System Files (Optional but Recommended)
-```bash
-# Windows (PowerShell)
-xcopy /E /I /Y memory_files\scripts\* %USERPROFILE%\.claude\memory\scripts\
-xcopy /E /I /Y memory_files\daemons\* %USERPROFILE%\.claude\memory\
-copy memory_files\CLAUDE.md %USERPROFILE%\.claude\CLAUDE.md
-
-# Linux/Mac
-cp -r memory_files/scripts/* ~/.claude/memory/scripts/
-cp -r memory_files/daemons/* ~/.claude/memory/
-cp memory_files/CLAUDE.md ~/.claude/CLAUDE.md
-
-# Create directories
-mkdir -p ~/.claude/memory/.pids ~/.claude/memory/logs ~/.claude/memory/.cache
-```
-
-#### 4️⃣ Start the Dashboard
+#### 3. Run the Application
 ```bash
 python app.py
 ```
 
-**Expected output:**
-```
- * Running on http://localhost:5000
-🚀 Claude Monitoring System v2.12 started successfully!
+**Access the dashboard:**
+- URL: http://localhost:5000
+- Username: `admin`
+- Password: `admin`
 
-Features enabled:
-✅ Memory System Integration (v2.2.0)
-✅ AI-Powered Anomaly Detection
-✅ Predictive Analytics & Forecasting
-✅ Custom Alert Routing & Escalation
-✅ Real-time WebSocket Support
-✅ 8 Daemon Health Monitoring
-✅ 10 Policy Enforcement Tracking
-```
-
-#### 5️⃣ Access the Dashboard
-- **URL**: http://localhost:5000
-- **Username**: `admin`
-- **Password**: `admin`
-
-### **🎉 You're All Set!**
-
-**What's Available:**
-- ✅ **Dashboard**: Real-time system metrics + Memory System stats
-- ✅ **Anomaly Detection**: AI-powered anomaly alerts
-- ✅ **Predictive Analytics**: Forecasting with confidence intervals
-- ✅ **Alert Routing**: Custom routing rules and escalation
-- ✅ **Cost Comparison**: Before/after optimization savings
-- ✅ **Policy Monitoring**: 10 policies with enforcement tracking
-- ✅ **Log Analyzer**: Search and filter system logs
-- ✅ **Session Tracker**: Project session management
-- ✅ **Mobile Dashboard**: Responsive mobile view
-- ✅ **Community Marketplace**: Share and download widgets
-
-### **🔧 Optional: Start Memory System Daemons**
-
-For full Memory System integration, start all 8 daemons:
-
+#### 4. Deploy Memory System Files (Optional)
 ```bash
+# Windows (PowerShell)
+xcopy /E /I /Y claude-memory-system\* %USERPROFILE%\.claude\memory\
+
+# Linux/Mac
+cp -r claude-memory-system/* ~/.claude/memory/
+```
+
+**Start the daemons:**
+```bash
+# Windows
+powershell -ExecutionPolicy Bypass -File ~/.claude/memory/setup-windows-startup.ps1
+
 # Linux/Mac
 bash ~/.claude/memory/startup-hook.sh
-
-# Windows (start individually)
-cd %USERPROFILE%\.claude\memory
-python daemons/context-daemon.py
-python daemons/session-auto-save-daemon.py
-python daemons/preference-tracker-daemon.py
-python daemons/skill-auto-suggester.py
-python daemons/commit-daemon.py
-python daemons/session-pruning-daemon.py
-python daemons/pattern-detection-daemon.py
-python daemons/failure-prevention-daemon.py
 ```
 
-**Verify daemon status:**
-- Check dashboard: Memory System Integration section
-- All 8 daemons should show "Running" status with PID
+---
+
+## What's Included
+
+### Memory System Files (139 files in `claude-memory-system/`)
+
+#### 📖 Complete Documentation
+- **MASTER-README.md**: Complete consolidated guide (1,500+ lines)
+  - 14 major sections with 100+ indexed subsections
+  - All policies, Java standards, optimization strategies
+  - Security best practices, database standards
+  - Complete command reference
+
+#### 🔧 Daemon Scripts (8-9)
+- `context-daemon.py` - Monitor context usage (every 10 min)
+- `session-auto-save-daemon.py` - Auto-save sessions (every 15 min)
+- `preference-auto-tracker.py` - Learn preferences (every 20 min)
+- `skill-auto-suggester.py` - Suggest skills (every 5 min)
+- `commit-daemon.py` - Auto-commit changes (on triggers)
+- `session-pruning-daemon.py` - Clean old sessions (monthly)
+- `pattern-detection-daemon.py` - Detect patterns (monthly)
+- `failure-prevention-daemon.py` - Learn from failures (every 6 hours)
+- `token-optimization-daemon.py` - Continuous optimization (optional)
+
+#### 🤖 Automation Scripts (81)
+**Context Optimization:**
+- `context-cache.py` - Tiered caching (hot/warm/cold)
+- `context-estimator.py` - Token estimation
+- `context-extractor.py` - Essential info extraction
+- `pre-execution-optimizer.py` - Pre-tool optimization
+
+**Token Optimization:**
+- `ast-code-navigator.py` - AST-based code navigation
+- `file-type-optimizer.py` - File-type specific optimization
+- `smart-file-summarizer.py` - Intelligent summarization
+- `tiered-cache.py` - Multi-tier caching
+
+**Failure Prevention:**
+- `failure-detector-v2.py` - Pattern detection
+- `failure-learner.py` - Knowledge base learning
+- `failure-solution-learner.py` - Solution tracking
+- `pre-execution-checker.py` - Pre-tool validation
+
+**Model Selection:**
+- `model-selection-enforcer.py` - Model recommendation
+- `model-selection-monitor.py` - Usage tracking
+
+**Policy Enforcement:**
+- `core-skills-enforcer.py` - Skills enforcement
+- `consultation-tracker.py` - User preference tracking
+
+**Session Management:**
+- `auto-save-session.py` - Session auto-save
+- `session-state.py` - External memory management
+- `archive-old-sessions.py` - Session archiving
+
+**Git Automation:**
+- `auto-commit.py` - Automatic commits
+- `auto-commit-detector.py` - Commit triggers
+- `trigger-auto-commit.py` - Trigger detection
+
+**And 60+ more automation scripts!**
+
+#### 📜 Policy Files (12 active + documentation)
+1. `core-skills-mandate.md` - Execution order enforcement
+2. `model-selection-enforcement.md` - Cost optimization
+3. `common-failures-prevention.md` - Self-learning fixes
+4. `CONTEXT-SESSION-INTEGRATION.md` - Memory management
+5. `file-management-policy.md` - File operations
+6. `git-auto-commit-policy.md` - Git automation
+7. `proactive-consultation-policy.md` - User collaboration
+8. `session-memory-policy.md` - Persistent memory
+9. `session-pruning-policy.md` - Session cleanup
+10. `user-preferences-policy.md` - Preference learning
+11. `cross-project-patterns-policy.md` - Pattern detection
+12. `test-case-policy.md` - Testing standards
+
+**Documentation (38 files):**
+- Quick start guides
+- Implementation summaries
+- Troubleshooting guides
+- API references
+- System overviews
+
+#### ☕ Java Spring Boot Documentation (10 files in `docs/`)
+- `java-project-structure.md` - Package structure and conventions
+- `spring-cloud-config.md` - Config server setup
+- `secret-management.md` - Secret management details
+- `api-design-standards.md` - REST API conventions
+- `error-handling-standards.md` - Exception patterns
+- `security-best-practices.md` - Security guidelines
+- `logging-standards.md` - Logging best practices
+- `database-standards.md` - Database patterns
+- `java-agent-strategy.md` - Agent collaboration
+- `git-and-context.md` - Git rules and context
 
 ---
 
-## 🆕 What's New in v2.11 (Feb 2026) - Alert Routing Edition 🚨📮
+## Claude Memory System Overview
 
-### **Custom Alert Routing & Escalation Engine** 🚨📮 NEW!
-- **Advanced Routing Rules** - Route alerts based on multiple conditions:
-  - 📊 **Severity-based Routing**: Critical, high, medium, low
-  - 🎯 **Metric-based Routing**: Route by specific metrics
-  - ⏰ **Time-based Routing**: Business hours vs. after-hours
-  - 📅 **Day-based Routing**: Weekday vs. weekend routing
-  - 🏷️ **Tag-based Routing**: Custom tag matching
-  - 🔧 **AND/OR Logic**: Complex condition combinations
-- **Multi-Level Escalation Policies**:
-  - 📊 **Level 1**: Primary on-call (customizable timeout)
-  - 📈 **Level 2**: Secondary on-call escalation
-  - 🎯 **Level 3**: Manager/executive escalation
-  - 🔄 **Auto-escalation**: Escalate if not acknowledged in X minutes
-  - 🔁 **Repeat Escalation**: Restart policy if unresolved (max repeats configurable)
-  - ⏱️ **Timeout Configuration**: Custom timeout per level (5-60 minutes)
-- **On-Call Schedule Management**:
-  - 📅 **Weekly Rotation**: Automatic weekly on-call rotation
-  - 👥 **Multiple Schedules**: Primary, secondary, tertiary rotations
-  - 🔄 **Auto-rotation**: Automatic rotation based on start date
-  - 🌍 **Timezone Support**: Schedule timezone configuration
-  - 👤 **Current On-Call**: Real-time on-call person identification
-  - 📊 **Rotation History**: Track who was on-call when
-- **Notification Channels**:
-  - 📧 **Email**: SMTP-based email notifications
-  - 📱 **SMS**: Twilio-powered SMS alerts
-  - 💬 **Slack**: Slack webhook integration
-  - 🔗 **Custom Webhooks**: POST to any HTTP endpoint
-  - ✅ **Channel Status**: Enable/disable channels individually
-  - 🎯 **Channel Groups**: Send to multiple channels per alert
-- **Alert Lifecycle Management**:
-  - 🔔 **Creation**: Automatic alert routing on creation
-  - 👀 **Acknowledgment**: Mark alerts as seen/acknowledged
-  - ✅ **Resolution**: Resolve alerts with notes
-  - 📊 **Status Tracking**: Active, acknowledged, resolved
-  - 📝 **History**: Complete alert lifecycle audit trail
-  - ⏱️ **Timestamps**: Created, acknowledged, resolved times
-- **Routing Rule Priority**:
-  - 🥇 **Priority Levels**: 1 = highest priority
-  - 📊 **Execution Order**: Rules executed by priority
-  - 🎯 **First Match**: Option to stop after first match
-  - 🔄 **Multiple Matches**: Option to execute all matching rules
-- **Escalation History**:
-  - 📊 **Level Tracking**: Record each escalation level
-  - ⏱️ **Timestamps**: When each level was triggered
-  - 👥 **Targets**: Who was notified at each level
-  - 📢 **Channels**: Which channels were used
-  - 🔄 **Repeat Count**: Track escalation repeats
-- **Alert Deduplication** (Future):
-  - 🔄 **Grouping**: Group similar alerts
-  - ⏱️ **Time Windows**: Deduplicate within time window
-  - 🎯 **Smart Matching**: Fingerprint-based deduplication
-- **Dashboard Features**:
-  - 📊 **Active Alerts**: Real-time active alerts list
-  - 📋 **Routing Rules**: Manage all routing rules
-  - 📈 **Escalation Policies**: Configure escalation chains
-  - 👥 **On-Call Schedules**: View and manage schedules
-  - 📢 **Notification Channels**: Configure channels
-  - 📊 **Statistics**: Alert counts by severity, status, metric
-  - 🔄 **Auto-refresh**: Updates every 30 seconds
-- **Rule Actions**:
-  - 📢 **Notify**: Send to notification channels
-  - 📈 **Escalate**: Start escalation policy
-  - 🏷️ **Tag**: Add tags to alerts
-  - 🔕 **Suppress**: Suppress notifications (quiet mode)
-  - 🔗 **Webhook**: Trigger custom webhooks
-- **Conditional Routing Examples**:
-  - Critical alerts → Email + SMS + Slack + Escalate
-  - High alerts during business hours → Email only
-  - After-hours alerts → SMS + Escalate immediately
-  - Weekend alerts → Secondary on-call rotation
-  - Specific metric alerts → Dedicated Slack channel
+The Claude Memory System v2.2.0 is a comprehensive automation framework that makes Claude Code intelligent, efficient, and reliable.
 
-**Technical Features:**
-- ✅ JSON-based configuration storage
-- ✅ RESTful API for all operations
-- ✅ Swagger API documentation
-- ✅ Real-time alert processing
-- ✅ Escalation state machine
-- ✅ On-call rotation calculator
-- ✅ Alert history tracking (last 1000)
+### Core Benefits
 
-**Use Cases:**
-- ✅ Route critical alerts to multiple channels
-- ✅ Escalate unacknowledged alerts automatically
-- ✅ Manage on-call rotations effortlessly
-- ✅ Customize routing by time/day/severity
-- ✅ Track alert lifecycle from creation to resolution
-- ✅ Prevent alert fatigue with smart routing
-- ✅ Ensure critical alerts never go unnoticed
-- ✅ Integrate with existing tools via webhooks
+🚀 **60-80% Token Savings**
+- Intelligent caching (hot/warm/cold tiers)
+- Smart file summarization
+- Diff-based editing
+- AST-based code navigation
+- 15 optimization strategies working together
 
-**API Endpoints:**
-- `GET /alert-routing` - Alert routing dashboard
-- `GET /api/alert-routing/stats` - Statistics
-- `GET /api/alert-routing/active-alerts` - Active alerts list
-- `GET /api/alert-routing/rules` - Get routing rules
-- `POST /api/alert-routing/rules` - Create routing rule
-- `POST /api/alert-routing/rules/<id>/toggle` - Enable/disable rule
-- `GET /api/alert-routing/policies` - Get escalation policies
-- `GET /api/alert-routing/on-call-schedules` - Get on-call schedules
-- `GET /api/alert-routing/channels` - Get notification channels
-- `POST /api/alert-routing/alerts/create` - Create new alert
-- `POST /api/alert-routing/alerts/<id>/acknowledge` - Acknowledge alert
-- `POST /api/alert-routing/alerts/<id>/resolve` - Resolve alert
+🛡️ **Self-Learning Failure Prevention**
+- Same error never happens twice
+- 15+ initial failure patterns
+- Auto-fix confidence scoring
+- 900-2900 tokens saved per prevented failure
 
-**Data Storage:**
-- `~/.claude/memory/alert_routing/routing_rules.json` - Routing rules
-- `~/.claude/memory/alert_routing/escalation_policies.json` - Escalation policies
-- `~/.claude/memory/alert_routing/on_call_schedules.json` - On-call schedules
-- `~/.claude/memory/alert_routing/notification_channels.json` - Channels config
-- `~/.claude/memory/alert_routing/alert_history.json` - Alert history
+🎯 **Automatic Model Selection**
+- Optimal cost/performance balance
+- Haiku for search (35-45%)
+- Sonnet for implementation (50-60%)
+- Opus for architecture (3-8%)
+
+💾 **100% Local Persistent Memory**
+- Full session continuity across restarts
+- Protected session files (never deleted)
+- Automatic session save every 15 min
+- Cross-project pattern learning
+
+👤 **User Preference Learning**
+- Stops asking repeated questions
+- Tracks decision patterns
+- Project-specific preferences
+- Transparent consultation
+
+🤖 **8-9 Background Daemons**
+- Continuous optimization
+- Zero manual intervention
+- Auto-start on system login
+- Health monitoring
+
+☕ **Java Spring Boot Standards**
+- Enforced best practices
+- Package structure conventions
+- API response patterns
+- Security guidelines
 
 ---
 
-## 🆕 What's New in v2.10 (Feb 2026) - Forecasting Edition 📈🔮
+## Complete Documentation
 
-### **Predictive Analytics & Forecasting Engine** 📈🔮 NEW!
-- **Time Series Forecasting** - Predict future metric values:
-  - 📊 **Health Score**: Predict system health trends
-  - 🧠 **Context Usage**: Forecast context utilization
-  - ❌ **Error Count**: Predict error occurrence patterns
-  - 💰 **Cost**: Forecast API costs and spending
-  - ⏱️ **Response Time**: Predict performance trends
-- **5 Forecasting Algorithms**:
-  - 📈 **Linear Regression**: Trend-based prediction using least squares
-  - 🎯 **Exponential Smoothing**: Weighted historical data prediction
-  - 📊 **Moving Average**: Sliding window trend analysis
-  - 📅 **Seasonal Patterns**: Hourly/daily pattern detection
-  - 🎨 **Ensemble Method**: Combines all methods (weighted average)
-- **Confidence Intervals**:
-  - 📊 Upper and lower bounds for predictions
-  - 🎯 Prediction uncertainty visualization
-  - 📈 Wider intervals for longer-term forecasts
-  - ✅ Statistical confidence scoring
-- **Forecast Horizons**:
-  - ⏰ **24 Hours**: Short-term predictions
-  - 📅 **72 Hours**: Medium-term planning (3 days)
-  - 📆 **7 Days**: Long-term capacity planning (168 hours)
-  - ⚙️ Customizable forecast periods
-- **Capacity Breach Predictions**:
-  - 🚨 **Threshold Monitoring**: Predict when metrics will breach limits
-  - ⏰ **Time to Breach**: Hours until capacity issues
-  - 🎯 **Urgency Classification**: Critical (<24h), High (<72h), Medium (<1 week)
-  - 💡 **Recommendations**: Actionable advice based on predictions
-  - 📊 **Proactive Alerts**: Get warned before issues occur
-- **Predictive Insights**:
-  - 💡 **Trend Analysis**: Detect increasing/decreasing patterns
-  - 📊 **Pattern Recognition**: Identify metric behavior changes
-  - 🎯 **Priority Scoring**: Critical, high, medium insights
-  - 💬 **Recommendations**: AI-generated actionable advice
-  - 📈 **24-hour Trends**: Immediate predictions
-- **Interactive Dashboard**:
-  - 📊 **Forecast Charts**: Visual predictions with confidence bands
-  - 📈 **Historical + Predicted**: Seamless timeline visualization
-  - 🎨 **Color-coded Metrics**: Easy-to-read charts
-  - 🔄 **Auto-refresh**: Updates every 5 minutes
-  - 📱 **Responsive Design**: Mobile-friendly interface
-- **Forecast Summary Cards**:
-  - 📊 Current value vs predicted value
-  - 📈 Trend indicators (increasing/decreasing/stable)
-  - 🎯 Confidence percentage
-  - 🎨 Color-coded by metric type
-- **Ensemble Forecasting**:
-  - 🎯 Weighted combination of all methods
-  - 📊 Dynamic weight adjustment based on accuracy
-  - ✅ Higher confidence through consensus
-  - 📈 R-squared calculation for linear regression
-- **Capacity Planning**:
-  - 📊 Predict resource exhaustion
-  - ⏰ Time-to-breach calculations
-  - 💡 Proactive recommendations
-  - 🎯 Threshold-based alerting
-- **Data Collection**:
-  - 💾 Stores up to 1,000 data points per metric
-  - 📊 Real-time metric tracking
-  - 🔄 Continuous learning from new data
-  - 📈 Historical pattern analysis
-  - 🗄️ Stored in `~/.claude/memory/forecasts/`
-- **Forecasting Methods Detail**:
-  - **Linear Regression**: Best for steady trends, calculates slope and R²
-  - **Exponential Smoothing**: Good for recent trend emphasis (α=0.3)
-  - **Moving Average**: Smooth out noise with 5-period window
-  - **Seasonal**: Detects hourly/daily patterns (24-hour cycles)
-  - **Ensemble**: Combines all with weighted average for robustness
+### Documentation Location
 
-**Technical Features:**
-- ✅ NumPy-powered statistical calculations
-- ✅ Multi-algorithm ensemble approach
-- ✅ Confidence interval calculation
-- ✅ JSON-based data persistence
-- ✅ RESTful API endpoints
-- ✅ Swagger API documentation
-- ✅ Real-time metric collection
+All documentation is in the `claude-memory-system/` folder:
 
-**Use Cases:**
-- ✅ Predict future system behavior
-- ✅ Plan capacity before breaches occur
-- ✅ Identify trends early
-- ✅ Optimize resource allocation
-- ✅ Prevent downtime proactively
-- ✅ Make data-driven decisions
-- ✅ Budget and cost forecasting
-- ✅ Performance planning
+📖 **[MASTER-README.md](./claude-memory-system/MASTER-README.md)** - Complete consolidated guide
+- 14 major sections with 100+ indexed subsections
+- All policies, Java standards, optimization strategies
+- Security best practices, database standards
+- Complete command reference
 
-**API Endpoints:**
-- `GET /predictive-analytics` - Forecasting dashboard
-- `GET /api/forecast/summary` - Forecast summary for all metrics
-- `GET /api/forecast/insights` - Predictive insights and recommendations
-- `GET /api/forecast/metric/<name>` - Forecast specific metric (supports periods, method params)
-- `GET /api/forecast/capacity-predictions` - Capacity breach predictions
-- `POST /api/forecast/train-models` - Train/retrain models (future enhancement)
+📁 **[docs/](./claude-memory-system/docs/)** - Java Spring Boot Documentation (10 files)
+- Project structure, patterns, conventions
+- Spring Cloud Config, Secret Management
+- API design, error handling, security
+- Logging standards, database optimization
 
-**Forecast Chart Features:**
-- 📊 Historical data (solid line)
-- 📈 Predicted values (dashed line)
-- 📉 Confidence intervals (shaded area)
-- 🎯 Trend indicators
-- 📱 Interactive tooltips
-- 🔄 Real-time updates
+📜 **[Policies Documentation](./claude-memory-system/)** - System Policies (12 files)
+- Core skills mandate, model selection
+- Failure prevention, context optimization
+- Session memory, user preferences
+- Git auto-commit, testing strategies
+
+### Quick Links
+
+| Resource | Link |
+|----------|------|
+| **Complete Documentation** | [claude-memory-system/MASTER-README.md](./claude-memory-system/MASTER-README.md) |
+| **Java Standards** | [claude-memory-system/docs/](./claude-memory-system/docs/) |
+| **Quick Start** | [claude-memory-system/MEMORY-SYSTEM-QUICKSTART.md](./claude-memory-system/MEMORY-SYSTEM-QUICKSTART.md) |
+| **Architecture** | [claude-memory-system/HOW-IT-WORKS.md](./claude-memory-system/HOW-IT-WORKS.md) |
+| **API Reference** | [claude-memory-system/API-REFERENCE.md](./claude-memory-system/API-REFERENCE.md) |
 
 ---
 
-## 🆕 What's New in v2.9 (Feb 2026) - AI Detection Edition 🧠🤖
+## System Architecture
 
-### **AI-Powered Anomaly Detection with Machine Learning** 🧠🤖 NEW!
-- **Multi-Algorithm Detection Engine** - 6 ML algorithms working together:
-  - 📊 **Z-Score Analysis**: Statistical deviation detection using mean and standard deviation
-  - 📈 **IQR Method (Interquartile Range)**: Outlier detection using quartiles
-  - 📉 **Moving Average**: Trend-based detection with sliding window analysis
-  - 🎯 **Exponential Smoothing**: Weighted prediction using historical data
-  - ⚡ **Spike Detection**: Identifies sudden value changes and spikes
-  - 📊 **Trend Analysis**: Detects sudden trend changes (increase/decrease)
-- **Intelligent Anomaly Scoring**:
-  - 🎯 Confidence scoring (0-100%) based on algorithm consensus
-  - ⚖️ Anomaly detected when 2+ algorithms agree
-  - 🔢 Detailed method breakdown for each detection
-  - 📊 Individual algorithm results and scores
-- **Severity Classification**:
-  - 🔴 **Critical**: 80%+ confidence (immediate attention required)
-  - 🟠 **High**: 60-79% confidence (investigation recommended)
-  - 🟡 **Medium**: 40-59% confidence (monitor closely)
-  - 🟢 **Low**: <40% confidence (informational)
-- **AI Insights & Recommendations**:
-  - 💡 Pattern-based insights from anomaly data
-  - 🎯 Prioritized recommendations (critical, high, medium)
-  - 📊 24-hour trend analysis
-  - 🔍 Most problematic metric identification
-  - ⚠️ Critical anomaly alerts
-  - 📈 Increased activity detection
-- **Anomaly Dashboard**:
-  - 📊 Statistics cards (Total, Critical, Unresolved, Resolved)
-  - 💡 AI insights section with recommendations
-  - 🔬 Detection methods overview (6 algorithms)
-  - 📋 Anomaly list with detailed information
-  - 🔍 Advanced filtering (All, Critical, High, Unresolved)
-  - ⏱️ Auto-refresh every 30 seconds
-- **Anomaly Management**:
-  - ✅ **Acknowledge**: Mark anomalies as seen/acknowledged
-  - ✔️ **Resolve**: Mark anomalies as resolved with notes
-  - 📝 Resolution notes for documentation
-  - 🕐 Timestamp tracking (detected, acknowledged, resolved)
-  - 📊 Status tracking (new, acknowledged, resolved)
-- **Metrics Monitoring**:
-  - 💚 Health Score anomalies
-  - ❌ Error Count anomalies
-  - 🧠 Context Usage anomalies
-  - ⏱️ Response Time anomalies
-  - 🤖 Custom metric support
-- **Data Collection & History**:
-  - 💾 Stores up to 10,000 metric data points
-  - 📊 Historical anomaly records (last 1000)
-  - 🔄 Continuous learning from new data
-  - 📈 Time-series analysis
-  - 🗄️ Stored in `~/.claude/memory/anomalies/`
-- **Detection Sensitivity**:
-  - 🔴 **High**: More sensitive (catches more anomalies)
-  - 🟡 **Medium**: Balanced detection (default)
-  - 🟢 **Low**: Conservative detection (fewer false positives)
-  - ⚙️ Configurable thresholds per algorithm
-- **Model Retraining**:
-  - 🔄 Manual retrain button (future enhancement)
-  - 📊 Adaptive learning from system behavior
-  - 🎯 Improving accuracy over time
+### Execution Flow (Every Request)
 
-**Technical Features:**
-- ✅ NumPy-powered statistical calculations
-- ✅ Real-time anomaly detection
-- ✅ Multi-method ensemble approach
-- ✅ JSON-based data persistence
-- ✅ RESTful API endpoints for all operations
-- ✅ Swagger API documentation
-- ✅ Session-based anomaly tracking
+```
+1. Context Check (REQUIRED)
+   ↓
+   context-monitor-v2.py --current-status
+   If >70%: Apply optimizations
 
-**Use Cases:**
-- ✅ Detect unusual system behavior automatically
-- ✅ Get early warnings before issues become critical
-- ✅ Reduce false positives with multi-algorithm consensus
-- ✅ Track and resolve anomalies systematically
-- ✅ Analyze patterns in system metrics
-- ✅ Make data-driven decisions based on AI insights
-- ✅ Prevent downtime with predictive detection
+2. Model Selection (REQUIRED)
+   ↓
+   model-selection-enforcer.py --analyze "message"
+   Use recommended model
 
-**API Endpoints:**
-- `GET /anomaly-detection` - Anomaly detection dashboard
-- `GET /api/anomaly/stats` - Get anomaly statistics
-- `GET /api/anomaly/insights` - Get AI insights and recommendations
-- `GET /api/anomaly/list` - List anomalies (supports filtering)
-- `POST /api/anomaly/<id>/acknowledge` - Acknowledge an anomaly
-- `POST /api/anomaly/<id>/resolve` - Resolve an anomaly with notes
+3. Skill Detection (OPTIONAL)
+   ↓
+   core-skills-enforcer.py --next-skill
+   Execute if mandatory
+
+4. Failure Prevention (BEFORE EVERY TOOL)
+   ↓
+   pre-execution-checker.py --tool {TOOL}
+   Apply auto-fixes
+
+5. Execute Task
+   ↓
+   Use optimized tool parameters
+   Apply offset/limit/head_limit
+
+6. Session Save (ON MILESTONES)
+   ↓
+   Auto-triggered by daemon
+
+7. Git Auto-Commit (ON COMPLETION)
+   ↓
+   Auto-triggered by daemon
+
+8. Logging (ALWAYS)
+   ↓
+   Log policy applications
+```
+
+### Background Automation
+
+**Continuous (Every 5-20 min):**
+- Context usage monitored
+- Sessions auto-saved
+- Preferences learned
+- Skills suggested
+- Token optimization applied
+
+**Periodic (Daily/Weekly/Monthly):**
+- Failures analyzed and learned
+- Cross-project patterns detected
+- Old sessions archived
+- System health checked
+
+**Event-Driven:**
+- Git commits on completion
+- Context cleanup on threshold
+- Daemon auto-restart on failure
 
 ---
 
-## 🆕 What's New in v2.8 (Feb 2026) - Community Marketplace Edition 🌐👥
+## 12 Active Policies
 
-### **Widget Sharing and Community Marketplace** 🌐👥 NEW!
-- **Community Platform** - Share widgets with the global community
-- **Browse & Discover**:
-  - 📊 Widget gallery with beautiful cards
-  - 🔍 Advanced search functionality
-  - 🏷️ Filter by category (Charts, Metrics, Tables, Dashboard, Monitoring)
-  - ⭐ Sort by: Most Recent, Popular, Rating, Downloads
-  - 🌟 Rating filter (5★, 4+★, 3+★)
-- **Publish Widgets**:
-  - 📤 Upload widget JSON files
-  - 📝 Rich descriptions and metadata
-  - 🏷️ Categorization system
-  - 🔖 Tagging for discoverability
-  - 📷 Screenshot uploads (optional)
-  - 👤 Author attribution
-  - 📜 MIT License agreement
-  - 🔢 Version tracking
-- **Widget Details Page**:
-  - 📋 Full widget information
-  - 📊 Stats (downloads, ratings, reviews)
-  - ⭐ 5-star rating system
-  - 👤 Author profile
-  - 🏷️ Tags and category
-  - 📅 Publish date and version
-  - 💬 Review count
-  - 👁️ Preview (coming soon)
-- **Rating & Reviews**:
-  - ⭐ Rate widgets 1-5 stars
-  - 📊 Average rating display
-  - 💬 Review count tracking
-  - 🔢 Individual rating history
-- **Download & Install**:
-  - 💾 One-click download as JSON
-  - 📊 Download counter
-  - 🔄 Import into Widget Builder
-  - 📥 Install directly to dashboard
-- **Community Statistics**:
-  - 📈 Total widgets published
-  - 📥 Total downloads across community
-  - 👥 Total contributors
-  - ⭐ Average rating across all widgets
-  - 📊 Category distribution
-- **Search & Filter**:
-  - 🔍 Real-time search (name, description, tags)
-  - 📂 Category filter
-  - ⭐ Rating filter
-  - 🔄 Sort options
-  - 🔁 Reset filters
-- **My Widgets**:
-  - 📁 View your published widgets
-  - 📊 Track performance
-  - ✏️ Manage your contributions
-- **Data Storage**:
-  - 💾 Stored in `~/.claude/memory/community/widgets.json`
-  - 📊 JSON-based widget repository
-  - 🔄 Auto-sync on publish/rate/download
+### 1. Core Skills Mandate
+**Purpose:** System-level enforcement of mandatory execution flow
 
-**Use Cases:**
-- ✅ Share your custom widgets with the community
-- ✅ Discover widgets created by others
-- ✅ Build a library of reusable components
-- ✅ Rate and review community widgets
-- ✅ Track widget popularity and downloads
-- ✅ Find inspiration for your own widgets
-- ✅ Contribute to the Claude monitoring ecosystem
+**5 Mandatory Skills (In Order):**
+1. Context Management - Always validate context first
+2. Model Selection - Always choose correct model
+3. Adaptive Skill Intelligence - Auto-detect relevant skills
+4. Task Planning Intelligence - Score complexity (0-10)
+5. Phased Execution Intelligence - Score task size (0-10)
 
----
+**Critical Protection:**
+- Session files NEVER deleted
+- Policy files PROTECTED
+- Logs PROTECTED
 
-## 🆕 What's New in v2.7 (Feb 2026) - Advanced Widget Builder Edition 🎨✨
+### 2. Model Selection Enforcement
+**Purpose:** Ensure correct model usage for cost optimization
 
-### **Advanced Widget Builder with Visual Editor** 🎨✨ NEW!
-- **Drag-and-Drop Interface** - Build widgets visually without writing code
-- **Component Library** - 15+ pre-built components:
-  - 📊 **Charts**: Line, Bar, Pie, Doughnut
-  - 📈 **Metrics**: Metric Cards, Gauges, Progress Bars, Stat Numbers
-  - 📋 **Lists & Tables**: Data Tables, Lists, Timelines
-  - 📝 **Content**: Headings, Text Blocks, Badges, Icons
-  - 💻 **Advanced**: Custom HTML, Iframes
-- **Live Canvas** - Real-time preview as you build
-- **Property Editor** - Visual controls for all component properties:
-  - Title, Colors (background, text)
-  - Padding, Border radius
-  - Width, Height
-  - Custom styles
-- **Data Source Integration**:
-  - Connect to live APIs
-  - Built-in data sources (metrics, daemons, notifications)
-  - Custom API endpoints
-  - Auto-refresh intervals
-  - Test connection feature
-- **Code Editor** - Advanced users can edit HTML/CSS/JS directly
-- **Widget Templates** - Quick start with pre-built layouts:
-  - 🩺 Health Monitor
-  - 📈 Trends Dashboard
-  - 🖥️ Status Board
-  - 📊 Analytics Panel
-- **Canvas Tools**:
-  - Undo/Redo functionality
-  - Clear canvas
-  - Component sorting (drag to reorder)
-  - Delete components
-  - Select and edit
-- **Save & Export**:
-  - Save custom widgets to session
-  - Export as JSON file
-  - Import widget definitions
-  - Share with team
-- **Professional UI**:
-  - 3-panel layout (Components | Canvas | Properties)
-  - Tabbed interface for organization
-  - Responsive design
-  - Smooth animations
-  - Visual feedback
+| Task Type | Model | Savings |
+|-----------|-------|---------|
+| Search/Find | Haiku | 96% cost reduction |
+| Implementation | Sonnet | Balanced cost/performance |
+| Architecture | Opus | Maximum capability |
 
-**Use Cases:**
-- ✅ Create custom dashboard widgets without coding
-- ✅ Build company-specific monitoring panels
-- ✅ Design KPI dashboards for different teams
-- ✅ Prototype widget ideas quickly
-- ✅ Customize visualizations for specific metrics
+**Healthy Distribution:**
+- Haiku: 35-45%
+- Sonnet: 50-60%
+- Opus: 3-8%
 
----
+### 3. Common Failures Prevention
+**Purpose:** Self-learning failure knowledge base
 
-## 🆕 What's New in v2.6 (Feb 2026) - Email & SMS Alerts Edition 📧📱
+**Auto-Fixes Applied:**
+- Bash: `del` → `rm`, `copy` → `cp`, etc.
+- Edit: Strip line number prefixes
+- Read: Auto-add offset/limit for large files
+- Grep: Auto-add head_limit
+- Git: Stage files before commit
 
-### **Email & SMS Alerts for Critical Issues** 📧📱 NEW!
-- **Multi-Channel Alerting** - Get notified via Email AND SMS for critical events
-- **SMTP Email Support** - Works with Gmail, Outlook, custom SMTP servers
-- **Twilio SMS Integration** - Send SMS alerts to multiple phone numbers
-- **Complete Configuration UI** - Easy setup in Settings page
-- **Test Functions** - Send test emails/SMS to verify setup
-- **Smart Alert Rules**:
-  - 🎯 **Severity Filtering** - Critical only or include warnings
-  - 📋 **Alert Type Selection** - Choose which events trigger alerts (health_score, daemon_down, error_threshold, context_usage)
-  - 🔇 **Quiet Hours** - Suppress alerts during specified hours (e.g., 10 PM - 8 AM)
-  - ⏱️ **Rate Limiting** - Prevent spam (max 10 alerts/hour)
-- **Email Features**:
-  - HTML formatted emails with professional styling
-  - Custom SMTP server configuration
-  - Gmail App Password support
-  - Multiple recipients (comma-separated)
-  - From email customization
-- **SMS Features** (via Twilio):
-  - Multiple recipients support
-  - Twilio Account SID and Auth Token
-  - Custom from number
-  - Shortened messages optimized for SMS
-- **Auto-Integration** - Automatically sends alerts when thresholds are breached
-- **Secure Storage** - Credentials stored in `~/.claude/memory/alert_config.json`
-- **Alert History** - Tracks last 100 alerts for rate limiting
+**Token Savings:** 900-2900 per prevented failure
 
----
+### 4. Context-Session Integration
+**Purpose:** Separate temporary vs persistent memory
 
-## 🆕 What's New in v2.5 (Feb 2026) - Mobile & Notifications Edition 📱🔔
+**Protected Directories (NEVER Cleanup):**
+- `~/.claude/memory/sessions/**`
+- `~/.claude/memory/*.md`
+- `~/.claude/settings*.json`
+- `~/.claude/memory/logs/**`
 
-### **Browser Push Notifications** 🔔 NEW!
-- **Real-time Alerts** - Get instant browser notifications for critical events
-- **Notification Permission** - Browser asks for permission on first load
-- **Smart Notifications** - Only notifies for critical and warning alerts
-- **Notification History** - Complete history of all notifications
-- **Mark as Read** - Individual or bulk mark as read
-- **Notification Trends** - 30-day trend chart showing alert patterns
-- **Stats Dashboard** - Total, critical, warning, and info counts
-- **Auto-Check** - Polls for new alerts every 30 seconds
-- **Persistent Storage** - Stores last 500 notifications in memory
+**Context Thresholds:**
+- <70%: 🟢 GREEN - Continue normally
+- 70-84%: 🟡 YELLOW - Use cache, optimize
+- 85-89%: 🟠 ORANGE - Use session state
+- 90%+: 🔴 RED - Save session, compact
 
-### **Alert History and Trends** 📊 NEW!
-- **Dedicated Notifications Page** - `/notifications` route with full history
-- **Unread Badge** - Notification bell shows unread count
-- **30-Day Trends Chart** - Visual timeline of notification patterns
-- **Stats Cards** - Overview of alerts by severity (Critical/Warning/Info)
-- **By-Day Breakdown** - See which days had most alerts
-- **By-Type Analysis** - Which alert types trigger most frequently
-- **Search & Filter** - Find specific notifications quickly
-- **Read/Unread States** - Visual distinction with styling
+### 5. File Management Policy
+**Purpose:** Clean working directory & intelligent large file handling
 
-### **Custom Dashboard Themes** 🎨 NEW!
-- **6 Beautiful Themes** - Choose from multiple color schemes
-- **Theme Gallery** - Visual preview cards with 3-color swatches
-- **Instant Apply** - Themes apply immediately without page reload
-- **Persistent Storage** - Theme preference saved in session
-- **Available Themes**:
-  - 🟣 **Default** - Purple gradient with light background
-  - ⚫ **Dark** - Dark slate with high contrast
-  - 🔵 **Blue** - Ocean blue with light tones
-  - 🟣 **Purple** - Royal purple with soft accents
-  - 🟢 **Green** - Fresh green with natural feel
-  - 🟠 **Orange** - Warm orange with energetic vibe
-- **Theme Preview** - See colors before applying
-- **Success Feedback** - Confirmation when theme is applied
+**Rules:**
+1. Temporary files → Use system temp
+2. Single README.md preferred
+3. Large files >500 lines → Smart strategies
 
-### **Widget Marketplace** 🧩 NEW!
-- **Dedicated Marketplace** - Browse and install dashboard widgets
-- **9 Pre-built Widgets**:
-  - 🩺 Health Score Meter (Featured)
-  - 📈 Error Trends Chart (Popular)
-  - 💰 Cost Tracker
-  - 🛡️ Policy Monitor (Featured)
-  - 🔔 Live Alert Feed
-  - 💾 Context Monitor (Popular)
-  - ⏱️ Session Timeline
-  - 🥧 Model Distribution Pie Chart
-  - ⚡ Quick Actions
-- **Widget Categories** - Filter by Metrics, Charts, Alerts, Tools
-- **Install/Uninstall** - One-click widget management
-- **My Widgets** - View all installed widgets
-- **Custom Widget Creator** - Build your own widgets
-- **Widget Stats** - See install counts and ratings
-- **Custom Widget Fields**:
-  - Name, Description, Category
-  - Icon (Font Awesome), Color
-  - Optional API data source
-- **Persistent Install List** - Remembers installed widgets
+**Large File Strategy:**
+- Step 1: Structure read (100 lines)
+- Step 2: Targeted read (offset+limit)
+- Step 3: Smart edit (use Edit tool)
+- **Savings:** 80-95%
 
-### **Mobile-Optimized Responsive Design** 📱 NEW!
-- **100% Mobile-Friendly** - Fully optimized for all devices
-- **Responsive Breakpoints**:
-  - 🖥️ **Desktop** - Full layout (>992px)
-  - 📱 **Tablet** - Adapted layout (768px-991px)
-  - 📱 **Mobile** - Single column layout (<768px)
-  - 📱 **Small Mobile** - Optimized for smallest screens (<576px)
-- **Touch Optimizations**:
-  - 44px minimum touch targets
-  - Larger form controls (24px)
-  - Tap highlight effects
-  - Touch-friendly spacing
-- **Mobile Features**:
-  - Collapsible navigation menu
-  - Stacked cards on small screens
-  - Responsive charts (max 250px height)
-  - Full-width modals on mobile
-  - Horizontal scroll for tables
-  - Optimized font sizes
-  - Landscape mode support
-- **Performance**:
-  - Lightweight CSS (no frameworks needed)
-  - Fast rendering on mobile devices
-  - Smooth animations and transitions
+### 6. Git Auto-Commit Policy
+**Purpose:** Automatic commit/push on completion events
+
+**Triggers:**
+1. Phase completion
+2. Todo completion
+3. Periodic checkpoints (every 30 min or 3-5 files)
+
+**Safety Rules:**
+- NEVER force push
+- Respect hooks
+- Inform user always
+- Check .git directory
+
+**Repository Rules:**
+- Always "main" branch (NEVER "master")
+- Always private (unless explicitly public)
+
+### 7. Proactive Consultation Policy
+**Purpose:** Transparent decision-making with user collaboration
+
+**When to Ask:**
+- Planning decision (complexity 4-6)
+- Phased execution (task size 3-5)
+- Model/approach uncertainty
+- Technology/library choice
+
+**When NOT to Ask:**
+- Clear scores (0-3 or 7-10)
+- User already specified
+- Previous decision in session
+- Trivial tasks
+
+### 8. Session Memory Policy
+**Purpose:** 100% local persistent memory across sessions
+
+**How It Works:**
+1. **At Session Start:** Auto-load `project-summary.md`
+2. **During Session:** Track decisions, files, context
+3. **At Session End:** Auto-save session summary
+
+**What to Capture:**
+- Technical decisions
+- User preferences (project-specific)
+- Files modified
+- Pending work
+- Important context
+
+**Protected from Context Cleanup:** 100% Protected
+
+### 9. Session Pruning Policy
+**Purpose:** Automatic cleanup of old sessions
+
+**Pruning Rules:**
+- Keep sessions modified in last 30 days
+- Archive sessions 31-90 days old
+- Delete archived sessions >90 days old
+
+**Safe to Archive:**
+- All tasks completed
+- No pending work
+- No errors
+- Auto-commit done
+
+**Never Prune:**
+- Active sessions (<30 days)
+- Sessions with errors
+- Explicitly protected sessions
+
+### 10. User Preferences Policy
+**Purpose:** Learn and auto-apply user preferences
+
+**Preference Types:**
+- Planning mode (use/skip)
+- Testing approach (TDD/after/skip)
+- API style (REST/GraphQL)
+- Error handling (exceptions/codes)
+- Commit frequency (phase/file/manual)
+
+**Learning Strategy:**
+- Track user choices
+- Apply automatically after 2-3 consistent choices
+- Never ask same question twice
+
+### 11. Cross-Project Patterns Policy
+**Purpose:** Learn patterns across projects and auto-apply
+
+**Pattern Detection:**
+- Monthly analysis of all project sessions
+- Identify common solutions
+- Track success rates
+- Build pattern library
+
+**Auto-Application:**
+- Suggest patterns when applicable
+- Apply high-confidence patterns (>80%)
+- Learn from user feedback
+
+### 12. Test Case Policy
+**Purpose:** Consistent testing approach
+
+**Testing Strategy:**
+- Unit tests for business logic
+- Integration tests for APIs
+- E2E tests for critical flows
+
+**Coverage Targets:**
+- Business logic: 80%+
+- Controllers: 60%+
+- Overall: 70%+
 
 ---
 
-## 🆕 What's New in v2.4 (Feb 2026) - Analytics Edition 📊
+## Java Spring Boot Standards
 
-### **Export to Excel/PDF** 📄 NEW!
-- **Multi-Format Export** - Export data in Excel (.xlsx) or PDF formats
-- **Comprehensive Reports** - Sessions, metrics, logs, and analytics reports
-- **Professional Formatting** - Styled headers, colored backgrounds, proper layouts
-- **One-Click Download** - Export buttons throughout the dashboard
-- **Excel Features** - Workbook sheets, cell styling, proper column widths
-- **PDF Features** - Tables, charts summaries, professional layouts
-- **Bulk Export** - Export up to 1000 records at once
+### Project Structure
 
-### **Advanced Analytics Dashboard** 📈 NEW!
-- **Dedicated Analytics Page** - Complete analytics dashboard with deep insights
-- **Trend Analysis** - Week-over-week, month-over-month comparisons
-- **Performance Metrics** - Health scores, error rates, daemon uptime
-- **Cost Analysis** - Visual cost savings with doughnut charts
-- **Policy Impact** - Effectiveness metrics with pie charts
-- **Usage Patterns** - Peak hours, busiest days, usage trends
-- **Time Range Filters** - 7/30/60/90 day analysis
-- **Interactive Charts** - Line, bar, doughnut, and pie charts
-- **Export Ready** - Export analytics to Excel/PDF
+**Base Package:** `com.techdeveloper.${projectname}`
 
-### **Custom Alert Thresholds** 🔔 NEW!
-- **Configurable Alerts** - Set your own threshold values
-- **4 Alert Types**:
-  - Health Score threshold (customizable %)
-  - Error count threshold (per hour)
-  - Context usage threshold (%)
-  - Daemon down alerts (on/off)
-- **Visual Sliders** - Easy-to-use range sliders
-- **Real-time Monitoring** - Checks every 30 seconds
-- **Alert Severity** - Warning vs Critical levels
-- **Active Alerts Display** - See triggered alerts in Settings
-- **API Endpoint** - Check alerts programmatically
+**Package Structure:**
 
-### **From v2.3:**
+| Package | Purpose |
+|---------|---------|
+| `controller` | REST endpoints |
+| `dto` | Response objects |
+| `form` | Request objects |
+| `constants` | All constants/enums |
+| `services` | Interfaces only |
+| `services.impl` | Package-private implementations |
+| `services.helper` | Helper classes |
+| `entity` | Database entities |
+| `repository` | Data access |
 
-### **Real-time WebSocket Updates** ⚡
-- **Live Data Streaming** - No more polling! Data updates every 10 seconds automatically
-- **WebSocket Connection** - Instant updates using Socket.IO
-- **Auto-Fallback** - Falls back to HTTP polling if WebSocket fails
-- **Connection Status Indicator** - Shows "Real-time: WebSocket" or "Auto-refresh: 30s"
-- **Zero Refresh Needed** - Dashboard stays fresh automatically
-- **Lower Server Load** - More efficient than HTTP polling
-- **Instant Notifications** - See changes as they happen
+### Mandatory Patterns
 
-### **Swagger API Documentation** 📖 NEW!
-- **Interactive API Docs** - Complete API documentation at `/api/docs`
-- **Try It Out** - Test all endpoints directly from the browser
-- **Request/Response Examples** - See exact formats for all APIs
-- **OpenAPI Standard** - Industry-standard API documentation
-- **Full Endpoint Coverage** - All 15+ endpoints documented
-- **Authentication Info** - Clear auth requirements for each endpoint
-- **Developer Friendly** - Makes integration easy
+1. **All responses use `ApiResponseDto<T>`**
+   ```java
+   public ApiResponseDto<UserDto> getUser(Long id) {
+       return ApiResponseDto.success(userDto);
+   }
+   ```
 
-### **Change Password** 🔐 NEW!
-- **Secure Password Management** - bcrypt hashing for security
-- **Easy Password Change** - Simple form in Settings page
-- **Validation** - 6+ character minimum, match confirmation
-- **Current Password Verification** - Must know current password
-- **Instant Feedback** - Success/error messages
-- **Session Security** - Passwords never stored in plain text
+2. **Form classes extend `ValidationMessageConstants`**
+   ```java
+   public class UserForm extends ValidationMessageConstants {
+       @NotBlank(message = REQUIRED_FIELD)
+       private String email;
+   }
+   ```
 
-### **Drag-and-Drop Widget Reordering** 🎯 NEW!
-- **Customize Layout** - Drag widgets to reorder them
-- **Visual Drag Handles** - Hover on left side to see drag handle
-- **Smooth Animations** - Beautiful drag-and-drop effects
-- **Persistent Order** - Your layout is saved automatically
-- **Reset Button** - Quickly reset to default order
-- **Touch Support** - Works on tablets and touch screens
+3. **Service impl extends Helper**
+   ```java
+   @Service
+   class UserServiceImpl extends UserServiceHelper implements UserService {
+       // Implementation
+   }
+   ```
 
-### **Extended Historical Data** 📊 (from v2.2)
-- **7/30/60/90 days** time range selection
-- Interactive filter buttons on dashboard
-- Visual comparison across different time periods
-- 90-day data retention (upgraded from 30 days)
-- Dynamic chart titles showing selected range
-- Summary statistics adapt to selected time range
+4. **NO hardcoded messages** (use constants)
+   ```java
+   public static final String USER_NOT_FOUND = "User not found";
+   ```
 
-### **Custom Dashboard Widgets** 🎨
-- **Customize Your Dashboard** - Show/hide any widget
-- **6 Customizable Widgets**:
-  - System Health Metrics
-  - Daemon Status
-  - Policy Status
-  - Historical Charts
-  - Recent Activity
-  - Recent Errors
-- **Persistent Preferences** - Your choices are saved in session
-- **One-Click Customization** - Modal interface with toggle switches
-- **Instant Apply** - Changes apply immediately after save
+5. **`@Transactional` for all write operations**
+   ```java
+   @Transactional
+   public User createUser(UserForm form) {
+       // Save user
+   }
+   ```
 
-### **From v2.1:**
-- ✅ Dark Mode toggle with system preference detection
-- ✅ 7-Day Historical Trends with interactive charts
-- ✅ Enhanced Search in Sessions table
-- ✅ Export to CSV for all data types
-- ✅ Professional error pages (404, 500)
-- ✅ Settings page with preferences
-
-[See Full Enhancement Details](#-recent-updates-v22---feb-2026)
+### Quality Checklist
+- ✅ `ApiResponseDto<T>` used?
+- ✅ DTO vs Form separate?
+- ✅ Messages in constants?
+- ✅ Service impl package-private?
+- ✅ Service impl extends helper?
 
 ---
 
-## 🌟 What Makes This Special?
+## Spring Boot Configuration
 
-### **All-in-One Solution**
-No need to search for files or scripts - this repo contains:
-- ✅ **Professional Monitoring Dashboard** (Flask web app)
-- ✅ **Complete Claude Memory System v2.0** (all 30 files)
-- ✅ **All Policies** (15 policy files)
-- ✅ **Complete Documentation** (API reference, guides, troubleshooting)
-- ✅ **Test Suites** (comprehensive testing)
-- ✅ **Maintenance Scripts** (daily/weekly/monthly health checks)
+### Spring Cloud Config Server
 
-### **5-Minute Setup**
+**📖 Full docs:** [claude-memory-system/docs/spring-cloud-config.md](./claude-memory-system/docs/spring-cloud-config.md)
+
+**Config Location:**
+```
+techdeveloper/backend/techdeveloper-config-server/configurations/
+├── application.yml                    # Global (ALL services)
+├── {project}/common/*.yml             # Project common
+└── {project}/services/{service}.yml   # Service-specific
+```
+
+**Microservice application.yml (ONLY THIS!):**
+```yaml
+spring:
+  application:
+    name: service-name
+  config:
+    import: "configserver:http://localhost:8888"
+  cloud:
+    config:
+      fail-fast: true
+      retry:
+        enabled: true
+
+secret-manager:
+  client:
+    enabled: true
+    project-name: "project-name"
+```
+
+**❌ NEVER add to microservice application.yml:**
+- Redis config (in config server)
+- Feign config (in config server)
+- Database config (in config server)
+- Email config (in config server)
+- Port numbers (in config server)
+
+### Secret Management
+
+**📖 Full docs:** [claude-memory-system/docs/secret-management.md](./claude-memory-system/docs/secret-management.md)
+
+**Services:**
+- Secret Manager: port 1002
+- Project Management: port 8109
+
+**How it works:**
+- Secrets fetched at startup
+- Injected as `${SECRET_KEY}`
+- **🚨 NEVER hardcode secrets!**
+
+**Microservice config:**
+```yaml
+secret-manager:
+  client:
+    enabled: true
+    project-name: "project-name"
+    base-url: "http://localhost:8085/api/v1/secrets"
+```
+
+---
+
+## Installation Guide
+
+### Prerequisites
+
+**Required:**
+- Python 3.7 or higher
+- pip (Python package manager)
+- Git (for cloning repository)
+
+**Optional (for Memory System):**
+- Windows/Linux/Mac OS
+- PowerShell (for Windows auto-startup)
+
+### Step-by-Step Installation
+
+#### 1. Clone Repository
 ```bash
 git clone https://github.com/piyushmakhija28/claude-monitoring-system.git
 cd claude-monitoring-system
-# Copy files to ~/.claude/memory (see SETUP-INSTRUCTIONS.md)
-python app.py
-# Open http://localhost:5000
 ```
 
-**That's it!** Dashboard + Full automation system ready! 🚀
-
----
-
-## 🎨 Using New Features (v2.2)
-
-### **Extended Historical Data (7/30/60/90 Days)**
-
-The Historical Trends section now supports multiple time ranges:
-
-1. **Access**: Navigate to Dashboard
-2. **Select Time Range**: Click one of the filter buttons:
-   - **7 Days** - Last week's data (default)
-   - **30 Days** - Last month's data
-   - **60 Days** - Last 2 months' data
-   - **90 Days** - Last 3 months' data
-3. **View Charts**: All 4 charts update automatically:
-   - Health Score Trend
-   - Errors Over Time
-   - Policy Hits
-   - Context Usage
-4. **Summary Stats**: Statistics box shows averages for selected period
-
-**Benefits:**
-- ✅ Identify long-term trends
-- ✅ Compare performance across months
-- ✅ Spot seasonal patterns
-- ✅ Better capacity planning
-
-### **Custom Dashboard Widgets**
-
-Personalize your dashboard by showing/hiding widgets:
-
-1. **Open Customization**:
-   - Click **"Customize"** button in dashboard header
-   - Modal opens with all available widgets
-
-2. **Available Widgets** (6 total):
-   - 🩺 **System Health** - Health score, daemons, policies, hits
-   - 🖥️ **Daemon Status** - Status of all 8 daemons
-   - 🛡️ **Policy Status** - Active policies cards
-   - 📊 **Historical Charts** - Trend charts (with time range filters)
-   - 📝 **Recent Activity** - Activity feed
-   - ⚠️ **Recent Errors** - Latest errors
-
-3. **Toggle Widgets**:
-   - Use switches to enable/disable each widget
-   - See real-time preview of your layout
-
-4. **Save Preferences**:
-   - Click **"Save Preferences"** button
-   - Dashboard reloads with your custom layout
-   - Preferences persist across sessions
-
-**Use Cases:**
-- ✅ **Focus Mode** - Hide unnecessary widgets for specific tasks
-- ✅ **Executive View** - Show only high-level health metrics
-- ✅ **Developer View** - Show errors, activity, and daemon status
-- ✅ **Analyst View** - Focus on historical charts and trends
-
-**Example Layouts:**
-
-**Minimal (Executive):**
-- ✅ System Health
-- ✅ Historical Charts
-- ❌ Daemon Status
-- ❌ Policy Status
-- ❌ Recent Activity
-- ❌ Recent Errors
-
-**Full (Developer):**
-- ✅ All widgets enabled (default)
-
-**Troubleshooting Focus:**
-- ✅ System Health
-- ✅ Daemon Status
-- ✅ Recent Activity
-- ✅ Recent Errors
-- ❌ Policy Status
-- ❌ Historical Charts
-
----
-
-## 🎨 Using Advanced Features (v2.3)
-
-### **Real-time WebSocket Updates** ⚡
-
-The dashboard now updates automatically in real-time!
-
-**How It Works:**
-1. **Automatic Connection**: WebSocket connects when you open the dashboard
-2. **Live Updates**: Data refreshes every 10 seconds automatically
-3. **Status Indicator**: Green "Real-time: WebSocket" badge shows active connection
-4. **Auto-Fallback**: If WebSocket fails, falls back to HTTP polling (30s)
-
-**Benefits:**
-- ✅ No manual refresh needed
-- ✅ See changes instantly (10s vs 30s)
-- ✅ Lower server load
-- ✅ More efficient data transfer
-- ✅ Always-fresh data
-
-**Connection Status:**
-- 🟢 **"Real-time: WebSocket"** = Active WebSocket connection
-- 🟡 **"Auto-refresh: 30s"** = Fallback to HTTP polling
-
-### **Swagger API Documentation** 📖
-
-Complete API documentation with interactive testing!
-
-**Access:**
-```
-URL: http://localhost:5000/api/docs
-```
-
-**Features:**
-- **Browse All Endpoints**: See all 15+ available APIs
-- **Try It Out**: Test endpoints directly from browser
-- **Request Examples**: See exact JSON format needed
-- **Response Examples**: See what each API returns
-- **Authentication**: Clear auth requirements
-- **Error Codes**: Understand all possible responses
-
-**Use Cases:**
-- ✅ Building integrations with other tools
-- ✅ Understanding API structure
-- ✅ Testing API calls before coding
-- ✅ Debugging API issues
-- ✅ Developer onboarding
-
-### **Change Password** 🔐
-
-Secure password management built-in!
-
-**Steps:**
-1. Navigate to **Settings** page
-2. Scroll to **"Change Password"** section
-3. Enter:
-   - Current password
-   - New password (min 6 characters)
-   - Confirm new password
-4. Click **"Change Password"**
-5. Success! Password updated instantly
-
-**Security Features:**
-- ✅ bcrypt hashing (industry standard)
-- ✅ Salt per user
-- ✅ Current password verification
-- ✅ Password strength validation
-- ✅ Match confirmation check
-- ✅ Never stored in plain text
-
-**Password Requirements:**
-- Minimum 6 characters
-- Must match confirmation
-- Must know current password
-
-### **Drag-and-Drop Widget Reordering** 🎯
-
-Rearrange your dashboard exactly how you want!
-
-**How to Reorder:**
-1. **Hover Over Widget**: Hover on left side of any widget row
-2. **See Drag Handle**: Purple handle appears with grip icon
-3. **Click and Drag**: Click handle and drag widget up/down
-4. **Drop**: Release to place widget in new position
-5. **Auto-Save**: Order saves automatically to localStorage
-
-**Visual Feedback:**
-- Purple drag handle on hover
-- Widget slides right when hovering
-- Smooth animations during drag
-- Ghost placeholder shows drop position
-
-**Reset Order:**
-- Click **"Reset Order"** button in dashboard header
-- Confirms before resetting
-- Reloads page with default order
-
-**Saved Automatically:**
-- Order persists across sessions
-- Saved in localStorage (per browser)
-- Different order per user/browser
-
-**Use Cases:**
-- ✅ Put most important widgets first
-- ✅ Group related widgets together
-- ✅ Create custom workflow layouts
-- ✅ Optimize for your screen size
-
----
-
-## 🎨 Using Latest Features (v2.4)
-
-### **Export to Excel/PDF** 📄
-
-Export your data in professional formats!
-
-**Available Export Types:**
-1. **Sessions** - All session history with metrics
-2. **Metrics** - Current system health and daemon status
-3. **Logs** - Recent activity logs (up to 1000 entries)
-4. **Analytics** - Complete analytics report with charts
-
-**How to Export:**
-
-**Excel (.xlsx):**
-```
-URL Pattern: /api/export/excel/{type}
-Examples:
-- /api/export/excel/sessions
-- /api/export/excel/metrics
-- /api/export/excel/logs
-- /api/export/excel/analytics
-```
-
-**PDF (.pdf):**
-```
-URL Pattern: /api/export/pdf/{type}
-Examples:
-- /api/export/pdf/sessions
-- /api/export/pdf/metrics
-- /api/export/pdf/logs
-- /api/export/pdf/analytics
-```
-
-**From UI:**
-- **Dashboard**: Export buttons for metrics
-- **Sessions Page**: Export sessions button
-- **Logs Page**: Export logs button
-- **Analytics Page**: Export analytics button
-
-**Excel Features:**
-- ✅ Professional styling (colored headers, proper fonts)
-- ✅ Multiple sheets for complex data
-- ✅ Auto-sized columns
-- ✅ Cell formatting
-- ✅ Opens in Excel, Google Sheets, LibreOffice
-
-**PDF Features:**
-- ✅ Professional layout with title and date
-- ✅ Formatted tables with headers
-- ✅ Color-coded data
-- ✅ Pagination for large datasets
-- ✅ Ready to print
-
-### **Advanced Analytics Dashboard** 📈
-
-Deep insights into your system!
-
-**Access:**
-```
-URL: http://localhost:5000/analytics
-```
-
-**Features:**
-
-**1. Key Metrics Cards:**
-- Average Health Score (with trend %)
-- Total Errors (with trend %)
-- Daemon Uptime %
-- Policy Effectiveness %
-
-**2. Trend Analysis Charts:**
-- Health Score Trend (line chart)
-- Error Distribution (bar chart)
-- Shows patterns over time
-
-**3. Cost Analysis:**
-- Before/After comparison
-- Visual savings percentage
-- Doughnut chart breakdown
-- Total savings calculation
-
-**4. Policy Impact:**
-- Context Optimizations count
-- Failures Prevented count
-- Model Selections count
-- Pie chart distribution
-
-**5. Usage Patterns:**
-- Peak Hour identification
-- Busiest Day
-- Peak Period analysis
-
-**6. Time Range Filter:**
-- 7 Days - Last week
-- 30 Days - Last month
-- 60 Days - Last 2 months
-- 90 Days - Last quarter
-
-**Use Cases:**
-- ✅ **Executive Reports** - High-level overview
-- ✅ **Trend Spotting** - Identify patterns
-- ✅ **Performance Review** - Month-over-month comparison
-- ✅ **Cost Justification** - Show ROI
-- ✅ **System Health** - Long-term health tracking
-
-### **Custom Alert Thresholds** 🔔
-
-Set your own alert limits!
-
-**Access:**
-```
-URL: http://localhost:5000/settings
-Section: Alert Thresholds
-```
-
-**Available Thresholds:**
-
-**1. Health Score Threshold (0-100%):**
-- Default: 70%
-- Alert when health score falls below this value
-- Severity: Warning (50-70%), Critical (<50%)
-
-**2. Error Count Threshold (per hour):**
-- Default: 10 errors/hour
-- Alert when errors exceed this count
-- Severity: Warning
-
-**3. Context Usage Threshold (50-100%):**
-- Default: 85%
-- Alert when context usage exceeds this
-- Severity: Warning
-
-**4. Daemon Down Alert (on/off):**
-- Default: On
-- Alert when any daemon stops running
-- Severity: Critical
-
-**How to Configure:**
-1. Go to **Settings** page
-2. Scroll to **"Alert Thresholds"** section
-3. Use sliders to adjust thresholds
-4. Toggle daemon alert on/off
-5. Click **"Save Alert Thresholds"**
-6. Alerts checked every 30 seconds
-
-**Alert Checking:**
+#### 2. Install Python Dependencies
 ```bash
-# API Endpoint
-GET /api/check-alerts
+pip install -r requirements.txt
+```
 
-# Response
+This installs:
+- Flask 3.0 - Web framework
+- Flask-SocketIO 5.3.6 - Real-time updates
+- psutil 5.9.8 - Process monitoring
+- NumPy 1.24.3 - Statistical analysis
+- bcrypt 4.0.1 - Password hashing
+- openpyxl 3.1.2 - Excel export
+- reportlab 4.0.4 - PDF export
+- flasgger 0.9.7.1 - API docs
+- Twilio 8.10.0 - SMS alerts
+- python-engineio 4.8.0 - Engine.IO
+- python-socketio 5.10.0 - Socket.IO
+- simple-websocket 1.0.0 - WebSocket
+- wsproto 1.2.0 - WebSocket protocol
+- h11 0.14.0 - HTTP/1.1
+
+#### 3. Verify Installation
+```bash
+python verify_enhancements.py
+```
+
+Expected output:
+```
+✓ All imports successful
+✓ Flask app initialized
+✓ All utilities loaded
+✓ System ready to run
+```
+
+---
+
+## Configuration
+
+### Application Settings
+
+Edit `app.py` to customize:
+
+```python
+# Secret key for session management
+app.secret_key = 'your-secret-key-here'
+
+# SocketIO CORS settings
+socketio = SocketIO(app, cors_allowed_origins="*")
+```
+
+### Memory System Configuration
+
+**Location:** `~/.claude/memory/`
+
+**Key Configuration Files:**
+- `CLAUDE.md` - Global configuration
+- `user-preferences.json` - User preferences
+- `failure-kb.json` - Failure knowledge base
+- `skills-registry.json` - Skill registry
+- `cross-project-patterns.json` - Pattern library
+
+### Email/SMS Alerts
+
+Configure in Settings page (http://localhost:5000/settings):
+
+**Email Settings:**
+- SMTP Server
+- SMTP Port
+- Username
+- Password
+- From Email
+
+**SMS Settings (Twilio):**
+- Account SID
+- Auth Token
+- From Phone Number
+
+---
+
+## Memory System Setup
+
+### First Time Setup
+
+#### Windows Auto-Startup (One-Time)
+```powershell
+# Run this once to auto-start all daemons on login
+powershell -ExecutionPolicy Bypass -File ~/.claude/memory/setup-windows-startup.ps1
+```
+
+This creates:
+- ✅ Startup batch script
+- ✅ Silent wrapper (no console window)
+- ✅ Task Scheduler entry
+- ✅ All 8-9 daemons auto-start on Windows login
+
+#### Linux/Mac Setup
+```bash
+# Add to ~/.bashrc or ~/.zshrc
+~/.claude/memory/startup-hook.sh
+```
+
+### Verify Installation
+
+```bash
+# Check system health
+bash ~/.claude/memory/verify-system.sh
+
+# View dashboard
+bash ~/.claude/memory/dashboard-v2.sh
+
+# Check daemon status
+python ~/.claude/memory/daemon-manager.py --status-all
+```
+
+**Expected Result:** 8/8 or 9/9 daemons running ✅
+
+### Daily Usage
+
+**At Session Start (MANDATORY):**
+```bash
+# Single command - does everything!
+bash ~/.claude/memory/session-start.sh
+```
+
+This automatically:
+1. ✅ Starts auto-recommendation daemon (9th daemon)
+2. ✅ Checks all 9 daemon PIDs and status
+3. ✅ Shows latest recommendations (model, skills, agents)
+4. ✅ Shows context status (OK/WARNING/CRITICAL)
+5. ✅ Shows optimizations needed
+6. ✅ Provides complete system health summary
+
+**Alternative (Quick Check):**
+```bash
+# Just check latest recommendations
+python ~/.claude/memory/check-recommendations.py
+```
+
+### During Work
+
+The system works automatically:
+- ✅ Context monitored every 10 min
+- ✅ Sessions auto-saved every 15 min
+- ✅ Preferences learned every 20 min
+- ✅ Skills suggested every 5 min
+- ✅ Failures prevented on every tool call
+- ✅ Git commits triggered on completion
+- ✅ Token optimization applied continuously
+
+**You just code - the system handles everything!**
+
+---
+
+## Running the Application
+
+### Start the Server
+
+```bash
+python app.py
+```
+
+Expected output:
+```
+ * Running on http://127.0.0.1:5000
+ * SocketIO server started
+ * Dashboard ready at http://localhost:5000
+```
+
+### Access the Dashboard
+
+1. Open browser: http://localhost:5000
+2. Login:
+   - Username: `admin`
+   - Password: `admin`
+3. Explore the dashboard!
+
+### Production Deployment
+
+For production, use a WSGI server:
+
+```bash
+# Install gunicorn
+pip install gunicorn
+
+# Run with gunicorn
+gunicorn -w 4 -b 0.0.0.0:5000 --worker-class eventlet app:app
+```
+
+Or use Docker:
+
+```dockerfile
+FROM python:3.9-slim
+
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install -r requirements.txt
+
+COPY . .
+
+CMD ["gunicorn", "-w", "4", "-b", "0.0.0.0:5000", "--worker-class", "eventlet", "app:app"]
+```
+
+---
+
+## How to Use
+
+### Dashboard Navigation
+
+#### Main Dashboard
+- **System Health Score**: Overall health (0-100)
+- **Daemon Status**: All 8-9 daemons
+- **Policy Enforcement**: Recent policy activity
+- **Context Usage**: Real-time token consumption
+- **Model Distribution**: Haiku/Sonnet/Opus usage
+
+#### Memory System Page
+- **Daemon Health Grid**: Visual daemon status
+- **Policy Compliance**: All 12 policies
+- **Context Optimization**: Cache statistics
+- **Failure Prevention**: Auto-fix tracking
+- **Session Memory**: Active sessions
+- **Git Activity**: Recent commits
+
+#### Analytics Page
+- **Cost Analysis**: Model usage and costs
+- **Performance Metrics**: Response times
+- **Token Optimization**: Savings metrics
+- **Historical Trends**: Time-series charts
+
+#### Anomaly Detection Page
+- **AI Detection**: 6 ML algorithms
+- **Anomaly List**: Recent anomalies
+- **Insights**: Pattern analysis
+- **Management**: Acknowledge/resolve
+
+#### Predictive Analytics Page
+- **Forecasting**: 5 algorithms
+- **Capacity Planning**: Breach prediction
+- **Time Series**: Future projections
+- **Recommendations**: AI insights
+
+#### Alert Routing Page
+- **Routing Rules**: Configure routing
+- **Escalation Levels**: Set up escalation
+- **On-Call Schedule**: Weekly rotation
+- **Alert History**: Track alerts
+
+#### Logs Page
+- **Real-time Logs**: Live log streaming
+- **Filter Logs**: By daemon, level, date
+- **Export Logs**: CSV, Excel, PDF
+
+#### Settings Page
+- **Email Alerts**: Configure SMTP
+- **SMS Alerts**: Configure Twilio
+- **Themes**: 6 custom themes
+- **Alert Rules**: Quiet hours, rate limiting
+
+### Widget Builder
+
+#### Create Widget
+1. Click "Widget Builder" in sidebar
+2. Drag components from palette
+3. Configure properties
+4. Preview in real-time
+5. Edit HTML/CSS/JS code
+6. Save widget
+
+#### Publish to Marketplace
+1. Click "Publish to Marketplace"
+2. Fill in details (name, description, category)
+3. Set price (free or paid)
+4. Submit for review
+5. Widget appears in marketplace
+
+#### Collaborate on Widget
+1. Open widget in builder
+2. Click "Start Collaboration"
+3. Share session code with team
+4. Edit together in real-time
+5. See live cursors and changes
+6. Chat with collaborators
+7. Lock lines to prevent conflicts
+
+#### Version Control
+1. View version timeline
+2. Compare versions (diff viewer)
+3. Rollback to previous version
+4. Add commit messages
+
+#### Comments & Discussions
+1. Add comments to widget
+2. @mention other users
+3. React with emojis
+4. Reply to comments (threaded)
+5. Get notifications on mentions
+
+---
+
+## API Reference
+
+### Memory System APIs
+
+#### Get Health Statistics
+```http
+GET /api/memory-system/health
+```
+
+**Response:**
+```json
 {
-  "success": true,
-  "alert_count": 2,
-  "alerts": [
+  "overall_health_score": 85,
+  "health_status": "healthy",
+  "daemon_health": {
+    "running": 8,
+    "total": 8,
+    "percentage": 100
+  },
+  "policy_enforcement": {
+    "active_policies": 10,
+    "recent_enforcements": 45
+  },
+  "context_optimization": {
+    "cache_hits": 120,
+    "token_savings": 60000
+  }
+}
+```
+
+#### Get Daemon Status
+```http
+GET /api/memory-system/daemons
+```
+
+**Response:**
+```json
+{
+  "daemons": [
     {
-      "type": "health_score",
-      "severity": "warning",
-      "message": "Health score is 65%",
-      "value": 65,
-      "threshold": 70
+      "name": "context-daemon",
+      "status": "running",
+      "pid": 12345,
+      "last_activity": "2026-02-15T10:30:00",
+      "uptime_hours": 24.5
     }
   ]
 }
 ```
 
-**Active Alerts Display:**
-- Shows in Settings page below threshold controls
-- Updates automatically every 30 seconds
-- Color-coded by severity (yellow=warning, red=critical)
-- Lists all currently triggered alerts
+#### Get Policy Status
+```http
+GET /api/memory-system/policies
+```
 
-**Use Cases:**
-- ✅ **Proactive Monitoring** - Catch issues early
-- ✅ **Custom Standards** - Set your own limits
-- ✅ **Team Alerts** - Different teams, different thresholds
-- ✅ **Testing** - Lower thresholds during testing
-- ✅ **Production** - Stricter thresholds in production
+**Response:**
+```json
+{
+  "policies": [
+    {
+      "name": "Core Skills Mandate",
+      "status": "active",
+      "enforcements": 150,
+      "last_enforcement": "2026-02-15T10:25:00"
+    }
+  ]
+}
+```
+
+### Anomaly Detection APIs
+
+#### Get Anomalies
+```http
+GET /api/anomaly-detection/anomalies
+```
+
+#### Acknowledge Anomaly
+```http
+POST /api/anomaly-detection/anomalies/{id}/acknowledge
+```
+
+#### Resolve Anomaly
+```http
+POST /api/anomaly-detection/anomalies/{id}/resolve
+Content-Type: application/json
+
+{
+  "resolution_notes": "Resolved by scaling resources"
+}
+```
+
+### Predictive Analytics APIs
+
+#### Get Forecast
+```http
+GET /api/predictive-analytics/forecast/{metric_name}?horizon=24h&algorithm=ensemble
+```
+
+#### Get Capacity Planning
+```http
+GET /api/predictive-analytics/capacity-planning/{metric_name}?threshold=80
+```
+
+### Alert Routing APIs
+
+#### Create Routing Rule
+```http
+POST /api/alert-routing/rules
+Content-Type: application/json
+
+{
+  "name": "Critical Alerts to Ops Team",
+  "conditions": {
+    "severity": "critical",
+    "metric_type": "cpu"
+  },
+  "actions": {
+    "notify": ["ops@example.com"],
+    "escalate_after_minutes": 15
+  }
+}
+```
+
+#### Get On-Call Schedule
+```http
+GET /api/alert-routing/on-call-schedule
+```
+
+### Widget Collaboration APIs
+
+#### Start Collaboration Session
+```http
+POST /api/widgets/{id}/collaborate/start
+```
+
+#### Get Widget Versions
+```http
+GET /api/widgets/{id}/versions
+```
+
+#### Create Version
+```http
+POST /api/widgets/{id}/versions
+Content-Type: application/json
+
+{
+  "commit_message": "Added new chart component"
+}
+```
+
+#### Get Version Diff
+```http
+GET /api/widgets/{id}/versions/{v1}/diff/{v2}
+```
+
+#### Add Comment
+```http
+POST /api/widgets/{id}/comments
+Content-Type: application/json
+
+{
+  "content": "Great widget! @john consider adding dark mode support",
+  "parent_id": null
+}
+```
+
+#### Get Trending Widgets
+```http
+GET /api/widgets/trending?period=7d&limit=10
+```
+
+### Complete API Documentation
+
+Full Swagger documentation available at: **http://localhost:5000/api/docs**
 
 ---
 
-## 🌟 Why This Was Built
+## Metrics Tracked
 
-The Claude Memory System v2.0 is a sophisticated automation framework with 15 policies, 8 daemons, and multiple optimization systems. However, monitoring all these components required:
+### System Metrics
+- **CPU Usage**: Daemon CPU consumption
+- **Memory Usage**: Daemon memory consumption
+- **Disk Usage**: Session storage size
+- **Network Usage**: API calls and bandwidth
 
-- ✅ Running multiple command-line scripts
-- ✅ Manually checking log files
-- ✅ Calculating cost savings manually
-- ✅ No visual representation of system health
-- ✅ Difficult to see optimization impact
+### Context Metrics
+- **Context Usage**: Token consumption percentage
+- **Cache Hit Rate**: Cache efficiency
+- **Token Savings**: Estimated tokens saved
+- **Optimizations Applied**: Count of optimizations
 
-**Claude Monitoring System solves all these problems** by providing:
-- 📊 **Unified Dashboard** - All metrics in one place
-- 💰 **Cost Comparison** - See exactly how much you're saving
-- 🛡️ **Policy Monitoring** - Real-time policy status
-- 📝 **Log Analyzer** - Search and analyze logs visually
-- 🎨 **Professional UI** - Modern, responsive design
+### Policy Metrics
+- **Enforcement Count**: Times each policy applied
+- **Compliance Rate**: Policy adherence percentage
+- **Violations**: Policy violations detected
 
----
+### Daemon Metrics
+- **Uptime**: Running time for each daemon
+- **Last Activity**: Timestamp of last activity
+- **Restart Count**: Number of restarts
+- **Error Count**: Errors encountered
 
-## ✨ Features
+### Model Metrics
+- **Haiku Usage**: Percentage and count
+- **Sonnet Usage**: Percentage and count
+- **Opus Usage**: Percentage and count
+- **Total Requests**: All API requests
+- **Cost Breakdown**: Estimated costs
 
-### 1. **Main Dashboard** 🚀 REAL-TIME
-- System health score (0-100%)
-- Real-time daemon status (8/8 running)
-- Active policies count
-- Recent activity feed
-- Policy hit statistics
-- **🔥 v2.3**: Real-time WebSocket updates (10s intervals)
-- **🔥 v2.3**: Drag-and-drop widget reordering
-- **v2.2**: Extended historical data (7/30/60/90 days)
-- **v2.2**: Custom widget visibility controls
-- **v2.2**: Customize button in header
-- **v2.2**: Persistent widget preferences
+### Failure Metrics
+- **Failures Prevented**: Total failures caught
+- **Auto-Fixes Applied**: Automatic corrections
+- **Patterns Learned**: Knowledge base size
+- **Success Rate**: Prevention success rate
 
-### 2. **Analytics Dashboard** 📊 NEW v2.4
-- **Comprehensive Analytics** - Dedicated analytics page
-- **Trend Analysis** - Multi-period comparisons
-- **Key Metrics Cards** - Health, errors, uptime, effectiveness
-- **Interactive Charts** - 6+ chart types (line, bar, pie, doughnut)
-- **Cost Analysis** - Before/after comparison with savings
-- **Policy Impact** - Effectiveness breakdown by type
-- **Usage Patterns** - Peak hours and busy periods
-- **Time Range Filters** - 7/30/60/90 day views
-- **Export Options** - Excel and PDF export
+### Session Metrics
+- **Active Sessions**: Sessions in last 7 days
+- **Total Sessions**: All project sessions
+- **Pruned Sessions**: Cleaned up sessions
+- **Storage Size**: Total storage used
 
-### 3. **Cost Comparison**
-- **Before vs After** optimization comparison
-- Token usage reduction visualization
-- Cost savings calculator
-- Efficiency score metrics
-- Optimization impact analysis
-- Visual charts for easy understanding
+### Git Metrics
+- **Total Commits**: All auto-commits
+- **Commits Today**: Today's commits
+- **Commits This Week**: Weekly commits
+- **Commit Frequency**: Average per day
 
-### 4. **Policy Monitoring**
-- All 6 policies status at a glance
-- Phase-wise implementation tracking
-- Policy execution history
-- Success rate metrics
-- Last triggered timestamps
-- Filterable views (all/active/inactive)
-
-### 5. **Log Analyzer**
-- View all log files in one place
-- Search functionality
-- Filter by level (ERROR/WARNING/INFO/DEBUG)
-- Terminal-style viewer with syntax highlighting
-- Real-time log statistics
-- Error trend analysis
-- Top issues identification
-
-### 6. **Session Tracking**
-- **Unique Session IDs** - Each session gets a unique identifier
-- **Current Session Monitoring** - Real-time metrics for active session
-- **Session History** - Last 10 completed sessions
-- **Session Comparison** - Compare current vs last session
-- **Metrics Tracking**:
-  - Policies hit
-  - Context optimizations
-  - Failures prevented
-  - Model switches
-  - Tokens used
-  - Errors encountered
-- **Duration Tracking** - Monitor how long each session lasts
-- **End Session** - Manually end and save session data
+### Widget Metrics
+- **Total Widgets**: All widgets created
+- **Published Widgets**: Marketplace widgets
+- **Downloads**: Widget download count
+- **Ratings**: Average rating
+- **Comments**: Comment count
+- **Active Collaborations**: Live collaboration sessions
 
 ---
 
-## 🚀 Complete Setup Guide
-
-### Prerequisites
-
-- Python 3.7 or higher
-- Git (for cloning)
-- Windows/Linux/Mac compatible
-
-### **Option 1: Quick Setup (Recommended)** ⭐
-
-**This repo includes EVERYTHING - no separate downloads needed!**
-
-### Step-by-Step Installation
-
-#### **Step 1: Clone the Repository**
-```bash
-git clone https://github.com/piyushmakhija28/claude-monitoring-system.git
-cd claude-monitoring-system
-```
-
-#### **Step 2: Setup Claude Memory System** 🎯
-
-**IMPORTANT**: This repo includes all 139 Claude Memory System v2.2.0 files in the `memory_files/` folder!
-
-```bash
-# Windows (PowerShell)
-# Copy all scripts
-xcopy /E /I /Y memory_files\scripts\* %USERPROFILE%\.claude\memory\scripts\
-# Copy all policies
-xcopy /E /I /Y memory_files\policies\* %USERPROFILE%\.claude\memory\
-# Copy all daemons
-xcopy /E /I /Y memory_files\daemons\* %USERPROFILE%\.claude\memory\
-# Copy all docs
-xcopy /E /I /Y memory_files\docs\* %USERPROFILE%\.claude\memory\docs\
-# Copy CLAUDE.md
-copy memory_files\CLAUDE.md %USERPROFILE%\.claude\CLAUDE.md
-
-# Linux/Mac
-# Copy all scripts
-cp -r memory_files/scripts/* ~/.claude/memory/scripts/
-# Copy all policies
-cp -r memory_files/policies/* ~/.claude/memory/
-# Copy all daemons
-cp -r memory_files/daemons/* ~/.claude/memory/
-# Copy all docs
-cp -r memory_files/docs/* ~/.claude/memory/docs/
-# Copy CLAUDE.md
-cp memory_files/CLAUDE.md ~/.claude/CLAUDE.md
-
-# Create required directories
-cd ~/.claude/memory
-mkdir -p .pids .restarts .cache .state logs sessions
-```
-
-**📖 Detailed Overview**: See [`memory_files/README.md`](memory_files/README.md) for complete file listing and documentation.
-
-#### **Step 3: Initialize the System**
-```bash
-# Start all 8 daemons
-bash ~/.claude/memory/startup-hook.sh
-
-# OR start daemons individually (Windows compatible)
-cd ~/.claude/memory
-python daemons/context-daemon.py &
-python daemons/session-auto-save-daemon.py &
-python daemons/preference-tracker-daemon.py &
-python daemons/skill-auto-suggester.py &
-python daemons/commit-daemon.py &
-python daemons/session-pruning-daemon.py &
-python daemons/pattern-detection-daemon.py &
-python daemons/failure-prevention-daemon.py &
-
-# Verify everything is working
-bash ~/.claude/memory/verify-system.sh
-# Expected: "✅ FULLY OPERATIONAL"
-```
-
-#### **Step 4: Install Dashboard Dependencies**
-```bash
-# Go back to dashboard directory
-cd claude-monitoring-system
-
-# Install Flask
-pip install -r requirements.txt
-```
-
-#### **Step 5: Run the Dashboard**
-```bash
-python app.py
-```
-
-#### **Step 6: Access the Dashboard**
-```
-URL: http://localhost:5000
-Username: admin
-Password: admin
-```
-
-**🎉 Done! You now have:**
-- ✅ Complete Claude Memory System v2.2.0 running (139 files)
-- ✅ 8 daemons active with PID tracking
-- ✅ All 10 policies automated and enforced
-- ✅ Professional monitoring dashboard with Memory System integration
-- ✅ Real-time daemon health monitoring
-- ✅ Policy enforcement tracking
-- ✅ Context optimization metrics
-- ✅ Failure prevention statistics
-- ✅ Model selection distribution analytics
-- ✅ Session memory tracking
-- ✅ Git auto-commit activity monitoring
-- ✅ System health scoring
-- ✅ AI-powered anomaly detection
-- ✅ Predictive forecasting
-- ✅ Custom alert routing
-- ✅ Cost comparison and savings
-- ✅ Log analyzer
-
----
-
-### **Option 2: Dashboard Only** (If you already have Claude Memory System)
-
-If you already have Claude Memory System v2.0 installed:
-
-```bash
-git clone https://github.com/piyushmakhija28/claude-monitoring-system.git
-cd claude-monitoring-system
-pip install -r requirements.txt
-python app.py
-```
-
----
-
-## 📊 What You'll See
-
-### Dashboard Overview (v2.12)
-```
-┌─────────────────────────────────────────────────────────────────┐
-│ 🎯 System Health: 100%  │  🤖 Daemons: 8/8  │  📋 Policies: 10 │
-├─────────────────────────────────────────────────────────────────┤
-│ 🧠 Memory System Integration Dashboard                          │
-│  ├─ Daemon Health: All 8 daemons running with PID tracking     │
-│  ├─ Policy Enforcement: 10 policies active, 1,234 hits today   │
-│  ├─ Context Optimization: 87% cache hit rate, 50K tokens saved │
-│  ├─ Failure Prevention: 45 failures prevented, 23 auto-fixes   │
-│  ├─ Model Selection: Haiku 42%, Sonnet 55%, Opus 3%            │
-│  ├─ Session Memory: 15 active sessions, 150MB storage          │
-│  └─ Git Auto-Commit: 67 commits today, 420 this week           │
-├─────────────────────────────────────────────────────────────────┤
-│ 📈 Live Metrics Chart (Auto-refresh every 30s)                  │
-│  • CPU Usage, Memory Usage, Disk I/O, Network                  │
-│  • Anomaly Detection with AI-powered alerts                    │
-├─────────────────────────────────────────────────────────────────┤
-│ 🔮 Predictive Analytics                                         │
-│  • 24h/72h/7-day forecasting with confidence intervals         │
-│  • Capacity breach predictions and recommendations             │
-├─────────────────────────────────────────────────────────────────┤
-│ 🚨 Alert Routing & Escalation                                   │
-│  • Custom routing rules with conditional logic                 │
-│  • Multi-level escalation policies                             │
-│  • On-call schedule management                                 │
-├─────────────────────────────────────────────────────────────────┤
-│ 📝 Recent Activity Feed & Policy Status                         │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-### Cost Comparison
-```
-┌─────────────────────────────────────────────────────┐
-│ BEFORE Optimization:                                 │
-│ • Tokens: 5,000,000                                 │
-│ • Cost: $345.00                                     │
-│                                                     │
-│ AFTER Optimization:                                  │
-│ • Tokens: 3,000,000 (40% reduction)                │
-│ • Cost: $207.00                                     │
-│                                                     │
-│ 💰 SAVINGS: $138.00 (40%)                           │
-└─────────────────────────────────────────────────────┘
-```
-
----
-
-## 🎯 Key Metrics Tracked
-
-### System Performance Metrics
-| Metric | Description | Impact |
-|--------|-------------|--------|
-| **System Health Score** | Overall system health (0-100%) | 100% = Perfect |
-| **CPU/Memory/Disk** | Resource utilization | <80% = Healthy |
-| **Network I/O** | Network traffic monitoring | Real-time tracking |
-| **Anomalies Detected** | AI-powered anomaly detection | Auto-alerts |
-| **Forecast Accuracy** | Predictive analytics confidence | 85-95% typical |
-
-### Memory System Metrics (v2.12)
-| Metric | Description | Impact |
-|--------|-------------|--------|
-| **Daemon Health** | Running daemons count | 8/8 = Healthy |
-| **Policy Enforcement** | Total policy executions | Higher = More automation |
-| **Context Cache Hits** | Successful cache retrievals | >80% = Optimal |
-| **Token Savings** | Tokens saved through optimization | ~500 per cache hit |
-| **Failures Prevented** | Auto-fixed failures | Higher = Better protection |
-| **Auto-Fixes Applied** | Automatic corrections | Pattern-based fixes |
-| **Model Distribution** | Haiku/Sonnet/Opus usage | Policy compliance |
-| **Session Activity** | Active vs archived sessions | Storage efficiency |
-| **Git Auto-Commits** | Automated commit frequency | Continuous backups |
-| **Cost Savings** | Money saved through optimization | 30-50% reduction |
-
----
-
-## 💡 How It Works
-
-### Architecture
-
-```
-Claude Monitoring System v2.12 (Flask)
-    ↓
-    ├── app.py (Main Flask application with SocketIO)
-    ├── utils/
-    │   ├── metrics.py (System metrics collector)
-    │   ├── log_parser.py (Log analyzer)
-    │   ├── policy_checker.py (Policy status checker)
-    │   ├── memory_system_monitor.py (Memory System v2.2.0 integration) ⭐ NEW
-    │   ├── anomaly_detector.py (AI-powered anomaly detection)
-    │   ├── predictive_analytics.py (Forecasting engine)
-    │   └── alert_routing.py (Alert routing and escalation)
-    ├── templates/
-    │   ├── dashboard.html (Main dashboard with Memory System stats)
-    │   ├── comparison.html (Cost comparison)
-    │   ├── policies.html (Policy monitoring)
-    │   ├── logs.html (Log analyzer)
-    │   ├── anomaly-detection.html (Anomaly dashboard) ⭐
-    │   ├── predictive-analytics.html (Forecasting dashboard) ⭐
-    │   └── alert-routing.html (Alert management) ⭐
-    ├── memory_files/ (139 Claude Memory System v2.2.0 files) ⭐ NEW
-    │   ├── scripts/ (81 automation scripts)
-    │   ├── policies/ (10 policy files)
-    │   ├── daemons/ (8 daemon scripts)
-    │   ├── docs/ (48 documentation files)
-    │   ├── CLAUDE.md (Global configuration)
-    │   └── README.md (Complete file documentation)
-    └── Reads from: ~/.claude/memory/
-        ├── .pids/ (Daemon PID files)
-        ├── logs/ (All daemon and policy logs)
-        ├── .cache/ (Context optimization cache)
-        ├── sessions/ (Session memory storage)
-        ├── failure-kb.json (Failure knowledge base)
-        └── All policy enforcement data
-```
-
-### Data Sources
-
-The dashboard reads from the actual Claude Memory System:
-- **Metrics**: Calls Python scripts in `~/.claude/memory/`
-- **Logs**: Reads from `~/.claude/memory/logs/`
-- **Status**: Checks PID files, KB files, config files
-- **Real-time**: Auto-refreshes every 30 seconds
-
----
-
-## 🛠️ Tech Stack
-
-### Backend
-- **Framework**: Flask 3.0 (Python) + Flask-SocketIO 5.3.6
-- **Real-time**: Socket.IO (WebSocket support)
-- **API Docs**: Swagger/Flasgger (OpenAPI 3.0)
-- **Security**: bcrypt 4.1.2 (password hashing)
-- **Process Monitoring**: psutil 5.9.8 (cross-platform daemon monitoring) ⭐
-- **Analytics**: NumPy 1.24.3 (statistical forecasting) ⭐
-- **Notifications**: Twilio 8.10.0 (SMS/email alerts)
-- **Export**: openpyxl 3.1.2 (Excel), ReportLab 4.0.9 (PDF)
-
-### Frontend
-- **UI Framework**: Bootstrap 5 + Font Awesome 6.4
-- **Charts**: Chart.js (6+ chart types + real-time updates)
-- **Drag-and-Drop**: SortableJS
-- **Icons**: Font Awesome 6.4
-- **Design**: Modern gradient UI (#667eea to #764ba2)
-- **Responsive**: Mobile-first design
-
-### Memory System Integration (v2.12)
-- **Daemon Monitoring**: PID tracking with psutil
-- **Policy Enforcement**: Real-time policy hit tracking
-- **Context Optimization**: Cache hit rate monitoring
-- **Failure Prevention**: Pattern-based auto-fix system
-- **Model Selection**: Haiku/Sonnet/Opus distribution tracking
-- **Session Memory**: Active session monitoring
-- **Git Auto-Commit**: Commit frequency analytics
-
----
-
-## 📦 Project Structure
+## Project Structure
 
 ```
 claude-monitoring-system/
-├── app.py                  # Main Flask application with SocketIO
-├── requirements.txt        # Python dependencies (14 packages)
-├── README.md              # Complete documentation
+├── app.py                          # Main Flask application (3,560 lines)
+├── requirements.txt                # Python dependencies
+├── verify_enhancements.py          # Installation verification
+├── LICENSE                         # MIT License
+├── README.md                       # This file
 │
-├── utils/                 # Backend utilities
-│   ├── __init__.py
-│   ├── metrics.py         # System metrics collector
-│   ├── log_parser.py      # Log analyzer
-│   ├── policy_checker.py  # Policy status checker
-│   ├── memory_system_monitor.py  # Memory System v2.2.0 integration ⭐
-│   ├── anomaly_detector.py       # AI anomaly detection ⭐
-│   ├── predictive_analytics.py   # Forecasting engine ⭐
-│   └── alert_routing.py          # Alert routing & escalation ⭐
+├── templates/                      # HTML templates
+│   ├── base.html                   # Base template with navigation
+│   ├── dashboard.html              # Main dashboard
+│   ├── login.html                  # Login page
+│   ├── policies.html               # Policy monitoring
+│   ├── logs.html                   # Log viewer
+│   ├── sessions.html               # Session tracking
+│   ├── analytics.html              # Analytics page
+│   ├── anomaly-detection.html      # Anomaly detection
+│   ├── predictive-analytics.html   # Forecasting
+│   ├── alert-routing.html          # Alert routing
+│   ├── notifications.html          # Notification center
+│   ├── settings.html               # Settings page
+│   ├── widgets.html                # Widget list
+│   ├── widget-builder.html         # Widget builder
+│   ├── community-marketplace.html  # Marketplace
+│   ├── comparison.html             # Comparison tool
+│   ├── 404.html                    # Error page
+│   └── 500.html                    # Error page
 │
-├── templates/             # Frontend templates
-│   ├── base.html          # Base template with navigation
-│   ├── login.html         # Login page
-│   ├── dashboard.html     # Main dashboard (Memory System stats) ⭐
-│   ├── comparison.html    # Cost comparison
-│   ├── policies.html      # Policy monitoring (10 policies) ⭐
-│   ├── logs.html          # Log analyzer
-│   ├── session-tracker.html    # Session tracking
-│   ├── mobile-dashboard.html   # Mobile view
-│   ├── widgets.html            # Widget builder
-│   ├── community-marketplace.html  # Community hub
-│   ├── anomaly-detection.html      # Anomaly dashboard ⭐
-│   ├── predictive-analytics.html   # Forecasting ⭐
-│   └── alert-routing.html          # Alert management ⭐
+├── static/                         # Static files
+│   ├── css/                        # Stylesheets
+│   │   ├── main.css                # Main styles
+│   │   ├── themes.css              # Theme styles
+│   │   └── widgets.css             # Widget styles
+│   └── js/                         # JavaScript files
+│       ├── main.js                 # Main scripts
+│       ├── widgets.js              # Widget scripts
+│       ├── collaboration.js        # Collaboration scripts
+│       └── charts.js               # Chart scripts
 │
-└── memory_files/          # Complete Claude Memory System v2.2.0 (139 files) ⭐
-    ├── scripts/           # 81 automation scripts (Python & Shell)
-    │   ├── context-*.py   # Context optimization scripts
-    │   ├── failure-*.py   # Failure prevention scripts
-    │   ├── model-*.py     # Model selection scripts
-    │   ├── policy-*.py    # Policy enforcement scripts
-    │   ├── session-*.py   # Session management scripts
-    │   └── *.sh           # Shell automation scripts
+├── utils/                          # Utility modules
+│   ├── metrics.py                  # Metrics collection
+│   ├── log_parser.py               # Log parsing
+│   ├── policy_checker.py           # Policy checking
+│   ├── session_tracker.py          # Session tracking
+│   ├── history_tracker.py          # History tracking
+│   ├── notification_manager.py     # Notifications
+│   ├── alert_sender.py             # Alert sending
+│   ├── community_widgets.py        # Widget management
+│   ├── anomaly_detector.py         # Anomaly detection
+│   ├── predictive_analytics.py     # Forecasting
+│   ├── alert_routing.py            # Alert routing
+│   ├── memory_system_monitor.py    # Memory system monitoring
+│   ├── widget_version_manager.py   # Version control
+│   ├── widget_comments_manager.py  # Comments
+│   ├── collaboration_manager.py    # Collaboration
+│   └── trending_calculator.py      # Trending algorithm
+│
+├── memory_files/                   # Memory System backup (deprecated)
+│   ├── scripts/                    # Old scripts
+│   ├── daemons/                    # Old daemon files
+│   └── policies/                   # Old policies
+│
+└── claude-memory-system/           # Memory System v2.2.0 (139 files)
+    ├── MASTER-README.md            # Complete documentation (1,500+ lines)
+    ├── CLAUDE.md                   # Global configuration
+    ├── HOW-IT-WORKS.md             # Architecture guide
+    ├── API-REFERENCE.md            # API documentation
+    ├── MEMORY-SYSTEM-QUICKSTART.md # Quick start guide
     │
-    ├── policies/          # 10 policy markdown files
-    │   ├── core-skills-mandate.md
-    │   ├── model-selection-enforcement.md
-    │   ├── proactive-consultation-policy.md
-    │   ├── session-memory-policy.md
-    │   ├── common-failures-prevention.md
-    │   ├── file-management-policy.md
-    │   ├── git-auto-commit-policy.md
-    │   ├── user-preferences-policy.md
-    │   ├── session-pruning-policy.md
-    │   └── CONTEXT-SESSION-INTEGRATION.md
+    ├── docs/                       # Java Spring Boot docs (10 files)
+    │   ├── java-project-structure.md
+    │   ├── spring-cloud-config.md
+    │   ├── secret-management.md
+    │   ├── api-design-standards.md
+    │   ├── error-handling-standards.md
+    │   ├── security-best-practices.md
+    │   ├── logging-standards.md
+    │   ├── database-standards.md
+    │   ├── java-agent-strategy.md
+    │   └── git-and-context.md
     │
-    ├── daemons/           # 8 daemon scripts
-    │   ├── context-daemon.py
-    │   ├── session-auto-save-daemon.py
-    │   ├── preference-tracker-daemon.py
-    │   ├── skill-auto-suggester.py
-    │   ├── commit-daemon.py
-    │   ├── session-pruning-daemon.py
-    │   ├── pattern-detection-daemon.py
-    │   └── failure-prevention-daemon.py
-    │
-    ├── docs/              # 48 documentation files
-    │   ├── SYSTEM-V2-OVERVIEW.md
-    │   ├── HOW-IT-WORKS.md
-    │   ├── API-REFERENCE.md
-    │   ├── TROUBLESHOOTING-V2.md
-    │   ├── Phase completion summaries (6 files)
-    │   └── Quick start guides (6+ files)
-    │
-    ├── CLAUDE.md          # Global configuration v2.2.0
-    └── README.md          # Complete file documentation
-    └── logs.html          # Log analyzer
+    ├── (daemon scripts - 8-9 files)
+    ├── (automation scripts - 81 files)
+    ├── (policy files - 12 active + 38 docs)
+    └── (configuration files - 10+ files)
 ```
 
 ---
 
-## 🔒 Security
+## Security
 
-- **Authentication**: Username/password required (admin/admin by default)
-- **Session Management**: Flask sessions with secret key
-- **Local Access**: Runs on localhost by default
-- **Read-Only**: Dashboard only reads data, doesn't modify system
+### Authentication & Authorization
 
-**⚠️ Important**: Change the default credentials in production!
+**Login System:**
+- Bcrypt password hashing
+- Session-based authentication
+- CSRF protection (Flask built-in)
+- Password change functionality
 
-Edit `app.py`:
-```python
-USERNAME = 'your_username'
-PASSWORD = 'your_secure_password'
-```
+**Default Credentials:**
+- Username: `admin`
+- Password: `admin`
+- **⚠️ Change immediately in production!**
 
----
+### XSS Protection
 
-## 🎨 Screenshots
+**Input Sanitization:**
+- All user inputs sanitized
+- HTML escaped in templates
+- Content Security Policy headers
+- Widget code sandboxing
 
-### Login Page
-Professional login with gradient background and modern card design.
+### Data Protection
 
-### Dashboard
-Real-time metrics, daemon status, policy cards, and activity feed.
+**Sensitive Data:**
+- Passwords hashed with bcrypt
+- API keys encrypted at rest
+- HTTPS recommended for production
+- No secrets in logs
 
-### Cost Comparison
-Visual comparison of before/after optimization with savings calculation.
+**Memory System Security:**
+- Local-only file access
+- No cloud uploads
+- Protected session files
+- Audit trail logging
 
-### Policies
-All 6 policies with status badges, phase tracking, and execution history.
+### Best Practices
 
-### Log Analyzer
-Terminal-style log viewer with search, filters, and syntax highlighting.
+1. **Change default password** immediately
+2. **Use HTTPS** in production
+3. **Restrict network access** (firewall)
+4. **Regular backups** of Memory System files
+5. **Monitor logs** for suspicious activity
+6. **Update dependencies** regularly
+7. **Enable 2FA** (future enhancement)
 
----
+### Security Checklist
 
-## 🔄 API Endpoints
-
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/` | GET | Redirect to dashboard or login |
-| `/login` | GET/POST | Login page (bcrypt authenticated) |
-| `/logout` | GET | Logout user |
-| `/dashboard` | GET | Main dashboard (supports `?days=7/30/60/90`) |
-| `/comparison` | GET | Cost comparison page |
-| `/analytics` | GET | **NEW** Advanced analytics dashboard |
-| `/policies` | GET | Policies status page |
-| `/logs` | GET | Log analyzer page |
-| `/settings` | GET | Settings & preferences page |
-| `/api/docs` | GET | **NEW** Swagger API documentation |
-| `/api/change-password` | POST | **NEW** Change user password |
-| `/api/logs/analyze` | POST | Analyze log file |
-| `/api/metrics/live` | GET | Get live metrics (JSON) |
-| `/api/daemon/restart/<name>` | POST | Restart daemon |
-| `/api/comparison` | GET | Get comparison data (JSON) |
-| `/api/widget-preferences` | GET/POST | Get or save widget preferences |
-| `/api/export/excel/<type>` | GET | Export to Excel (sessions/metrics/logs/analytics) |
-| `/api/export/pdf/<type>` | GET | Export to PDF (sessions/metrics/logs/analytics) |
-| `/api/alert-thresholds` | GET/POST | Get or set alert thresholds |
-| `/api/check-alerts` | GET | Check current alerts against thresholds |
-| `/widgets` | GET | Widget marketplace page |
-| `/widget-builder` | GET | Advanced widget builder with visual editor |
-| `/community-marketplace` | GET | **NEW** Community widget marketplace |
-| `/notifications` | GET | Notifications history page |
-| `/api/widgets/save` | POST | Save custom widget from builder |
-| `/api/community-widgets` | GET | **NEW** Get all community widgets |
-| `/api/community-widgets/stats` | GET | **NEW** Get marketplace statistics |
-| `/api/community-widgets/publish` | POST | **NEW** Publish widget to community |
-| `/api/community-widgets/<id>/download` | GET | **NEW** Download community widget |
-| `/api/community-widgets/<id>/rate` | POST | **NEW** Rate a community widget |
-| `/api/widgets/install` | POST | **NEW** Install a widget from marketplace |
-| `/api/widgets/installed` | GET | **NEW** Get list of installed widgets |
-| `/api/widgets/create` | POST | **NEW** Create custom widget |
-| `/api/widgets/uninstall` | POST | **NEW** Uninstall a widget |
-| `/api/notifications` | GET | **NEW** Get notifications with filters |
-| `/api/notifications/<id>/read` | POST | **NEW** Mark notification as read |
-| `/api/notifications/mark-all-read` | POST | **NEW** Mark all notifications as read |
-| `/api/notification-trends` | GET | Get notification trends (30 days) |
-| `/api/themes` | GET/POST | Get or set dashboard theme |
-| `/api/alert-config` | GET/POST | **NEW** Get or update Email/SMS alert configuration |
-| `/api/test-email` | POST | **NEW** Send test email to verify configuration |
-| `/api/test-sms` | POST | **NEW** Send test SMS to verify configuration |
-| `/api/send-alert` | POST | **NEW** Manually trigger an email/SMS alert |
-| `/anomaly-detection` | GET | **v2.9** Anomaly detection dashboard with ML insights |
-| `/api/anomalies` | GET | **v2.9** Get detected anomalies (JSON) |
-| `/api/anomalies/retrain` | POST | **v2.9** Retrain anomaly detection model |
-| `/predictive-analytics` | GET | **v2.10** Predictive forecasting dashboard |
-| `/api/forecast/<metric>/<horizon>` | GET | **v2.10** Get forecast for metric (24h/72h/7d) |
-| `/api/forecast/insights` | GET | **v2.10** Get predictive insights and recommendations |
-| `/alert-routing` | GET | **v2.11** Alert routing and escalation dashboard |
-| `/api/alerts` | GET | **v2.11** Get all alerts |
-| `/api/alerts/create` | POST | **v2.11** Create new alert |
-| `/api/alerts/<id>/acknowledge` | POST | **v2.11** Acknowledge alert |
-| `/api/alerts/<id>/resolve` | POST | **v2.11** Resolve alert |
-| `/api/routing-rules` | GET/POST | **v2.11** Get or create routing rules |
-| `/api/routing-rules/<id>` | PUT/DELETE | **v2.11** Update or delete routing rule |
-| `/api/escalation-policies` | GET/POST | **v2.11** Get or create escalation policies |
-| `/api/escalation-policies/<id>` | PUT/DELETE | **v2.11** Update or delete escalation policy |
-| `/api/on-call-schedules` | GET/POST | **v2.11** Get or create on-call schedules |
-| `/api/notification-channels` | GET/POST | **v2.11** Get or create notification channels |
-| `/api/memory-system/health` | GET | **v2.12** Get Memory System comprehensive stats ⭐ |
-| `/api/memory-system/daemons` | GET | **v2.12** Get daemon health status (8 daemons) ⭐ |
-| `/api/memory-system/policies` | GET | **v2.12** Get policy enforcement stats (10 policies) ⭐ |
-
-### **WebSocket Events** (Real-time)
-
-| Event | Direction | Description |
-|-------|-----------|-------------|
-| `connect` | Client→Server | Client connects to WebSocket |
-| `disconnect` | Client→Server | Client disconnects |
-| `connection_response` | Server→Client | Connection confirmation |
-| `request_metrics` | Client→Server | Request metrics update |
-| `metrics_update` | Server→Client | Real-time metrics data (10s interval) |
-| `error` | Server→Client | Error notifications |
+- ✅ Input validation on all forms
+- ✅ SQL injection prevention (parameterized queries)
+- ✅ XSS protection (output encoding)
+- ✅ CSRF tokens on state-changing requests
+- ✅ Password complexity requirements
+- ✅ Session timeout (30 minutes)
+- ✅ Secure cookie flags (httpOnly, secure)
+- ✅ Rate limiting on login
+- ✅ Audit logging
 
 ---
 
-## 📈 Performance
+## Troubleshooting
 
-- **Load Time**: < 2 seconds
-- **Auto-refresh**: Every 30 seconds (configurable)
-- **Memory Usage**: ~50MB
-- **CPU Usage**: < 1% (idle), ~5% (active)
-- **Concurrent Users**: Supports multiple simultaneous users
+### Common Issues
 
----
+#### Dashboard Won't Start
 
-## 🤝 Contributing
+**Error:** `ModuleNotFoundError: No module named 'flask'`
 
-This is a monitoring dashboard for Claude Memory System v2.2.0. To contribute:
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-**Areas for Contribution:**
-- Additional forecasting algorithms
-- New anomaly detection models
-- Custom alert routing patterns
-- Dashboard widgets and visualizations
-- Memory system automation scripts
-- Documentation improvements
-
----
-
-## 📝 License
-
-MIT License - See LICENSE file for details
-
-This project is part of the Claude Memory System v2.2.0.
-
----
-
-## 🙏 Acknowledgments
-
-- **TechDeveloper** - Creator and maintainer
-- Built for **Claude Memory System v2.2.0** (139 files included)
-- **Flask 3.0** + **Flask-SocketIO** for real-time backend
-- **Bootstrap 5** + **Font Awesome** for modern UI
-- **Chart.js** for beautiful data visualizations
-- **NumPy** for statistical forecasting
-- **psutil** for cross-platform process monitoring
-- **SciKit-Learn** inspiration for anomaly detection algorithms
-- **Twilio** for SMS/email notification support
-
----
-
-## 📞 Support
-
-### **Dashboard Issues**
-For issues or questions about the monitoring dashboard:
-1. Check the log analyzer in the dashboard (`/logs`)
-2. Review daemon status in Memory System Integration section
-3. Check API documentation at `/api/docs`
-4. Review console logs in browser developer tools
-
-### **Memory System Issues**
-For Claude Memory System v2.2.0 issues:
-1. Check daemon status: `python ~/.claude/memory/daemon-manager.py --status-all`
-2. Review troubleshooting guide: `memory_files/docs/TROUBLESHOOTING-V2.md`
-3. Check system health: `bash ~/.claude/memory/dashboard.sh`
-4. Verify system: `bash ~/.claude/memory/verify-system.sh`
-
-### **Getting Help**
-- **Email**: support@techdeveloper.in
-- **Website**: https://www.techdeveloper.in
-- **GitHub Issues**: https://github.com/piyushmakhija28/claude-monitoring-system/issues
-- **Documentation**: See `memory_files/docs/` for complete guides
-
----
-
-## 🚀 Quick Start Commands
-
+**Solution:**
 ```bash
-# Install dependencies
 pip install -r requirements.txt
-
-# Run dashboard
-python app.py
-
-# Access dashboard
-Open: http://localhost:5000
-Login: admin / admin
 ```
 
+#### Memory System Not Detected
+
+**Error:** "Memory system files not found"
+
+**Solution:**
+```bash
+# Deploy Memory System files
+cp -r claude-memory-system/* ~/.claude/memory/
+
+# Or on Windows
+xcopy /E /I /Y claude-memory-system\* %USERPROFILE%\.claude\memory\
+```
+
+#### Daemons Not Running
+
+**Error:** "0/8 daemons running"
+
+**Solution:**
+```bash
+# Start daemons manually
+bash ~/.claude/memory/startup-hook.sh
+
+# Or on Windows
+powershell -ExecutionPolicy Bypass -File ~/.claude/memory/setup-windows-startup.ps1
+```
+
+#### Daemon Status Shows "Not Started"
+
+**Solution:**
+```bash
+# Check daemon logs
+tail -f ~/.claude/memory/logs/daemons/context-daemon.log
+
+# Restart specific daemon
+python ~/.claude/memory/daemon-manager.py --restart context-daemon
+```
+
+#### WebSocket Connection Failed
+
+**Error:** "SocketIO connection failed"
+
+**Solution:**
+1. Check if port 5000 is blocked by firewall
+2. Try different browser
+3. Disable browser extensions
+4. Check console for errors
+
+#### High Memory Usage
+
+**Solution:**
+```bash
+# Check which daemon is using memory
+python ~/.claude/memory/daemon-manager.py --status-all
+
+# Restart all daemons
+bash ~/.claude/memory/startup-hook.sh
+```
+
+### Daemon Troubleshooting
+
+#### Check Daemon Status
+```bash
+python ~/.claude/memory/daemon-manager.py --status-all
+```
+
+#### View Daemon Logs
+```bash
+# All daemon logs
+ls ~/.claude/memory/logs/daemons/
+
+# Specific daemon
+tail -f ~/.claude/memory/logs/daemons/context-daemon.log
+```
+
+#### Restart Specific Daemon
+```bash
+python ~/.claude/memory/daemon-manager.py --restart context-daemon
+```
+
+#### Restart All Daemons
+```bash
+bash ~/.claude/memory/startup-hook.sh
+```
+
+### Memory System Troubleshooting
+
+#### Context Issues
+```bash
+# Check context status
+python ~/.claude/memory/context-monitor-v2.py --current-status
+
+# Clear cache if needed
+rm -rf ~/.claude/memory/.cache/*
+```
+
+#### Session Memory Issues
+```bash
+# Check sessions
+ls -lh ~/.claude/memory/sessions/
+
+# Archive old sessions
+python ~/.claude/memory/archive-old-sessions.py
+```
+
+#### Rollback if Needed
+```bash
+python ~/.claude/memory/rollback.py
+```
+
+### Health Checks
+
+#### Run Full Test Suite
+```bash
+python ~/.claude/memory/test-all-phases.py
+```
+
+#### Daily Health Check
+```bash
+bash ~/.claude/memory/daily-health-check.sh
+```
+
+#### Weekly Health Check
+```bash
+bash ~/.claude/memory/weekly-health-check.sh
+```
+
+#### Check for Conflicts
+```bash
+bash ~/.claude/memory/check-conflicts.sh
+```
+
+### Getting Help
+
+If you encounter issues:
+
+1. **Check logs**: `~/.claude/memory/logs/`
+2. **Run health check**: `bash ~/.claude/memory/verify-system.sh`
+3. **View dashboard**: `bash ~/.claude/memory/dashboard-v2.sh`
+4. **Read documentation**: `claude-memory-system/MASTER-README.md`
+5. **Open GitHub issue**: [Report issue](https://github.com/piyushmakhija28/claude-monitoring-system/issues)
+
 ---
 
-## 🎯 Recent Updates
+## Contributing
 
-### **🔥 v2.12 (Feb 2026) - Memory System Integration Edition** 🧠⚡
-- ✅ **Complete Memory System v2.2.0 Integration** (139 files included)
-- ✅ **8 Daemon Health Monitoring** with PID tracking and status
-- ✅ **10 Policy Enforcement Tracking** with hit counting
-- ✅ **Context Optimization Metrics** (cache hits, token savings)
-- ✅ **Failure Prevention Statistics** (auto-fixes, patterns learned)
-- ✅ **Model Selection Distribution** (Haiku/Sonnet/Opus analytics)
-- ✅ **Session Memory Tracking** (active/archived sessions)
-- ✅ **Git Auto-Commit Activity** (commit frequency analytics)
-- ✅ **System Health Scoring** (0-100 comprehensive score)
-- ✅ **Real-time Memory System Dashboard** with live updates
+We welcome contributions! Here's how you can help:
 
-### **v2.11 (Feb 2026) - Alert Routing Edition** 🚨📮
-- ✅ **Custom Alert Routing Rules** (severity, metric, time, tag-based)
-- ✅ **Multi-Level Escalation Policies** (3-level escalation)
-- ✅ **On-Call Schedule Management** (weekly rotation, time zones)
-- ✅ **Notification Channel Integration** (email, SMS, webhook, Slack)
-- ✅ **Alert Acknowledgment & Resolution** workflow
+### How to Contribute
 
-### **v2.10 (Feb 2026) - Forecasting Edition** 📈🔮
-- ✅ **Predictive Analytics Engine** (5 forecasting algorithms)
-- ✅ **Confidence Intervals** (statistical forecast accuracy)
-- ✅ **Capacity Breach Prediction** (proactive alerts)
-- ✅ **Multiple Time Horizons** (24h, 72h, 7-day forecasts)
-- ✅ **Predictive Insights & Recommendations**
+1. **Fork the repository**
+2. **Create a feature branch**
+   ```bash
+   git checkout -b feature/your-feature-name
+   ```
+3. **Make your changes**
+4. **Test thoroughly**
+   ```bash
+   python verify_enhancements.py
+   ```
+5. **Commit with descriptive message**
+   ```bash
+   git commit -m "feat: Add new feature description"
+   ```
+6. **Push to your fork**
+   ```bash
+   git push origin feature/your-feature-name
+   ```
+7. **Open a Pull Request**
 
-### **v2.9 (Feb 2026) - AI Detection Edition** 🧠🤖
-- ✅ **AI-Powered Anomaly Detection** (4 ML algorithms)
-- ✅ **Real-time Anomaly Alerts** with confidence scores
-- ✅ **Model Retraining** on-demand
-- ✅ **Anomaly History Tracking**
+### Contribution Guidelines
 
-### **Earlier Releases (v2.4 - v2.8):**
-- ✅ **Community Marketplace** for widget sharing
-- ✅ **Advanced Widget Builder** with visual editor
-- ✅ **Email & SMS Alerts** via Twilio
-- ✅ **Mobile Dashboard** optimized for mobile devices
-- ✅ **Export to Excel/PDF** professional reports
-- ✅ **Advanced Analytics Dashboard** with 6+ chart types
-- ✅ **Real-time WebSocket Updates** (10s intervals)
-- ✅ **Swagger API Documentation** interactive docs
-- ✅ **WebSocket Auto-Fallback** - Falls back to HTTP polling if WebSocket fails
-- ✅ **Connection Status Indicator** - Shows real-time vs polling status
-- ✅ **Enhanced Security** - bcrypt password hashing for all users
-- ✅ **Persistent Widget Order** - Layout saved in localStorage
+**Code Style:**
+- Follow PEP 8 for Python code
+- Use meaningful variable names
+- Add comments for complex logic
+- Include docstrings for functions
 
-**✅ From v2.2:**
-- ✅ **Extended Historical Data** - 7/30/60/90 days time range selection with interactive filters
-- ✅ **Custom Dashboard Widgets** - Show/hide any of 6 widgets, persistent preferences
-- ✅ **90-Day Data Retention** - Upgraded from 30 days for long-term trend analysis
-- ✅ **Widget Customization Modal** - Beautiful modal interface with toggle switches
-- ✅ **Dynamic Charts** - Charts adapt to selected time range automatically
-- ✅ **API Enhancements** - New endpoints for comparison data and widget preferences
+**Commit Messages:**
+- Use conventional commits format
+- `feat:` for new features
+- `fix:` for bug fixes
+- `docs:` for documentation
+- `refactor:` for code refactoring
+- `test:` for tests
 
-**✅ From v2.1:**
-- ✅ **Dark Mode Toggle** - Complete light/dark theme with smooth transitions
-- ✅ **7-Day Historical Charts** - Health score, errors, policy hits, and context usage trends
-- ✅ **Enhanced Search** - Search and filter in Sessions table with live results
-- ✅ **Export to CSV** - Sessions, metrics, and logs export functionality
-- ✅ **Custom Error Pages** - Professional 404 and 500 error pages
-- ✅ **Settings Page** - User preferences with localStorage persistence
+**Testing:**
+- Test all changes locally
+- Ensure no breaking changes
+- Add tests for new features
+- Verify dashboard loads correctly
 
-**🔮 Future Enhancements:**
-- [ ] Mobile app (iOS & Android)
-- [ ] Multi-user support with roles & permissions
-- [ ] Slack/Discord webhook notifications
-- [ ] Integration with monitoring tools (Datadog, New Relic, etc.)
-- [x] ~~Real-time collaboration on widget building~~ ✅ **COMPLETED in v2.13**
-- [x] ~~Widget version control and history~~ ✅ **COMPLETED in v2.13**
-- [x] ~~Widget comments and discussions~~ ✅ **COMPLETED in v2.13**
-- [x] ~~Featured/trending widgets section~~ ✅ **COMPLETED in v2.13**
-- [x] ~~AI-powered anomaly detection~~ ✅ **COMPLETED in v2.10**
-- [x] ~~Predictive analytics and forecasting~~ ✅ **COMPLETED in v2.11**
-- [x] ~~Custom alert routing and escalation~~ ✅ **COMPLETED in v2.12**
+**Documentation:**
+- Update README if needed
+- Add inline comments
+- Document new APIs
+- Update CHANGELOG
+
+### Areas for Contribution
+
+**High Priority:**
+- 🐛 Bug fixes
+- 📊 New metrics and charts
+- 🎨 UI/UX improvements
+- 📱 Mobile responsiveness
+- 🔒 Security enhancements
+
+**Medium Priority:**
+- ✨ New features
+- 📖 Documentation improvements
+- 🧪 Test coverage
+- ⚡ Performance optimization
+
+**Future Enhancements:**
+- 🔐 Two-factor authentication
+- 📊 Custom dashboards
+- 🌍 Multi-language support
+- 📱 Mobile app
+- 🔌 Plugin system
 
 ---
 
-**Made with ❤️ for Claude Memory System**
+## License
 
-Version: 2.8 (Community Marketplace Edition) 🌐👥
-Last Updated: 2026-02-10
-Developer: TechDeveloper (www.techdeveloper.in)
-Powered by: Claude Sonnet 4.5
+MIT License
 
-**New in v2.8:**
-- 🌐 Community widget marketplace for sharing
-- 📤 Publish widgets to global community
-- ⭐ Rating and review system (5-star)
-- 📥 Browse, search, and download community widgets
-- 📊 Community statistics dashboard
+Copyright (c) 2026 TechDeveloper
 
-**From v2.7:**
-- 🎨 Advanced widget builder with drag-and-drop interface
-- 🧩 15+ component library (charts, metrics, tables, content)
-- 🔴 Live preview canvas with real-time editing
-- 💾 Save/export custom widgets
-- 📋 Pre-built templates for quick start
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
 
-**From v2.6:**
-- 📧 Email alerts via SMTP (Gmail, Outlook, custom)
-- 📱 SMS alerts via Twilio
-- 🎯 Smart alert rules (severity, types, quiet hours, rate limiting)
-- 🧪 Test email/SMS functions
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
 
-**From v2.5:**
-- 🔔 Browser push notifications & alert history
-- 🎨 Custom dashboard themes (6 themes)
-- 🧩 Widget marketplace with 9+ widgets
-- 📱 Mobile-optimized responsive design
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
 
-**From v2.4:**
-- 📄 Export to Excel/PDF formats
-- 📈 Advanced analytics dashboard
-- 🔔 Custom alert thresholds
+---
 
-**From v2.3:**
-- ⚡ Real-time WebSocket updates
-- 📖 Swagger API documentation
-- 🔐 Change password functionality
-- 🎯 Drag-and-drop widget reordering
+## Acknowledgments
+
+**Built with:**
+- Flask - Web framework
+- Socket.IO - Real-time updates
+- Chart.js - Data visualization
+- Bootstrap - UI framework
+- NumPy - Statistical analysis
+- psutil - Process monitoring
+
+**Inspired by:**
+- Claude AI by Anthropic
+- Modern DevOps practices
+- Professional monitoring solutions
+
+**Special Thanks:**
+- Anthropic team for Claude AI
+- Open source community
+- All contributors
+
+---
+
+## Contact & Support
+
+**Developer:** TechDeveloper
+**Website:** [www.techdeveloper.in](https://www.techdeveloper.in)
+**GitHub:** [piyushmakhija28/claude-monitoring-system](https://github.com/piyushmakhija28/claude-monitoring-system)
+
+**Support:**
+- 🐛 [Report Bug](https://github.com/piyushmakhija28/claude-monitoring-system/issues)
+- ✨ [Request Feature](https://github.com/piyushmakhija28/claude-monitoring-system/issues)
+- 📖 [Documentation](./claude-memory-system/MASTER-README.md)
+- 💬 [Discussions](https://github.com/piyushmakhija28/claude-monitoring-system/discussions)
+
+---
+
+**Made with ❤️ by TechDeveloper**
+
+**⭐ Star this repo if you find it useful!**
+
+---
+
+## Version History
+
+### v2.13 (Feb 2026) - Widget Collaboration Edition
+- Real-time collaborative widget editing
+- Version control with semantic versioning
+- Comments and discussions with @mentions
+- Featured and trending widgets
+- Backend architecture complete (33%)
+
+### v2.12 (Feb 2026) - Memory System Integration
+- Complete Claude Memory System v2.2.0 integration
+- 8 daemon health monitoring
+- 10 policy enforcement tracking
+- Context optimization metrics
+- System health scoring
+
+### v2.11 (Feb 2026) - Alert Routing Edition
+- Custom routing rules
+- Multi-level escalation
+- On-call schedules
+- Notification channels
+
+### v2.10 (Feb 2026) - Forecasting Edition
+- 5 forecasting algorithms
+- Time series predictions
+- Capacity planning
+- Breach detection
+
+### v2.9 (Feb 2026) - AI Detection Edition
+- 6 ML anomaly detection algorithms
+- Ensemble detection
+- Confidence scoring
+- Anomaly management
+
+### v2.8 (Feb 2026) - Community Marketplace
+- Widget marketplace
+- Share and discover widgets
+- Rating system
+- Download tracking
+
+### v2.7 (Feb 2026) - Advanced Widget Builder
+- Drag-and-drop editor
+- 15+ components
+- Live preview
+- Code editing
+
+### v2.6 (Feb 2026) - Email & SMS Alerts
+- Email notifications (SMTP)
+- SMS alerts (Twilio)
+- Alert rules
+- History tracking
+
+### v2.5 (Feb 2026) - Mobile & Notifications
+- 6 custom themes
+- Browser notifications
+- Mobile responsive
+- Real-time updates
+
+### v2.4 (Feb 2026) - Analytics Edition
+- Cost analysis
+- Performance metrics
+- Export options
+- API documentation
+
+---
+
+**End of README** 📖
