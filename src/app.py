@@ -19,10 +19,12 @@ from services.monitoring.log_parser import LogParser
 from services.monitoring.policy_checker import PolicyChecker
 from services.monitoring.session_tracker import SessionTracker
 from services.monitoring.memory_system_monitor import MemorySystemMonitor
+from services.monitoring.performance_profiler import PerformanceProfiler
 
 # Import AI services
 from services.ai.anomaly_detector import AnomalyDetector
 from services.ai.predictive_analytics import PredictiveAnalytics
+from services.ai.bottleneck_analyzer import BottleneckAnalyzer
 
 # Import widget services
 from services.widgets.community_manager import CommunityWidgetsManager
@@ -87,6 +89,8 @@ widget_version_manager = WidgetVersionManager()
 widget_comments_manager = WidgetCommentsManager()
 collaboration_manager = CollaborationSessionManager()
 trending_calculator = TrendingCalculator()
+performance_profiler = PerformanceProfiler()
+bottleneck_analyzer = BottleneckAnalyzer()
 
 # User database (in production, use a proper database)
 # Password: 'admin' (hashed with bcrypt)
@@ -3197,6 +3201,169 @@ def create_routed_alert():
         return jsonify({'success': False, 'message': str(e)}), 500
 
 # ============================================================
+# Performance Profiling Routes
+# ============================================================
+
+@app.route('/performance-profiling')
+@login_required
+def performance_profiling():
+    """Performance Profiling Dashboard"""
+    try:
+        # Get initial data for dashboard
+        stats = performance_profiler.get_stats_summary()
+        bottlenecks = performance_profiler.get_bottlenecks()
+        slow_ops = performance_profiler.get_slow_operations(limit=20)
+        recommendations = bottleneck_analyzer.generate_recommendations(slow_ops)
+
+        return render_template('performance-profiling.html',
+                             stats=stats,
+                             bottlenecks=bottlenecks,
+                             slow_operations=slow_ops,
+                             recommendations=recommendations)
+    except Exception as e:
+        return render_template('error.html', error=str(e)), 500
+
+@app.route('/api/performance/stats')
+@login_required
+def api_performance_stats():
+    """
+    Get real-time performance statistics
+    ---
+    tags:
+      - Performance Profiling
+    responses:
+      200:
+        description: Real-time performance statistics
+    """
+    try:
+        stats = performance_profiler.get_stats_summary()
+        trends = performance_profiler.analyze_trends(days=7)
+        resource_usage = performance_profiler.get_resource_usage()
+
+        # Add resource usage to stats
+        stats['resource_usage'] = resource_usage
+
+        # Add trend data for charts
+        stats['trend_labels'] = trends.get('labels', [])
+        stats['trend_values'] = trends.get('avg_durations', [])
+
+        return jsonify({
+            'success': True,
+            'data': stats
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/performance/slow-operations')
+@login_required
+def api_slow_operations():
+    """
+    Get recent slow operations
+    ---
+    tags:
+      - Performance Profiling
+    parameters:
+      - name: threshold
+        in: query
+        type: integer
+        description: Duration threshold in milliseconds (default 2000)
+      - name: limit
+        in: query
+        type: integer
+        description: Maximum number of results (default 50)
+    responses:
+      200:
+        description: List of slow operations
+    """
+    try:
+        threshold = request.args.get('threshold', 2000, type=int)
+        limit = request.args.get('limit', 50, type=int)
+
+        slow_ops = performance_profiler.get_slow_operations(threshold, limit)
+
+        return jsonify({
+            'success': True,
+            'data': slow_ops,
+            'count': len(slow_ops)
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/performance/bottlenecks')
+@login_required
+def api_bottlenecks():
+    """
+    Get top bottlenecks by tool type
+    ---
+    tags:
+      - Performance Profiling
+    responses:
+      200:
+        description: Dictionary of bottlenecks grouped by tool
+    """
+    try:
+        bottlenecks = performance_profiler.get_bottlenecks()
+
+        return jsonify({
+            'success': True,
+            'data': bottlenecks
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/performance/recommendations')
+@login_required
+def api_recommendations():
+    """
+    Get AI-powered optimization recommendations
+    ---
+    tags:
+      - Performance Profiling
+    responses:
+      200:
+        description: List of optimization recommendations
+    """
+    try:
+        slow_ops = performance_profiler.get_slow_operations(limit=100)
+        recommendations = bottleneck_analyzer.generate_recommendations(slow_ops)
+
+        return jsonify({
+            'success': True,
+            'data': recommendations,
+            'count': len(recommendations)
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/performance/trends')
+@login_required
+def api_performance_trends():
+    """
+    Get performance trends over time
+    ---
+    tags:
+      - Performance Profiling
+    parameters:
+      - name: days
+        in: query
+        type: integer
+        description: Number of days to analyze (default 7)
+    responses:
+      200:
+        description: Historical trend data
+    """
+    try:
+        days = request.args.get('days', 7, type=int)
+        trends = performance_profiler.analyze_trends(days)
+
+        return jsonify({
+            'success': True,
+            'data': trends
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+# ============================================================
 # Memory System Integration Routes
 # ============================================================
 
@@ -3539,6 +3706,7 @@ if __name__ == '__main__':
     AI Detection: http://localhost:5000/anomaly-detection
     Forecasting: http://localhost:5000/predictive-analytics
     Alert Routing: http://localhost:5000/alert-routing
+    Performance: http://localhost:5000/performance-profiling
     Username: admin
     Password: admin
 
