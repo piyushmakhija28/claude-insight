@@ -23,6 +23,79 @@ Just clone, setup, and start using!
 
 ---
 
+## 📚 Claude Memory System Documentation
+
+**IMPORTANT**: Yeh project mein **complete Claude Memory System v2.2.0 ka documentation** bhi included hai!
+
+### 🗂️ Documentation Location
+
+**👉 [claude-memory-system/](./claude-memory-system/) folder mein complete documentation hai:**
+
+- **📖 [MASTER-README.md](./claude-memory-system/MASTER-README.md)** - Complete consolidated guide (START HERE!)
+  - 14 major sections with 100+ indexed subsections
+  - All policies, Java standards, optimization strategies
+  - Security best practices, database standards
+  - Complete command reference
+
+- **📁 [docs/](./claude-memory-system/docs/)** - Java Spring Boot Documentation (10 files)
+  - Project structure, patterns, conventions
+  - Spring Cloud Config, Secret Management
+  - API design, error handling, security
+  - Logging standards, database optimization
+
+- **📜 [policies/](./claude-memory-system/policies/)** - System Policies (12 files)
+  - Core skills mandate, model selection
+  - Failure prevention, context optimization
+  - Session memory, user preferences
+  - Git auto-commit, testing strategies
+
+### 🎯 What Can You Monitor?
+
+**Is dashboard se aap monitor kar sakte ho:**
+
+1. **📊 Context Usage** - Real-time token consumption tracking
+2. **🤖 Daemon Health** - All 8-9 daemons status (running/stopped)
+3. **🛡️ Failure Prevention** - Knowledge base stats, prevented failures
+4. **🎯 Model Usage** - Haiku/Sonnet/Opus distribution
+5. **💬 User Preferences** - Learned patterns and auto-applied choices
+6. **📈 Optimization Stats** - Token savings, cache hits
+7. **🔍 Session Memory** - Active sessions, storage usage
+8. **⚠️ Alerts** - Context warnings, daemon failures, anomalies
+
+### 🚀 Quick Links
+
+| Resource | Link |
+|----------|------|
+| **Complete Documentation** | [claude-memory-system/MASTER-README.md](./claude-memory-system/MASTER-README.md) |
+| **Java Standards** | [claude-memory-system/docs/](./claude-memory-system/docs/) |
+| **Policies** | [claude-memory-system/policies/](./claude-memory-system/policies/) |
+| **Quick Start** | [claude-memory-system/MEMORY-SYSTEM-QUICKSTART.md](./claude-memory-system/MEMORY-SYSTEM-QUICKSTART.md) |
+| **Architecture** | [claude-memory-system/HOW-IT-WORKS.md](./claude-memory-system/HOW-IT-WORKS.md) |
+
+### 💡 Benefits
+
+**Claude Memory System provides:**
+- ✅ **60-80% token savings** through intelligent optimization
+- ✅ **Self-learning failure prevention** - same error never happens twice
+- ✅ **Automatic model selection** - optimal cost/performance
+- ✅ **100% local persistent memory** - full session continuity
+- ✅ **User preference learning** - stops asking repeated questions
+- ✅ **8-9 background daemons** - continuous optimization
+- ✅ **Java Spring Boot standards** - enforced best practices
+- ✅ **Security best practices** - automatic enforcement
+
+**Is monitoring system se:**
+- ✅ **Real-time visibility** into all Memory System components
+- ✅ **AI-powered anomaly detection** for proactive alerts
+- ✅ **Predictive forecasting** for capacity planning
+- ✅ **Custom alert routing** to notify right people
+- ✅ **Beautiful dashboards** for easy understanding
+- ✅ **Historical analysis** for optimization insights
+
+**Together they make Claude Code intelligent, efficient, and reliable! 🚀**
+
+---
+
 ## 🆕 What's New in v2.13 (Feb 2026) - Widget Collaboration Edition 🤝✨
 
 ### **Widget Collaboration Features** 🤝✨ NEW!
