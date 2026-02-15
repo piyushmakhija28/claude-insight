@@ -1,4 +1,4 @@
-# 🤖 Claude Insight v2.14
+# 🤖 Claude Insight v2.15
 
 **Professional Real-time Analytics Dashboard with Complete Claude Memory System v2.2.0 Integration**
 
@@ -42,6 +42,10 @@ A comprehensive, real-time monitoring and analytics dashboard for the Claude Mem
 - [📊 Core Monitoring](#core-monitoring-features)
 - [🧠 Memory System Integration](#memory-system-integration-v212)
 - [⚡ Performance Profiling](#performance-profiling-v214)
+- [🎨 Advanced Themes & Customization](#advanced-themes--customization-v215) **NEW!**
+- [🔍 Advanced Search & Filtering](#advanced-search--filtering-v215) **NEW!**
+- [📈 ML Model Training](#ml-model-training-v215) **NEW!**
+- [🛠️ Debugging & Troubleshooting](#debugging--troubleshooting-tools-v215) **NEW!**
 - [🚨 Alert Routing](#alert-routing-escalation-v211)
 - [📈 Predictive Analytics](#predictive-analytics-v210)
 - [🤖 AI Anomaly Detection](#ai-anomaly-detection-v29)
@@ -248,6 +252,211 @@ Weighted health calculation (0-100):
 - **WebSocket Support**: Real-time updates via SocketIO
 - **Export Capabilities**: CSV/JSON export for performance data
 - **Configurable Thresholds**: Customize slow operation detection (default: 2000ms)
+
+---
+
+### Advanced Themes & Customization (v2.15)
+
+#### 🎨 14 Preset Themes
+**6 Original Themes:**
+- Default (Purple gradient)
+- Dark (High contrast slate)
+- Blue (Ocean tones)
+- Purple (Royal accents)
+- Green (Natural feel)
+- Orange (Energetic vibe)
+
+**8 NEW Themes:**
+- **Cyberpunk**: Neon pink & cyan with dark background
+- **Ocean**: Deep blue with wave accents
+- **Forest**: Deep green with nature feel
+- **Sunset**: Warm red to golden yellow gradient
+- **Nord**: Arctic blue with cool accents
+- **Tokyo Night**: Modern dark with blue & purple
+- **Dracula**: Popular dark with purple & pink
+- **Monokai**: Classic dark with vibrant colors
+
+#### 🎨 Custom Theme Builder
+**Color Customization** (8 color pickers):
+- Primary & Secondary colors
+- Background & Text colors
+- Success, Warning, Danger, Info colors
+- Live preview with instant updates
+
+**Typography Customization**:
+- **11 Font Families**: Inter, Roboto, Open Sans, Poppins, Montserrat, Lato, Nunito, Source Sans Pro, JetBrains Mono, Fira Code
+- **Font Sizes**: 12px (Small) to 18px (Extra Large)
+- **Font Weights**: Light (300) to Bold (700)
+
+**Theme Management**:
+- ✅ Save custom themes to localStorage
+- ✅ Export themes as JSON files
+- ✅ Import themes from JSON files
+- ✅ Real-time preview before applying
+- ✅ Persistent across sessions
+
+---
+
+### Advanced Search & Filtering (v2.15)
+
+#### 🔍 Global Search Engine
+**Search Across 7 Data Sources:**
+- 📋 **Logs**: System logs and performance data
+- 📅 **Sessions**: Session history and activity
+- 📜 **Policies**: Policy definitions and enforcement
+- ⚙️ **Daemons**: Daemon status and health
+- ⚡ **Performance**: Performance metrics and profiling data
+- 🚨 **Alerts**: Alert history and notifications
+- 🧩 **Widgets**: Widget configurations
+
+#### 🎯 Advanced Filtering
+- **Data Source**: Multi-select from 7 sources
+- **Date Range**: Today, Yesterday, Last 7/30/90 days, Custom range
+- **Severity Levels**: Critical, High, Medium, Low, Success
+- **Tags**: Dynamic tag filtering
+- **Sort Options**: Relevance, Date (newest/oldest), Severity, Source
+- **Result Limits**: 50, 100, 200, 500, or All results
+
+#### 💾 Saved Searches & History
+- **Save Searches**: Store frequently-used queries with filters
+- **Search History**: Auto-save last 50 searches
+- **Replay Searches**: One-click replay of previous searches
+- **Export Searches**: Share search configurations
+
+#### 📤 Export Results
+- **CSV Export**: With proper headers and formatting
+- **JSON Export**: With metadata and timestamps
+- **Excel Export**: Styled workbook with headers
+- **Bulk Actions**: Export selected or all results
+
+#### 🚀 Search Features
+- **Regex Mode**: Pattern matching support
+- **Case-Insensitive**: Smart search matching
+- **Highlighting**: Matched terms highlighted in results
+- **Pagination**: Navigate through large result sets
+- **Real-time Stats**: Search time, result count, sources searched
+
+---
+
+### ML Model Training (v2.15)
+
+#### 🧠 5-Step Training Wizard
+**Step 1: Model Selection** (6 categories, 15+ models):
+- **Anomaly Detection**: Isolation Forest, LOF, One-Class SVM
+- **Time Series Forecasting**: ARIMA, Prophet, LSTM
+- **Classification**: Random Forest, XGBoost, Neural Networks
+- **Regression**: Linear, Ridge/Lasso, SVR
+- **Clustering**: K-Means, DBSCAN, Hierarchical
+- **Custom Models**: Upload PyTorch/TensorFlow/Scikit-learn models
+
+**Step 2: Data Upload** (3 sources):
+- **File Upload**: Drag & drop CSV, JSON, Excel (max 100MB)
+- **System Data**: Logs, metrics, alerts, sessions, performance
+- **API Connection**: Connect to external data sources with auth
+
+**Step 3: Configuration**:
+- **Train/Test Split**: Adjustable slider (50-90%)
+- **Cross-Validation**: 3-fold, 5-fold, 10-fold
+- **Auto-Optimization**: Grid Search, Random Search, Bayesian Optimization
+- **Hyperparameter Tuning**: Interactive parameter configuration
+
+**Step 4: Training** (Real-time):
+- **Live Progress**: Epoch counter and progress bar
+- **Training Metrics**: Loss, accuracy, validation metrics
+- **Loss Curve**: Chart.js visualization
+- **Training Logs**: Terminal-style console with color coding
+- **Time Tracking**: Elapsed time and ETA
+
+**Step 5: Evaluation**:
+- **Performance Metrics**: Accuracy, Precision, Recall, F1-Score
+- **Confusion Matrix**: Heatmap visualization
+- **ROC Curve**: With AUC score
+- **Feature Importance**: Ranked feature contributions
+
+#### 💾 Model Management
+- **Save Models**: With name, description, tags
+- **Export Models**: Download trained models
+- **Deploy Models**: Deploy to production
+- **Model Comparison**: Compare multiple models side-by-side
+- **Saved Models List**: Quick access to trained models
+
+#### 📊 Visualization
+- **Chart.js Integration**: Beautiful, responsive charts
+- **Real-time Updates**: Live training progress
+- **Interactive Charts**: Zoom, pan, export charts
+- **Professional Design**: Clean, modern UI
+
+---
+
+### Debugging & Troubleshooting Tools (v2.15)
+
+#### 📋 Real-time Log Streaming
+- **Start/Stop/Clear Controls**: Full control over log stream
+- **Log Filters**:
+  - Level: ERROR, WARN, INFO, DEBUG
+  - Source: Daemon, API, Database, System
+  - Search: Full-text search within logs
+- **Terminal Console**: Dark theme, color-coded levels
+- **Live Statistics**: Total logs, errors, warnings, info count
+- **Auto-scroll**: Automatic scroll to latest entries
+- **Performance**: Keep last 100 entries, ring buffer
+
+#### ⚙️ Daemon Health Diagnostics
+**Visual Daemon Cards** showing:
+- Status (running/stopped) with color indicators
+- Process ID (PID)
+- CPU Usage percentage
+- Memory Usage (MB)
+- Uptime display
+
+**Actions per Daemon**:
+- Restart daemon
+- View daemon logs
+- Auto-refresh capability
+- Detailed diagnostics
+
+#### ⚡ Performance Profiling
+**API Endpoint Performance**:
+- Endpoint path
+- Average response time (ms)
+- Total call count
+- Status badge (success/warning/danger)
+
+**Database Query Metrics**:
+- Query preview
+- Average execution time
+- Call count
+- Impact level calculation
+
+**Memory Monitor**:
+- Heap used (with progress bar)
+- Heap total
+- External memory
+- Color-coded warnings (green/yellow/red)
+
+#### 🐛 Error Trace Analyzer
+**Error Statistics**:
+- Total errors count
+- 24-hour trend (+/- percentage)
+- Auto-resolved count
+
+**Error Types Table**:
+- Error type classification
+- Occurrence count
+- Trend indicators (increasing/stable/decreasing)
+- Quick action buttons
+
+**AI-Powered Quick Fixes**:
+- Smart recommendations based on patterns
+- One-click apply functionality
+- Success tracking
+- Fix history
+
+#### 🛠️ Sidebar Tools
+- **System Snapshot**: Capture/restore system state
+- **Quick Actions**: Health check, restart daemons, clear cache
+- **Debug Mode**: Enable verbose logging and stack traces
+- **Emergency Shutdown**: Safe shutdown with confirmation
 
 ---
 
@@ -1950,6 +2159,12 @@ We welcome contributions! Here's how you can help:
 
 **Future Enhancements:**
 
+**✨ NEW in v2.15 (Latest Release):**
+- ✅ **Advanced Themes & Customization** - 8 new themes + custom theme builder with color pickers (v2.15)
+- ✅ **Advanced Search & Filtering** - Global search across all data sources with filters, saved searches, export (v2.15)
+- ✅ **ML Model Training UI** - 5-step wizard for training 15+ model types with real-time visualization (v2.15)
+- ✅ **Debugging & Troubleshooting Tools** - Real-time log streaming, daemon diagnostics, error analysis (v2.15)
+
 **Completed in Recent Versions:**
 - ✅ Performance profiling dashboard (v2.14)
 - ✅ Widget collaboration with real-time editing (v2.13)
@@ -1965,10 +2180,6 @@ We welcome contributions! Here's how you can help:
 - 🔌 Plugin system for extensibility
 - 🔄 Integration with other monitoring tools (Grafana, Prometheus)
 - 📧 Advanced notification channels (Slack, Discord, PagerDuty)
-- 🎨 More themes and customization options
-- 🔍 Advanced search and filtering capabilities
-- 📈 Machine learning model training UI
-- 🛠️ Advanced debugging and troubleshooting tools
 
 ---
 
