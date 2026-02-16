@@ -36,6 +36,8 @@ sleep 2
 python ~/.claude/memory/session-start-check.py
 ```
 
+**⚠️ CRITICAL: Always use `python` command, NOT `python3`!**
+
 ---
 
 ## 🔧 BACKGROUND AUTOMATION

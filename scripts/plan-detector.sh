@@ -6,10 +6,10 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PLAN_DETECTOR="$SCRIPT_DIR/plan-detector.py"
 
 # Check if Python is available
-if command -v python3 &> /dev/null; then
-    PYTHON_CMD="python3"
-elif command -v python &> /dev/null; then
+if command -v python &> /dev/null; then
     PYTHON_CMD="python"
+elif command -v python3 &> /dev/null; then
+    PYTHON_CMD="python3"
 else
     echo "❌ Python not found. Please install Python to use plan detector."
     exit 1
