@@ -43,9 +43,16 @@ bash ~/.claude/memory/session-start.sh
 3. ✅ Shows latest recommendations (model, skills, agents)
 4. ✅ Shows context status (OK/WARNING/CRITICAL)
 5. ✅ **Detects active Claude Code plan (Free/Pro/Team/Enterprise)**
-6. ✅ Provides complete system health summary
+6. ✅ **Generates unique Session ID for tracking**
+7. ✅ Provides complete system health summary
 
 **I MUST apply these recommendations BEFORE responding!**
+
+**🎯 MANDATORY: After session start, I MUST provide the Session ID to user:**
+- Format: `SESSION-YYYYMMDD-HHMMSS-XXXX`
+- Example: `SESSION-20260216-173003-09RZ`
+- **Always show this ID** for tracking purposes
+- User needs this to track the session in logs
 
 **Alternative (If above fails):**
 ```bash
@@ -147,6 +154,104 @@ Me:
 7. pattern-detection-daemon - Detects patterns
 8. failure-prevention-daemon - Learns failures
 9. auto-recommendation-daemon - Generates recommendations (every 5 sec)
+
+---
+
+## 🆔 SESSION ID TRACKING (MANDATORY)
+
+**Every session and work item gets a unique tracking ID!**
+
+### **Format:**
+```
+SESSION-YYYYMMDD-HHMMSS-XXXX
+```
+
+**Example:** `SESSION-20260216-173003-09RZ`
+
+### **When Generated:**
+- ✅ **Session start** - Automatically during session-start.sh
+- ✅ **Work item start** - When starting any major task
+- ✅ **On request** - Anytime user asks
+
+### **Mandatory Display:**
+
+**I MUST show Session ID after:**
+1. Running session-start.sh
+2. Starting any new work/task
+3. User explicitly requests it
+
+**Format to show:**
+```
+🆔 Session ID: SESSION-20260216-173003-09RZ
+```
+
+### **Session ID Banner:**
+
+Full banner displayed automatically:
+```
+================================================================================
+📋 SESSION ID FOR TRACKING
+================================================================================
+
+🆔 Session ID: SESSION-20260216-173003-09RZ
+📅 Started: 2026-02-16T17:30:03
+📊 Status: ACTIVE
+📝 Description: Session started at 2026-02-16 17:30:03
+
+💡 Use this ID to track this session in logs and reports
+================================================================================
+```
+
+### **Usage:**
+
+**Generate new session:**
+```bash
+bash ~/.claude/memory/session-id-generator.sh create --description "Your description"
+```
+
+**Show current session:**
+```bash
+bash ~/.claude/memory/session-id-generator.sh current
+```
+
+**List recent sessions:**
+```bash
+bash ~/.claude/memory/session-id-generator.sh list
+```
+
+**Get session stats:**
+```bash
+python ~/.claude/memory/session-id-generator.py stats --session-id SESSION-20260216-173003-09RZ
+```
+
+### **Tracking Benefits:**
+
+1. **📊 Session Logs** - Track all activity by session ID
+2. **🔍 Debugging** - Find exact session when issues occur
+3. **📈 Analytics** - Analyze session duration, work items
+4. **🤝 Collaboration** - Share session ID for support
+5. **📝 Reporting** - Generate reports by session
+
+### **Session Data Stored:**
+
+**Location:** `~/.claude/memory/sessions/SESSION-*.json`
+
+**Contains:**
+- Session ID and timestamps
+- Work items and their status
+- Session metadata
+- Duration and completion stats
+
+**Log:** `~/.claude/memory/logs/sessions.log`
+
+### **Enforcement:**
+
+**I MUST:**
+- ✅ Generate session ID on session start
+- ✅ Display session ID banner to user
+- ✅ Provide session ID for tracking
+- ✅ Log all session events
+- ❌ NEVER skip showing session ID
 
 ---
 
