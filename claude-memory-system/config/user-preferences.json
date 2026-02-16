@@ -51,11 +51,16 @@
     "commit_style": [],
     "plan_mode": [],
     "phased_execution": [],
-    "documentation": []
+    "documentation": [
+      {
+        "value": "separate",
+        "timestamp": "2026-02-16 12:07:44"
+      }
+    ]
   },
   "metadata": {
     "created": "2026-01-26",
-    "last_updated": "2026-01-26 20:04:58",
+    "last_updated": "2026-02-16 12:07:44",
     "learning_threshold": 3,
     "total_preferences_learned": 1
   }

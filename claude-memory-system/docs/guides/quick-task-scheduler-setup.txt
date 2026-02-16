@@ -1,0 +1,27 @@
+╔════════════════════════════════════════════════════════════════╗
+║  QUICK TASK SCHEDULER SETUP - COPY-PASTE IN POWERSHELL ADMIN  ║
+╚════════════════════════════════════════════════════════════════╝
+
+# Run this in PowerShell (Admin):
+
+$action = New-ScheduledTaskAction -Execute "C:\Program Files\Git\bin\bash.exe" -Argument "C:\Users\techd\.claude\memory\startup-hook.sh"
+$trigger = New-ScheduledTaskTrigger -AtLogOn -User $env:USERNAME
+$settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -StartWhenAvailable
+$principal = New-ScheduledTaskPrincipal -UserId $env:USERNAME -RunLevel Highest
+Register-ScheduledTask -TaskName "ClaudeMemoryDaemons" -Action $action -Trigger $trigger -Settings $settings -Principal $principal -Force
+
+# Then run watchdog:
+
+$action2 = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File C:\Users\techd\.claude\memory\daemon-watchdog.ps1"
+$trigger2 = New-ScheduledTaskTrigger -AtLogOn -User $env:USERNAME
+$settings2 = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -ExecutionTimeLimit (New-TimeSpan -Days 9999)
+Register-ScheduledTask -TaskName "ClaudeDaemonWatchdog" -Action $action2 -Trigger $trigger2 -Settings $settings2 -Principal $principal -Force
+
+# Verify:
+
+schtasks /query /tn "ClaudeMemoryDaemons" /fo LIST
+schtasks /query /tn "ClaudeDaemonWatchdog" /fo LIST
+
+╔════════════════════════════════════════════════════════════════╗
+║  DONE! Daemons will auto-start on Windows login!              ║
+╚════════════════════════════════════════════════════════════════╝

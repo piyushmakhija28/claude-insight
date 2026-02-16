@@ -491,6 +491,11 @@
                         </a>
                     </li>
                     <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'automation_dashboard' %}active{% endif %}" href="{{ url_for('automation_dashboard') }}">
+                            <i class="fas fa-robot"></i> Automation
+                        </a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link {% if request.endpoint == 'anomaly_detection' %}active{% endif %}" href="{{ url_for('anomaly_detection') }}">
                             <i class="fas fa-brain"></i> AI Detection
                         </a>

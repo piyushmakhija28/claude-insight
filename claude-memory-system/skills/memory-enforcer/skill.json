@@ -1,0 +1,15 @@
+{
+  "name": "memory-enforcer",
+  "version": "1.0.0",
+  "description": "Automatically enforces memory system policies and logs execution for monitoring",
+  "author": "System",
+  "tags": ["system", "memory", "monitoring", "logging"],
+  "priority": "highest",
+  "auto_invoke": true,
+  "invocation_triggers": [
+    "every_user_request",
+    "before_task_execution",
+    "before_tool_use"
+  ],
+  "dependencies": []
+}

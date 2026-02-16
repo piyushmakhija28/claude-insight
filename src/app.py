@@ -25,6 +25,9 @@ from services.monitoring.policy_checker import PolicyChecker
 from services.monitoring.session_tracker import SessionTracker
 from services.monitoring.memory_system_monitor import MemorySystemMonitor
 from services.monitoring.performance_profiler import PerformanceProfiler
+from services.monitoring.automation_tracker import AutomationTracker
+from services.monitoring.skill_agent_tracker import SkillAgentTracker
+from services.monitoring.optimization_tracker import OptimizationTracker
 
 # Import AI services
 from services.ai.anomaly_detector import AnomalyDetector
@@ -96,6 +99,9 @@ collaboration_manager = CollaborationSessionManager()
 trending_calculator = TrendingCalculator()
 performance_profiler = PerformanceProfiler()
 bottleneck_analyzer = BottleneckAnalyzer()
+automation_tracker = AutomationTracker()
+skill_agent_tracker = SkillAgentTracker()
+optimization_tracker = OptimizationTracker()
 
 # User database (in production, use a proper database)
 # Password: 'admin' (hashed with bcrypt)
@@ -2291,6 +2297,23 @@ def analytics():
                          chart_data=chart_data,
                          summary_stats=summary_stats,
                          analytics_data=analytics_data)
+
+@app.route('/automation-dashboard')
+@login_required
+def automation_dashboard():
+    """
+    Complete Automation System Dashboard
+    Shows all CLAUDE.md automation components:
+    - Session start recommendations
+    - 9th daemon status
+    - Task breakdown enforcement
+    - Task auto-tracker
+    - Skill/Agent selection
+    - Plan mode suggestions
+    - Tool optimization (15 strategies)
+    - Standards enforcement
+    """
+    return render_template('automation-dashboard.html')
 
 @app.route('/api/change-password', methods=['POST'])
 @login_required
@@ -4758,6 +4781,174 @@ def memory_system_policies():
         return jsonify({
             'success': True,
             'policies': policies
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+# ============================================================
+# Automation Tracking APIs (NEW)
+# ============================================================
+
+@app.route('/api/automation/session-start-recommendations')
+@login_required
+def automation_session_start():
+    """Get session-start recommendations"""
+    try:
+        recommendations = automation_tracker.get_session_start_recommendations()
+        return jsonify({
+            'success': True,
+            'data': recommendations
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/automation/daemon-9-status')
+@login_required
+def automation_daemon_9():
+    """Get 9th daemon (auto-recommendation) status"""
+    try:
+        status = automation_tracker.get_9th_daemon_status()
+        return jsonify({
+            'success': True,
+            'data': status
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/automation/task-breakdown-stats')
+@login_required
+def automation_task_breakdown():
+    """Get task breakdown enforcement statistics"""
+    try:
+        stats = automation_tracker.get_task_breakdown_stats()
+        return jsonify({
+            'success': True,
+            'data': stats
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/automation/task-tracker-stats')
+@login_required
+def automation_task_tracker():
+    """Get task auto-tracker statistics"""
+    try:
+        stats = automation_tracker.get_task_tracker_stats()
+        return jsonify({
+            'success': True,
+            'data': stats
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/automation/comprehensive-stats')
+@login_required
+def automation_comprehensive():
+    """Get all automation statistics"""
+    try:
+        stats = automation_tracker.get_comprehensive_automation_stats()
+        return jsonify({
+            'success': True,
+            'data': stats
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+# ============================================================
+# Skill & Agent Tracking APIs (NEW)
+# ============================================================
+
+@app.route('/api/skills/selection-stats')
+@login_required
+def skills_selection_stats():
+    """Get skill selection and usage statistics"""
+    try:
+        stats = skill_agent_tracker.get_skill_selection_stats()
+        return jsonify({
+            'success': True,
+            'data': stats
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/agents/usage-stats')
+@login_required
+def agents_usage_stats():
+    """Get agent invocation statistics"""
+    try:
+        stats = skill_agent_tracker.get_agent_usage_stats()
+        return jsonify({
+            'success': True,
+            'data': stats
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/plan-mode/suggestions')
+@login_required
+def plan_mode_suggestions():
+    """Get plan mode auto-suggestion statistics"""
+    try:
+        stats = skill_agent_tracker.get_plan_mode_suggestions()
+        return jsonify({
+            'success': True,
+            'data': stats
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/skills-agents/comprehensive-stats')
+@login_required
+def skills_agents_comprehensive():
+    """Get all skill/agent statistics"""
+    try:
+        stats = skill_agent_tracker.get_comprehensive_stats()
+        return jsonify({
+            'success': True,
+            'data': stats
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+# ============================================================
+# Tool Optimization Tracking APIs (NEW)
+# ============================================================
+
+@app.route('/api/optimization/tool-metrics')
+@login_required
+def optimization_tool_metrics():
+    """Get tool optimization metrics (15 strategies)"""
+    try:
+        metrics = optimization_tracker.get_tool_optimization_metrics()
+        return jsonify({
+            'success': True,
+            'data': metrics
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/optimization/standards-enforcement')
+@login_required
+def optimization_standards():
+    """Get coding standards enforcement statistics"""
+    try:
+        stats = optimization_tracker.get_standards_enforcement_stats()
+        return jsonify({
+            'success': True,
+            'data': stats
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/optimization/comprehensive-stats')
+@login_required
+def optimization_comprehensive():
+    """Get all optimization statistics"""
+    try:
+        stats = optimization_tracker.get_comprehensive_optimization_stats()
+        return jsonify({
+            'success': True,
+            'data': stats
         })
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
