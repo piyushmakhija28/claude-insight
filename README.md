@@ -1,4 +1,4 @@
-# 🤖 Claude Insight v2.16
+# 🤖 Claude Insight v2.17
 
 **Professional Real-time Analytics Dashboard with Complete Claude Memory System v2.2.0 Integration**
 
@@ -13,7 +13,7 @@ A comprehensive, real-time monitoring and analytics dashboard for the Claude Mem
 - ✅ **139 files** - All automation scripts, policies, and documentation
 - ✅ **8-9 daemons** - Complete daemon monitoring scripts
 - ✅ **81 automation scripts** - Python & Shell scripts for all features
-- ✅ **48 policy files** - All 12 policies + complete documentation
+- ✅ **50 policy files** - All 14 policies + complete documentation
 - ✅ **CLAUDE.md** - Global configuration v2.2.0
 - ✅ **Real-time integration** - Live monitoring of all components
 
@@ -34,7 +34,7 @@ A comprehensive, real-time monitoring and analytics dashboard for the Claude Mem
 - [🧠 Memory System Overview](#claude-memory-system-overview)
 - [📖 Complete Documentation](#complete-documentation)
 - [🤖 System Architecture](#system-architecture)
-- [📜 12 Active Policies](#12-active-policies)
+- [📜 14 Active Policies](#14-active-policies)
 - [☕ Java Spring Boot Standards](#java-spring-boot-standards)
 - [🔧 Spring Boot Configuration](#spring-boot-configuration)
 
@@ -112,7 +112,7 @@ The Claude Memory System v2.2.0 is a powerful automation framework that:
 #### 📊 System Health Dashboard
 - **Real-time Health Score**: 0-100 overall system health with component breakdown
 - **Daemon Status Grid**: Visual health monitoring of all 8-9 daemons
-- **Policy Compliance**: Track enforcement of all 12 active policies
+- **Policy Compliance**: Track enforcement of all 14 active policies
 - **Performance Metrics**: Response times, context usage, error tracking
 - **Session Tracking**: Active sessions, history, incomplete work detection
 - **Export Options**: CSV, Excel, PDF reports
@@ -1087,7 +1087,7 @@ All documentation is in the `claude-memory-system/` folder:
 
 ---
 
-## 12 Active Policies
+## 14 Active Policies
 
 ### 1. Core Skills Mandate
 **Purpose:** System-level enforcement of mandatory execution flow
@@ -1269,6 +1269,61 @@ All documentation is in the `claude-memory-system/` folder:
 - Business logic: 80%+
 - Controllers: 60%+
 - Overall: 70%+
+
+### 13. Task/Phase Enforcement Policy ⚡ NEW!
+**Purpose:** BLOCKING enforcement of task breakdown and phased execution
+
+**Enforcement Rules:**
+- **Complexity >= 3:** TaskCreate REQUIRED
+- **Size >= 6:** Phased execution REQUIRED
+- **Auto-analysis:** Every request analyzed automatically
+- **Blocking:** Cannot proceed without compliance
+
+**Scoring Criteria:**
+- Requirements count (0-3)
+- Domain complexity (0-2)
+- File modifications (0-2)
+- Multi-item indicators (0-2)
+- Complexity keywords (0-1)
+
+**Benefits:**
+- 🚨 Mandatory task tracking
+- ✅ No work without proper breakdown
+- 📊 Clear progress visibility
+- 🔄 Auto-commit on completion
+
+**Enforcer Script:** `task-phase-enforcer.py`
+
+### 14. Task Progress Tracking Policy 📋 NEW!
+**Purpose:** Granular progress updates for session resumability
+
+**Update Frequency:**
+- **Minimum:** Every significant action
+- **Recommended:** Every 2-3 tool calls
+- **Maximum:** Don't let >5 tool calls pass
+
+**Metadata Structure:**
+```json
+{
+  "progress": "3/5 steps complete",
+  "current_step": "Implementing feature X",
+  "completed": ["Step1", "Step2", "Step3"],
+  "remaining": ["Step4", "Step5"],
+  "last_file": "path/to/file:line"
+}
+```
+
+**Resume Capability:**
+- Know exactly where work stopped
+- Can resume from exact file/line
+- See what's done/remaining
+- Full audit trail
+
+**Benefits:**
+- ✅ Real-time progress visibility
+- 🔄 Session exit recovery
+- 📍 Exact location tracking
+- 🎯 Clear accountability
 
 ---
 
