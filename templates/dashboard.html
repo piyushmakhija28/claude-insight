@@ -206,6 +206,10 @@
                         <h6 class="text-muted mb-3"><i class="fas fa-percentage me-2"></i>Context Usage</h6>
                         <canvas id="contextUsageChart" height="200"></canvas>
                     </div>
+                    <div class="col-md-6">
+                        <h6 class="text-muted mb-3"><i class="fas fa-robot me-2"></i>Model Usage Distribution</h6>
+                        <canvas id="modelUsageChart" height="200"></canvas>
+                    </div>
                 </div>
             </div>
         </div>
@@ -890,9 +894,68 @@ function initializeHistoricalCharts() {
     }
 }
 
+// Initialize Model Usage Chart
+function initializeModelUsageChart() {
+    fetch('/api/model-usage')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const canvas = document.getElementById('modelUsageChart');
+                if (canvas) {
+                    new Chart(canvas.getContext('2d'), {
+                        type: 'doughnut',
+                        data: {
+                            labels: ['Haiku', 'Sonnet', 'Opus'],
+                            datasets: [{
+                                data: data.usage || [0, 0, 0],
+                                backgroundColor: [
+                                    'rgba(99, 102, 241, 0.8)',  // Haiku - Blue
+                                    'rgba(139, 92, 246, 0.8)',  // Sonnet - Purple
+                                    'rgba(236, 72, 153, 0.8)'   // Opus - Pink
+                                ],
+                                borderWidth: 2,
+                                borderColor: '#fff'
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    position: 'bottom',
+                                    labels: {
+                                        padding: 15,
+                                        usePointStyle: true,
+                                        font: {
+                                            size: 12
+                                        }
+                                    }
+                                },
+                                tooltip: {
+                                    callbacks: {
+                                        label: function(context) {
+                                            const label = context.label || '';
+                                            const value = context.parsed || 0;
+                                            const percentage = data.percentage_data[context.dataIndex] || 0;
+                                            return `${label}: ${value} requests (${percentage.toFixed(1)}%)`;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Error loading model usage data:', error);
+        });
+}
+
 // Call this after page loads
 document.addEventListener('DOMContentLoaded', function() {
     initializeHistoricalCharts();
+    initializeModelUsageChart();
 });
 
 // Cleanup on page unload

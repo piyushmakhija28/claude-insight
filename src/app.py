@@ -75,7 +75,15 @@ def get_version():
 
 APP_VERSION = get_version()
 
-app = Flask(__name__)
+# Get project root (parent of src directory)
+PROJECT_ROOT = Path(__file__).parent.parent
+
+# Initialize Flask with correct paths (cross-platform compatible)
+app = Flask(
+    __name__,
+    template_folder=str(PROJECT_ROOT / 'templates'),
+    static_folder=str(PROJECT_ROOT / 'static')
+)
 app.secret_key = 'claude-insight-secret-key-2026'
 
 # Make version available to all templates
@@ -1099,6 +1107,39 @@ def restart_daemon(daemon_name):
         return jsonify({'success': True, 'message': f'Daemon {daemon_name} restarted successfully'})
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/model-usage')
+@login_required
+def api_model_usage():
+    """API endpoint for Claude model usage stats (Haiku/Sonnet/Opus)"""
+    try:
+        model_stats = metrics.get_model_usage_stats()
+        return jsonify({
+            'success': True,
+            'total_requests': model_stats.get('total_requests', 0),
+            'counts': model_stats.get('counts', {}),
+            'percentages': model_stats.get('percentages', {}),
+            'models': ['Haiku', 'Sonnet', 'Opus'],
+            'usage': [
+                model_stats.get('counts', {}).get('haiku', 0),
+                model_stats.get('counts', {}).get('sonnet', 0),
+                model_stats.get('counts', {}).get('opus', 0)
+            ],
+            'percentage_data': [
+                model_stats.get('percentages', {}).get('haiku', 0),
+                model_stats.get('percentages', {}).get('sonnet', 0),
+                model_stats.get('percentages', {}).get('opus', 0)
+            ]
+        })
+    except Exception as e:
+        print(f"Error in api_model_usage: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'total_requests': 0,
+            'counts': {},
+            'percentages': {}
+        }), 500
 
 @app.route('/sessions')
 @login_required
