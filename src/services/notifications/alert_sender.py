@@ -8,13 +8,18 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from datetime import datetime
 from pathlib import Path
+import sys
+
+# Add path resolver for portable paths
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+from utils.path_resolver import get_data_dir, get_logs_dir
 
 
 class AlertSender:
     """Send email and SMS alerts for critical events"""
 
     def __init__(self):
-        self.config_dir = Path.home() / '.claude' / 'memory'
+        self.config_dir = get_data_dir()
         self.config_file = self.config_dir / 'alert_config.json'
         self.ensure_config_file()
 

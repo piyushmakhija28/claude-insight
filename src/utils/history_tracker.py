@@ -5,13 +5,18 @@ import os
 import json
 from datetime import datetime, timedelta
 from pathlib import Path
+import sys
+
+# Add path resolver for portable paths
+sys.path.insert(0, str(Path(__file__).parent.parent))
+from utils.path_resolver import get_data_dir
 
 
 class HistoryTracker:
     """Track and store historical metrics for the dashboard"""
 
     def __init__(self):
-        self.memory_dir = Path.home() / '.claude' / 'memory'
+        self.memory_dir = get_data_dir()
         self.history_file = self.memory_dir / 'dashboard_history.json'
         self.ensure_history_file()
 

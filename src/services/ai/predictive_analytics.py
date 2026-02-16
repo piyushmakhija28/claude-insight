@@ -6,6 +6,11 @@ import json
 import numpy as np
 from datetime import datetime, timedelta
 from pathlib import Path
+import sys
+
+# Add path resolver for portable paths
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+from utils.path_resolver import get_data_dir, get_logs_dir
 from collections import deque
 
 
@@ -13,7 +18,7 @@ class PredictiveAnalytics:
     """Predictive analytics and forecasting for system metrics"""
 
     def __init__(self):
-        self.data_dir = Path.home() / '.claude' / 'memory' / 'forecasts'
+        self.data_dir = get_data_dir() / 'forecasts'
         self.forecasts_file = self.data_dir / 'forecasts.json'
         self.predictions_file = self.data_dir / 'predictions.json'
         self.models_file = self.data_dir / 'models.json'

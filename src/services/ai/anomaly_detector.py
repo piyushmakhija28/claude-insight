@@ -6,6 +6,11 @@ import json
 import numpy as np
 from datetime import datetime, timedelta
 from pathlib import Path
+import sys
+
+# Add path resolver for portable paths
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+from utils.path_resolver import get_data_dir, get_logs_dir
 from collections import deque
 
 
@@ -13,7 +18,7 @@ class AnomalyDetector:
     """Detect anomalies in system metrics using AI/ML algorithms"""
 
     def __init__(self):
-        self.data_dir = Path.home() / '.claude' / 'memory' / 'anomalies'
+        self.data_dir = get_data_dir() / 'anomalies'
         self.anomalies_file = self.data_dir / 'anomalies.json'
         self.models_file = self.data_dir / 'models.json'
         self.history_file = self.data_dir / 'history.json'

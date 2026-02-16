@@ -7,6 +7,11 @@ from flask import Blueprint, request, jsonify, render_template
 from pathlib import Path
 import json
 from datetime import datetime
+import sys
+
+# Add parent directory for imports
+sys.path.insert(0, str(Path(__file__).parent.parent))
+from utils.path_resolver import get_sessions_dir, get_logs_dir
 
 session_search_bp = Blueprint('session_search', __name__)
 
@@ -14,8 +19,8 @@ class SessionSearchService:
     """Service for searching and retrieving session data"""
 
     def __init__(self):
-        self.sessions_dir = Path.home() / '.claude' / 'memory' / 'sessions'
-        self.sessions_log = Path.home() / '.claude' / 'memory' / 'logs' / 'sessions.log'
+        self.sessions_dir = get_sessions_dir()
+        self.sessions_log = get_logs_dir() / 'sessions.log'
 
     def search_session(self, session_id):
         """Search for a session by ID"""

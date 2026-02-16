@@ -6,6 +6,11 @@ import json
 import uuid
 from datetime import datetime, timedelta
 from pathlib import Path
+import sys
+
+# Add path resolver for portable paths
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+from utils.path_resolver import get_data_dir, get_logs_dir
 from collections import defaultdict
 
 
@@ -13,7 +18,7 @@ class AlertRoutingEngine:
     """Manage alert routing rules and escalation policies"""
 
     def __init__(self):
-        self.data_dir = Path.home() / '.claude' / 'memory' / 'alert_routing'
+        self.data_dir = get_data_dir() / 'alert_routing'
         self.routing_rules_file = self.data_dir / 'routing_rules.json'
         self.escalation_policies_file = self.data_dir / 'escalation_policies.json'
         self.on_call_schedules_file = self.data_dir / 'on_call_schedules.json'

@@ -10,6 +10,11 @@ import json
 import os
 from datetime import datetime, timedelta
 from pathlib import Path
+import sys
+
+# Add path resolver for portable paths
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+from utils.path_resolver import get_data_dir, get_logs_dir
 from collections import defaultdict
 
 
@@ -17,7 +22,7 @@ class AutomationTracker:
     """Track Claude Memory System automation components"""
 
     def __init__(self):
-        self.memory_dir = Path.home() / '.claude' / 'memory'
+        self.memory_dir = get_data_dir()
         self.logs_dir = self.memory_dir / 'logs'
         self.sessions_dir = self.memory_dir / 'sessions'
 

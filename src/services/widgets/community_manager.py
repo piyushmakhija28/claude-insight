@@ -5,13 +5,18 @@ Handles widget sharing, ratings, and community marketplace
 import json
 from datetime import datetime
 from pathlib import Path
+import sys
+
+# Add path resolver for portable paths
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+from utils.path_resolver import get_data_dir, get_logs_dir
 
 
 class CommunityWidgetsManager:
     """Manage community widget marketplace"""
 
     def __init__(self):
-        self.data_dir = Path.home() / '.claude' / 'memory' / 'community'
+        self.data_dir = get_data_dir() / 'community'
         self.widgets_file = self.data_dir / 'widgets.json'
         self.ensure_data_files()
 

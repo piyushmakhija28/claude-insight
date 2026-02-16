@@ -5,13 +5,18 @@ Handles browser push notifications and notification history
 import json
 from datetime import datetime
 from pathlib import Path
+import sys
+
+# Add path resolver for portable paths
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+from utils.path_resolver import get_data_dir, get_logs_dir
 
 
 class NotificationManager:
     """Manage browser notifications and history"""
 
     def __init__(self):
-        self.memory_dir = Path.home() / '.claude' / 'memory'
+        self.memory_dir = get_data_dir()
         self.notifications_file = self.memory_dir / 'notifications_history.json'
         self.ensure_notifications_file()
 

@@ -10,12 +10,17 @@ from pathlib import Path
 from datetime import datetime
 from cryptography.fernet import Fernet
 import base64
+import sys
+
+# Add parent directory to path for imports
+sys.path.insert(0, str(Path(__file__).parent.parent))
+from utils.path_resolver import get_config_dir, get_sessions_dir
 
 class ClaudeCredentialsManager:
     """Manage Claude/Anthropic API credentials securely"""
 
     def __init__(self):
-        self.config_dir = Path.home() / '.claude' / 'memory' / 'config'
+        self.config_dir = get_config_dir()
         self.config_dir.mkdir(parents=True, exist_ok=True)
 
         self.credentials_file = self.config_dir / 'claude_credentials.enc'
@@ -171,10 +176,10 @@ class AutoSessionTracker:
     """Automatically track Claude sessions"""
 
     def __init__(self):
-        self.sessions_dir = Path.home() / '.claude' / 'memory' / 'sessions'
+        self.sessions_dir = get_sessions_dir()
         self.sessions_dir.mkdir(parents=True, exist_ok=True)
 
-        self.auto_tracking_config = Path.home() / '.claude' / 'memory' / 'config' / 'auto_tracking.json'
+        self.auto_tracking_config = get_config_dir() / 'auto_tracking.json'
 
     def enable_auto_tracking(self, interval_minutes=5):
         """Enable automatic session tracking"""
