@@ -84,6 +84,9 @@ APP_VERSION = get_version()
 # Get project root (parent of src directory)
 PROJECT_ROOT = Path(__file__).parent.parent
 
+# Define memory directory path
+MEMORY_DIR = str(Path.home() / '.claude' / 'memory')
+
 # Initialize Flask with correct paths (cross-platform compatible)
 app = Flask(
     __name__,
