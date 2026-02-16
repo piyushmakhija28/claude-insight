@@ -457,6 +457,7 @@ secret-manager:
 
 | Policy | Enforcement |
 |--------|-------------|
+| **🚨 Auto-Fix Enforcement** | **MANDATORY FIRST: bash auto-fix-enforcer.sh (BLOCKING)** |
 | Context Check | Run context-monitor-v2.py BEFORE responding |
 | Model Selection | Run model-selection-enforcer.py BEFORE task |
 | **Task/Phase Breakdown** | **🚨 BLOCKING: task-phase-enforcer.py --analyze (STEP 3)** |
@@ -475,6 +476,37 @@ secret-manager:
 **On EVERY user request:**
 
 ```
+🚨 AUTO-FIX ENFORCEMENT (STEP -1 - BEFORE EVERYTHING) 🚨
+   → export PYTHONIOENCODING=utf-8
+   → bash auto-fix-enforcer.sh
+
+   🔍 CHECK ALL SYSTEMS (6 CHECKS):
+   → Python availability (CRITICAL)
+   → Critical files present (CRITICAL)
+   → Blocking enforcer initialized (CRITICAL)
+   → Session state valid (HIGH)
+   → Daemon status (INFO)
+   → Git repository clean (INFO)
+
+   🔧 AUTO-FIX FAILURES:
+   → Blocking enforcer state → Auto-fix
+   → Session markers → Auto-fix
+   → Other failures → Manual fix required
+
+   🚨 IF ANY CRITICAL FAILURE:
+   → STOP ALL WORK IMMEDIATELY
+   → Report failure + fix instructions
+   → Wait for user to fix
+   → Re-run enforcer
+   → Only proceed when ALL OK
+
+   ✅ EXIT CODE 0 → Continue to Step 0
+   ❌ EXIT CODE != 0 → BLOCKED, fix first
+
+   📄 Output: All systems operational
+
+        ↓
+
 🔵 SYNC SYSTEM (FOUNDATION - ALWAYS FIRST)
    → Context Management + Session Management
    → Load project README, service .md files
