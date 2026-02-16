@@ -44,10 +44,24 @@ Thumbs.db
 
 # Logs
 *.log
+logs/
 
-# Environment variables
+# Environment variables (CRITICAL: NEVER COMMIT)
 .env
 .env.local
+.env.*
+!.env.example
+
+# User database (contains password hashes - NEVER COMMIT)
+data/users.json
+
+# Session data
+data/sessions/
 
 # Flask session
 flask_session/
+
+# Security scan results
+security-scan.json
+bandit-report.json
+safety-report.json
