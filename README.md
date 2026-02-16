@@ -1,4 +1,4 @@
-# 🤖 Claude Insight v2.18.0
+# 🤖 Claude Insight v2.5.2
 
 **Professional Real-time Analytics Dashboard with Complete Claude Memory System v2.5.0 Integration**
 
