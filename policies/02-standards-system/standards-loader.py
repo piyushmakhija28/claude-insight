@@ -4,6 +4,22 @@ Coding Standards Loader
 Loads all coding standards before execution
 """
 
+# Fix encoding for Windows console
+import sys
+if sys.stdout.encoding != 'utf-8':
+    try:
+        sys.stdout.reconfigure(encoding='utf-8')
+    except AttributeError:
+        import io
+        sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+if sys.stderr.encoding != 'utf-8':
+    try:
+        sys.stderr.reconfigure(encoding='utf-8')
+    except AttributeError:
+        import io
+        sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
+
+
 import json
 import sys
 from pathlib import Path
@@ -25,76 +41,81 @@ class StandardsLoader:
         """Load all coding standards"""
 
         print(f"\n{'='*70}")
-        print(f"🔧 CODING STANDARDS LOADER")
+        print(f"[WRENCH] CODING STANDARDS LOADER")
         print(f"{'='*70}\n")
 
-        print("📋 Loading standards from documentation...\n")
+        print("[CLIPBOARD] Loading standards from documentation...\n")
 
         # 1. Java Project Structure
         print("  [1/12] Java Project Structure...")
         self.standards['java_structure'] = self.load_java_structure()
-        print("         ✅ Loaded")
+        print("         [CHECK] Loaded")
 
         # 2. Config Server Rules
         print("  [2/12] Config Server Rules...")
         self.standards['config_server'] = self.load_config_server_rules()
-        print("         ✅ Loaded")
+        print("         [CHECK] Loaded")
 
         # 3. Secret Management
         print("  [3/12] Secret Management...")
         self.standards['secret_management'] = self.load_secret_management()
-        print("         ✅ Loaded")
+        print("         [CHECK] Loaded")
 
         # 4. Response Format
         print("  [4/12] Response Format...")
         self.standards['response_format'] = self.load_response_format()
-        print("         ✅ Loaded")
+        print("         [CHECK] Loaded")
 
         # 5. API Design
         print("  [5/12] API Design Standards...")
         self.standards['api_design'] = self.load_api_design()
-        print("         ✅ Loaded")
+        print("         [CHECK] Loaded")
 
         # 6. Database Standards
         print("  [6/12] Database Standards...")
         self.standards['database'] = self.load_database_standards()
-        print("         ✅ Loaded")
+        print("         [CHECK] Loaded")
 
         # 7. Error Handling
         print("  [7/12] Error Handling...")
         self.standards['error_handling'] = self.load_error_handling()
-        print("         ✅ Loaded")
+        print("         [CHECK] Loaded")
 
         # 8. Service Layer Pattern
         print("  [8/12] Service Layer Pattern...")
         self.standards['service_pattern'] = self.load_service_pattern()
-        print("         ✅ Loaded")
+        print("         [CHECK] Loaded")
 
         # 9. Entity Pattern
         print("  [9/12] Entity Pattern...")
         self.standards['entity_pattern'] = self.load_entity_pattern()
-        print("         ✅ Loaded")
+        print("         [CHECK] Loaded")
 
         # 10. Controller Pattern
         print(" [10/12] Controller Pattern...")
         self.standards['controller_pattern'] = self.load_controller_pattern()
-        print("         ✅ Loaded")
+        print("         [CHECK] Loaded")
 
         # 11. Constants Organization
         print(" [11/12] Constants Organization...")
         self.standards['constants'] = self.load_constants_organization()
-        print("         ✅ Loaded")
+        print("         [CHECK] Loaded")
 
         # 12. Common Utilities
-        print(" [12/12] Common Utilities...")
+        print(" [12/13] Common Utilities...")
         self.standards['utilities'] = self.load_common_utilities()
-        print("         ✅ Loaded")
+        print("         [CHECK] Loaded")
+
+        # 13. Documentation Standards
+        print(" [13/13] Documentation Standards...")
+        self.standards['documentation'] = self.load_documentation_standards()
+        print("         [CHECK] Loaded")
 
         print(f"\n{'='*70}")
-        print(f"✅ ALL STANDARDS LOADED SUCCESSFULLY")
+        print(f"[CHECK] ALL STANDARDS LOADED SUCCESSFULLY")
         print(f"{'='*70}\n")
 
-        print(f"📊 Summary:")
+        print(f"[CHART] Summary:")
         print(f"   Total Standards: {len(self.standards)}")
         print(f"   Rules Loaded: {self.count_total_rules()}")
         print(f"   Ready for Execution: YES\n")
@@ -454,6 +475,94 @@ class StandardsLoader:
             ]
         }
 
+    def load_documentation_standards(self):
+        """Load documentation standards"""
+        return {
+            'structure': {
+                'levels': 2,
+                'level_1': {
+                    'location': 'projectname/',
+                    'purpose': 'Project overview (all backend + frontend repos)',
+                    'files': ['README.md', 'CLAUDE.md']
+                },
+                'level_2': {
+                    'location': 'projectname/backend/service-name/ OR projectname/frontend/app-name/',
+                    'requirement': 'MUST have .git directory',
+                    'purpose': 'Repository-specific documentation',
+                    'files': ['README.md', 'CLAUDE.md']
+                }
+            },
+            'forbidden_locations': [
+                'projectname/backend/ (NO .git - not a repo)',
+                'projectname/frontend/ (NO .git - not a repo)'
+            ],
+            'readme_structure': {
+                'level_1_sections': [
+                    'Table of Contents',
+                    'Overview',
+                    'Project Structure',
+                    'Backend Services',
+                    'Frontend Applications',
+                    'Architecture',
+                    'Configuration',
+                    'Deployment',
+                    'Development Guidelines'
+                ],
+                'level_2_sections': [
+                    'Table of Contents',
+                    'Overview',
+                    'API Documentation',
+                    'Setup Guide',
+                    'Configuration',
+                    'Database Schema',
+                    'Testing',
+                    'Deployment'
+                ],
+                'requirements': [
+                    'Comprehensive content with indexing',
+                    'Clickable anchor links',
+                    'Horizontal separators between sections',
+                    'Proper header hierarchy',
+                    'All documentation consolidated'
+                ]
+            },
+            'claude_md_structure': {
+                'level_1_purpose': 'Project-level instructions',
+                'level_2_purpose': 'Repository-specific instructions',
+                'restrictions': [
+                    'NEVER override global policies',
+                    'NEVER duplicate README.md content',
+                    'NEVER contain general documentation'
+                ]
+            },
+            'consolidation': {
+                'before_new_file': [
+                    'Check if content belongs in README.md',
+                    'Verify location has .git (for repo-level)',
+                    'Only create at project root OR in git repos'
+                ],
+                'process': [
+                    'Create comprehensive README.md with ToC',
+                    'Move all content from other .md files into README.md',
+                    'Delete all other .md files (except CLAUDE.md)',
+                    'Update README.md ToC with all sections',
+                    'Test all anchor links'
+                ]
+            },
+            'rules': [
+                '2 .md files at 2 LEVELS:',
+                'Level 1 (Project Root): README.md + CLAUDE.md (project overview)',
+                'Level 2 (Each Git Repo): README.md + CLAUDE.md (repo-specific)',
+                'NO .md files in non-git folders (backend/, frontend/)',
+                'NO separate .md files (API.md, Setup.md, Architecture.md, etc.)',
+                'NO status/report files as separate .md files',
+                'NO migration guides as separate files',
+                'ALL content consolidated into README.md at appropriate level',
+                'Table of Contents MANDATORY in README.md',
+                'Anchor links MUST work for all sections'
+            ]
+        }
+
     def count_total_rules(self):
         """Count total number of rules loaded"""
         total = 0
@@ -472,12 +581,12 @@ class StandardsLoader:
                 'standards': self.standards
             }, f, indent=2)
 
-        print(f"💾 Standards cached to: {cache_file}")
+        print(f"[FLOPPY] Standards cached to: {cache_file}")
 
     def display_summary(self):
         """Display summary of loaded standards"""
         print(f"\n{'='*70}")
-        print(f"📋 STANDARDS SUMMARY")
+        print(f"[CLIPBOARD] STANDARDS SUMMARY")
         print(f"{'='*70}\n")
 
         for name, standard in self.standards.items():
