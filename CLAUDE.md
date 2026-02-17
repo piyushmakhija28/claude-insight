@@ -1219,6 +1219,18 @@ security:
 
 ## 🎯 EXECUTION FLOW (MANDATORY)
 
+**🚨 CRITICAL: Run BEFORE EVERY user request (not just session start!):**
+
+```bash
+# STEP -2: START NEW REQUEST ENFORCEMENT (MANDATORY FIRST!)
+python ~/.claude/memory/per-request-enforcer.py --new-request
+```
+
+**This resets per-request policies and shows:**
+- 🔄 Request counter
+- 📋 Which policies need to be enforced THIS request
+- ✅ Status of each policy
+
 **On EVERY user request:**
 
 ```
@@ -1259,6 +1271,9 @@ security:
    → Load previous session (if exists)
    → Understand: Current state + History
    → Output: Complete context loaded
+
+   ✅ MARK COMPLETE:
+   python ~/.claude/memory/per-request-enforcer.py --mark-complete context_checked
 
         ↓
 
@@ -1313,6 +1328,9 @@ security:
 
    📄 Output: Structured prompt with verified examples
 
+   ✅ MARK COMPLETE:
+   python ~/.claude/memory/per-request-enforcer.py --mark-complete prompt_verified
+
 1. 🎯 Automatic Task Breakdown (MANDATORY - SECOND STEP) 🎯
    → task-auto-breakdown.py "{STRUCTURED_PROMPT}"
 
@@ -1345,6 +1363,9 @@ security:
    → No manual updates needed
 
    📄 Output: All tasks created, auto-tracking enabled
+
+   ✅ MARK COMPLETE:
+   python ~/.claude/memory/per-request-enforcer.py --mark-complete task_analyzed
 
 2. 🎯 Auto Plan Mode Suggestion (MANDATORY - THIRD STEP) 🎯
    → auto-plan-mode-suggester.py "{COMPLEXITY}" "{PROMPT}"
@@ -1413,6 +1434,9 @@ security:
    → Architectural needs → Upgrade to OPUS
 
    📄 Output: Selected model with reasoning
+
+   ✅ MARK COMPLETE:
+   python ~/.claude/memory/per-request-enforcer.py --mark-complete model_determined
 
 5. 🎯 Auto Skill & Agent Selection (MANDATORY - SMART SELECTION) 🎯
    → auto-skill-agent-selector.py "{TASK_TYPE}" "{COMPLEXITY}" "{PROMPT}"
@@ -1484,6 +1508,9 @@ security:
    → TOKEN-OPTIMIZATION-COMPLETE.md (status)
    → Consolidates existing work
 
+   ✅ MARK COMPLETE:
+   python ~/.claude/memory/per-request-enforcer.py --mark-complete tools_optimized
+
 7. Failure Prevention (BEFORE EVERY TOOL)
    → pre-execution-checker.py --tool {TOOL}
    → Apply auto-fixes
@@ -1543,6 +1570,19 @@ security:
    → Log task updates
    → Log progress tracking
    → Log tool optimizations
+
+🚨 FINAL CHECK (BEFORE RESPONDING TO USER) 🚨
+   → python ~/.claude/memory/per-request-enforcer.py --check-status
+
+   📋 VERIFY ALL POLICIES ENFORCED:
+   → context_checked ✅
+   → prompt_verified ✅
+   → task_analyzed ✅
+   → model_determined ✅
+   → tools_optimized ✅
+
+   ✅ ALL COMPLETE → Respond to user
+   ❌ ANY PENDING → Cannot respond yet
 ```
 
 ---
@@ -1698,12 +1738,20 @@ Task(subagent_type="migration-expert", prompt="...")
 
 ---
 
-**VERSION:** 2.8.0 (Documentation Standards Policy)
+**VERSION:** 2.9.0 (Per-Request Policy Enforcement)
 **LAST UPDATED:** 2026-02-17
 **STATUS:** 🟢 FULLY OPERATIONAL
 **LOCATION:** `~/.claude/CLAUDE.md`
 
 **CHANGELOG:**
+- v2.9.0 (2026-02-17): 🔄 **Per-Request Policy Enforcement:**
+  - Created per-request-enforcer.py for continuous policy enforcement
+  - Policies now run BEFORE EVERY user request (not just session start)
+  - Added per-request state tracking (resets for each request)
+  - Added policy completion markers throughout execution flow
+  - Added final check before responding to user
+  - Fixed: Policies were only enforced once at session start
+  - Fixed: tree command replaced with find (Git Bash compatibility)
 - v2.8.0 (2026-02-17): 📋 **Documentation Standards Policy:**
   - Added 2-file .md policy (README.md + CLAUDE.md only per project)
   - Created documentation-standards.md with comprehensive rules
