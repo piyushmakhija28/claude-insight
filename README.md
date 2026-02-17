@@ -2716,16 +2716,9 @@ claude-insight/
 │   ├── monitors/                   # Monitoring tools
 │   └── ... (81+ files)
 │
-├── skills/                         # All skills (28+ skills)
-│   ├── java-spring-boot-microservices/
-│   ├── docker/
-│   ├── kubernetes/
-│   └── ... (28+ skills)
-│
-├── agents/                         # All agents (12+ agents)
-│   ├── spring-boot-microservices/
-│   ├── orchestrator-agent/
-│   └── ... (12+ agents)
+├── AGENTS_AND_SKILLS.md            # Reference to claude-global-library
+│   # NOTE: Skills and agents are in separate repo:
+│   # https://github.com/piyushmakhija28/claude-global-library
 │
 ├── config/                         # Configuration files
 │   ├── skills-registry.json
@@ -3158,49 +3151,58 @@ Claude Insight is a **public package** that users download from GitHub. When you
 
 | Type | Source | Destination | When |
 |------|--------|-------------|------|
-| **Skills** | `~/.claude/skills/` | `claude-insight/skills/` | After creating new skill |
-| **Agents** | `~/.claude/agents/` | `claude-insight/agents/` | After creating new agent |
 | **Policies** | `~/.claude/memory/policies/` | `claude-insight/policies/` | After policy updates |
-| **Docs** | `~/.claude/memory/docs/` | `claude-insight/memory-docs/` | After doc updates |
-| **Scripts** | `~/.claude/memory/scripts/` | `claude-insight/memory-scripts/` | After new scripts |
-| **Config** | `~/.claude/memory/config/` | `claude-insight/config/` | After config changes |
+| **Docs** | `~/.claude/memory/docs/` | `claude-insight/docs/` | After doc updates |
+| **Scripts** | `~/.claude/memory/scripts/` | `claude-insight/scripts/` | After new scripts |
+
+**Note:** Skills and agents are now in a separate repository:
+- **Repository:** [claude-global-library](https://github.com/piyushmakhija28/claude-global-library)
+- **Local Path:** `../claude-global-library/`
+- Skills/agents should be synced to `claude-global-library`, NOT `claude-insight`
 
 ### Quick Sync Commands
 
-**Full Sync (After Major Changes):**
+**Full Sync (Core Memory System Only):**
 ```bash
 cd /path/to/claude-insight
 
-# Sync all at once
-cp -r ~/.claude/skills/* skills/
-cp -r ~/.claude/agents/* agents/
+# Sync core memory system files (NO skills/agents)
 cp -r ~/.claude/memory/policies/* policies/
-cp -r ~/.claude/memory/docs/* memory-docs/
-cp -r ~/.claude/memory/scripts/* memory-scripts/
-cp -r ~/.claude/memory/config/* config/
-cp ~/.claude/CLAUDE.md CLAUDE.md
-cp ~/.claude/memory/MASTER-README.md MASTER-README.md
+cp -r ~/.claude/memory/docs/* docs/
+cp -r ~/.claude/memory/scripts/* scripts/
 
-echo "✅ Full sync completed!"
+echo "✅ Core memory system sync completed!"
 ```
 
 **Single Item Sync:**
 ```bash
-# New skill
-cp -r ~/.claude/skills/{skill-name} /path/to/claude-insight/skills/
-
-# New agent
-cp -r ~/.claude/agents/{agent-name} /path/to/claude-insight/agents/
-
 # Updated policy
 cp ~/.claude/memory/policies/{policy-file}.md /path/to/claude-insight/policies/
+
+# Updated doc
+cp ~/.claude/memory/docs/{doc-file}.md /path/to/claude-insight/docs/
+
+# Updated script
+cp ~/.claude/memory/scripts/{script-name}.py /path/to/claude-insight/scripts/
+```
+
+**For Skills/Agents (Use claude-global-library instead):**
+```bash
+# Sync to claude-global-library (NOT claude-insight)
+cd /path/to/claude-global-library
+
+# New skill
+cp -r ~/.claude/skills/{skill-name} skills/
+
+# New agent
+cp -r ~/.claude/agents/{agent-name} agents/
 ```
 
 ### Verification
 
 ```bash
-# Verify skill synced
-ls /path/to/claude-insight/skills/{skill-name}
+# Verify policy synced
+ls /path/to/claude-insight/policies/{policy-file}.md
 
 # Verify agent synced
 ls /path/to/claude-insight/agents/{agent-name}
@@ -3251,17 +3253,8 @@ claude-insight/
 │   ├── monitors/                        # Monitoring tools
 │   └── ... (81+ files)
 │
-├── skills/                              # 28+ skills
-│   ├── java-spring-boot-microservices/
-│   ├── docker/
-│   ├── kubernetes/
-│   └── ... (28+ skills)
-│
-├── agents/                              # 12+ agents
-│   ├── spring-boot-microservices/
-│   ├── orchestrator-agent/
-│   ├── devops-engineer/
-│   └── ... (12+ agents)
+├── AGENTS_AND_SKILLS.md                 # Reference to claude-global-library
+│   # Skills/agents moved to: https://github.com/piyushmakhija28/claude-global-library
 │
 ├── config/                              # 6+ configuration files
 │   ├── skills-registry.json
