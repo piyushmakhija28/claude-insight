@@ -33,20 +33,22 @@
 
 ## 🚀 **Current System Architecture**
 
-### **Daemons: 8/8 Running (100%)**
+### **Daemons: 10/10 Running (100%)**
 
 | # | Daemon | Architecture | Status |
 |---|--------|-------------|--------|
 | 1 | **failure-prevention-daemon-smart** | Smart Adaptive (10-60s) | 🟢 Running |
 | 2 | **context-daemon-hybrid** | Event-Driven + Periodic (30s) | 🟢 Running |
 | 3 | **session-auto-save-daemon** | Event-Driven | 🟢 Running |
-| 4 | **preference-auto-tracker** | Tracking | 🟢 Running |
-| 5 | **pattern-detection-daemon** | Detection | 🟢 Running |
+| 4 | **preference-auto-tracker** | User Preferences | 🟢 Running |
+| 5 | **pattern-detection-daemon** | Code Patterns | 🟢 Running |
 | 6 | **commit-daemon** | Auto-commit | 🟢 Running |
-| 7 | **session-pruning-daemon** | Cleanup | 🟢 Running |
-| 8 | **skill-auto-suggester** | Suggestions | 🟢 Running |
+| 7 | **session-pruning-daemon** | Session Cleanup | 🟢 Running |
+| 8 | **skill-auto-suggester** | Skill/Agent Suggestions | 🟢 Running |
+| 9 | **token-optimization-daemon** | Auto-prune context >85% | 🟢 Running |
+| 10 | **health-monitor-daemon** | Auto-restart dead daemons | 🟢 Running |
 
-**Deleted:** auto-recommendation-daemon (buggy, not needed)
+**Deleted:** auto-recommendation-daemon (buggy), old daemon versions (3 files)
 
 ---
 
