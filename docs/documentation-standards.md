@@ -1,8 +1,38 @@
 # Documentation Standards Policy
 
-**VERSION:** 1.0.0
-**STATUS:** 🟢 ACTIVE ENFORCEMENT
+**VERSION:** 2.0.0
+**STATUS:** 🟢 ACTIVE ENFORCEMENT + AUTO-CHECK
 **SCOPE:** All Git Projects
+
+---
+
+## 🚨 MANDATORY: Auto-Check & Create Comprehensive Documentation
+
+**NEW POLICY (v2.0.0):**
+
+**For EVERY git repository:**
+1. ✅ **Check** for README.md and CLAUDE.md
+2. ✅ **Check comprehensiveness** (minimum 50 lines, required sections)
+3. ✅ **Auto-create** if missing
+4. ✅ **Auto-update** if not comprehensive
+
+**Automation Script:**
+```bash
+# Check all git repos
+python ~/.claude/memory/scripts/comprehensive-docs-checker.py /path/to/project
+
+# Auto-create missing files
+python ~/.claude/memory/scripts/comprehensive-docs-checker.py /path/to/project --auto-create
+
+# Auto-create + Auto-update non-comprehensive files
+python ~/.claude/memory/scripts/comprehensive-docs-checker.py /path/to/project --auto-create --auto-update
+```
+
+**When to Run:**
+- ✅ On new git repository creation
+- ✅ When user requests documentation check
+- ✅ When missing documentation detected
+- ✅ Periodic checks (monthly)
 
 ---
 
@@ -144,6 +174,59 @@ Service-specific API docs...
 - Use consistent naming (verb-noun format)
 - Add "Back to Top" links for long documents
 - Include status badges (✅, ❌, 🟡, etc.)
+
+---
+
+## 📏 Comprehensiveness Requirements (AUTO-CHECKED)
+
+**BOTH README.md and CLAUDE.md MUST be comprehensive:**
+
+### Minimum Requirements for README.md:
+
+**✅ MUST HAVE (or file is marked non-comprehensive):**
+1. **Minimum 50 lines** of actual content
+2. **Title** (`# Project/Service Name`)
+3. **Table of Contents** (with clickable links)
+4. **Architecture** section (tech stack, dependencies)
+5. **Getting Started** section (prerequisites, installation, running)
+6. **Multiple sections** (at least 5 major sections with `##`)
+
+**⚠️ If ANY is missing → Marked as "Not comprehensive"**
+
+### Minimum Requirements for CLAUDE.md:
+
+**✅ MUST HAVE (or file is marked non-comprehensive):**
+1. **Minimum 50 lines** of actual content
+2. **Title** (`# [Name] - Claude Code Instructions`)
+3. **PROJECT OVERVIEW** section
+4. **PROJECT STRUCTURE** section (directory layout)
+5. **PROJECT-SPECIFIC** rules/conventions section
+6. **Multiple sections** (at least 5 major sections with `##`)
+
+**⚠️ If ANY is missing → Marked as "Not comprehensive"**
+
+### Auto-Checker Behavior:
+
+**On detection of non-comprehensive file:**
+1. 🔍 **Check** - Identify missing sections/requirements
+2. 📄 **Report** - Show what's missing
+3. 🛠️ **Auto-fix** (if `--auto-update` flag used):
+   - Backup original file (`.backup` extension)
+   - Generate comprehensive version
+   - Include all required sections
+   - Preserve any custom content
+
+**Example:**
+```bash
+# Check only (no changes)
+python comprehensive-docs-checker.py /path/to/project
+
+# Auto-create missing files
+python comprehensive-docs-checker.py /path/to/project --auto-create
+
+# Auto-create + Auto-update non-comprehensive files
+python comprehensive-docs-checker.py /path/to/project --auto-create --auto-update
+```
 
 ---
 
