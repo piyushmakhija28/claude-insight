@@ -619,10 +619,6 @@
             z-index: 0;
         }
 
-        [data-theme="dark"] .stat-icon {
-            opacity: 0.15;
-        }
-
         .card-header {
             background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
             color: #1e293b;
@@ -650,10 +646,6 @@
         .card-header h5 i {
             color: #6366f1;
             margin-right: 0.5rem;
-        }
-
-        [data-theme="dark"] .card-header h5 i {
-            color: #818cf8;
         }
 
         .card-body {
@@ -952,91 +944,6 @@
 
         [data-theme="dark"] .metric-box:hover {
             background: #475569;
-        }
-
-        /* Bootstrap Color Class Overrides for Dark Mode */
-        [data-theme="dark"] .text-muted {
-            color: #94a3b8 !important;
-        }
-
-        [data-theme="dark"] .text-secondary {
-            color: #cbd5e1 !important;
-        }
-
-        [data-theme="dark"] .bg-light {
-            background-color: #334155 !important;
-        }
-
-        [data-theme="dark"] .bg-white {
-            background-color: #1e293b !important;
-        }
-
-        [data-theme="dark"] small {
-            color: var(--text-secondary);
-        }
-
-        /* Status Badge Dark Mode Fixes */
-        [data-theme="dark"] .status-active {
-            background: rgba(16, 185, 129, 0.2);
-            color: #34d399;
-        }
-
-        [data-theme="dark"] .status-warning {
-            background: rgba(251, 191, 36, 0.2);
-            color: #fbbf24;
-        }
-
-        [data-theme="dark"] .status-error {
-            background: rgba(239, 68, 68, 0.2);
-            color: #f87171;
-        }
-
-        /* Activity Timeline Dark Mode */
-        [data-theme="dark"] .activity-item {
-            color: #f1f5f9;
-        }
-
-        [data-theme="dark"] .activity-item .text-muted {
-            color: #94a3b8 !important;
-        }
-
-        /* Headings Dark Mode */
-        [data-theme="dark"] h1,
-        [data-theme="dark"] h2,
-        [data-theme="dark"] h3,
-        [data-theme="dark"] h4,
-        [data-theme="dark"] h5,
-        [data-theme="dark"] h6 {
-            color: #f1f5f9;
-        }
-
-        [data-theme="dark"] p {
-            color: #e2e8f0;
-        }
-
-        /* List Group Dark Mode */
-        [data-theme="dark"] .list-group-item {
-            background-color: #1e293b;
-            color: #f1f5f9;
-            border-color: #334155;
-        }
-
-        [data-theme="dark"] .list-group-item:hover {
-            background-color: #334155;
-        }
-
-        /* Modal Dark Mode */
-        [data-theme="dark"] .modal-content {
-            background-color: #1e293b;
-            color: #f1f5f9;
-        }
-
-        [data-theme="dark"] .modal-header {
-            border-bottom-color: #334155;
-        }
-
-        [data-theme="dark"] .modal-footer {
-            border-top-color: #334155;
         }
 
         /* Notification Badge */
@@ -1358,7 +1265,7 @@
     {% block extra_css %}{% endblock %}
 </head>
 <body>
-    {% if session.get('logged_in') %}
+    {% if session.logged_in %}
     <!-- Admin Dashboard Layout -->
     <div class="admin-wrapper">
         <!-- Sidebar Navigation -->
@@ -1514,12 +1421,11 @@
                     <i class="fas fa-chevron-down ms-2"></i>
                 </div>
 
-                <div class="dropdown-menu dropdown-menu-end" id="userDropdown" style="display: none; position: absolute; right: 1rem; top: 100%; margin-top: 0.5rem; min-width: 200px; z-index: 1050; background: white; border: 1px solid #e5e7eb; border-radius: 0.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
-                    <a class="dropdown-item" href="{{ url_for('settings') }}" style="padding: 0.75rem 1rem; display: block; color: #1e293b; text-decoration: none; transition: background 0.2s;">
+                <div class="dropdown-menu dropdown-menu-end" id="userDropdown" style="display: none; position: absolute; right: 0; top: 60px;">
+                    <a class="dropdown-item" href="{{ url_for('settings') }}">
                         <i class="fas fa-cog me-2"></i>Settings
                     </a>
-                    <div style="border-top: 1px solid #e5e7eb;"></div>
-                    <a class="dropdown-item" href="{{ url_for('logout') }}" style="padding: 0.75rem 1rem; display: block; color: #ef4444; text-decoration: none; transition: background 0.2s;">
+                    <a class="dropdown-item" href="{{ url_for('logout') }}">
                         <i class="fas fa-sign-out-alt me-2"></i>Logout
                     </a>
                 </div>
@@ -1628,7 +1534,7 @@
     </div>
     {% endif %}
 
-    {% if session.get('logged_in') %}
+    {% if session.logged_in %}
     <!-- Professional Footer -->
     <footer class="modern-footer mt-5">
         <div class="container">

@@ -5364,7 +5364,7 @@ def background_thread():
             policy_status = policy_checker.get_detailed_policy_status()
 
             daemons_running = len([d for d in daemon_status if d.get('status') == 'running'])
-            daemons_total = len(daemon_status) if daemon_status else 10  # 10 core daemons
+            daemons_total = len(daemon_status) if daemon_status else 8
             health_score = system_health.get('health_score', system_health.get('score', 0))
 
             socketio.emit('metrics_update', {
@@ -5375,7 +5375,7 @@ def background_thread():
                 'context_usage': system_health.get('context_usage', 0),
                 'memory_usage': system_health.get('memory_usage', 0),
                 'timestamp': datetime.now().isoformat()
-            }, namespace='/')
+            }, broadcast=True)
         except Exception as e:
             print(f"Error in background thread: {e}")
 
@@ -5384,9 +5384,9 @@ thread = threading.Thread(target=background_thread, daemon=True)
 thread.start()
 
 if __name__ == '__main__':
-    print(f"""
+    print("""
     ============================================================
-    Claude Insight v{APP_VERSION} (3-Level Architecture Edition)
+    Claude Insight v2.12 (Memory Integration Edition)
     ============================================================
 
     Dashboard URL: http://localhost:5000
@@ -5400,10 +5400,9 @@ if __name__ == '__main__':
     Username: admin
     Password: admin
 
-    🧠 Memory System v3.2.0 (3-Level Architecture):
-    ✓ 10 Daemon health monitoring (all core daemons + health monitor)
-    ✓ 3-Level Architecture (Sync → Rules → Execution)
-    ✓ 12-Step Execution System (Prompt → Task → Model → Tools)
+    🧠 Memory System v2.2.0 Integration:
+    ✓ 8 Daemon health monitoring (context, auto-save, git, etc.)
+    ✓ 10 Policy enforcement tracking (active status)
     ✓ Context optimization metrics (cache hits, token savings)
     ✓ Failure prevention stats (auto-fixes, patterns learned)
     ✓ Model selection distribution (haiku/sonnet/opus usage)

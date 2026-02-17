@@ -619,10 +619,6 @@
             z-index: 0;
         }
 
-        [data-theme="dark"] .stat-icon {
-            opacity: 0.15;
-        }
-
         .card-header {
             background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
             color: #1e293b;
@@ -650,10 +646,6 @@
         .card-header h5 i {
             color: #6366f1;
             margin-right: 0.5rem;
-        }
-
-        [data-theme="dark"] .card-header h5 i {
-            color: #818cf8;
         }
 
         .card-body {
@@ -952,91 +944,6 @@
 
         [data-theme="dark"] .metric-box:hover {
             background: #475569;
-        }
-
-        /* Bootstrap Color Class Overrides for Dark Mode */
-        [data-theme="dark"] .text-muted {
-            color: #94a3b8 !important;
-        }
-
-        [data-theme="dark"] .text-secondary {
-            color: #cbd5e1 !important;
-        }
-
-        [data-theme="dark"] .bg-light {
-            background-color: #334155 !important;
-        }
-
-        [data-theme="dark"] .bg-white {
-            background-color: #1e293b !important;
-        }
-
-        [data-theme="dark"] small {
-            color: var(--text-secondary);
-        }
-
-        /* Status Badge Dark Mode Fixes */
-        [data-theme="dark"] .status-active {
-            background: rgba(16, 185, 129, 0.2);
-            color: #34d399;
-        }
-
-        [data-theme="dark"] .status-warning {
-            background: rgba(251, 191, 36, 0.2);
-            color: #fbbf24;
-        }
-
-        [data-theme="dark"] .status-error {
-            background: rgba(239, 68, 68, 0.2);
-            color: #f87171;
-        }
-
-        /* Activity Timeline Dark Mode */
-        [data-theme="dark"] .activity-item {
-            color: #f1f5f9;
-        }
-
-        [data-theme="dark"] .activity-item .text-muted {
-            color: #94a3b8 !important;
-        }
-
-        /* Headings Dark Mode */
-        [data-theme="dark"] h1,
-        [data-theme="dark"] h2,
-        [data-theme="dark"] h3,
-        [data-theme="dark"] h4,
-        [data-theme="dark"] h5,
-        [data-theme="dark"] h6 {
-            color: #f1f5f9;
-        }
-
-        [data-theme="dark"] p {
-            color: #e2e8f0;
-        }
-
-        /* List Group Dark Mode */
-        [data-theme="dark"] .list-group-item {
-            background-color: #1e293b;
-            color: #f1f5f9;
-            border-color: #334155;
-        }
-
-        [data-theme="dark"] .list-group-item:hover {
-            background-color: #334155;
-        }
-
-        /* Modal Dark Mode */
-        [data-theme="dark"] .modal-content {
-            background-color: #1e293b;
-            color: #f1f5f9;
-        }
-
-        [data-theme="dark"] .modal-header {
-            border-bottom-color: #334155;
-        }
-
-        [data-theme="dark"] .modal-footer {
-            border-top-color: #334155;
         }
 
         /* Notification Badge */
