@@ -1219,19 +1219,44 @@ security:
 
 ## 🎯 EXECUTION FLOW (MANDATORY)
 
-**🚨 CRITICAL: Run BEFORE EVERY user request (not just session start!):**
+**🤖 TRUE AUTOMATION MODE (OPTION B - RECOMMENDED):**
 
 ```bash
-# STEP -2: START NEW REQUEST ENFORCEMENT (MANDATORY FIRST!)
-python ~/.claude/memory/per-request-enforcer.py --new-request
+# ONE-TIME SETUP: Install automatic hooks
+bash ~/.claude/memory/install-auto-hooks.sh
+
+# That's it! Hooks now run automatically before EVERY request
+# No manual intervention needed!
 ```
 
-**This resets per-request policies and shows:**
-- 🔄 Request counter
-- 📋 Which policies need to be enforced THIS request
-- ✅ Status of each policy
+**Hooks installed:**
+- ✅ `pre-request` hook → Runs `auto-enforce-all-policies.sh` automatically
+- ✅ `user-prompt-submit` hook → Runs before processing user prompt
+- 🔒 **Blocking mode** → Must pass to proceed
 
-**On EVERY user request:**
+**What happens automatically:**
+1. New request detected
+2. Auto-enforce-all-policies.sh runs
+3. All 3 layers enforced automatically
+4. Response only if all policies pass
+
+---
+
+**📋 MANUAL BACKUP MODE (OPTION A - FALLBACK):**
+
+If hooks don't work or disabled, use manual mode:
+
+```bash
+# STEP -2: START NEW REQUEST (Run this BEFORE every response!)
+python ~/.claude/memory/per-request-enforcer.py --new-request
+
+# OR use the all-in-one automatic script:
+bash ~/.claude/memory/auto-enforce-all-policies.sh
+```
+
+---
+
+**On EVERY user request (Manual Mode):**
 
 ```
 🚨 AUTO-FIX ENFORCEMENT (STEP -1 - BEFORE EVERYTHING) 🚨
@@ -1738,12 +1763,20 @@ Task(subagent_type="migration-expert", prompt="...")
 
 ---
 
-**VERSION:** 2.9.0 (Per-Request Policy Enforcement)
+**VERSION:** 3.0.0 (TRUE AUTOMATION - Auto-Hooks)
 **LAST UPDATED:** 2026-02-17
-**STATUS:** 🟢 FULLY OPERATIONAL
+**STATUS:** 🤖 FULLY AUTOMATED
 **LOCATION:** `~/.claude/CLAUDE.md`
 
 **CHANGELOG:**
+- v3.0.0 (2026-02-17): 🤖 **TRUE AUTOMATION - Auto-Hooks:**
+  - Created auto-enforce-all-policies.sh (all-in-one automatic script)
+  - Created install-auto-hooks.sh (automatic hook installer)
+  - Installed pre-request and user-prompt-submit hooks
+  - Policies now run AUTOMATICALLY before every request (no manual steps!)
+  - Added Option B (TRUE automation) + Option A (manual backup)
+  - Blocking mode: Policies must pass before response
+  - Complete 3-level architecture runs automatically
 - v2.9.0 (2026-02-17): 🔄 **Per-Request Policy Enforcement:**
   - Created per-request-enforcer.py for continuous policy enforcement
   - Policies now run BEFORE EVERY user request (not just session start)
