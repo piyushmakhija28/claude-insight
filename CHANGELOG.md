@@ -7,9 +7,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+---
+
+## [2.7.0] - 2026-02-17
+
+### Added
+- **Complete Daemon Management System**
+  - Added `daemon-manager.py` - Comprehensive daemon lifecycle management for all 10 daemons
+  - Added `health-monitor-daemon.py` - Auto-restart monitor for dead daemons (checks every 5 min)
+  - Added `daemon-logger.py` - Centralized daemon logging system
+  - Added `pid-tracker.py` - Process ID tracking and management
+  - All utilities added to `src/utils/` for easy access
+
+- **Enhanced Daemon Support**
+  - Now manages 10 core daemons (upgraded from 8-9)
+  - Added `token-optimization-daemon` - Auto-optimizes context when >85%
+  - Added `health-monitor-daemon` - Auto-restarts dead daemons
+  - Removed non-existent `auto-recommendation-daemon`
+
+- **Cross-Platform Daemon Management**
+  - Windows, Linux, Mac support
+  - Auto-start on system login
+  - JSON status API for dashboard integration
+  - Real-time daemon health monitoring
+
 ### Changed
-- Migrated to semantic versioning (MAJOR.MINOR.PATCH)
-- Improved version management workflow
+- **daemon-manager.py** - Updated with correct subdirectory paths for all daemon scripts
+- **health-monitor-daemon.py** - Fixed import paths to use `utilities/` subdirectory
+- All daemon scripts now properly reference their actual locations
+- Documentation updated with complete daemon system details
+
+### Fixed
+- Fixed daemon-manager.py looking for scripts in wrong directories
+- Fixed health-monitor-daemon.py import errors (daemon-logger.py, pid-tracker.py, daemon-manager.py)
+- Fixed missing daemon paths causing startup failures
+- All 10 daemons now start and run correctly with auto-restart capability
+
+### Documentation
+- Updated README.md with daemon management system details
+- Updated CLAUDE.md with complete daemon information
+- Added daemon utilities documentation
+- Added changelog entry for v2.7.0
 
 ---
 

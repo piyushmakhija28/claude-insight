@@ -1,6 +1,7 @@
-# 🤖 Claude Insight v2.5.2
+# 🤖 Claude Insight v2.7.0
 
 **Professional Real-time Analytics Dashboard with Complete Claude Memory System v2.5.0 Integration**
+**🆕 Now with Enhanced Daemon Management System (10 Daemons)**
 
 [![GitHub](https://img.shields.io/badge/GitHub-claude--monitoring--system-blue?logo=github)](https://github.com/piyushmakhija28/claude-insight)
 [![Python](https://img.shields.io/badge/Python-3.7+-blue?logo=python)](https://www.python.org/)
@@ -11,11 +12,12 @@ A comprehensive, real-time monitoring and analytics dashboard for the Claude Mem
 
 **🎁 COMPLETE PACKAGE**: This repo includes **everything you need** - the monitoring dashboard + **complete Claude Memory System v2.5.0 files**:
 - ✅ **139 files** - All automation scripts, policies, and documentation
-- ✅ **8-9 daemons** - Complete daemon monitoring scripts
+- ✅ **10 daemons** - Complete daemon management system with auto-restart (v2.7.0 🆕)
 - ✅ **81 automation scripts** - Python & Shell scripts for all features
 - ✅ **50 policy files** - All 14 policies + complete documentation
 - ✅ **CLAUDE.md** - Global configuration v2.2.0
 - ✅ **Real-time integration** - Live monitoring of all components
+- ✅ **Daemon utilities** - daemon-manager.py, health-monitor-daemon.py, and more (v2.7.0 🆕)
 
 **Developed by [TechDeveloper](https://www.techdeveloper.in)** 💻
 
@@ -1649,23 +1651,50 @@ RESULT: Code that follows ALL standards
 
 ### Background Automation
 
-**Continuous (Every 5-20 min):**
-- Context usage monitored
-- Sessions auto-saved
-- Preferences learned
-- Skills suggested
-- Token optimization applied
+**🤖 10 Core Daemons (v2.7.0 - ENHANCED):**
+
+All daemons run 24/7 with auto-restart capability:
+
+1. **context-daemon** - Hybrid monitoring (event + periodic, 30s)
+2. **session-auto-save-daemon** - Auto-saves at milestones
+3. **preference-auto-tracker** - Learns user preferences
+4. **skill-auto-suggester** - Recommends skills/agents
+5. **commit-daemon** - Auto-commits on phase completion
+6. **session-pruning-daemon** - Cleans old sessions weekly
+7. **pattern-detection-daemon** - Detects code patterns
+8. **failure-prevention-daemon** - Smart adaptive (10-60s intervals)
+9. **token-optimization-daemon** - Auto-optimizes context >85%
+10. **health-monitor-daemon** - Auto-restarts dead daemons (every 5 min)
+
+**✅ Daemon Management System:**
+- **daemon-manager.py** - Start/stop/status for all daemons
+- **health-monitor-daemon.py** - Monitors all 10 daemons, auto-restarts on failure
+- **daemon-logger.py** - Centralized daemon logging
+- **pid-tracker.py** - Process ID management
+- Auto-start on Windows/Linux/Mac login
+- Cross-platform support (Windows/Linux/Mac)
+- JSON status API for dashboard integration
+
+**Continuous (Every 5-60 sec):**
+- Context usage monitored (hybrid: event + 30s periodic)
+- Failure prevention (smart adaptive: 10-60s based on activity)
+- Health monitoring (every 5 min, auto-restart dead daemons)
+- Token optimization (triggered when context >85%)
 
 **Periodic (Daily/Weekly/Monthly):**
-- Failures analyzed and learned
-- Cross-project patterns detected
-- Old sessions archived
-- System health checked
+- Sessions auto-saved (at milestones)
+- Preferences learned (continuous)
+- Skills suggested (continuous)
+- Failures analyzed and learned (adaptive intervals)
+- Cross-project patterns detected (continuous)
+- Old sessions archived (weekly)
+- System health checked (every 5 min by health-monitor)
 
 **Event-Driven:**
 - Git commits on completion
-- Context cleanup on threshold
-- Daemon auto-restart on failure
+- Context cleanup on threshold (>85%)
+- Daemon auto-restart on failure (instant)
+- Pattern detection on code changes
 
 ---
 

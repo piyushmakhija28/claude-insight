@@ -1,9 +1,10 @@
 # Claude Insight - Project Instructions
 
 **Project:** Claude Insight - Monitoring Dashboard for Claude Memory System
-**Version:** 2.6.0
+**Version:** 2.7.0
 **Type:** Public GitHub Repository
 **Status:** 🟢 Active
+**Updated:** 2026-02-17 (Daemon Management System Enhanced)
 
 ---
 
@@ -34,14 +35,22 @@
    - `auto-fix-enforcer.py` - System health checks
    - `blocking-policy-enforcer.py` - Policy enforcement
 
-3. **Core Documentation:**
+3. **Daemon Management System (NEW - v2.7.0):**
+   - `daemon-manager.py` - Daemon lifecycle management (10 daemons)
+   - `health-monitor-daemon.py` - Auto-restart dead daemons
+   - `daemon-logger.py` - Centralized daemon logging
+   - `pid-tracker.py` - Process ID tracking
+   - Supports all 10 core daemons with auto-restart
+
+4. **Core Documentation:**
    - `MASTER-README.md` - Complete system documentation
    - Policy documentation (enforcement, failure prevention)
 
-4. **Dashboard Files:**
+5. **Dashboard Files:**
    - Monitoring dashboard UI
    - Analytics visualization
    - Health check displays
+   - Daemon status monitoring
 
 **❌ NOT INCLUDED (These Go to Claude Global Library):**
 - Skills (Docker, Kubernetes, Java, etc.)
@@ -75,6 +84,59 @@ claude-insight/
 └── tests/                         # Test files
 
 ```
+
+---
+
+## 🤖 Daemon Management System (v2.7.0)
+
+**Overview:**
+Claude Insight now includes a complete daemon management system that handles all 10 core daemons of the Claude Memory System.
+
+**10 Core Daemons:**
+1. **context-daemon** - Monitors context usage (hybrid: event-driven + periodic)
+2. **session-auto-save-daemon** - Auto-saves sessions at milestones
+3. **preference-auto-tracker** - Learns user preferences automatically
+4. **skill-auto-suggester** - Suggests relevant skills/agents
+5. **commit-daemon** - Auto-commits on phase completion
+6. **session-pruning-daemon** - Cleans old sessions weekly
+7. **pattern-detection-daemon** - Detects code patterns
+8. **failure-prevention-daemon** - Smart adaptive failure detection
+9. **token-optimization-daemon** - Auto-optimizes context when >85%
+10. **health-monitor-daemon** - Auto-restarts dead daemons
+
+**Daemon Utilities (`src/utils/`):**
+
+```python
+# daemon-manager.py - Main daemon controller
+python daemon-manager.py --status-all     # Check all daemon status
+python daemon-manager.py --start <name>   # Start specific daemon
+python daemon-manager.py --stop <name>    # Stop specific daemon
+python daemon-manager.py --restart <name> # Restart specific daemon
+
+# health-monitor-daemon.py - Auto-restart monitor
+# Runs continuously, checks every 5 minutes
+# Auto-restarts any dead daemons
+```
+
+**Key Features:**
+- ✅ Cross-platform (Windows/Linux/Mac)
+- ✅ Auto-restart on failure
+- ✅ Smart adaptive intervals (10-60s based on activity)
+- ✅ Event-driven + periodic monitoring
+- ✅ Centralized logging
+- ✅ PID tracking
+- ✅ JSON status output
+
+**Startup Integration:**
+- Windows: `scripts/start-all-daemons.bat` (auto-start on login)
+- Linux/Mac: `scripts/start-all-daemons.sh`
+
+**Recent Fixes (2026-02-17):**
+- ✅ Fixed daemon-manager.py to use correct subdirectory paths
+- ✅ Removed non-existent auto-recommendation-daemon
+- ✅ Added token-optimization-daemon and health-monitor-daemon
+- ✅ Fixed health-monitor-daemon import paths for utilities
+- ✅ All 10 daemons now managed correctly
 
 ---
 
@@ -167,7 +229,15 @@ bash sync-from-memory-system.sh
 
 ---
 
-**VERSION:** 1.0.0 (Project-Specific)
+**VERSION:** 2.7.0 (Daemon Management Enhanced)
 **LAST UPDATED:** 2026-02-17
 **TYPE:** Public Project Instructions
 **LOCATION:** `claude-insight/CLAUDE.md`
+
+**CHANGELOG v2.7.0:**
+- Added complete daemon management system (10 daemons)
+- Added daemon utilities to src/utils/
+- Fixed daemon-manager.py with correct paths
+- Fixed health-monitor-daemon.py imports
+- Enhanced documentation with daemon details
+- All systems operational and auto-restarting
