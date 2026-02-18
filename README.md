@@ -3413,3 +3413,127 @@ This release answers the fundamental question: "Is the automation system working
 ---
 
 **End of README** 📖
+
+---
+
+## 📁 Session & Log Management
+
+### Session Storage
+
+**Global Memory System:**
+```
+~/.claude/memory/sessions/
+├── SESSION-20260217-121025-AFV3.json          # Session metadata
+├── current-session.json                        # Current active session
+└── [project-name]/                             # Project-specific sessions
+    ├── session-2026-01-25-15-00.md            # Session notes
+    └── project-summary.md                      # Project summary
+```
+
+**Claude Insight:**
+```
+claude-insight/data/sessions/
+└── [session-id]/                               # Session-specific data
+    ├── session.json                            # Session metadata
+    ├── metrics.json                            # Session metrics
+    └── events.log                              # Session events
+```
+
+### Log Storage
+
+**Global Memory System:**
+```
+~/.claude/memory/logs/
+├── policy-hits.log                             # Policy applications
+├── sessions.log                                # Session events
+├── daemons/                                    # Daemon logs
+│   ├── context-daemon.log
+│   ├── session-auto-save-daemon.log
+│   └── ...
+├── auto-enforcement.log                        # Auto-enforcement logs
+└── sessions/                                   # 🆕 Session-based logs
+    └── SESSION-YYYYMMDD-HHMMSS-XXXX/          # Per-session folder
+        ├── 00-session-start.log               # Session initialization
+        ├── 01-level-minus-1.log              # Auto-fix enforcement
+        ├── 02-level-1-sync.log               # Sync system
+        ├── 03-level-2-standards.log          # Standards loaded
+        ├── 04-level-3-execution.log          # All 12 steps
+        ├── user-prompt.txt                    # Original user request
+        ├── generated-prompt.yaml              # AI-generated prompt
+        ├── thinking-process.md                # What I thought & why
+        ├── decisions.yaml                     # All decisions made
+        ├── task-breakdown.yaml                # Tasks created
+        ├── tools-used.log                     # Tool calls made
+        └── session-summary.md                 # Complete summary
+```
+
+**Claude Insight:**
+```
+claude-insight/logs/
+├── flask.log                                   # Flask application log
+├── monitoring.log                              # Monitoring events
+├── errors.log                                  # Error log
+└── sessions/                                   # 🆕 Session-based logs
+    └── SESSION-YYYYMMDD-HHMMSS-XXXX/          # Same structure as global
+        └── (mirrors global session logs)
+```
+
+### Session-Based Logging (New Feature!)
+
+Every session now creates a dedicated folder with **COMPLETE TRANSPARENCY:**
+
+**What's Logged:**
+1. ✅ **3-Level Architecture Flow** - All steps with details
+2. ✅ **Thinking Process** - What I thought and WHY
+3. ✅ **User Prompt** - Your original request (exact copy)
+4. ✅ **Generated Prompt** - How prompt policy transformed it
+5. ✅ **Decisions** - Every decision made (model, tasks, tools, etc.)
+6. ✅ **Task Breakdown** - All tasks created automatically
+7. ✅ **Tool Calls** - Every tool used with parameters
+8. ✅ **Standards Applied** - Which coding standards enforced
+9. ✅ **Policies Triggered** - Which policies ran
+10. ✅ **Session Summary** - Complete overview
+
+**How to Access:**
+
+```bash
+# View current session logs
+SESSION_ID=$(cat ~/.claude/memory/sessions/current-session.json | grep -oP 'SESSION-[0-9-A-Z]+')
+cat ~/.claude/memory/logs/sessions/$SESSION_ID/thinking-process.md
+
+# View session summary
+cat ~/.claude/memory/logs/sessions/$SESSION_ID/session-summary.md
+
+# View all decisions
+cat ~/.claude/memory/logs/sessions/$SESSION_ID/decisions.yaml
+
+# View generated prompt
+cat ~/.claude/memory/logs/sessions/$SESSION_ID/generated-prompt.yaml
+```
+
+**Benefits:**
+- 🔍 **Full Transparency** - See exactly what Claude did and why
+- 📊 **Debugging** - Find issues in specific sessions
+- 📈 **Analytics** - Analyze patterns across sessions
+- 🤝 **Collaboration** - Share session logs with team
+- 📝 **Documentation** - Auto-documented decision process
+
+**Example Session Log:**
+```
+~/.claude/memory/logs/sessions/SESSION-20260218-094635-XYZ1/
+├── 00-session-start.log           # "Session started at 2026-02-18 09:46:35"
+├── 01-level-minus-1.log           # "Auto-fix: All systems operational"
+├── 02-level-1-sync.log            # "Context: 80%, Session: SESSION-..."
+├── 03-level-2-standards.log       # "Loaded 13 standards, 77 rules"
+├── 04-level-3-execution.log       # "Step 3.0: Prompt generated..."
+├── user-prompt.txt                # "Restructure Claude Insight..."
+├── generated-prompt.yaml          # Full structured prompt
+├── thinking-process.md            # "I need to: 1. Check docs 2. ..."
+├── decisions.yaml                 # "complexity: 5, model: HAIKU, ..."
+├── task-breakdown.yaml            # "3 tasks created: ..."
+├── tools-used.log                 # "Bash: ls -la, Read: README.md"
+└── session-summary.md             # Complete overview
+```
+
+This makes EVERY session FULLY TRACEABLE and TRANSPARENT! 🎉
+
