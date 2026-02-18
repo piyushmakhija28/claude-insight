@@ -244,7 +244,7 @@
 <!-- Policy Execution Tracking -->
 <div class="row mb-4">
     <div class="col-lg-8 mb-4 mb-lg-0">
-        <div class="card">
+        <div class="card h-100">
             <div class="card-header">
                 <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
                     <h5>
@@ -254,8 +254,10 @@
                     <span class="badge bg-success" id="policyHealthBadge">Loading...</span>
                 </div>
             </div>
-            <div class="card-body" style="min-height: 420px;">
-                <canvas id="policyExecutionTimelineChart" height="320"></canvas>
+            <div class="card-body">
+                <div style="height: 400px;">
+                    <canvas id="policyExecutionTimelineChart" height="350"></canvas>
+                </div>
                 <div class="mt-3">
                     <small class="text-muted">
                         <i class="fas fa-info-circle me-1"></i>
@@ -266,14 +268,14 @@
         </div>
     </div>
     <div class="col-lg-4">
-        <div class="card">
+        <div class="card h-100">
             <div class="card-header">
                 <h5>
                     <i class="fas fa-tasks"></i>
                     Enforcement Steps
                 </h5>
             </div>
-            <div class="card-body" style="max-height: 300px; overflow-y: auto;">
+            <div class="card-body" style="overflow-y: auto;">
                 <div id="enforcementSteps">
                     <div class="text-center text-muted py-4">
                         <i class="fas fa-spinner fa-spin fa-2x mb-3"></i>
@@ -346,7 +348,7 @@
 <!-- System Information -->
 <div class="row">
     <div class="col-lg-6 mb-4 mb-lg-0">
-        <div class="card">
+        <div class="card h-100">
             <div class="card-header">
                 <h5>
                     <i class="fas fa-info-circle"></i>
@@ -366,14 +368,14 @@
         </div>
     </div>
     <div class="col-lg-6">
-        <div class="card">
+        <div class="card h-100">
             <div class="card-header">
                 <h5>
                     <i class="fas fa-exclamation-triangle"></i>
                     Recent Errors
                 </h5>
             </div>
-            <div class="card-body" style="max-height: 300px; overflow-y: auto;">
+            <div class="card-body" style="overflow-y: auto;">
                 <div id="recentErrors">
                     <div class="text-center text-muted py-4">
                         <i class="fas fa-spinner fa-spin fa-2x mb-3"></i>
