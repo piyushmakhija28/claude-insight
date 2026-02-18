@@ -76,7 +76,7 @@
                     <i class="fas fa-spinner fa-spin"></i>
                 </div>
                 <div class="stat-label">Active Policies</div>
-                <small class="text-muted mt-2 d-block">Out of 6 total</small>
+                <small class="text-muted mt-2 d-block" id="totalPoliciesText">Out of ... total</small>
             </div>
         </div>
     </div>
@@ -221,9 +221,18 @@
                         <h6 class="text-muted mb-3"><i class="fas fa-percentage me-2"></i>Context Usage</h6>
                         <canvas id="contextUsageChart" height="200"></canvas>
                     </div>
-                    <div class="col-md-6">
-                        <h6 class="text-muted mb-3"><i class="fas fa-robot me-2"></i>Model Usage Distribution</h6>
-                        <canvas id="modelUsageChart" height="200"></canvas>
+                    <div class="col-md-12">
+                        <h6 class="text-muted mb-3"><i class="fas fa-robot me-2"></i>Model Usage Analysis</h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6 class="text-muted small mb-2">Distribution</h6>
+                                <canvas id="modelUsageChart" height="200"></canvas>
+                            </div>
+                            <div class="col-md-6">
+                                <h6 class="text-muted small mb-2">Trend (Last 7 Days)</h6>
+                                <canvas id="modelUsageTrendChart" height="200"></canvas>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -512,7 +521,7 @@ function loadMetrics() {
 
             // Update daemons
             const daemonsRunning = data.daemons_running || 0;
-            const totalDaemons = data.total_daemons || 0;
+            const totalDaemons = data.daemons_total || 0;
             document.getElementById('daemonsRunning').innerHTML = `
                 <span class="text-${daemonsRunning === totalDaemons ? 'success' : 'warning'}">${daemonsRunning}/${totalDaemons}</span>
             `;
@@ -520,9 +529,11 @@ function loadMetrics() {
 
             // Update active policies
             const activePolicies = data.active_policies || 0;
+            const totalPolicies = data.total_policies || 0;
             document.getElementById('activePolicies').innerHTML = `
-                <span class="text-primary">${activePolicies}/6</span>
+                <span class="text-primary">${activePolicies}</span>
             `;
+            document.getElementById('totalPoliciesText').textContent = `Out of ${totalPolicies} total`;
 
             // Update policy hits
             const policyHits = data.policy_hits_today || 0;
@@ -643,10 +654,15 @@ function loadSystemInfo() {
         .then(response => response.json())
         .then(data => {
             const container = document.getElementById('systemInfo');
+
+            // Determine badge color based on status
+            const statusBadgeColor = data.status === 'Operational' ? 'success' :
+                                    (data.status === 'Healthy' ? 'info' : 'warning');
+
             container.innerHTML = `
                 <tr>
                     <td class="text-muted">Status:</td>
-                    <td><span class="badge bg-success">Operational</span></td>
+                    <td><span class="badge bg-${statusBadgeColor}">${data.status || 'Unknown'}</span></td>
                 </tr>
                 <tr>
                     <td class="text-muted">Memory Path:</td>
@@ -1021,6 +1037,9 @@ function initializeModelUsageChart() {
             if (data.success) {
                 const canvas = document.getElementById('modelUsageChart');
                 if (canvas) {
+                    // Store percentage data in closure for access in callbacks
+                    const percentageData = data.percentage_data || [0, 0, 0];
+
                     new Chart(canvas.getContext('2d'), {
                         type: 'doughnut',
                         data: {
@@ -1047,6 +1066,22 @@ function initializeModelUsageChart() {
                                         usePointStyle: true,
                                         font: {
                                             size: 12
+                                        },
+                                        generateLabels: function(chart) {
+                                            const chartData = chart.data;
+                                            if (chartData.labels.length && chartData.datasets.length) {
+                                                return chartData.labels.map((label, i) => {
+                                                    const value = chartData.datasets[0].data[i];
+                                                    const percentage = percentageData[i] || 0;
+                                                    return {
+                                                        text: `${label}: ${percentage.toFixed(1)}%`,
+                                                        fillStyle: chartData.datasets[0].backgroundColor[i],
+                                                        hidden: false,
+                                                        index: i
+                                                    };
+                                                });
+                                            }
+                                            return [];
                                         }
                                     }
                                 },
@@ -1055,7 +1090,7 @@ function initializeModelUsageChart() {
                                         label: function(context) {
                                             const label = context.label || '';
                                             const value = context.parsed || 0;
-                                            const percentage = data.percentage_data[context.dataIndex] || 0;
+                                            const percentage = percentageData[context.dataIndex] || 0;
                                             return `${label}: ${value} requests (${percentage.toFixed(1)}%)`;
                                         }
                                     }
@@ -1068,6 +1103,105 @@ function initializeModelUsageChart() {
         })
         .catch(error => {
             console.error('Error loading model usage data:', error);
+        });
+}
+
+// Initialize Model Usage Trend Chart (Line Chart)
+function initializeModelUsageTrendChart() {
+    fetch('/api/model-usage-trend')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const canvas = document.getElementById('modelUsageTrendChart');
+                if (canvas) {
+                    new Chart(canvas.getContext('2d'), {
+                        type: 'line',
+                        data: {
+                            labels: data.labels || [],
+                            datasets: [
+                                {
+                                    label: 'Haiku',
+                                    data: data.haiku_data || [],
+                                    borderColor: 'rgba(99, 102, 241, 1)',
+                                    backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                                    borderWidth: 2,
+                                    fill: true,
+                                    tension: 0.4
+                                },
+                                {
+                                    label: 'Sonnet',
+                                    data: data.sonnet_data || [],
+                                    borderColor: 'rgba(139, 92, 246, 1)',
+                                    backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                                    borderWidth: 2,
+                                    fill: true,
+                                    tension: 0.4
+                                },
+                                {
+                                    label: 'Opus',
+                                    data: data.opus_data || [],
+                                    borderColor: 'rgba(236, 72, 153, 1)',
+                                    backgroundColor: 'rgba(236, 72, 153, 0.1)',
+                                    borderWidth: 2,
+                                    fill: true,
+                                    tension: 0.4
+                                }
+                            ]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    position: 'bottom',
+                                    labels: {
+                                        padding: 10,
+                                        usePointStyle: true,
+                                        font: {
+                                            size: 11
+                                        }
+                                    }
+                                },
+                                tooltip: {
+                                    mode: 'index',
+                                    intersect: false,
+                                    callbacks: {
+                                        label: function(context) {
+                                            const label = context.dataset.label || '';
+                                            const value = context.parsed.y || 0;
+                                            return `${label}: ${value} requests`;
+                                        }
+                                    }
+                                }
+                            },
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    ticks: {
+                                        stepSize: 1
+                                    },
+                                    grid: {
+                                        color: 'rgba(0, 0, 0, 0.05)'
+                                    }
+                                },
+                                x: {
+                                    grid: {
+                                        display: false
+                                    }
+                                }
+                            },
+                            interaction: {
+                                mode: 'nearest',
+                                axis: 'x',
+                                intersect: false
+                            }
+                        }
+                    });
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Error loading model usage trend data:', error);
         });
 }
 
@@ -1241,6 +1375,7 @@ function updateRecentExecutions(executions) {
 document.addEventListener('DOMContentLoaded', function() {
     initializeHistoricalCharts();
     initializeModelUsageChart();
+    initializeModelUsageTrendChart();
     initializePolicyExecutionTracking();
 });
 
@@ -1470,6 +1605,12 @@ function updateDashboardWithWebSocketData(data) {
         const policiesEl = document.getElementById('activePolicies');
         if (policiesEl) {
             policiesEl.innerHTML = `<div class="text-info">${data.active_policies}</div>`;
+        }
+
+        // Update total policies text
+        const totalPoliciesEl = document.getElementById('totalPoliciesText');
+        if (totalPoliciesEl && data.total_policies !== undefined) {
+            totalPoliciesEl.textContent = `Out of ${data.total_policies} total`;
         }
 
         console.log('✅ Dashboard updated with real-time data');

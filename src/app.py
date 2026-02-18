@@ -1043,6 +1043,8 @@ def api_policies():
 def api_system_info():
     """API endpoint for system information - REAL DATA"""
     try:
+        from pathlib import Path
+
         system_health = metrics.get_system_health()
         daemon_status = metrics.get_daemon_status()
 
@@ -1050,18 +1052,39 @@ def api_system_info():
         daemons_total = len(daemon_status)
         health_score = system_health.get('health_score', system_health.get('score', 0))
 
+        # Get memory path
+        memory_path = Path.home() / '.claude' / 'memory'
+
+        # Calculate uptime from session start
+        uptime_str = 'N/A'
+        try:
+            blocking_state_file = memory_path / '.blocking-enforcer-state.json'
+            if blocking_state_file.exists():
+                with open(blocking_state_file, 'r') as f:
+                    state = json.load(f)
+                    session_start = state.get('session_start_time')
+                    if session_start:
+                        from datetime import datetime
+                        start_time = datetime.fromisoformat(session_start)
+                        now = datetime.now()
+                        delta = now - start_time
+                        hours = int(delta.total_seconds() / 3600)
+                        minutes = int((delta.total_seconds() % 3600) / 60)
+                        uptime_str = f'{hours}h {minutes}m'
+        except Exception as e:
+            print(f"Error calculating uptime: {e}")
+
         return jsonify({
             'success': True,
-            'system_info': {
-                'status': 'Operational' if health_score >= 90 else ('Healthy' if health_score >= 70 else 'Degraded'),
-                'health_score': health_score,
-                'memory_usage': system_health.get('memory_usage', 0),
-                'context_usage': system_health.get('context_usage', 0),
-                'daemons_running': daemons_running,
-                'daemons_total': daemons_total,
-                'uptime': system_health.get('uptime', 'Active'),
-                'last_check': datetime.now().isoformat()
-            }
+            'status': 'Operational' if health_score >= 90 else ('Healthy' if health_score >= 70 else 'Degraded'),
+            'memory_path': str(memory_path),
+            'last_update': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+            'uptime': uptime_str,
+            'health_score': health_score,
+            'daemons_running': daemons_running,
+            'daemons_total': daemons_total,
+            'context_usage': system_health.get('context_usage', 0),
+            'memory_usage': system_health.get('memory_usage', 0)
         })
     except Exception as e:
         print(f"Error in api_system_info: {e}")
