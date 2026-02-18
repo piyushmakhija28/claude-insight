@@ -194,7 +194,6 @@ class AutomationTracker:
         """
         return {
             'session_start': self.get_session_start_recommendations(),
-            'daemon_9': self.get_9th_daemon_status(),
             'task_breakdown': self.get_task_breakdown_stats(),
             'task_tracker': self.get_task_tracker_stats(),
             'timestamp': datetime.now().isoformat()

@@ -63,45 +63,30 @@ else
 fi
 
 # ============================================================================
-# STEP 3: Check All 9 Daemon PIDs and Status
+# STEP 3: Check Enforcement Hooks Status
 # ============================================================================
 echo ""
-echo "${BLUE}[3/7] Checking all 9 daemon statuses...${NC}"
+echo "${BLUE}[3/7] Checking enforcement hooks status...${NC}"
 
-# Use daemon-manager.py for accurate status check
-python "$MEMORY_PATH/utilities/daemon-manager.py" --status-all > /tmp/daemon-status.json 2>/dev/null
+# Enforcement is now done via Claude Code hooks (not background daemons)
+# Check that hook scripts exist in current/
+CURRENT_DIR="$MEMORY_PATH/current"
+HOOKS_OK=0
 
-if [ $? -eq 0 ]; then
-    RUNNING=$(grep -c '"running": true' /tmp/daemon-status.json)
-    STOPPED=$((9 - RUNNING))
-
-    python - /tmp/daemon-status.json <<EOF
-import json, sys
-
-# Fix encoding for Windows console
-if sys.stdout.encoding != 'utf-8':
-    sys.stdout.reconfigure(encoding='utf-8')
-
-with open(sys.argv[1], 'r') as f:
-    data = json.load(f)
-for daemon, info in data.items():
-    if info.get('running'):
-        print("   ✅ " + daemon + ": Running (PID: " + str(info.get('pid')) + ")")
-    else:
-        print("   ❌ " + daemon + ": Stopped")
-EOF
-
-    echo ""
-    if [ $RUNNING -eq 9 ]; then
-        echo "${GREEN}   ✅ ALL 9 DAEMONS RUNNING PERFECTLY!${NC}"
+for script in "3-level-flow.py" "clear-session-handler.py" "stop-notifier.py"; do
+    if [ -f "$CURRENT_DIR/$script" ]; then
+        echo "${GREEN}   [OK] $script${NC}"
+        HOOKS_OK=$((HOOKS_OK + 1))
     else
-        echo "${GREEN}   Running: $RUNNING / 9${NC}"
-        echo "${RED}   Stopped: $STOPPED / 9${NC}"
+        echo "${YELLOW}   [!] $script not found in current/${NC}"
     fi
+done
 
-    rm -f /tmp/daemon-status.json
+echo ""
+if [ $HOOKS_OK -eq 3 ]; then
+    echo "${GREEN}   [OK] All 3 hook scripts present - enforcement active${NC}"
 else
-    echo "${YELLOW}⚠️  Could not check daemon status${NC}"
+    echo "${YELLOW}   [!] $HOOKS_OK/3 hook scripts found${NC}"
 fi
 
 # ============================================================================
