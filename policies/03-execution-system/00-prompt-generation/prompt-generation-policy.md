@@ -49,7 +49,7 @@ User Natural Language Input
 task_type: "[API/Feature/Fix/Refactor/Migration/etc]"
 user_request: "[Original natural language request]"
 project_context:
-  project_name: "[e.g., surgricalswale]"
+  project_name: "[e.g., sample-project]"
   service_name: "[e.g., user-service, product-service]"
   technology_stack: "[Spring Boot 3.2.0, PostgreSQL, etc]"
   existing_patterns: "[List from codebase]"
@@ -253,12 +253,12 @@ for doc in docs:
 
 # 4. Verify project structure
 print("🔍 Verifying project structure...")
-project_structure = scan_directory("surgricalswale/backend/")
+project_structure = scan_directory("sample-project/backend/")
 information_gathered["project_structure"] = project_structure
 
 # 5. Check configuration examples
 print("⚙️ Checking configuration examples...")
-config_examples = find_configs("configurations/surgricalswale/")
+config_examples = find_configs("configurations/sample-project/")
 information_gathered["config_examples"] = config_examples
 
 # OUTPUT what was found
@@ -315,7 +315,7 @@ task_type = "API Creation"
 entities = ["Product"]
 operations = ["Create", "Read", "Update", "Delete"]
 technology = "Spring Boot" (from context)
-project = "surgricalswale" (from context)
+project = "sample-project" (from context)
 ```
 
 ### **2. Search for Similar Examples**
@@ -379,7 +379,7 @@ output_structure = {
         "form/ProductForm.java"
     ],
     "configurations": [
-        "configurations/surgricalswale/services/product-service.yml"
+        "configurations/sample-project/services/product-service.yml"
     ]
 }
 ```
@@ -415,19 +415,19 @@ structured_prompt = generate_prompt(
 
 ### **1. Existing Projects:**
 ```
-workspace-spring-tool-suite-4-4.27.0-new/
-├── surgricalswale/
+example-workspace/
+├── sample-project/
 │   └── backend/
 │       ├── auth-service/          # Auth patterns, JWT, security
 │       ├── user-service/          # User CRUD, validation
 │       └── product-service/       # Product operations
 │
-└── techdeveloper/
+└── example-project/
     └── backend/
-        ├── techdeveloper-gateway/           # Gateway patterns
-        ├── techdeveloper-eureka/            # Service discovery
-        ├── techdeveloper-config-server/     # Config patterns
-        └── techdeveloper-secret-manager/    # Secret management
+        ├── example-project-gateway/           # Gateway patterns
+        ├── example-project-eureka/            # Service discovery
+        ├── example-project-config-server/     # Config patterns
+        └── example-project-secret-manager/    # Secret management
 ```
 
 ### **2. Architecture Documentation:**
@@ -447,12 +447,12 @@ workspace-spring-tool-suite-4-4.27.0-new/
 # Build from existing code
 examples_db = {
     "CRUD_API": {
-        "user-service": "com.techdeveloper.userservice.controller.UserController",
+        "user-service": "com.example-project.userservice.controller.UserController",
         "pattern": "Controller → Service → Repository",
         "response": "ApiResponseDto<T>"
     },
     "Authentication": {
-        "auth-service": "com.techdeveloper.authservice.controller.AuthController",
+        "auth-service": "com.example-project.authservice.controller.AuthController",
         "pattern": "JWT token generation",
         "security": "Spring Security configuration"
     },
@@ -477,14 +477,14 @@ examples_db = {
 task_type: "REST API Creation"
 user_request: "Create a product API"
 project_context:
-  project_name: "surgricalswale"
+  project_name: "sample-project"
   service_name: "product-service"
   technology_stack:
     - "Spring Boot 3.2.0"
     - "PostgreSQL"
     - "Spring Cloud Config"
     - "Eureka Discovery"
-  base_package: "com.techdeveloper.surgricalswale.productservice"
+  base_package: "com.example-project.sample-project.productservice"
 
 structured_input:
   entity:
@@ -512,7 +512,7 @@ conditions:
       example: "user-service/application.yml"
 
     - condition: "Base package structure must exist"
-      validation: "Check com.techdeveloper.surgricalswale.productservice exists"
+      validation: "Check com.example-project.sample-project.productservice exists"
       example: "user-service package structure"
 
     - condition: "Dependencies must be available"
@@ -534,37 +534,37 @@ conditions:
 
 expected_output:
   files_created:
-    - path: "backend/product-service/src/main/java/com/techdeveloper/surgricalswale/productservice/entity/Product.java"
+    - path: "backend/product-service/src/main/java/com/example-project/sample-project/productservice/entity/Product.java"
       type: "JPA Entity"
       purpose: "Database mapping"
       example: "user-service/entity/User.java"
 
-    - path: "backend/product-service/src/main/java/com/techdeveloper/surgricalswale/productservice/repository/ProductRepository.java"
+    - path: "backend/product-service/src/main/java/com/example-project/sample-project/productservice/repository/ProductRepository.java"
       type: "JPA Repository"
       purpose: "Database operations"
       example: "user-service/repository/UserRepository.java"
 
-    - path: "backend/product-service/src/main/java/com/techdeveloper/surgricalswale/productservice/services/ProductService.java"
+    - path: "backend/product-service/src/main/java/com/example-project/sample-project/productservice/services/ProductService.java"
       type: "Service Interface"
       purpose: "Business logic contract"
       example: "user-service/services/UserService.java"
 
-    - path: "backend/product-service/src/main/java/com/techdeveloper/surgricalswale/productservice/services/impl/ProductServiceImpl.java"
+    - path: "backend/product-service/src/main/java/com/example-project/sample-project/productservice/services/impl/ProductServiceImpl.java"
       type: "Service Implementation"
       purpose: "Business logic"
       example: "user-service/services/impl/UserServiceImpl.java"
 
-    - path: "backend/product-service/src/main/java/com/techdeveloper/surgricalswale/productservice/controller/ProductController.java"
+    - path: "backend/product-service/src/main/java/com/example-project/sample-project/productservice/controller/ProductController.java"
       type: "REST Controller"
       purpose: "API endpoints"
       example: "user-service/controller/UserController.java"
 
-    - path: "backend/product-service/src/main/java/com/techdeveloper/surgricalswale/productservice/dto/ProductDto.java"
+    - path: "backend/product-service/src/main/java/com/example-project/sample-project/productservice/dto/ProductDto.java"
       type: "Response DTO"
       purpose: "API response"
       example: "user-service/dto/UserDto.java"
 
-    - path: "backend/product-service/src/main/java/com/techdeveloper/surgricalswale/productservice/form/ProductForm.java"
+    - path: "backend/product-service/src/main/java/com/example-project/sample-project/productservice/form/ProductForm.java"
       type: "Request Form"
       purpose: "API request validation"
       example: "user-service/form/UserForm.java"
@@ -575,7 +575,7 @@ expected_output:
       reason: "Ensure JPA, PostgreSQL available"
 
   configurations:
-    - location: "techdeveloper/backend/techdeveloper-config-server/configurations/surgricalswale/services/product-service.yml"
+    - location: "example-project/backend/example-project-config-server/configurations/sample-project/services/product-service.yml"
       changes:
         - "Database configuration"
         - "JPA settings"
@@ -595,7 +595,7 @@ examples_from_codebase:
     - service: "user-service"
       file: "controller/UserController.java"
       pattern: "CRUD operations with ApiResponseDto"
-      location: "surgricalswale/backend/user-service/"
+      location: "sample-project/backend/user-service/"
 
   reference_code:
     - description: "Entity with JPA annotations"
@@ -638,7 +638,7 @@ architecture_compliance:
 task_type: "Security Enhancement - JWT Authentication & Authorization"
 user_request: "Add authentication with JWT to product service, users should login and access products based on roles"
 project_context:
-  project_name: "surgricalswale"
+  project_name: "sample-project"
   affected_services:
     - "auth-service" (JWT generation)
     - "product-service" (JWT validation, role-based access)
@@ -696,7 +696,7 @@ conditions:
 
     - condition: "Gateway must be configured for routing"
       validation: "Check gateway routes to product-service"
-      example: "techdeveloper-gateway/application.yml"
+      example: "example-project-gateway/application.yml"
 
     - condition: "User roles must be defined"
       validation: "Check Role enum/entity exists"
@@ -721,23 +721,23 @@ conditions:
 
 expected_output:
   files_created:
-    - path: "backend/product-service/src/main/java/com/techdeveloper/surgricalswale/productservice/security/JwtAuthenticationFilter.java"
+    - path: "backend/product-service/src/main/java/com/example-project/sample-project/productservice/security/JwtAuthenticationFilter.java"
       type: "Security Filter"
       purpose: "Validate JWT on each request"
       example: "auth-service/security/JwtAuthenticationFilter.java"
 
-    - path: "backend/product-service/src/main/java/com/techdeveloper/surgricalswale/productservice/security/SecurityConfig.java"
+    - path: "backend/product-service/src/main/java/com/example-project/sample-project/productservice/security/SecurityConfig.java"
       type: "Security Configuration"
       purpose: "Configure Spring Security"
       example: "auth-service/security/SecurityConfig.java"
 
-    - path: "backend/product-service/src/main/java/com/techdeveloper/surgricalswale/productservice/security/JwtUtil.java"
+    - path: "backend/product-service/src/main/java/com/example-project/sample-project/productservice/security/JwtUtil.java"
       type: "Utility Class"
       purpose: "JWT parsing and validation"
       example: "auth-service/security/JwtUtil.java"
 
   files_modified:
-    - path: "backend/product-service/src/main/java/com/techdeveloper/surgricalswale/productservice/controller/ProductController.java"
+    - path: "backend/product-service/src/main/java/com/example-project/sample-project/productservice/controller/ProductController.java"
       changes:
         - "Add @PreAuthorize annotations"
         - "Add role-based access control"
@@ -750,7 +750,7 @@ expected_output:
       reason: "Enable Spring Security and JWT"
 
   configurations:
-    - location: "techdeveloper/backend/techdeveloper-config-server/configurations/surgricalswale/services/product-service.yml"
+    - location: "example-project/backend/example-project-config-server/configurations/sample-project/services/product-service.yml"
       changes:
         - "jwt.secret: ${secret-manager.jwt.secret}"
         - "jwt.expiration: 86400000"
@@ -758,8 +758,8 @@ expected_output:
 
     - location: "Secret Manager"
       changes:
-        - "Add jwt.secret for surgricalswale project"
-      command: "POST /api/v1/secrets/project/surgricalswale"
+        - "Add jwt.secret for sample-project project"
+      command: "POST /api/v1/secrets/project/sample-project"
 
 success_criteria:
   - "✅ Unauthenticated requests return 401"
@@ -775,7 +775,7 @@ examples_from_codebase:
     - service: "auth-service"
       file: "security/SecurityConfig.java"
       pattern: "Spring Security configuration with JWT"
-      location: "surgricalswale/backend/auth-service/"
+      location: "sample-project/backend/auth-service/"
 
     - service: "auth-service"
       file: "security/JwtAuthenticationFilter.java"
@@ -827,7 +827,7 @@ from pathlib import Path
 
 class PromptGenerator:
     def __init__(self):
-        self.workspace = Path("C:/Users/techd/Documents/workspace-spring-tool-suite-4-4.27.0-new")
+        self.workspace = Path("C:/Users/techd/Documents/example-workspace")
         self.docs = Path("C:/Users/techd/.claude/memory/docs")
         self.examples_db = self.load_examples()
 
@@ -1005,7 +1005,7 @@ class PromptGenerator:
             "task_type": analysis["task_type"],
             "user_request": user_message,
             "project_context": {
-                "project_name": "surgricalswale",  # From context
+                "project_name": "sample-project",  # From context
                 "service_name": self.infer_service(analysis),
                 "technology_stack": self.get_tech_stack()
             },

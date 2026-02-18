@@ -48,7 +48,7 @@ def find_git_repos_with_changes():
     repos_with_changes = []
     
     # Common project locations
-    workspace = os.path.expanduser("~/Documents/workspace-spring-tool-suite-4-4.27.0-new")
+    workspace = os.path.expanduser("~/Documents/example-workspace")
     
     if not os.path.exists(workspace):
         return repos_with_changes

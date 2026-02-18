@@ -17,7 +17,7 @@ Usage:
 
 Examples:
   python archive-old-sessions.py
-  python archive-old-sessions.py techdeveloper-ui
+  python archive-old-sessions.py example-project-ui
   python archive-old-sessions.py --dry-run
 """
 

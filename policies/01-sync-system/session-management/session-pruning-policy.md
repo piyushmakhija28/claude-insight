@@ -40,7 +40,7 @@ Why? This is the cumulative summary that's always needed.
 
 ### Before Archival:
 ```
-sessions/techdeveloper-ui/
+sessions/example-project-ui/
 ├── project-summary.md           (always kept)
 ├── session-2026-01-26-14-30.md  (recent - kept)
 ├── session-2026-01-25-10-15.md  (recent - kept)
@@ -52,7 +52,7 @@ sessions/techdeveloper-ui/
 
 ### After Archival:
 ```
-sessions/techdeveloper-ui/
+sessions/example-project-ui/
 ├── project-summary.md           (always kept)
 ├── session-2026-01-26-14-30.md  (active)
 ├── session-2026-01-25-10-15.md  (active)
@@ -114,7 +114,7 @@ Output:
 🗂️  Archiving sessions for 8 projects...
    Rules: Keep last 10 sessions, archive older than 30 days
 
-📦 techdeveloper-ui:
+📦 example-project-ui:
    Total sessions: 25
    Keeping active: 10
    Archiving: 15
@@ -127,7 +127,7 @@ Output:
 
 ### Archive Specific Project:
 ```bash
-python ~/.claude/memory/archive-old-sessions.py techdeveloper-ui
+python ~/.claude/memory/archive-old-sessions.py example-project-ui
 ```
 
 ### Preview Without Archiving (Dry Run):
@@ -155,7 +155,7 @@ Output:
 📊 Session Memory Statistics
 ======================================================================
 
-📁 techdeveloper-ui
+📁 example-project-ui
    Active sessions: 10
    Archivable (>30d, beyond last 10): 15
    Already archived: 32 (2.45 MB)
@@ -245,7 +245,7 @@ tail -f ~/.claude/memory/logs/policy-hits.log | grep session-pruning
 
 Output:
 ```
-[2026-01-26 20:30:15] session-pruning | archived | techdeveloper-ui | 15 sessions
+[2026-01-26 20:30:15] session-pruning | archived | example-project-ui | 15 sessions
 [2026-01-26 20:30:15] session-pruning | archived-all | 47 total sessions
 ```
 
@@ -266,7 +266,7 @@ du -sh ~/.claude/memory/sessions/*/archive/
 
 ### Extract Specific Month:
 ```bash
-cd ~/.claude/memory/sessions/techdeveloper-ui/archive/2025-12
+cd ~/.claude/memory/sessions/example-project-ui/archive/2025-12
 tar -xzf sessions.tar.gz
 
 # Sessions extracted to current directory
@@ -276,7 +276,7 @@ mv session-*.md ../../
 
 ### Extract All Archives:
 ```bash
-cd ~/.claude/memory/sessions/techdeveloper-ui/archive
+cd ~/.claude/memory/sessions/example-project-ui/archive
 
 for dir in */; do
     cd "$dir"
@@ -289,7 +289,7 @@ done
 ### Restore Specific Session:
 ```bash
 # Extract one file from archive
-cd ~/.claude/memory/sessions/techdeveloper-ui/archive/2025-12
+cd ~/.claude/memory/sessions/example-project-ui/archive/2025-12
 tar -xzf sessions.tar.gz session-2025-12-15-16-45.md
 mv session-2025-12-15-16-45.md ../../
 ```
@@ -325,7 +325,7 @@ $ python ~/.claude/memory/archive-old-sessions.py --stats
 
 📊 Session Memory Statistics
 ======================================================================
-📁 techdeveloper-ui
+📁 example-project-ui
    Active sessions: 35
    Archivable (>30d, beyond last 10): 25
    Oldest active session: 2025-10-15 (103 days old)
@@ -334,7 +334,7 @@ $ python ~/.claude/memory/archive-old-sessions.py
 
 🗂️  Archiving sessions for 8 projects...
 
-📦 techdeveloper-ui:
+📦 example-project-ui:
    Total sessions: 35
    Keeping active: 10
    Archiving: 25
@@ -347,7 +347,7 @@ $ python ~/.claude/memory/archive-old-sessions.py --stats
 
 📊 Session Memory Statistics
 ======================================================================
-📁 techdeveloper-ui
+📁 example-project-ui
    Active sessions: 10
    Archivable (>30d, beyond last 10): 0
    Already archived: 25 (1.2 MB)
@@ -360,7 +360,7 @@ $ python ~/.claude/memory/archive-old-sessions.py --dry-run
 
 [DRY RUN] Archiving sessions for 8 projects...
 
-📦 techdeveloper-ui:
+📦 example-project-ui:
    Total sessions: 35
    Keeping active: 10
    Archiving: 25
@@ -378,7 +378,7 @@ $ python ~/.claude/memory/archive-old-sessions.py
 ### Example 3: Restore Old Session
 ```bash
 # Need to reference old session from December
-cd ~/.claude/memory/sessions/techdeveloper-ui/archive/2025-12
+cd ~/.claude/memory/sessions/example-project-ui/archive/2025-12
 tar -xzf sessions.tar.gz session-2025-12-15-16-45.md
 cat session-2025-12-15-16-45.md  # Review content
 ```

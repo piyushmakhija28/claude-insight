@@ -17,7 +17,7 @@ A comprehensive, real-time monitoring and analytics dashboard for the Claude Mem
 - ✅ **CLAUDE.md** - Global configuration v2.2.0
 - ✅ **Real-time integration** - Live monitoring of all components
 
-**Developed by [TechDeveloper](https://www.techdeveloper.in)** 💻
+**Developed by Claude Code Community** 💻
 
 ---
 
@@ -842,137 +842,6 @@ All documentation is in the `claude-memory-system/` folder:
 - Business logic: 80%+
 - Controllers: 60%+
 - Overall: 70%+
-
----
-
-## Java Spring Boot Standards
-
-### Project Structure
-
-**Base Package:** `com.techdeveloper.${projectname}`
-
-**Package Structure:**
-
-| Package | Purpose |
-|---------|---------|
-| `controller` | REST endpoints |
-| `dto` | Response objects |
-| `form` | Request objects |
-| `constants` | All constants/enums |
-| `services` | Interfaces only |
-| `services.impl` | Package-private implementations |
-| `services.helper` | Helper classes |
-| `entity` | Database entities |
-| `repository` | Data access |
-
-### Mandatory Patterns
-
-1. **All responses use `ApiResponseDto<T>`**
-   ```java
-   public ApiResponseDto<UserDto> getUser(Long id) {
-       return ApiResponseDto.success(userDto);
-   }
-   ```
-
-2. **Form classes extend `ValidationMessageConstants`**
-   ```java
-   public class UserForm extends ValidationMessageConstants {
-       @NotBlank(message = REQUIRED_FIELD)
-       private String email;
-   }
-   ```
-
-3. **Service impl extends Helper**
-   ```java
-   @Service
-   class UserServiceImpl extends UserServiceHelper implements UserService {
-       // Implementation
-   }
-   ```
-
-4. **NO hardcoded messages** (use constants)
-   ```java
-   public static final String USER_NOT_FOUND = "User not found";
-   ```
-
-5. **`@Transactional` for all write operations**
-   ```java
-   @Transactional
-   public User createUser(UserForm form) {
-       // Save user
-   }
-   ```
-
-### Quality Checklist
-- ✅ `ApiResponseDto<T>` used?
-- ✅ DTO vs Form separate?
-- ✅ Messages in constants?
-- ✅ Service impl package-private?
-- ✅ Service impl extends helper?
-
----
-
-## Spring Boot Configuration
-
-### Spring Cloud Config Server
-
-**📖 Full docs:** [claude-memory-system/docs/spring-cloud-config.md](./claude-memory-system/docs/spring-cloud-config.md)
-
-**Config Location:**
-```
-techdeveloper/backend/techdeveloper-config-server/configurations/
-├── application.yml                    # Global (ALL services)
-├── {project}/common/*.yml             # Project common
-└── {project}/services/{service}.yml   # Service-specific
-```
-
-**Microservice application.yml (ONLY THIS!):**
-```yaml
-spring:
-  application:
-    name: service-name
-  config:
-    import: "configserver:http://localhost:8888"
-  cloud:
-    config:
-      fail-fast: true
-      retry:
-        enabled: true
-
-secret-manager:
-  client:
-    enabled: true
-    project-name: "project-name"
-```
-
-**❌ NEVER add to microservice application.yml:**
-- Redis config (in config server)
-- Feign config (in config server)
-- Database config (in config server)
-- Email config (in config server)
-- Port numbers (in config server)
-
-### Secret Management
-
-**📖 Full docs:** [claude-memory-system/docs/secret-management.md](./claude-memory-system/docs/secret-management.md)
-
-**Services:**
-- Secret Manager: port 1002
-- Project Management: port 8109
-
-**How it works:**
-- Secrets fetched at startup
-- Injected as `${SECRET_KEY}`
-- **🚨 NEVER hardcode secrets!**
-
-**Microservice config:**
-```yaml
-secret-manager:
-  client:
-    enabled: true
-    project-name: "project-name"
-    base-url: "http://localhost:8085/api/v1/secrets"
-```
 
 ---
 
@@ -1969,8 +1838,7 @@ SOFTWARE.
 
 ## Contact & Support
 
-**Developer:** TechDeveloper
-**Website:** [www.techdeveloper.in](https://www.techdeveloper.in)
+**Developer:** Claude Code Community
 **GitHub:** [piyushmakhija28/claude-insight](https://github.com/piyushmakhija28/claude-insight)
 
 **Support:**
@@ -1981,7 +1849,7 @@ SOFTWARE.
 
 ---
 
-**Made with ❤️ by TechDeveloper**
+**Made with ❤️ for Claude Code Community**
 
 **⭐ Star this repo if you find it useful!**
 

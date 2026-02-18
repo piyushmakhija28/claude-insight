@@ -14,7 +14,7 @@ from datetime import datetime
 
 class PromptGenerator:
     def __init__(self):
-        self.workspace = Path("C:/Users/techd/Documents/workspace-spring-tool-suite-4-4.27.0-new")
+        self.workspace = Path("C:/Users/techd/Documents/example-workspace")
         self.docs = Path("C:/Users/techd/.claude/memory/docs")
 
     def think_about_request(self, user_message: str) -> Dict:
@@ -89,7 +89,7 @@ class PromptGenerator:
 
         for service in service_dirs:
             for file_type in file_types:
-                pattern_path = f"surgricalswale/backend/{service}/**/*{file_type}"
+                pattern_path = f"sample-project/backend/{service}/**/*{file_type}"
                 gathered["similar_files"].append(pattern_path)
 
         # Extract common patterns (placeholder)
@@ -103,7 +103,7 @@ class PromptGenerator:
 
         # Project structure (placeholder)
         gathered["project_structure"] = {
-            "base_path": "surgricalswale/backend/",
+            "base_path": "sample-project/backend/",
             "services": ["auth-service", "user-service"],
             "common_packages": ["controller", "services", "entity", "repository", "dto", "form"]
         }
@@ -251,9 +251,9 @@ class PromptGenerator:
     def find_project_context(self, entities: List[str]) -> Dict:
         """Determine project and service context"""
         context = {
-            "project_name": "surgricalswale",
+            "project_name": "sample-project",
             "service_name": "unknown-service",
-            "base_package": "com.techdeveloper.surgricalswale"
+            "base_package": "com.example-project.sample-project"
         }
 
         # Map entities to services
@@ -269,7 +269,7 @@ class PromptGenerator:
         for entity in entities:
             if entity in entity_service_map:
                 context["service_name"] = entity_service_map[entity]
-                context["base_package"] = f"com.techdeveloper.surgricalswale.{entity}service"
+                context["base_package"] = f"com.example-project.sample-project.{entity}service"
                 break
 
         return context
@@ -293,7 +293,7 @@ class PromptGenerator:
                 {
                     "condition": "Database must be configured",
                     "validation": "Check Config Server has datasource config",
-                    "example": "configurations/surgricalswale/services/user-service.yml"
+                    "example": "configurations/sample-project/services/user-service.yml"
                 },
                 {
                     "condition": "Dependencies must be available",
@@ -325,7 +325,7 @@ class PromptGenerator:
                 {
                     "condition": "Secret Manager must have JWT secret",
                     "validation": "Check secret exists",
-                    "command": "GET /api/v1/secrets/project/surgricalswale/key/jwt.secret"
+                    "command": "GET /api/v1/secrets/project/sample-project/key/jwt.secret"
                 },
                 {
                     "condition": "User entity must exist",
@@ -351,7 +351,7 @@ class PromptGenerator:
 
     def define_file_structure(self, task_type: str, service_name: str, entities: List[str]) -> Dict:
         """Define expected file structure"""
-        base_path = f"backend/{service_name}/src/main/java/com/techdeveloper/surgricalswale/{service_name.replace('-service', 'service')}"
+        base_path = f"backend/{service_name}/src/main/java/com/example-project/sample-project/{service_name.replace('-service', 'service')}"
 
         structure = {
             "files_created": [],
@@ -409,7 +409,7 @@ class PromptGenerator:
 
             structure["configurations"] = [
                 {
-                    "location": f"techdeveloper/backend/techdeveloper-config-server/configurations/surgricalswale/services/{service_name}.yml",
+                    "location": f"example-project/backend/example-project-config-server/configurations/sample-project/services/{service_name}.yml",
                     "changes": ["Database config", "JPA settings", "Eureka registration"],
                     "template": "user-service.yml"
                 }

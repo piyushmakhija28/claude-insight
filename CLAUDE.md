@@ -214,7 +214,7 @@ python daemon-manager.py --restart <name> # Restart specific daemon
 
 ```bash
 # Navigate to project
-cd "C:\Users\techd\Documents\workspace-spring-tool-suite-4-4.27.0-new\claude-insight"
+cd "/path/to/claude-insight"
 
 # Check what belongs here
 python verify-content.py

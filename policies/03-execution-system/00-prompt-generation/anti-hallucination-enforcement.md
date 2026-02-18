@@ -157,11 +157,11 @@ OUTPUT: What information was found and verified
    ✅ Endpoints: POST /create, GET /{id}, GET /list, PUT /update, DELETE /{id}
 
 3. Reading java-project-structure.md...
-   ✅ Package structure: com.techdeveloper.{project}.{service}
+   ✅ Package structure: com.example-project.{project}.{service}
    ✅ Packages: controller, services, services.impl, entity, repository, dto, form
 
 4. Checking project structure...
-   ✅ Base path exists: surgricalswale/backend/
+   ✅ Base path exists: sample-project/backend/
    ✅ Services found: auth-service, user-service
    ⚠️ product-service NOT found (will need to create)
 
@@ -217,7 +217,7 @@ Based on verified information:
    ✅ Usage confirmed in 15 endpoints
 
 2. Package Structure (from actual codebase):
-   ✅ Verified: com.techdeveloper.surgricalswale.userservice
+   ✅ Verified: com.example-project.sample-project.userservice
    ✅ Packages exist: controller, services, entity, repository, dto, form
    ✅ Pattern confirmed in user-service and auth-service
 
@@ -388,7 +388,7 @@ Claude:
   ✅ Found UserController.java - reading patterns...
   ✅ Pattern extracted: ApiResponseDto<T> for responses
   ✅ Pattern extracted: Form classes for validation
-  ✅ Verified package structure: com.techdeveloper.{project}.{service}
+  ✅ Verified package structure: com.example-project.{project}.{service}
 
 ✅ VERIFICATION:
   ✅ All patterns from actual user-service code

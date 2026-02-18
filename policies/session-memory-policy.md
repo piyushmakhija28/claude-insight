@@ -38,7 +38,7 @@ Provides **100% local, 100% private persistent memory** across Claude Code sessi
 
 ```
 ~/.claude/memory/sessions/
-├── techdeveloper-ui/
+├── example-project-ui/
 │   ├── session-2026-01-25-15-00.md     (individual session)
 │   ├── session-2026-01-24-10-30.md     (individual session)
 │   └── project-summary.md               (← MAIN FILE - auto-loaded)
@@ -176,7 +176,7 @@ None this session
 ## 🎯 Project Quick Context (Read This First!)
 
 **In 3 lines:**
-This is an Angular 19 app for techdeveloper.org with JWT authentication,
+This is an Angular 19 app for example-project.org with JWT authentication,
 service-based architecture, and REST API integration. User prefers rapid
 iteration (skip tests), direct implementation for <7 complexity tasks.
 
@@ -558,13 +558,13 @@ PROJECT_NAME=$(basename $(git rev-parse --show-toplevel 2>/dev/null) || basename
 
 # Option 3: User override (in project .clauderc)
 # .clauderc file:
-#   CLAUDE_PROJECT_NAME="techdeveloper-ui"
+#   CLAUDE_PROJECT_NAME="example-project-ui"
 ```
 
 **Examples:**
 ```
-/c/Users/techd/Documents/workspace/techdeveloper/frontend/techdeveloper-ui
-→ sessions/techdeveloper-ui/
+/c/Users/techd/Documents/workspace/example-project/frontend/example-project-ui
+→ sessions/example-project-ui/
 
 /c/Users/techd/Documents/workspace/medspy/backend/medspy-node
 → sessions/medspy-node/
@@ -580,8 +580,8 @@ Custom override in .clauderc:
 ### **Example 1: New Project (First Session)**
 
 ```
-Session starts in: techdeveloper-ui/
-Claude checks: ~/.claude/memory/sessions/techdeveloper-ui/project-summary.md
+Session starts in: example-project-ui/
+Claude checks: ~/.claude/memory/sessions/example-project-ui/project-summary.md
 Result: File doesn't exist
 Claude: Starts fresh (no previous context)
 
@@ -590,15 +590,15 @@ Claude: Starts fresh (no previous context)
 Session ends:
 Claude: Generates summary
 Saves to:
-  - sessions/techdeveloper-ui/session-2026-01-25-15-00.md
-  - sessions/techdeveloper-ui/project-summary.md (created)
+  - sessions/example-project-ui/session-2026-01-25-15-00.md
+  - sessions/example-project-ui/project-summary.md (created)
 ```
 
 ### **Example 2: Continuing Project (Second Session)**
 
 ```
-Session starts in: techdeveloper-ui/
-Claude checks: ~/.claude/memory/sessions/techdeveloper-ui/project-summary.md
+Session starts in: example-project-ui/
+Claude checks: ~/.claude/memory/sessions/example-project-ui/project-summary.md
 Result: File exists! ✅
 Claude loads:
   - JWT auth is implemented
@@ -617,13 +617,13 @@ Claude: "I see JWT auth is already implemented in auth.service.ts.
 ### **Example 3: Switching Projects**
 
 ```
-Morning session in: techdeveloper-ui/
-Claude loads: techdeveloper-ui context ✅
+Morning session in: example-project-ui/
+Claude loads: example-project-ui context ✅
 
 Afternoon session in: medspy-node/
 Claude detects project change
 Claude loads: medspy-node context ✅
-(Doesn't confuse with techdeveloper context!)
+(Doesn't confuse with example-project context!)
 ```
 
 ---
