@@ -162,7 +162,7 @@ class TestCommandValidator:
     def test_script_on_whitelist(self, tmp_path):
         """Script on whitelist should pass validation"""
         # Create one of the whitelisted scripts
-        allowed_script = tmp_path / "pid-tracker.py"
+        allowed_script = tmp_path / "context-monitor-v2.py"
         allowed_script.touch()
 
         validated = CommandValidator.validate_script_path(allowed_script, tmp_path)
@@ -173,7 +173,7 @@ class TestCommandValidator:
         outside_dir = tmp_path.parent / "outside"
         outside_dir.mkdir(exist_ok=True)
 
-        script = outside_dir / "pid-tracker.py"
+        script = outside_dir / "context-monitor-v2.py"
         script.touch()
 
         with pytest.raises(SecurityError):
@@ -181,7 +181,7 @@ class TestCommandValidator:
 
     def test_script_does_not_exist(self, tmp_path):
         """Non-existent script should raise SecurityError"""
-        script = tmp_path / "pid-tracker.py"  # Not created
+        script = tmp_path / "context-monitor-v2.py"  # Not created
 
         with pytest.raises(SecurityError) as exc_info:
             CommandValidator.validate_script_path(script, tmp_path)

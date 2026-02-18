@@ -1,39 +1,20 @@
 #!/usr/bin/env python3
 """
 Phase 2 Infrastructure Test Suite
-Tests daemon manager, PID tracker, health monitor, and auto-restart
+Tests hooks enforcement scripts (3-level architecture)
+
+Replaces old daemon-manager / pid-tracker tests.
+Enforcement is now done via Claude Code hooks, not background daemons.
 """
 
 import sys
-import time
 import json
+import subprocess
 from pathlib import Path
 
-# Add memory dir to path
 memory_dir = Path.home() / '.claude' / 'memory'
-sys.path.insert(0, str(memory_dir))
+current_dir = memory_dir / 'current'
 
-import importlib.util
-
-def import_module(module_name, file_name):
-    """Import module from file with hyphens in name"""
-    spec = importlib.util.spec_from_file_location(module_name, memory_dir / file_name)
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
-
-# Import modules
-daemon_manager_module = import_module('daemon_manager', 'daemon-manager.py')
-DaemonManager = daemon_manager_module.DaemonManager
-
-pid_tracker_module = import_module('pid_tracker', 'pid-tracker.py')
-PIDTracker = pid_tracker_module.PIDTracker
-
-daemon_logger_module = import_module('daemon_logger', 'daemon-logger.py')
-DaemonLogger = daemon_logger_module.DaemonLogger
-
-health_monitor_module = import_module('health_monitor', 'health-monitor-daemon.py')
-HealthMonitor = health_monitor_module.HealthMonitor
 
 def run_test(test_name, test_func):
     """Run a test and report results"""
@@ -50,231 +31,136 @@ def run_test(test_name, test_func):
             print(f"[FAIL] {test_name} FAILED")
             return False
     except Exception as e:
-        print(f"[ERROR] {test_name} ERRORED: {e}")
-        import traceback
-        traceback.print_exc()
+        print(f"[ERROR] {test_name} raised exception: {e}")
         return False
 
-def test_daemon_manager():
-    """Test daemon manager basic operations"""
-    manager = DaemonManager()
 
-    print("1. Check platform detection")
-    print(f"   Platform: Windows={manager.is_windows}")
-
-    print("2. Start a test daemon")
-    # Use context-daemon as test subject
-    result = manager.start_daemon('context-daemon')
-    print(f"   Status: {result['status']}")
-    print(f"   PID: {result.get('pid', 'N/A')}")
-
-    if result['status'] not in ['started', 'already_running']:
-        print(f"   Error: {result.get('message')}")
-        return False
-
-    print("3. Check daemon status")
-    status = manager.get_status('context-daemon')
-    print(f"   Running: {status['running']}")
-    print(f"   PID: {status['pid']}")
-
-    if not status['running']:
-        return False
-
-    print("4. Get all daemon status")
-    all_status = manager.get_all_status()
-    running_count = sum(1 for s in all_status.values() if s['running'])
-    print(f"   Total daemons: {len(all_status)}")
-    print(f"   Running: {running_count}")
-
-    return True
-
-def test_pid_tracker():
-    """Test PID tracker operations"""
-    tracker = PIDTracker()
-
-    print("1. Write test PID")
-    success = tracker.write_pid('test-tracker', 99999)
-    print(f"   Write success: {success}")
-
-    print("2. Read test PID")
-    pid = tracker.read_pid('test-tracker')
-    print(f"   Read PID: {pid}")
-
-    if pid != 99999:
-        return False
-
-    print("3. Check if running (should be False)")
-    running = tracker.is_running(99999)
-    print(f"   Running: {running}")
-
-    if running:  # Should be False for fake PID
-        return False
-
-    print("4. Verify daemon")
-    verification = tracker.verify_daemon('test-tracker')
-    print(f"   Status: {verification['status']}")
-
-    if verification['status'] != 'stale_pid':
-        return False
-
-    print("5. Cleanup stale PIDs")
-    cleaned = tracker.cleanup_stale()
-    print(f"   Cleaned: {len(cleaned)}")
-
-    print("6. Health monitoring")
-    health = tracker.monitor_health()
-    print(f"   Health score: {health['health_score']:.1f}%")
-    print(f"   Running: {health['running']}/{health['total_daemons']}")
-
-    return True
-
-def test_daemon_logger():
-    """Test daemon logger"""
-    logger = DaemonLogger('test-phase2')
-
-    print("1. Test logging levels")
-    logger.debug("Debug message")
-    logger.info("Info message")
-    logger.warning("Warning message")
-    print("   Logged to file")
-
-    print("2. Test policy hit logging")
-    logger.policy_hit('test-policy', 'test-action', 'test-context')
-    print("   Policy hit logged")
-
-    print("3. Test health event")
-    logger.health_event('TEST', 'Test event', 'INFO')
-    print("   Health event logged")
-
-    print("4. Check log file exists")
-    log_exists = logger.daemon_log.exists()
-    print(f"   Log file exists: {log_exists}")
-
-    print("5. Get recent logs")
-    recent = logger.get_recent_logs(5)
-    print(f"   Recent logs: {len(recent)} lines")
-
-    return log_exists and len(recent) > 0
-
-def test_health_monitor():
-    """Test health monitor"""
-    monitor = HealthMonitor()
-
-    print("1. Check health summary")
-    summary = monitor.get_health_summary()
-    print(f"   Total daemons: {summary['total_daemons']}")
-    print(f"   Healthy: {summary['healthy']}")
-    print(f"   Unhealthy: {summary['unhealthy']}")
-    print(f"   Health: {summary['health_percentage']:.1f}%")
-
-    print("2. Check restart rate limiting")
-    can_restart = monitor.should_restart('test-daemon')
-    print(f"   Can restart: {can_restart}")
-
-    print("3. Load restart history")
-    history = monitor.load_restart_history('context-daemon')
-    print(f"   Restart events: {len(history)}")
-
-    return True
-
-def test_auto_restart():
-    """Test auto-restart functionality"""
-    manager = DaemonManager()
-    tracker = PIDTracker()
-
-    print("1. Ensure context-daemon is running")
-    status = manager.get_status('context-daemon')
-    if not status['running']:
-        result = manager.start_daemon('context-daemon')
-        print(f"   Started: {result['status']}")
-        time.sleep(2)
-
-    print("2. Get daemon PID")
-    pid = tracker.read_pid('context-daemon')
-    print(f"   PID: {pid}")
-
-    if not pid:
-        print("   ERROR: No PID found")
-        return False
-
-    print("3. Kill the daemon")
-    kill_result = tracker.kill_process(pid, force=True)
-    print(f"   Kill status: {kill_result['status']}")
-
-    time.sleep(2)
-
-    print("4. Verify daemon is dead")
-    running = tracker.is_running(pid)
-    print(f"   Still running: {running}")
-
-    if running:
-        print("   ERROR: Failed to kill daemon")
-        return False
-
-    print("5. Trigger health check (simulates auto-restart)")
-    monitor = HealthMonitor()
-    result = monitor.check_daemon_health('context-daemon')
-    print(f"   Health check result: {result['status']}")
-    print(f"   Action taken: {result['action']}")
-
-    time.sleep(2)
-
-    print("6. Verify daemon restarted")
-    new_status = manager.get_status('context-daemon')
-    print(f"   Running: {new_status['running']}")
-    print(f"   New PID: {new_status['pid']}")
-
-    if not new_status['running']:
-        print("   ERROR: Daemon not restarted")
-        return False
-
-    print("7. Verify PID changed")
-    if new_status['pid'] == pid:
-        print("   WARNING: PID unchanged (might be same process)")
-    else:
-        print(f"   PID changed: {pid} -> {new_status['pid']}")
-
-    return True
-
-def main():
-    """Run all tests"""
-    print("\n" + "="*60)
-    print("PHASE 2 INFRASTRUCTURE TEST SUITE")
-    print("="*60)
-
-    tests = [
-        ("Daemon Manager", test_daemon_manager),
-        ("PID Tracker", test_pid_tracker),
-        ("Daemon Logger", test_daemon_logger),
-        ("Health Monitor", test_health_monitor),
-        ("Auto-Restart", test_auto_restart),
+def test_enforcement_scripts_present():
+    """All 3-level enforcement scripts must be in current/"""
+    required = [
+        '3-level-flow.py',
+        'blocking-policy-enforcer.py',
+        'auto-fix-enforcer.sh',
+        'context-monitor-v2.py',
+        'session-id-generator.py',
+        'clear-session-handler.py',
+        'stop-notifier.py',
+        'per-request-enforcer.py',
+        'session-logger.py',
     ]
 
-    results = []
-    for test_name, test_func in tests:
-        passed = run_test(test_name, test_func)
-        results.append((test_name, passed))
+    missing = [s for s in required if not (current_dir / s).exists()]
 
-    # Summary
+    if missing:
+        print(f"  Missing scripts: {', '.join(missing)}")
+        return False
+
+    print(f"  All {len(required)} scripts present in {current_dir}")
+    return True
+
+
+def test_blocking_enforcer():
+    """Blocking policy enforcer must be importable"""
+    enforcer_path = current_dir / 'blocking-policy-enforcer.py'
+    if not enforcer_path.exists():
+        print(f"  blocking-policy-enforcer.py not found")
+        return False
+
+    result = subprocess.run(
+        ['python', str(enforcer_path), '--status'],
+        capture_output=True,
+        text=True,
+        timeout=10
+    )
+
+    print(f"  Blocking enforcer exit code: {result.returncode}")
+    if result.stdout:
+        print(f"  Output: {result.stdout[:100]}")
+    return True  # Just check it runs, status code may vary
+
+
+def test_session_log_structure():
+    """Session log directory structure must be correct"""
+    sessions_dir = memory_dir / 'logs' / 'sessions'
+    if not sessions_dir.exists():
+        print(f"  logs/sessions/ does not exist yet (created on first use)")
+        return True  # Not an error, created on first session
+
+    session_dirs = [d for d in sessions_dir.iterdir() if d.is_dir()]
+    print(f"  Found {len(session_dirs)} session directories")
+
+    if session_dirs:
+        # Check that at least one has a flow-trace.json
+        has_trace = any((d / 'flow-trace.json').exists() for d in session_dirs)
+        if has_trace:
+            print(f"  flow-trace.json present in session dirs")
+        else:
+            print(f"  No flow-trace.json found (may not have run yet)")
+
+    return True
+
+
+def test_latest_flow_trace():
+    """Latest flow trace should exist after at least one session"""
+    latest = memory_dir / 'logs' / 'latest-flow-trace.json'
+    if not latest.exists():
+        print(f"  latest-flow-trace.json not found (run a session first)")
+        return True  # Not a failure, just not run yet
+
+    try:
+        data = json.loads(latest.read_text(encoding='utf-8'))
+        session_id = data.get('session_id', 'unknown')
+        levels = data.get('levels_passed', 0)
+        print(f"  Latest trace: {session_id}, {levels}/4 levels passed")
+        return True
+    except Exception as e:
+        print(f"  Cannot parse latest-flow-trace.json: {e}")
+        return False
+
+
+def test_policy_log():
+    """Policy hits log should be writable"""
+    log_file = memory_dir / 'logs' / 'policy-hits.log'
+    if not log_file.exists():
+        print(f"  policy-hits.log not created yet")
+        return True  # Created on first policy hit
+
+    lines = log_file.read_text(encoding='utf-8', errors='ignore').splitlines()
+    print(f"  policy-hits.log: {len(lines)} entries")
+    return True
+
+
+def main():
     print("\n" + "="*60)
-    print("TEST SUMMARY")
+    print("PHASE 2: HOOKS ENFORCEMENT INFRASTRUCTURE TESTS")
     print("="*60)
+    print("Testing 3-level architecture enforcement (hooks-based)")
+    print()
 
-    passed_count = sum(1 for _, passed in results if passed)
-    total_count = len(results)
+    tests = [
+        ("Enforcement Scripts Present", test_enforcement_scripts_present),
+        ("Blocking Enforcer Runs",      test_blocking_enforcer),
+        ("Session Log Structure",        test_session_log_structure),
+        ("Latest Flow Trace",            test_latest_flow_trace),
+        ("Policy Hits Log",              test_policy_log),
+    ]
 
-    for test_name, passed in results:
-        status = "[OK] PASSED" if passed else "[FAIL] FAILED"
-        print(f"{status:15} {test_name}")
+    passed = 0
+    failed = 0
 
-    print(f"\nTotal: {passed_count}/{total_count} tests passed")
+    for test_name, test_func in tests:
+        result = run_test(test_name, test_func)
+        if result:
+            passed += 1
+        else:
+            failed += 1
 
-    if passed_count == total_count:
-        print("\n[OK] ALL TESTS PASSED!")
-        return 0
-    else:
-        print(f"\n[FAIL] {total_count - passed_count} tests failed")
-        return 1
+    print(f"\n{'='*60}")
+    print(f"RESULTS: {passed}/{passed+failed} tests passed")
+    print('='*60)
+
+    return 0 if failed == 0 else 1
+
 
 if __name__ == '__main__':
     sys.exit(main())

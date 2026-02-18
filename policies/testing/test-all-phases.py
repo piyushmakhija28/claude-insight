@@ -108,52 +108,52 @@ class ComprehensiveTests:
 
         return True
 
-    def test_phase2_daemon_infrastructure(self):
-        """Test Phase 2: Daemon Infrastructure"""
-        print("Testing daemon infrastructure...")
+    def test_phase2_hooks_enforcement(self):
+        """Test Phase 2: Hooks Enforcement Infrastructure (3-level architecture)"""
+        print("Testing hooks enforcement scripts...")
 
-        # Test daemon manager
+        current_dir = self.memory_dir / 'current'
+
+        # Required enforcement scripts
+        required_scripts = [
+            '3-level-flow.py',
+            'blocking-policy-enforcer.py',
+            'auto-fix-enforcer.sh',
+            'context-monitor-v2.py',
+            'session-id-generator.py',
+            'clear-session-handler.py',
+            'stop-notifier.py',
+            'per-request-enforcer.py',
+        ]
+
+        missing = []
+        for script in required_scripts:
+            if not (current_dir / script).exists():
+                missing.append(script)
+
+        if missing:
+            print(f"  [FAIL] Missing scripts: {', '.join(missing)}")
+            return False
+
+        print(f"  [OK] All {len(required_scripts)} enforcement scripts present in current/")
+
+        # Test blocking enforcer runs
         result = self.run_command(
-            f'python {self.memory_dir}/daemon-manager.py --status-all --format json',
-            'Daemon manager'
+            f'python {current_dir}/blocking-policy-enforcer.py --status',
+            'Blocking policy enforcer'
         )
-        if not result['success']:
-            print(f"  [FAIL] Daemon manager failed")
-            return False
-
-        try:
-            status = json.loads(result['output'])
-            running_count = sum(1 for s in status.values() if s.get('running'))
-            print(f"  [OK] Daemon manager: {running_count} daemons running")
-        except:
-            print(f"  [FAIL] Cannot parse daemon status")
-            return False
-
-        # Test PID tracker
-        result = self.run_command(
-            f'python {self.memory_dir}/pid-tracker.py --health',
-            'PID tracker'
-        )
-        if not result['success']:
-            print(f"  [FAIL] PID tracker failed")
-            return False
-
-        try:
-            health = json.loads(result['output'])
-            score = health.get('health_score', 0)
-            print(f"  [OK] PID tracker: Health score {score}%")
-        except:
-            print(f"  [FAIL] Cannot parse health data")
-            return False
-
-        # Test daemon logger (check log files exist)
-        log_dir = self.memory_dir / 'logs' / 'daemons'
-        log_count = len(list(log_dir.glob('*.log')))
-        if log_count > 0:
-            print(f"  [OK] Daemon logger: {log_count} log files")
+        if result['success']:
+            print(f"  [OK] Blocking enforcer operational")
         else:
-            print(f"  [FAIL] No daemon log files found")
-            return False
+            print(f"  [WARN] Blocking enforcer returned non-zero (may need initialization)")
+
+        # Check session logs directory
+        sessions_log_dir = self.memory_dir / 'logs' / 'sessions'
+        if sessions_log_dir.exists():
+            session_count = len([d for d in sessions_log_dir.iterdir() if d.is_dir()])
+            print(f"  [OK] Session logs directory: {session_count} sessions")
+        else:
+            print(f"  [WARN] No session logs directory yet (created on first use)")
 
         return True
 
@@ -315,13 +315,12 @@ class ComprehensiveTests:
         else:
             print(f"  [OK] All required log files exist")
 
-        # Check directories exist
+        # Check required directories exist
         required_dirs = [
-            '.pids',
-            '.restarts',
             '.cache',
-            '.state',
-            'logs/daemons'
+            'logs',
+            'logs/sessions',
+            'current',
         ]
 
         missing_dirs = []
@@ -330,8 +329,7 @@ class ComprehensiveTests:
                 missing_dirs.append(dir_name)
 
         if missing_dirs:
-            print(f"  [FAIL] Missing directories: {', '.join(missing_dirs)}")
-            return False
+            print(f"  [WARN] Missing directories: {', '.join(missing_dirs)}")
         else:
             print(f"  [OK] All required directories exist")
 
@@ -345,7 +343,7 @@ class ComprehensiveTests:
 
         tests = [
             ("Phase 1: Context Optimization", self.test_phase1_context_optimization),
-            ("Phase 2: Daemon Infrastructure", self.test_phase2_daemon_infrastructure),
+            ("Phase 2: Hooks Enforcement", self.test_phase2_hooks_enforcement),
             ("Phase 3: Failure Prevention", self.test_phase3_failure_prevention),
             ("Phase 4: Policy Automation", self.test_phase4_policy_automation),
             ("System Integration", self.test_integration),

@@ -75,11 +75,6 @@ def find_policy_files(memory_dir):
             '03-execution-system/09-git-commit/auto-commit-enforcer.py'
         ],
 
-        # Infrastructure
-        'daemon-infrastructure': [
-            'utilities/daemon-manager.py',
-            'utilities/pid-tracker.py'
-        ]
     }
 
     found_policies = {}

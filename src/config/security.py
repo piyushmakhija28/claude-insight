@@ -196,8 +196,9 @@ class CommandValidator:
     """Command validation to prevent injection attacks"""
 
     ALLOWED_SCRIPTS = {
-        'pid-tracker.py',
-        'context-monitor.py',
+        'context-monitor-v2.py',
+        'blocking-policy-enforcer.py',
+        'per-request-enforcer.py',
         'session-tracker.py',
         'policy-checker.py',
     }
