@@ -17,12 +17,19 @@ Components:
 """
 
 import os
+import sys
 import json
 import hashlib
 import random
 import string
 from datetime import datetime
 from pathlib import Path
+
+# Fix encoding for Windows console
+if sys.stdout.encoding != 'utf-8':
+    sys.stdout.reconfigure(encoding='utf-8')
+if sys.stderr.encoding != 'utf-8':
+    sys.stderr.reconfigure(encoding='utf-8')
 
 class SessionIDGenerator:
     """Generates and manages session IDs"""
@@ -183,19 +190,19 @@ class SessionIDGenerator:
             session_data = self.get_session_data(session_id)
 
         print("\n" + "="*80)
-        print("📋 SESSION ID FOR TRACKING")
+        print("[CLIPBOARD] SESSION ID FOR TRACKING")
         print("="*80)
-        print(f"\n🆔 Session ID: {session_id}")
+        print(f"\n[U+1F194] Session ID: {session_id}")
 
         if session_data:
-            print(f"📅 Started: {session_data['start_time'][:19]}")
-            print(f"📊 Status: {session_data['status']}")
+            print(f"[U+1F4C5] Started: {session_data['start_time'][:19]}")
+            print(f"[CHART] Status: {session_data['status']}")
             if session_data.get('description'):
-                print(f"📝 Description: {session_data['description']}")
+                print(f"[U+1F4DD] Description: {session_data['description']}")
             if session_data.get('work_items'):
-                print(f"🔧 Work Items: {len(session_data['work_items'])}")
+                print(f"[WRENCH] Work Items: {len(session_data['work_items'])}")
 
-        print("\n💡 Use this ID to track this session in logs and reports")
+        print("\n[BULB] Use this ID to track this session in logs and reports")
         print("="*80 + "\n")
 
     def list_recent_sessions(self, limit=10):
@@ -294,9 +301,9 @@ def main():
 
     elif args.action == 'list':
         sessions = generator.list_recent_sessions(args.limit)
-        print(f"\n📋 Recent Sessions (last {args.limit}):\n")
+        print(f"\n[CLIPBOARD] Recent Sessions (last {args.limit}):\n")
         for session in sessions:
-            status_icon = "✅" if session['status'] == 'COMPLETED' else "🔄"
+            status_icon = "[CHECK]" if session['status'] == 'COMPLETED' else "[CYCLE]"
             print(f"{status_icon} {session['session_id']}")
             print(f"   Started: {session['start_time'][:19]}")
             print(f"   Status: {session['status']}")
@@ -312,7 +319,7 @@ def main():
 
         stats = generator.get_session_stats(session_id)
         if stats:
-            print(f"\n📊 Session Statistics: {session_id}\n")
+            print(f"\n[CHART] Session Statistics: {session_id}\n")
             print(f"Duration: {stats['duration_formatted']}")
             print(f"Total Work Items: {stats['total_work_items']}")
             print(f"Completed: {stats['completed_work_items']}")
@@ -329,9 +336,9 @@ def main():
             sys.exit(1)
 
         if generator.end_session(session_id):
-            print(f"✅ Session ended: {session_id}")
+            print(f"[CHECK] Session ended: {session_id}")
         else:
-            print(f"❌ Failed to end session: {session_id}")
+            print(f"[CROSS] Failed to end session: {session_id}")
             sys.exit(1)
 
 
