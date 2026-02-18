@@ -981,18 +981,22 @@ def api_metrics():
 
         health_score = system_health.get('health_score', system_health.get('score', 0))
 
+        # Get policy hits for today
+        policy_hits_today = metrics.get_policy_hits_today()
+
         return jsonify({
             'success': True,
             'health_score': health_score,
             'daemons_running': daemons_running,
             'daemons_total': daemons_total,
             'active_policies': policy_status.get('active_policies', 0),
-            'policy_hits': 0,  # Will track from logs later
+            'total_policies': policy_status.get('total_policies', 0),
+            'policy_hits': policy_hits_today,
             'context_usage': system_health.get('context_usage', 0),
             'memory_usage': system_health.get('memory_usage', 0),
             'labels': ['Now'],
             'health_scores': [health_score],
-            'policy_hits_data': [0]
+            'policy_hits_data': [policy_hits_today]
         })
     except Exception as e:
         print(f"Error in api_metrics: {e}")
@@ -1020,28 +1024,13 @@ def api_policies():
     try:
         policies_data = policy_checker.get_detailed_policy_status()
 
-        # Ensure policies is an array for dashboard
-        if isinstance(policies_data, dict):
-            # Convert dict to array of policy objects
-            policies_array = []
-            for key, value in policies_data.items():
-                if isinstance(value, dict):
-                    policies_array.append({
-                        'name': key.replace('_', ' ').title(),
-                        **value
-                    })
-                else:
-                    # Simple key-value pair
-                    policies_array.append({
-                        'name': key.replace('_', ' ').title(),
-                        'status': 'active',
-                        'value': value
-                    })
-            policies_data = policies_array
-
+        # policies_data is already properly structured with:
+        # - total_policies, active_policies, warning_policies, error_policies (integers)
+        # - policies (array of policy objects)
+        # Return it as-is
         return jsonify({
             'success': True,
-            'policies': policies_data
+            **policies_data  # Spread the dict to include all keys at top level
         })
     except Exception as e:
         print(f"Error in api_policies: {e}")
@@ -1167,6 +1156,32 @@ def api_model_usage():
             'total_requests': 0,
             'counts': {},
             'percentages': {}
+        }), 500
+
+@app.route('/api/model-usage-trend')
+@login_required
+def api_model_usage_trend():
+    """API endpoint for model usage trend over time (last 7 days)"""
+    try:
+        trend_data = metrics.get_model_usage_trend(days=7)
+        return jsonify({
+            'success': True,
+            'labels': trend_data.get('labels', []),
+            'haiku_data': trend_data.get('haiku_data', []),
+            'sonnet_data': trend_data.get('sonnet_data', []),
+            'opus_data': trend_data.get('opus_data', [])
+        })
+    except Exception as e:
+        print(f"Error in api_model_usage_trend: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'labels': [],
+            'haiku_data': [],
+            'sonnet_data': [],
+            'opus_data': []
         }), 500
 
 @app.route('/api/policy-execution-stats')

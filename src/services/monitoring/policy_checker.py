@@ -269,8 +269,14 @@ class PolicyChecker:
             'policies': []
         }
 
+        # Get policy hits from log
+        policy_hits = self._count_policy_hits()
+
         for policy in self.policies:
             status = self._check_policy_status(policy)
+
+            # Get hits for this policy
+            hits = policy_hits.get(policy['id'], 0)
 
             policy_data = {
                 'id': policy['id'],
@@ -279,7 +285,8 @@ class PolicyChecker:
                 'phase': f"Phase {policy['phase']}",
                 'status': status['status'],
                 'details': status['details'],
-                'files': policy['files']
+                'files': policy['files'],
+                'hits': hits  # Add hits count
             }
 
             detailed['policies'].append(policy_data)
@@ -292,3 +299,65 @@ class PolicyChecker:
                 detailed['error_policies'] += 1
 
         return detailed
+
+    def _count_policy_hits(self):
+        """Count policy hits from policy-hits.log"""
+        hits = {}
+        policy_log = self.memory_dir / 'logs' / 'policy-hits.log'
+
+        try:
+            if not policy_log.exists():
+                return hits
+
+            with open(policy_log, 'r', encoding='utf-8', errors='ignore') as f:
+                for line in f:
+                    line = line.strip()
+                    if not line or line.startswith('#'):
+                        continue
+
+                    # Parse line format: [timestamp] policy-name | action | context
+                    try:
+                        if '[' in line and ']' in line:
+                            # Extract policy name (between ] and first |)
+                            rest = line.split(']', 1)[1].strip()
+                            policy_name = rest.split('|')[0].strip()
+
+                            # Map daemon names to policy IDs
+                            policy_id = self._map_daemon_to_policy_id(policy_name)
+                            if policy_id:
+                                hits[policy_id] = hits.get(policy_id, 0) + 1
+                    except:
+                        continue
+        except Exception as e:
+            print(f"Error counting policy hits: {e}")
+
+        return hits
+
+    def _map_daemon_to_policy_id(self, daemon_name):
+        """Map daemon/script name to policy ID"""
+        daemon_name_lower = daemon_name.lower()
+
+        # Map common daemon names to policy IDs
+        mappings = {
+            'commit': 'git-auto-commit',
+            'session': 'session-management',
+            'context': 'context-management',
+            'task': 'task-breakdown',
+            'prompt': 'prompt-generation',
+            'model': 'model-selection',
+            'skill': 'skill-agent-selection',
+            'agent': 'skill-agent-selection',
+            'tool': 'tool-optimization',
+            'plan': 'plan-mode-suggestion',
+            'daemon': 'daemon-infrastructure',
+            'parallel': 'parallel-execution',
+            'failure': 'failure-prevention',
+            'standards': 'standards-loader',
+            'auto-fix': 'auto-fix-enforcement'
+        }
+
+        for key, policy_id in mappings.items():
+            if key in daemon_name_lower:
+                return policy_id
+
+        return None
