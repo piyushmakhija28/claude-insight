@@ -1,56 +1,258 @@
-#  - Claude Code Instructions
+# Claude Insight - Claude Code Instructions
 
-**Project:** 
-**Type:** [PROJECT TYPE]
-**Status:** 🟢 Active Development
-
----
-
-## 📋 PROJECT OVERVIEW
-
-[Describe project purpose and scope]
-
-**Important:** This file provides **ADDITIONAL** project-specific context. It does **NOT** override global CLAUDE.md policies.
+**Project:** Claude Insight
+**Type:** Python Flask Monitoring Dashboard
+**Version:** 3.3.0
+**Status:** Active Development
 
 ---
 
-## 🏗️ PROJECT STRUCTURE
+## PROJECT OVERVIEW
 
-### Directory Layout
+Claude Insight is a **real-time monitoring dashboard** for the Claude Memory System.
+It tracks the 3-Level Architecture execution, policy enforcement, session analytics,
+and provides a web UI to visualize Claude Code behavior across sessions.
 
-```text
-/
-├── README.md                    # Project documentation
-├── CLAUDE.md                    # This file (Claude instructions)
-└── [PROJECT STRUCTURE]
+**Key purpose:** Monitor how Claude follows the 3-level enforcement policies
+(Level -1 Auto-Fix, Level 1 Sync, Level 2 Standards, Level 3 Execution with 12 steps).
+
+**Important:** This file provides **ADDITIONAL** project-specific context to Claude.
+It does **NOT** override the global `~/.claude/CLAUDE.md` policies.
+
+---
+
+## FIRST TIME SETUP - INSTALL THE MEMORY SYSTEM
+
+Before working on this project, set up the Claude Memory System globally.
+This ensures Claude follows the 3-level enforcement architecture automatically.
+
+### Option A: Automatic Setup (Recommended)
+
+**Windows (PowerShell):**
+```powershell
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+.\scripts\setup-global-claude.ps1
+```
+
+**Unix / macOS / Linux / WSL:**
+```bash
+chmod +x scripts/setup-global-claude.sh
+./scripts/setup-global-claude.sh
+```
+
+**What the automatic setup does:**
+1. Creates `~/.claude/` directory if it does not exist
+2. Installs core enforcement scripts to `~/.claude/memory/current/`
+3. Creates `~/.claude/settings.json` with 3-level flow hooks
+4. Installs the global CLAUDE.md (3-level architecture, no project-specific info)
+5. Hooks activate automatically when you reopen Claude Code
+
+### Option B: Manual Setup
+
+1. **Create the directory:**
+   ```bash
+   mkdir -p ~/.claude/memory/current
+   ```
+
+2. **Copy enforcement scripts:**
+   ```bash
+   cp scripts/3-level-flow.py ~/.claude/memory/current/
+   cp scripts/auto-fix-enforcer.sh ~/.claude/memory/current/
+   cp scripts/session-start.sh ~/.claude/memory/current/
+   cp scripts/per-request-enforcer.py ~/.claude/memory/current/
+   cp scripts/context-monitor-v2.py ~/.claude/memory/current/
+   cp scripts/blocking-policy-enforcer.py ~/.claude/memory/current/
+   cp scripts/session-id-generator.py ~/.claude/memory/current/
+   cp scripts/session-logger.py ~/.claude/memory/current/
+   cp scripts/clear-session-handler.py ~/.claude/memory/current/
+   cp scripts/stop-notifier.py ~/.claude/memory/current/
+   ```
+
+3. **Install global CLAUDE.md:**
+   ```bash
+   cp scripts/global-claude-md-template.md ~/.claude/CLAUDE.md
+   ```
+   NOTE: If you already have `~/.claude/CLAUDE.md`, manually merge the
+   3-level architecture section from the template into your existing file.
+   Do NOT replace personal configurations - just prepend the 3-level section.
+
+4. **Install hooks in `~/.claude/settings.json`:**
+   ```json
+   {
+     "model": "sonnet",
+     "hooks": {
+       "Stop": [{
+         "hooks": [{
+           "type": "command",
+           "command": "python ~/.claude/memory/current/stop-notifier.py",
+           "timeout": 20,
+           "statusMessage": "Session summary check..."
+         }]
+       }],
+       "UserPromptSubmit": [{
+         "hooks": [
+           {
+             "type": "command",
+             "command": "python ~/.claude/memory/current/clear-session-handler.py",
+             "timeout": 15,
+             "statusMessage": "Checking session state..."
+           },
+           {
+             "type": "command",
+             "command": "python ~/.claude/memory/current/3-level-flow.py --summary",
+             "timeout": 30,
+             "statusMessage": "Running 3-level architecture check..."
+           }
+         ]
+       }]
+     }
+   }
+   ```
+
+5. **Restart Claude Code** - hooks activate on next launch.
+
+### After Setup - What You Will See
+
+Every message you send will trigger the 3-level flow automatically:
+```
+[LEVEL -1] AUTO-FIX ENFORCEMENT (BLOCKING)  [OK] All 7 checks passed
+[LEVEL 1] SYNC SYSTEM                        [OK] Context: 80% | Session: SESSION-...
+[LEVEL 2] STANDARDS SYSTEM                   [OK] 14 standards, 89 rules loaded
+[LEVEL 3] EXECUTION SYSTEM (12 steps)        [OK] All steps verified
 ```
 
 ---
 
-## 🎯 PROJECT-SPECIFIC RULES
+## HOW GLOBAL vs PROJECT CLAUDE.MD WORKS
 
-[Add project-specific rules, conventions, and guidelines]
+```
+~/.claude/CLAUDE.md          <- GLOBAL (installed by setup script)
+  - 3-level architecture       Non-bypassable enforcement rules
+  - Skill/agent registry       21 skills + 12 agents mapped
+  - Windows Unicode rules      Mandatory on Windows
+  - Context optimization       Auto-applied every request
+
+<your-project>/CLAUDE.md     <- PROJECT (this file)
+  - Project overview           What this project is
+  - Project structure          File organization
+  - Dev commands               How to run/test/build
+  - Project conventions        Coding style for this project
+```
+
+**Core rule:** Global policies are ALWAYS active. Project CLAUDE.md ADDS context,
+never overrides. You cannot disable the 3-level architecture from a project file.
+
+**CRITICAL - Never put these in global CLAUDE.md:**
+- Project-specific credentials or API keys
+- Internal company paths or server addresses
+- Business-specific logic or domain knowledge
+- Personal preferences specific to your workflow only
 
 ---
 
-## 🔧 DEVELOPMENT WORKFLOW
+## PROJECT STRUCTURE
 
-[Describe development workflow, build process, testing]
+```
+claude-insight/
+├── CLAUDE.md                       <- This file (project context)
+├── README.md                       <- Full documentation
+├── CHANGELOG.md                    <- Version history
+├── run.py                          <- App entry point
+├── requirements.txt                <- Python dependencies
+│
+├── src/                            <- Main Flask application
+│   ├── app.py                      <- Flask app, routes, SocketIO
+│   ├── config.py                   <- Dev/Prod/Test configuration
+│   ├── auth/                       <- Authentication (bcrypt)
+│   ├── models/                     <- Data models
+│   ├── routes/                     <- Additional route handlers
+│   ├── middleware/                 <- Request logging middleware
+│   ├── mcp/                        <- MCP enforcement server
+│   ├── services/
+│   │   ├── monitoring/             <- Core monitoring (key folder)
+│   │   │   ├── three_level_flow_tracker.py
+│   │   │   ├── policy_execution_tracker.py
+│   │   │   ├── session_tracker.py
+│   │   │   ├── metrics_collector.py
+│   │   │   ├── log_parser.py
+│   │   │   └── skill_agent_tracker.py
+│   │   ├── ai/                     <- AI analytics (anomaly, prediction)
+│   │   └── notifications/          <- Alert routing system
+│   └── utils/
+│       ├── path_resolver.py        <- Cross-platform path resolution
+│       └── history_tracker.py      <- Activity history
+│
+├── templates/                      <- 31 Jinja2 HTML templates
+├── static/                         <- CSS, JS, i18n files
+│
+├── scripts/                        <- Setup and enforcement scripts
+│   ├── setup-global-claude.sh      <- Unix automatic setup
+│   ├── setup-global-claude.ps1     <- Windows automatic setup
+│   ├── global-claude-md-template.md <- Public CLAUDE.md template
+│   ├── 3-level-flow.py             <- Main hook entry script
+│   ├── auto-fix-enforcer.sh        <- Level -1 enforcement
+│   ├── session-start.sh            <- Level 1 session init
+│   └── (other enforcement scripts)
+│
+├── policies/                       <- Policy definitions
+│   ├── 01-sync-system/             <- Foundation layer policies
+│   └── 03-execution-system/        <- 12-step execution policies
+│
+├── docs/                           <- Architecture documentation
+├── config/                         <- Runtime configuration JSONs
+└── tests/                          <- Test suite
+```
 
 ---
 
-## ✅ SUMMARY
+## DEVELOPMENT COMMANDS
 
-**This CLAUDE.md provides:**
-- ✅ Project-specific context
-- ✅ Development guidelines
-- ✅ Project conventions
+```bash
+# Install dependencies
+pip install -r requirements.txt
 
-**Global policies:** Apply automatically (NOT overridden)
+# Run the dashboard (port 5000)
+python run.py
+
+# Run tests
+python -m pytest tests/ -v
+
+# Check specific test
+python -m pytest tests/test_policy_integration.py -v
+
+# Bump version
+python scripts/bump-version.py --patch
+```
+
+**Default credentials:** admin / admin (change in production)
+**Dashboard URL:** http://localhost:5000
 
 ---
 
-**Project:** 
-**Version:** 1.0.0
+## PROJECT-SPECIFIC CONVENTIONS
+
+1. **No daemon scripts** - No background process files in this project
+2. **No Windows Unicode** - All Python files use ASCII only (cp1252 safe)
+3. **Path resolution** - Always use `path_resolver.py` for cross-platform paths
+4. **Services** - Business logic in `src/services/`, never in routes or templates
+5. **Templates** - All HTML in `templates/`, extend from `base.html`
+6. **Config** - All config via `src/config.py`, no hardcoded values anywhere
+7. **Monitoring** reads `~/.claude/memory/logs/` - memory system must be installed
+
+---
+
+## WHAT CLAUDE INSIGHT MONITORS
+
+| What | From | Dashboard |
+|------|------|-----------|
+| 3-level flow execution | `~/.claude/memory/logs/sessions/*/flow-trace.json` | /3level-flow-history |
+| Policy enforcement | `~/.claude/memory/logs/policy-hits.log` | /policies |
+| Session analytics | `~/.claude/memory/sessions/` | /sessions |
+| Skill/agent usage | flow-trace.json data | /analytics |
+| Context usage % | Context monitor logs | /dashboard |
+
+---
+
+**Version:** 3.3.0
 **Last Updated:** 2026-02-18
-**Status:** 🟢 Active Development
+**Source:** https://github.com/piyushmakhija28/claude-insight

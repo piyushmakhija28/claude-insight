@@ -1,2499 +1,349 @@
-# 🤖 Claude Insight v2.7.0
+# Claude Insight v3.3.0
 
-**Professional Real-time Analytics Dashboard with Complete Claude Memory System v3.2.0 Integration**
-**🆕 Now with 3-Level Architecture & Enhanced Daemon Management (10 Daemons)**
+**Real-time Monitoring Dashboard for the Claude Memory System (3-Level Architecture)**
 
-[![GitHub](https://img.shields.io/badge/GitHub-claude--monitoring--system-blue?logo=github)](https://github.com/piyushmakhija28/claude-insight)
-[![Python](https://img.shields.io/badge/Python-3.7+-blue?logo=python)](https://www.python.org/)
+[![GitHub](https://img.shields.io/badge/GitHub-claude--insight-blue?logo=github)](https://github.com/piyushmakhija28/claude-insight)
+[![Python](https://img.shields.io/badge/Python-3.8+-blue?logo=python)](https://www.python.org/)
 [![Flask](https://img.shields.io/badge/Flask-3.0-green?logo=flask)](https://flask.palletsprojects.com/)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Version](https://img.shields.io/badge/Version-3.3.0-brightgreen)](CHANGELOG.md)
 
-A comprehensive, real-time monitoring and analytics dashboard for the Claude Memory System v3.2.0 (3-Level Architecture). Track system health, analyze costs, monitor policies, and optimize performance - all from one beautiful interface with AI-powered anomaly detection, predictive forecasting, and custom alert routing.
-
-**🎁 COMPLETE PACKAGE**: This repo includes **everything you need** - the monitoring dashboard + **complete Claude Memory System v3.2.0 files**:
-- ✅ **3-Level Architecture** - Sync System → Rules/Standards → Execution System
-- ✅ **12-Step Execution Flow** - Prompt Generation → Task Breakdown → Model Selection → Execution
-- ✅ **10 daemons** - Complete daemon management system with auto-restart & health monitoring
-- ✅ **150+ files** - All automation scripts, policies, and documentation
-- ✅ **81 automation scripts** - Python & Shell scripts for all features
-- ✅ **50 policy files** - All policies + complete documentation
-- ✅ **Project-specific CLAUDE.md** - Dashboard-focused configuration v2.7.0
-- ✅ **Real-time integration** - Live monitoring of all components
-- ✅ **Daemon utilities** - daemon-manager.py, health-monitor-daemon.py, and more
-
-**Developed by Claude Code Community** 💻
+Claude Insight is a Python Flask dashboard that monitors how Claude Code follows the
+**3-Level Architecture enforcement policies** in real-time. Track policy execution,
+session analytics, skill/agent usage, context optimization, and AI-powered anomaly
+detection — all from one interface.
 
 ---
 
-## 📑 Table of Contents
+## Table of Contents
 
-### 🚀 Getting Started
-- [🎯 Overview](#overview)
-- [✨ Features](#features)
-- [🚀 Quick Start](#quick-start)
-- [📦 What's Included](#whats-included)
-
-### 📚 Claude Memory System
-- [🧠 Memory System Overview](#claude-memory-system-overview)
-- [📖 Complete Documentation](#complete-documentation)
-- [🤖 System Architecture](#system-architecture)
-  - [🏗️ 3-Layer Architecture](#️-3-layer-architecture)
-  - [⚡ Execution Flow](#execution-flow-every-request)
-  - [🔄 Background Automation](#background-automation)
-- [📜 14 Active Policies](#14-active-policies)
-- [☕ Java Spring Boot Standards](#java-spring-boot-standards)
-- [🔧 Spring Boot Configuration](#spring-boot-configuration)
-
-### 🎨 Dashboard Features
-- [📊 Core Monitoring](#core-monitoring-features)
-- [🧠 Memory System Integration](#memory-system-integration-v212)
-- [🚨 Auto-Fix Enforcement System](#auto-fix-enforcement-system-v250) **NEW! 🔥**
-- [📋 Plan Detection System](#plan-detection-system-v240) **NEW! 🎉**
-- [🤖 Complete Automation System Dashboard](#-complete-automation-system-dashboard-v2171-new) **NEW! 🎉**
-- [⚡ Performance Profiling](#performance-profiling-v214)
-- [🔐 Two-Factor Authentication](#two-factor-authentication-2fa-v216) **NEW!**
-- [📊 Custom Dashboard Builder](#custom-dashboard-builder-v216) **NEW!**
-- [🌍 Multi-language Support](#multi-language-support-i18n-v216) **NEW!**
-- [🔌 Plugin System](#plugin-system-v216) **NEW!**
-- [🔄 Grafana & Prometheus](#grafana--prometheus-integration-v216) **NEW!**
-- [📧 Advanced Notifications](#advanced-notification-channels-v216) **NEW!**
-- [🎨 Advanced Themes & Customization](#advanced-themes--customization-v215)
-- [🔍 Advanced Search & Filtering](#advanced-search--filtering-v215)
-- [📈 ML Model Training](#ml-model-training-v215)
-- [🛠️ Debugging & Troubleshooting](#debugging--troubleshooting-tools-v215)
-- [🚨 Alert Routing](#alert-routing--escalation-v211)
-- [📈 Predictive Analytics](#predictive-analytics-v210)
-- [🤖 AI Anomaly Detection](#ai-anomaly-detection-v29)
-- [🌐 Community Marketplace](#community-marketplace-v27-v213)
-- [🤝 Widget Collaboration](#widget-collaboration-v213)
-
-### 🔧 Installation & Setup
-- [📥 Installation Guide](#installation-guide)
-- [⚙️ Configuration](#configuration)
-- [🎯 Memory System Setup](#memory-system-setup)
-- [🔄 Running the Application](#running-the-application)
-
-### 📖 Usage & Reference
-- [💡 How to Use](#how-to-use)
-- [🔄 API Reference](#api-reference)
-- [📊 Metrics Tracked](#metrics-tracked)
-- [📁 Project Structure](#project-structure)
-
-### 📚 Additional Resources
-- [⚡ Quick Start Guide (60 Seconds)](#quick-start-guide-60-seconds)
-- [🤖 Automation System Integration Details](#automation-system-integration-details-v2171)
-- [🔄 Auto-Sync Guide for Contributors](#auto-sync-guide-for-contributors)
-- [📦 Complete Package Contents](#complete-package-contents)
-
-### 🛡️ Security & Support
-- [🔒 Security](#security)
-- [🐛 Troubleshooting](#troubleshooting)
-- [🤝 Contributing](#contributing)
-- [📄 License](#license)
+- [Overview](#overview)
+- [Features](#features)
+- [Quick Start](#quick-start)
+  - [Prerequisites](#prerequisites)
+  - [Installation](#installation)
+  - [Memory System Setup](#memory-system-setup)
+  - [Running the Dashboard](#running-the-dashboard)
+- [The 3-Level Architecture](#the-3-level-architecture)
+  - [Level -1: Auto-Fix Enforcement](#level--1-auto-fix-enforcement)
+  - [Level 1: Sync System](#level-1-sync-system)
+  - [Level 2: Standards System](#level-2-standards-system)
+  - [Level 3: Execution System](#level-3-execution-system)
+- [How the Hooks Work](#how-the-hooks-work)
+- [Dashboard Pages](#dashboard-pages)
+- [Project Structure](#project-structure)
+- [API Reference](#api-reference)
+- [Configuration](#configuration)
+- [Global vs Project CLAUDE.md](#global-vs-project-claudemd)
+- [Troubleshooting](#troubleshooting)
+- [Contributing](#contributing)
+- [Changelog](#changelog)
+- [License](#license)
 
 ---
 
 ## Overview
 
-The Claude Insight is a professional-grade dashboard that provides complete visibility into your Claude Memory System v2.2.0 deployment. Monitor daemon health, track policy enforcement, analyze token consumption, detect anomalies, and optimize performance - all in real-time.
+### What Is Claude Insight?
 
-### Why This Was Built
+Claude Insight provides visibility into the Claude Memory System — a policy enforcement
+framework that runs inside Claude Code. The memory system uses a **3-level architecture**
+to ensure Claude always follows coding standards, picks the right skills/agents, and
+manages context efficiently.
 
-The Claude Memory System v2.2.0 is a powerful automation framework that:
-- Reduces token consumption by 60-80%
-- Prevents repeated failures through self-learning
-- Manages context automatically with intelligent optimization
-- Enforces code standards for Java Spring Boot projects
-- Runs 8-9 background daemons for continuous optimization
+**The problem it solves:** Without monitoring, you cannot tell if Claude is following
+your enforcement policies, which model it selected, how much context it consumed, or
+whether it invoked the correct skill for a task.
 
-**But how do you know it's working?** That's where this monitoring system comes in.
+**Claude Insight shows you all of this in real-time.**
 
-### What Makes This Special
+### How It Works
 
-🎯 **Complete Integration**: Direct integration with all Memory System components
-📊 **Real-time Monitoring**: Live updates every 10-30 seconds via WebSocket
-🧠 **AI-Powered**: Machine learning for anomaly detection and forecasting
-🚨 **Smart Alerts**: Custom routing with multi-level escalation
-🌐 **Community Features**: Share widgets, collaborate in real-time
-📈 **Professional UI**: Beautiful, responsive dashboard with 6 themes
-🔒 **Secure**: Authentication, authorization, XSS protection
+```
+Claude Code (your IDE)
+       |
+       | Every message triggers:
+       v
+UserPromptSubmit Hook
+       |
+       v
+3-level-flow.py --summary
+  [Level -1] Auto-Fix Enforcement
+  [Level 1]  Sync System (Context + Session)
+  [Level 2]  Standards + Skill Selection
+  [Level 3]  12-Step Execution
+       |
+       | Writes to:
+       v
+~/.claude/memory/logs/
+       |
+       | Read by:
+       v
+Claude Insight Dashboard (Flask)
+       |
+       v
+Real-time charts, analytics, alerts
+```
 
 ---
 
 ## Features
 
-### Core Monitoring Features
-
-#### 📊 System Health Dashboard
-- **Real-time Health Score**: 0-100 overall system health with component breakdown
-- **Daemon Status Grid**: Visual health monitoring of all 8-9 daemons
-- **Policy Compliance**: Track enforcement of all 14 active policies
-- **Performance Metrics**: Response times, context usage, error tracking
-- **Session Tracking**: Active sessions, history, incomplete work detection
-- **📋 Plan Detection**: Auto-detects active Claude Code subscription (Free/Pro/Team/Enterprise) **NEW!**
-- **Export Options**: CSV, Excel, PDF reports
-
-#### 💰 Cost Analysis
-- **Model Usage Distribution**: Haiku/Sonnet/Opus usage percentages
-- **API Costs**: Token consumption and cost tracking
-- **Optimization Impact**: Token savings and efficiency metrics
-- **Trend Analysis**: Historical cost patterns
-
-#### 📈 Performance Metrics
-- **Response Times**: Average, min, max response times
-- **Context Usage**: Real-time token consumption monitoring
-- **Cache Performance**: Hit rates and efficiency
-- **Error Tracking**: Failure prevention statistics
-
----
-
-### 🚨 Auto-Fix Enforcement System (v2.5.0) **NEW! 🔥**
-
-**🚨 CRITICAL: If ANY policy or system fails → STOP ALL WORK → FIX IMMEDIATELY**
-
-The Auto-Fix Enforcement System implements **zero-tolerance failure policy** with automatic fixing capabilities.
-
-#### 🎯 Philosophy
-
-**Zero Tolerance for Failures:**
-- ❌ Don't work around failures
-- ❌ Don't ignore warnings
-- ❌ Don't proceed with broken systems
-- ✅ **Fix immediately and properly**
-
-**Blocking Enforcement:**
-- Python missing → **BLOCK ALL WORK**
-- Critical files missing → **BLOCK ALL WORK**
-- Session not started → **BLOCK ALL WORK**
-- Enforcer not initialized → **BLOCK ALL WORK**
-
-#### ✨ Key Features
-
-**6 Comprehensive System Checks:**
-1. 🐍 **Python Availability** (CRITICAL) - Verifies Python command works
-2. 📁 **Critical Files** (CRITICAL) - Ensures all system files present
-3. 🔒 **Blocking Enforcer** (CRITICAL) - Validates enforcer initialized
-4. 📊 **Session State** (HIGH) - Checks session started and context checked
-5. 🤖 **Daemon Status** (INFO) - Reports daemon health (not blocking)
-6. 📂 **Git Repository** (INFO) - Checks for uncommitted changes
-
-**Auto-Fix Capabilities:**
-- ✅ **Can auto-fix:** Blocking enforcer state, session markers
-- ⚠️ **Manual fix:** Python installation, missing files, daemon restart
-
-**Smart Failure Handling:**
-```
-Check System → Failure Found?
-                    ↓ Yes
-              Auto-Fix Possible?
-                    ↓ Yes
-              Apply Auto-Fix
-                    ↓
-              Re-check System
-                    ↓
-              Still Failing?
-                    ↓ Yes
-         🚨 BLOCK WORK + Show Fix Instructions
-```
-
-#### 📊 Example Output
-
-**All Systems OK:**
-```
-🔍 [1/6] Checking Python...
-   ✅ Python available: Python 3.13.12
-🔍 [2/6] Checking critical files...
-   ✅ All critical files present
-🔍 [3/6] Checking blocking enforcer...
-   ✅ Blocking enforcer initialized
-🔍 [4/6] Checking session state...
-   ✅ Session state valid
-🔍 [5/6] Checking daemons...
-   ℹ️ Daemons: 8 running, 1 stopped
-🔍 [6/6] Checking git repositories...
-   ✅ Git repository clean
-
-✅ ALL SYSTEMS OPERATIONAL - NO FAILURES DETECTED
-```
-
-**With Failures (Blocked):**
-```
-🔍 [1/6] Checking Python...
-   ❌ Python NOT FOUND - CRITICAL!
-
-🚨 SYSTEM FAILURES DETECTED - WORK BLOCKED
-
-🔴 CRITICAL FAILURES: 1
-   [1] Python: Python command not found or not working
-   📋 Fix Instructions:
-      • Install Python from python.org
-      • Add Python to PATH
-      • Verify: python --version
-
-🚨 WORK IS BLOCKED - FIX ALL FAILURES BEFORE CONTINUING
-```
-
-#### 🚀 Usage
-
-**Automatic (Recommended):**
-```bash
-export PYTHONIOENCODING=utf-8
-bash ~/.claude/memory/auto-fix-enforcer.sh
-```
-
-**Check Only (No Auto-Fix):**
-```bash
-bash ~/.claude/memory/auto-fix-enforcer.sh --check
-```
-
-**JSON Output:**
-```bash
-python ~/.claude/memory/auto-fix-enforcer.py --json
-```
-
-#### 🔗 Integration
-
-**STEP -1 in Execution Flow:**
-- Runs **BEFORE** all other steps
-- Mandatory check before EVERY user request
-- Work cannot proceed if exit code ≠ 0
-- Only continues when all systems operational
-
-**Files:**
-- `scripts/auto-fix-enforcer.py` - Main logic (600+ lines)
-- `scripts/auto-fix-enforcer.sh` - Shell wrapper
-- `docs/auto-fix-enforcement.md` - Full documentation (400+ lines)
-
-#### ⚙️ Exit Codes
-
-| Code | Meaning | Action |
-|------|---------|--------|
-| 0 | ✅ All OK | Continue work |
-| 1 | ⚠️ General failure | Check and fix |
-| 2+ | 🔴 Critical failures | BLOCKED - fix immediately |
-
-#### 🎯 Priority Levels
-
-| Level | Symbol | Meaning | Action |
-|-------|--------|---------|--------|
-| CRITICAL | 🔴 | System cannot function | BLOCK immediately |
-| HIGH | 🟠 | Major degradation | BLOCK, fix soon |
-| MEDIUM | 🟡 | Minor issues | WARN, fix when convenient |
-| INFO | ℹ️ | Informational | Continue, no action |
-
-#### 📖 Documentation
-
-**Complete guide:** `~/.claude/memory/docs/auto-fix-enforcement.md`
-
-Covers:
-- All system checks in detail
-- Auto-fix capabilities and limitations
-- Integration with blocking enforcer
-- Troubleshooting guide
-- Exit codes and priority levels
-- Future enhancements
-
----
-
-### 📋 Plan Detection System (v2.4.0) **NEW!**
-
-**Automatically detects and displays your active Claude Code subscription plan!**
-
-#### 🎯 What It Does
-
-The Plan Detection System automatically identifies which Claude Code plan you're using:
-- 🆓 **Free Plan** - Basic features, limited usage (100K context tokens)
-- ⭐ **Pro Plan** - Full features, extended context (200K tokens), background tasks
-- 👥 **Team Plan** - Pro + team collaboration, shared workspaces
-- 🏢 **Enterprise Plan** - All features, SLA guarantee, custom deployment
-
-#### ⚡ Key Features
-
-**Automatic Detection:**
-- ✅ Runs automatically on every session start
-- ✅ Shows plan info in session initialization
-- ✅ Caches results for 24 hours
-- ✅ Updates when cache expires
-
-**Detection Methods:**
-- Analyzes Claude config files (`~/.claude/config.json`)
-- Checks available features (background tasks, team collaboration, etc.)
-- Validates context limits and API quotas
-- Monitors feature flags and system capabilities
-
-**Output Formats:**
-```bash
-# Full display with features and limits
-bash ~/.claude/memory/scripts/plan-detector.sh
-
-# Summary only (for session start)
-bash ~/.claude/memory/scripts/plan-detector.sh --summary
-
-# JSON output (for programmatic use)
-bash ~/.claude/memory/scripts/plan-detector.sh --json
-```
-
-#### 📊 Example Output
-
-**Session Start (Summary):**
-```
-[6/6] Detecting active Claude Code plan...
-✅ Active Plan: ⭐ Pro Plan | Limits: 200K tokens
-```
-
-**Full Display:**
-```
-================================================================================
-📋 CLAUDE CODE SUBSCRIPTION PLAN
-================================================================================
-
-🎯 Active Plan: ⭐ Pro Plan
-📅 Detected: 2026-02-16
-✅ Status: ACTIVE
-
-📦 Features:
-   ✓ Full features
-   ✓ Priority support
-   ✓ Extended context
-   ✓ Background tasks
-
-⚙️ Limits:
-   • Max Context: 200K tokens
-   • Max Requests: Unlimited
-
-================================================================================
-```
-
-#### 🔧 Technical Details
-
-**Files:**
-- `~/.claude/memory/scripts/plan-detector.py` - Python detection logic
-- `~/.claude/memory/scripts/plan-detector.sh` - Shell wrapper
-- `~/.claude/memory/docs/plan-detection.md` - Full documentation
-- `~/.claude/memory/.plan-cache.json` - Cached plan info
-
-**Integration Points:**
-1. **Session Start**: Auto-runs in `session-start.sh`
-2. **Dashboard**: Displays plan in health check
-3. **Context Monitor**: Adjusts limits based on detected plan
-4. **Optimization**: Enables plan-specific optimizations
-
-**Cache System:**
-- Location: `~/.claude/memory/.plan-cache.json`
-- Validity: 24 hours
-- Auto-refresh when stale
-- Clear cache: `rm ~/.claude/memory/.plan-cache.json`
-
-#### 💡 Use Cases
-
-1. **Context Optimization**: Automatically adjust context usage thresholds based on plan limits
-2. **Feature Gating**: Enable/disable features based on plan availability
-3. **Cost Tracking**: Different cost models for different plans
-4. **Support**: Provide plan-specific help and documentation
-5. **Upgrade Prompts**: Suggest upgrades when hitting limits
-
-#### 📖 Documentation
-
-**Full documentation:** `~/.claude/memory/docs/plan-detection.md`
-
-Covers:
-- Detailed detection methods
-- Configuration options
-- Troubleshooting guide
-- Python API usage
-- Integration examples
-
----
-
-### 🤖 Complete Automation System Dashboard (v2.17.1) **NEW!**
-
-**100% Automation Coverage - The Missing Piece!**
-
-This is what Claude Insight was built for - **complete real-time visibility** into your entire automation framework. Track every daemon, every policy, every optimization strategy, and every automation component defined in CLAUDE.md.
-
-#### 🎯 Why This Exists
-The Claude Memory System v2.2.0 defines extensive automation (9 daemons, 14 policies, 15 optimization strategies). But **how do you know it's working?** This dashboard gives you the answer.
-
-#### 📊 9 Comprehensive Cards
-
-**1. Session Start Recommendations**
-- Model recommended (Haiku/Sonnet/Opus)
-- Context usage percentage
-- Skills recommended (count + list)
-- Agents recommended (count + list)
-- Context status (OK/WARNING/CRITICAL)
-- Optimizations needed
-
-**2. 9th Daemon - Auto-Recommendation**
-- Status (Running/Stopped/Unknown)
-- Process ID (PID)
-- Recommendations generated count
-- Last activity timestamp
-- Description and interval
-
-**3. Task Breakdown Enforcement**
-- Total analyses performed
-- Tasks required (complexity >= 3)
-- Phases required (complexity >= 6)
-- Complexity distribution chart
-- Recent breakdown logs
-
-**4. Task Auto-Tracker**
-- Total tasks tracked
-- Auto-updates count
-- Manual updates count
-- Completion rate percentage
-- Average progress updates
-
-**5. Skill Selection Statistics**
-- Total skill invocations
-- Auto-selected count
-- Manual invoked count
-- Top 5 skills used
-- Skills by name breakdown
-
-**6. Agent Invocation Statistics**
-- Total agent invocations
-- Parallel agents count
-- Sequential agents count
-- Top 5 agents used
-- Agents by type breakdown
-
-**7. Plan Mode Suggestions**
-- Total suggestions made
-- Auto-entered count (mandatory)
-- User approved count
-- User declined count
-- Average complexity score
-
-**8. Tool Optimization (15 Strategies)**
-- Total optimizations applied
-- Tokens saved (estimated)
-- Savings percentage (target: 60-80%)
-- Top 5 optimization strategies
-- Strategy-by-strategy breakdown:
-  - Response Compression
-  - Diff-Based Editing
-  - Smart Tool Selection (tree vs Glob/Grep)
-  - Smart Grep Optimization
-  - Tiered Caching (Hot/Warm/Cold)
-  - Session State (Aggressive)
-  - Incremental Updates
-  - File Type Optimization
-  - Lazy Context Loading
-  - Smart File Summarization
-  - Batch File Operations
-  - MCP Response Filtering
-  - Conversation Pruning
-  - AST-Based Code Navigation
-  - Parallel Tool Calls
-
-**9. Coding Standards Enforcement**
-- Total enforcements
-- Violations detected
-- Auto-fixes applied
-- Standards by type:
-  - Java Spring Boot
-  - Config Server
-  - Secret Management
-  - API Design
-  - Database
-
-#### ⚡ Real-Time Features
-- **Auto-refresh**: Dashboard updates every 30 seconds
-- **Live data**: All metrics pulled from memory system logs
-- **No setup**: Works out-of-the-box with existing automation
-- **Zero overhead**: Read-only monitoring with no performance impact
-
-#### 🎨 Professional UI
-- Beautiful metric cards with color coding
-- Status badges (Running/Stopped/Unknown)
-- Clean, modern layout
-- Responsive design
-- Easy navigation
-
-#### 📍 Access
-- **URL**: `/automation-dashboard`
-- **Navigation**: Click "Automation" in menu (robot icon)
-- **Requirements**: Claude Memory System v2.2.0 installed
-
-#### 🎯 Coverage Before vs After
-
-**Before v2.17.1:**
-- 8 daemons tracked (missing 9th daemon)
-- Basic policy tracking
-- Context optimization tracked
-- **Coverage: ~50%**
-
-**After v2.17.1:**
-- ✅ All 9 daemons tracked
-- ✅ Session start recommendations
-- ✅ Task breakdown enforcement
-- ✅ Task auto-tracker
-- ✅ Skill/agent selection
-- ✅ Plan mode suggestions
-- ✅ 15 optimization strategies
-- ✅ Standards enforcement
-- **Coverage: 100%** 🎯
-
----
-
-### Memory System Integration (v2.12)
-
-#### 🔧 8-9 Daemon Health Monitoring
-Real-time status of all automation daemons:
-
-| Daemon | Interval | Purpose |
-|--------|----------|---------|
-| **context-daemon** | 10 min | Monitor context usage |
-| **session-auto-save-daemon** | 15 min | Auto-save sessions |
-| **preference-auto-tracker** | 20 min | Learn user preferences |
-| **skill-auto-suggester** | 5 min | Suggest relevant skills |
-| **commit-daemon** | 15 min | Auto-commit changes |
-| **session-pruning-daemon** | Monthly | Clean old sessions |
-| **pattern-detection-daemon** | Monthly | Detect cross-project patterns |
-| **failure-prevention-daemon** | 6 hours | Learn from failures |
-| **token-optimization-daemon** | 5 min | Continuous optimization (optional) |
-
-**Monitoring Features:**
-- ✅ PID tracking for each daemon
-- 📊 Last activity timestamps
-- 🔴 Status indicators (running, stopped, error, not_started)
-- 🔄 Auto-restart detection
-- 📈 Uptime statistics
-
-#### 📜 10 Policy Enforcement Tracking
-Monitor all active policies in real-time:
-
-1. **Core Skills Mandate**: Enforced execution order
-2. **Model Selection**: Haiku/Sonnet/Opus usage tracking
-3. **Proactive Consultation**: User preference learning
-4. **Session Memory**: Auto-save and restore
-5. **Failure Prevention**: Auto-fix patterns
-6. **File Management**: Smart file operations
-7. **Git Auto-Commit**: Automatic commits
-8. **User Preferences**: Preference storage
-9. **Session Pruning**: Old session cleanup
-10. **Context Integration**: Context + session sync
-
-**Tracking Features:**
-- 📈 Enforcement metrics (times each policy applied)
-- 📝 Recent activity (last 10 enforcement actions)
-- ✅ Compliance status
-
-#### 💾 Context Optimization Metrics
-- 📊 **Cache Statistics**: Cache size and file count
-- 🎯 **Cache Hit Rate**: Successful cache retrievals
-- 💰 **Token Savings**: Estimated tokens saved (~500 per hit)
-- ⚡ **Optimizations Applied**: Total optimization count
-- 📈 **Efficiency Score**: Overall cache effectiveness
-
-#### 🛡️ Failure Prevention Statistics
-- **Failures Prevented**: Total failures caught
-- **Auto-Fixes Applied**: Automatic corrections made
-- **Patterns Learned**: Knowledge base size (15+ initial patterns)
-- **By Tool**: Breakdown by tool (Bash, Edit, Read, Grep, Git)
-- **Recent Fixes**: Last 10 auto-fix applications
-- **Success Rate**: Percentage of prevented failures
-
-#### 📊 Model Selection Distribution
-- **Haiku Usage**: Fast searches and reads (target: 35-45%)
-- **Sonnet Usage**: Implementation and editing (target: 50-60%)
-- **Opus Usage**: Architecture and planning (target: 3-8%)
-- **Compliance**: Whether usage matches policy targets
-- **Cost Impact**: Savings from correct model selection
-
-#### 💾 Session Memory Statistics
-- **Total Sessions**: All project sessions
-- **Active Sessions**: Modified in last 7 days
-- **Pruned Sessions**: Cleaned up sessions
-- **Total Size**: Storage used by sessions (MB)
-- **Session Health**: Storage efficiency
-
-#### 📝 Git Auto-Commit Activity
-- **Total Commits**: All auto-commits made
-- **Commits Today**: Today's commit count
-- **Commits This Week**: Weekly commit activity
-- **Recent Commits**: Last 10 commit messages
-- **Commit Frequency**: Average commits per day
-
-#### 🏥 System Health Score
-Weighted health calculation (0-100):
-- 🔧 **Daemon Health** (40%): Running daemon percentage
-- 🚨 **Critical Health** (30%): Critical daemon status
-- 📋 **Policy Activity** (20%): Recent policy usage
-- 💾 **Cache Efficiency** (10%): Cache effectiveness
-
-**Health Status:**
-- ✅ **Healthy** (80+)
-- ⚠️ **Degraded** (60-79)
-- 🔴 **Critical** (<60)
-
----
-
-### Performance Profiling (v2.14)
-
-#### 📊 Real-Time Performance Monitoring
-- **Operation Tracking**: Monitor all tool operations (Read, Write, Grep, Bash, Edit)
-- **Response Time Analytics**: Track average, median, p95, and p99 percentiles
-- **Slow Operations Detection**: Automatically identify operations >2 seconds
-- **Bottleneck Analysis**: Top 10 bottlenecks per tool type
-- **Resource Usage**: Track memory and CPU consumption
-
-#### 🎯 Performance Metrics Dashboard
-- **Total Operations**: Count of all operations tracked (last 24 hours)
-- **Average Response Time**: Mean duration across all operations
-- **Slow Operations Counter**: Operations exceeding threshold
-- **Optimization Rate**: Percentage of operations optimized
-- **Interactive Charts**: Response time trends and operations by tool (Chart.js)
-
-#### 🤖 AI-Powered Recommendations
-- **File Operation Analysis**: Detect large files read without offset/limit optimization
-- **Repetitive Operation Detection**: Identify caching opportunities for frequently accessed files
-- **Bash Command Analysis**: Flag slow or inefficient shell commands
-- **Grep Optimization**: Detect missing head_limit parameters
-- **Performance Regression Detection**: Compare current vs. 7-day historical trends
-
-#### 💾 Data Persistence
-- **In-Memory Ring Buffers**: 1,000 recent operations + 100 slow operations for fast access
-- **Daily JSON Files**: Automatic persistence to `~/.claude/memory/performance/`
-- **Historical Trends**: 7-day, 30-day, 90-day trend analysis
-- **Auto-Refresh**: Dashboard updates every 30 seconds via AJAX
-
-#### 🔧 Integration Features
-- **API Endpoints**: 6 RESTful endpoints for stats, bottlenecks, trends, and recommendations
-- **WebSocket Support**: Real-time updates via SocketIO
-- **Export Capabilities**: CSV/JSON export for performance data
-- **Configurable Thresholds**: Customize slow operation detection (default: 2000ms)
-
----
-
-### Two-Factor Authentication (2FA) (v2.16)
-
-#### 🔐 Security Enhancement
-- **TOTP-Based Authentication**: Google Authenticator, Authy, Microsoft Authenticator support
-- **QR Code Setup**: Easy scanning for quick configuration
-- **Manual Secret Entry**: Alternative setup method with copyable secret key
-- **6-Digit Verification**: Standard TOTP code verification
-
-#### 🔑 Backup & Recovery
-- **10 Backup Codes**: One-time use recovery codes generated at setup
-- **Download/Print/Copy**: Multiple options to save backup codes securely
-- **Activity Logging**: Track all 2FA-related activities (enable, disable, login attempts)
-- **IP Address Tracking**: Monitor login locations and security events
-
-#### 📊 Management Features
-- **Enable/Disable Toggle**: Easy on/off control with verification
-- **Activity History**: View recent 2FA events with timestamps and status
-- **Status Badge**: Visual indicator of 2FA configuration status
-
----
-
-### Custom Dashboard Builder (v2.16)
-
-#### 🎨 Drag-and-Drop Interface
-- **GridStack.js Integration**: Professional grid layout with responsive design
-- **Multiple Dashboards**: Create and manage unlimited custom dashboards
-- **Grid Customization**: Adjust columns (4/6/12) and spacing (tight/normal/loose)
-- **Save/Load Layouts**: Persist dashboard configurations
-
-#### 📦 Widget Library
-**Metrics Widgets:**
-- Context Usage card
-- Daemon Status card
-- Policy Hits card
-
-**Chart Widgets:**
-- Line Chart (trends)
-- Bar Chart (distribution)
-- Pie Chart (proportions)
-
-**Activity Widgets:**
-- Activity Feed (real-time events)
-- Error Log (error tracking)
-- Alert List (active alerts)
-- Alert Timeline (historical alerts)
-
-#### 🔧 Advanced Features
-- **Export/Import**: Share dashboards as JSON files
-- **Widget Configuration**: Customize individual widget settings
-- **Auto-Save**: Automatic dashboard persistence
-- **Dashboard Manager**: Browse, load, and delete saved dashboards
-
----
-
-### Multi-language Support (i18n) (v2.16)
-
-#### 🌍 Supported Languages
-- **English** (en) - Default
-- **Hindi** (हिन्दी) - Full translation
-- **Spanish** (Español) - Full translation
-- **French** (Français) - Core translations
-- **German** (Deutsch) - Core translations
-
-#### 🔄 Translation Features
-- **Dynamic Switching**: Change language without page reload (optional)
-- **LocalStorage Persistence**: Remember user's language preference
-- **Automatic Detection**: Can detect browser language
-- **Navigation Translation**: All menu items translated
-- **Common Terms**: Buttons, labels, messages translated
-- **Date/Number Formatting**: Locale-specific formatting
-
-#### 🛠️ i18n System
-- **JSON-Based Translations**: Structured translation files per language
-- **Key-Path Access**: Nested translation keys (e.g., `common.save`)
-- **Fallback Mechanism**: English fallback for missing translations
-- **Custom Event**: `languageChanged` event for dynamic updates
-
----
-
-### Plugin System (v2.16)
-
-#### 🔌 Plugin Management
-- **Install/Uninstall**: Easy plugin lifecycle management
-- **Enable/Disable**: Toggle plugins without uninstalling
-- **Version Control**: Track plugin versions and updates
-- **Dependency Checking**: Validate plugin compatibility
-
-#### 🏪 Plugin Marketplace
-**Available Plugin Categories:**
-- **Integrations**: Slack, Prometheus, external tools
-- **Widgets**: Custom dashboard widgets
-- **Analytics**: Advanced AI insights
-- **Utilities**: Backup, automation tools
-
-**Marketplace Features:**
-- Search and filter plugins
-- Category-based browsing
-- Download count and ratings
-- Author information
-
-#### ⚙️ Plugin System Settings
-- **Auto-Update**: Automatically update installed plugins
-- **External Sources**: Allow custom plugin installation
-- **Security Validation**: Plugin verification before installation
-
----
-
-### Grafana & Prometheus Integration (v2.16)
-
-#### 🔥 Prometheus Metrics Endpoint
-**Available Metrics:**
-- `context_usage_percent` - Context usage percentage (gauge)
-- `daemon_status` - Daemon health (gauge, 0=down, 1=up)
-- `policy_hits_total` - Total policy hits (counter)
-- `error_count_total` - Total errors (counter)
-- `session_count_total` - Total sessions (counter)
-
-**Endpoint Configuration:**
-```yaml
-scrape_configs:
-  - job_name: 'claude-insight'
-    static_configs:
-      - targets: ['localhost:5000']
-    metrics_path: '/metrics'
-    scrape_interval: 15s
-```
-
-#### 📊 Grafana Dashboards
-**Pre-built Dashboard Templates:**
-- **System Overview**: Context, daemons, policies dashboard
-- **Performance**: Response times and bottleneck analysis
-- **Alerts**: Alert history and trend visualization
-
-**Features:**
-- Download dashboard JSON files
-- Import directly into Grafana
-- Customizable panels and queries
-- Real-time metric visualization
-
----
-
-### Advanced Notification Channels (v2.16)
-
-#### 📱 Slack Integration
-- **Webhook Configuration**: Easy webhook URL setup
-- **Channel Customization**: Specify target channel (#alerts)
-- **Username Customization**: Custom bot name
-- **Test Notifications**: Verify configuration before production use
-
-#### 💬 Discord Integration
-- **Webhook Support**: Discord webhook URL integration
-- **Bot Customization**: Custom username for notifications
-- **Rich Embeds**: Formatted notification messages
-- **Test Functionality**: Validate webhook before deployment
-
-#### 📟 PagerDuty Integration
-- **Integration Key**: Secure API key configuration
-- **Severity Mapping**: Map alert levels to PagerDuty severities
-- **Incident Creation**: Automatic incident creation on alerts
-- **Test Alerts**: Send test incidents to verify setup
-
-#### 🔔 Notification Rules
-**Event-Based Routing:**
-- Critical Alerts → All channels
-- Daemon Down → Slack + PagerDuty
-- High Context Usage → Slack + Discord
-
-**Configuration:**
-- Per-event channel selection
-- Multiple channel support
-- Custom routing rules
-
----
-
-### Advanced Themes & Customization (v2.15)
-
-#### 🎨 14 Preset Themes
-**6 Original Themes:**
-- Default (Purple gradient)
-- Dark (High contrast slate)
-- Blue (Ocean tones)
-- Purple (Royal accents)
-- Green (Natural feel)
-- Orange (Energetic vibe)
-
-**8 NEW Themes:**
-- **Cyberpunk**: Neon pink & cyan with dark background
-- **Ocean**: Deep blue with wave accents
-- **Forest**: Deep green with nature feel
-- **Sunset**: Warm red to golden yellow gradient
-- **Nord**: Arctic blue with cool accents
-- **Tokyo Night**: Modern dark with blue & purple
-- **Dracula**: Popular dark with purple & pink
-- **Monokai**: Classic dark with vibrant colors
-
-#### 🎨 Custom Theme Builder
-**Color Customization** (8 color pickers):
-- Primary & Secondary colors
-- Background & Text colors
-- Success, Warning, Danger, Info colors
-- Live preview with instant updates
-
-**Typography Customization**:
-- **11 Font Families**: Inter, Roboto, Open Sans, Poppins, Montserrat, Lato, Nunito, Source Sans Pro, JetBrains Mono, Fira Code
-- **Font Sizes**: 12px (Small) to 18px (Extra Large)
-- **Font Weights**: Light (300) to Bold (700)
-
-**Theme Management**:
-- ✅ Save custom themes to localStorage
-- ✅ Export themes as JSON files
-- ✅ Import themes from JSON files
-- ✅ Real-time preview before applying
-- ✅ Persistent across sessions
-
----
-
-### Advanced Search & Filtering (v2.15)
-
-#### 🔍 Global Search Engine
-**Search Across 7 Data Sources:**
-- 📋 **Logs**: System logs and performance data
-- 📅 **Sessions**: Session history and activity
-- 📜 **Policies**: Policy definitions and enforcement
-- ⚙️ **Daemons**: Daemon status and health
-- ⚡ **Performance**: Performance metrics and profiling data
-- 🚨 **Alerts**: Alert history and notifications
-- 🧩 **Widgets**: Widget configurations
-
-#### 🎯 Advanced Filtering
-- **Data Source**: Multi-select from 7 sources
-- **Date Range**: Today, Yesterday, Last 7/30/90 days, Custom range
-- **Severity Levels**: Critical, High, Medium, Low, Success
-- **Tags**: Dynamic tag filtering
-- **Sort Options**: Relevance, Date (newest/oldest), Severity, Source
-- **Result Limits**: 50, 100, 200, 500, or All results
-
-#### 💾 Saved Searches & History
-- **Save Searches**: Store frequently-used queries with filters
-- **Search History**: Auto-save last 50 searches
-- **Replay Searches**: One-click replay of previous searches
-- **Export Searches**: Share search configurations
-
-#### 📤 Export Results
-- **CSV Export**: With proper headers and formatting
-- **JSON Export**: With metadata and timestamps
-- **Excel Export**: Styled workbook with headers
-- **Bulk Actions**: Export selected or all results
-
-#### 🚀 Search Features
-- **Regex Mode**: Pattern matching support
-- **Case-Insensitive**: Smart search matching
-- **Highlighting**: Matched terms highlighted in results
-- **Pagination**: Navigate through large result sets
-- **Real-time Stats**: Search time, result count, sources searched
-
----
-
-### ML Model Training (v2.15)
-
-#### 🧠 5-Step Training Wizard
-**Step 1: Model Selection** (6 categories, 15+ models):
-- **Anomaly Detection**: Isolation Forest, LOF, One-Class SVM
-- **Time Series Forecasting**: ARIMA, Prophet, LSTM
-- **Classification**: Random Forest, XGBoost, Neural Networks
-- **Regression**: Linear, Ridge/Lasso, SVR
-- **Clustering**: K-Means, DBSCAN, Hierarchical
-- **Custom Models**: Upload PyTorch/TensorFlow/Scikit-learn models
-
-**Step 2: Data Upload** (3 sources):
-- **File Upload**: Drag & drop CSV, JSON, Excel (max 100MB)
-- **System Data**: Logs, metrics, alerts, sessions, performance
-- **API Connection**: Connect to external data sources with auth
-
-**Step 3: Configuration**:
-- **Train/Test Split**: Adjustable slider (50-90%)
-- **Cross-Validation**: 3-fold, 5-fold, 10-fold
-- **Auto-Optimization**: Grid Search, Random Search, Bayesian Optimization
-- **Hyperparameter Tuning**: Interactive parameter configuration
-
-**Step 4: Training** (Real-time):
-- **Live Progress**: Epoch counter and progress bar
-- **Training Metrics**: Loss, accuracy, validation metrics
-- **Loss Curve**: Chart.js visualization
-- **Training Logs**: Terminal-style console with color coding
-- **Time Tracking**: Elapsed time and ETA
-
-**Step 5: Evaluation**:
-- **Performance Metrics**: Accuracy, Precision, Recall, F1-Score
-- **Confusion Matrix**: Heatmap visualization
-- **ROC Curve**: With AUC score
-- **Feature Importance**: Ranked feature contributions
-
-#### 💾 Model Management
-- **Save Models**: With name, description, tags
-- **Export Models**: Download trained models
-- **Deploy Models**: Deploy to production
-- **Model Comparison**: Compare multiple models side-by-side
-- **Saved Models List**: Quick access to trained models
-
-#### 📊 Visualization
-- **Chart.js Integration**: Beautiful, responsive charts
-- **Real-time Updates**: Live training progress
-- **Interactive Charts**: Zoom, pan, export charts
-- **Professional Design**: Clean, modern UI
-
----
-
-### Debugging & Troubleshooting Tools (v2.15)
-
-#### 📋 Real-time Log Streaming
-- **Start/Stop/Clear Controls**: Full control over log stream
-- **Log Filters**:
-  - Level: ERROR, WARN, INFO, DEBUG
-  - Source: Daemon, API, Database, System
-  - Search: Full-text search within logs
-- **Terminal Console**: Dark theme, color-coded levels
-- **Live Statistics**: Total logs, errors, warnings, info count
-- **Auto-scroll**: Automatic scroll to latest entries
-- **Performance**: Keep last 100 entries, ring buffer
-
-#### ⚙️ Daemon Health Diagnostics
-**Visual Daemon Cards** showing:
-- Status (running/stopped) with color indicators
-- Process ID (PID)
-- CPU Usage percentage
-- Memory Usage (MB)
-- Uptime display
-
-**Actions per Daemon**:
-- Restart daemon
-- View daemon logs
-- Auto-refresh capability
-- Detailed diagnostics
-
-#### ⚡ Performance Profiling
-**API Endpoint Performance**:
-- Endpoint path
-- Average response time (ms)
-- Total call count
-- Status badge (success/warning/danger)
-
-**Database Query Metrics**:
-- Query preview
-- Average execution time
-- Call count
-- Impact level calculation
-
-**Memory Monitor**:
-- Heap used (with progress bar)
-- Heap total
-- External memory
-- Color-coded warnings (green/yellow/red)
-
-#### 🐛 Error Trace Analyzer
-**Error Statistics**:
-- Total errors count
-- 24-hour trend (+/- percentage)
-- Auto-resolved count
-
-**Error Types Table**:
-- Error type classification
-- Occurrence count
-- Trend indicators (increasing/stable/decreasing)
-- Quick action buttons
-
-**AI-Powered Quick Fixes**:
-- Smart recommendations based on patterns
-- One-click apply functionality
-- Success tracking
-- Fix history
-
-#### 🛠️ Sidebar Tools
-- **System Snapshot**: Capture/restore system state
-- **Quick Actions**: Health check, restart daemons, clear cache
-- **Debug Mode**: Enable verbose logging and stack traces
-- **Emergency Shutdown**: Safe shutdown with confirmation
-
----
-
-### Alert Routing & Escalation (v2.11)
-
-#### 🚨 Custom Routing Rules
-Route alerts based on multiple criteria:
-- **Severity**: Critical, warning, info
-- **Metric Type**: CPU, memory, context, daemon, policy
-- **Time-based**: Business hours, after hours, weekends
-- **Tag-based**: Environment, service, component
-
-#### 📢 Multi-Level Escalation
-- **Up to 3+ escalation levels** with configurable timeouts
-- **Automatic escalation** if alerts not acknowledged
-- **On-call schedules** with weekly rotation
-- **Auto-calculation** of current on-call personnel
-
-#### 📬 Notification Channels
-- **Email**: SMTP integration (Gmail, Outlook, custom)
-- **SMS**: Twilio-powered text notifications
-- **Slack**: Webhook integration
-- **Custom Webhooks**: Integrate with any system
-
-#### 🔄 Alert Lifecycle
-```
-Create → Route → Notify → Escalate → Acknowledge → Resolve
-```
-
----
-
-### Predictive Analytics (v2.10)
-
-#### 📈 5 Forecasting Algorithms
-1. **Linear Regression**: Trend-based prediction
-2. **Exponential Smoothing**: Weighted recent data
-3. **Moving Average**: Smoothed historical average
-4. **Seasonal Analysis**: Pattern-based forecasting
-5. **Ensemble Model**: Combined algorithm consensus
-
-#### 🔮 Time Series Forecasting
-- **Predict future metric values** with confidence intervals
-- **Forecast horizons**: 24 hours, 72 hours, 7 days (customizable)
-- **Confidence levels**: 95%, 90%, 80%
-- **Trend detection**: Upward, downward, stable, volatile
-
-#### ⚠️ Capacity Planning
-- **Breach prediction**: Identify when thresholds will be exceeded
-- **Time-to-breach**: Calculate days/hours until capacity limit
-- **Proactive alerts**: Warn before issues occur
-- **Resource recommendations**: Suggest optimization actions
-
-#### 🧠 AI Insights
-- **Trend analysis**: Identify long-term patterns
-- **Pattern recognition**: Detect recurring behaviors
-- **Recommendations**: AI-generated optimization suggestions
-
----
-
-### AI Anomaly Detection (v2.9)
-
-#### 🤖 6 ML Algorithms
-1. **Z-Score Analysis**: Statistical outlier detection
-2. **IQR Method**: Interquartile range analysis
-3. **Moving Average**: Deviation from rolling average
-4. **Exponential Smoothing**: Weighted deviation detection
-5. **Spike Detection**: Sudden value changes
-6. **Trend Analysis**: Long-term pattern deviations
-
-#### 🎯 Ensemble Detection
-- **Anomaly triggered** when 2+ algorithms agree
-- **Confidence scoring**: 0-100% based on algorithm consensus
-- **Severity classification**: Critical, high, medium, low
-- **False positive reduction**: Through ensemble approach
-
-#### 💡 AI Insights
-- **Pattern-based insights**: "Value 45% above rolling average"
-- **Recommendations**: "Consider scaling resources"
-- **Historical context**: Compare to similar patterns
-
-#### 📊 Anomaly Management
-- **Acknowledge**: Mark anomaly as seen
-- **Resolve**: Close with resolution notes
-- **Audit trail**: Full anomaly lifecycle tracking
-- **Analytics**: Anomaly frequency and trends
-
----
-
-### Community Marketplace (v2.7-v2.13)
-
-#### 🎨 Advanced Widget Builder
-- **Drag-and-drop editor**: Visual widget creation
-- **15+ components**: Charts, metrics, tables, gauges, dashboards
-- **Live preview**: Real-time widget preview canvas
-- **Code editor**: HTML, CSS, JavaScript with syntax highlighting
-- **Template library**: Pre-built widget templates
-
-#### 🌐 Widget Marketplace
-- **Share widgets**: Publish to community marketplace
-- **Browse catalog**: Discover widgets by category
-- **5-star rating system**: Rate and review widgets
-- **Download tracking**: Monitor widget popularity
-- **Author profiles**: Track creator contributions
-
----
-
-### Widget Collaboration (v2.13)
-
-#### 🤝 Real-time Collaborative Editing
-- **Multi-user editing**: Build widgets together in real-time
-- **Live cursors**: See other users' cursors with names
-- **Operation sync**: Instant synchronization across users
-- **Line locking**: Prevent conflicts (5-min timeout)
-- **Collaboration chat**: Built-in messaging
-- **Session management**: 2-hour sessions with auto-cleanup
-- **User colors**: 8 unique colors for visual identification
-- **Auto-reconnect**: Seamless reconnection handling
-
-#### 📚 Version Control & History
-- **Semantic versioning**: Professional version management (major.minor.patch)
-- **Version timeline**: Visual history of all changes
-- **Diff viewer**: Line-by-line comparison with syntax highlighting
-- **Rollback**: Restore previous versions with one click
-- **Commit messages**: Descriptive change logs
-- **Auto-versioning**: Automatic version creation on edits
-- **Component tracking**: Track HTML/CSS/JS changes separately
-
-#### 💬 Comments & Discussions
-- **Threaded discussions**: Multi-level comment threads
-- **@Mentions**: Tag and notify other users
-- **Emoji reactions**: 👍, ❤️, etc.
-- **Real-time notifications**: Instant mention alerts
-- **Edit/Delete**: Full comment management
-- **Moderation**: Soft delete with audit trail
-- **XSS protection**: Sanitized content for security
-
-#### ⭐ Featured & Trending Widgets
-- **Trending score algorithm**: Weighted scoring
-  - 40% Downloads
-  - 30% Ratings
-  - 20% Comments
-  - 10% Recency
-- **Featured carousel**: Admin-curated highlights
-- **Multi-period trending**: 24h, 7d, 30d views
-- **Rank indicators**: 1st/2nd/3rd badges with trend arrows
-- **Smart caching**: 60-minute cache for performance
-- **Category filters**: Browse by type and timeframe
+### Core Monitoring
+
+| Feature | Description |
+|---------|-------------|
+| **3-Level Flow Tracker** | Shows each Level (-1, 1, 2, 3) execution per session |
+| **Policy Execution Tracker** | Which policies ran, pass/fail per request |
+| **Session Analytics** | Session duration, requests per session, context usage |
+| **Skill/Agent Usage** | Which skills and agents were invoked and how often |
+| **Context Monitoring** | Context % per request, optimization actions taken |
+| **Model Selection Tracking** | Haiku/Sonnet/Opus distribution across requests |
+
+### AI-Powered Analytics
+
+| Feature | Description |
+|---------|-------------|
+| **Anomaly Detection** | Detects unusual patterns (context spikes, policy failures) |
+| **Predictive Analytics** | Forecasts context usage and session patterns |
+| **Bottleneck Analysis** | Identifies slow steps in the 3-level flow |
+| **Performance Profiling** | Response time analysis per step |
+
+### Alerting & Notifications
+
+| Feature | Description |
+|---------|-------------|
+| **Alert Routing** | Multi-level alert escalation |
+| **Multi-channel Notifications** | Email, Slack, webhook support |
+| **Custom Alert Rules** | Define thresholds for any metric |
+| **Real-time Alerts** | WebSocket-based instant notifications |
+
+### Dashboard Capabilities
+
+| Feature | Description |
+|---------|-------------|
+| **Real-time Updates** | Live data via WebSocket (SocketIO) |
+| **Session Search** | Search and filter session history |
+| **Export Options** | CSV, Excel, PDF report generation |
+| **Multi-language** | EN, HI, ES, FR, DE support |
+| **Custom Dashboard Builder** | Build personalized metric views |
+| **Dark/Light Themes** | Multiple UI themes |
 
 ---
 
 ## Quick Start
 
-### Get Started in 5 Minutes
+### Prerequisites
 
-#### 1. Clone the Repository
+- Python 3.8+
+- Claude Code installed (`npm install -g @anthropic-ai/claude-code`)
+- Git
+
+### Installation
+
 ```bash
+# 1. Clone the repository
 git clone https://github.com/piyushmakhija28/claude-insight.git
 cd claude-insight
-```
 
-#### 2. Install Dependencies
-```bash
+# 2. Create virtual environment (recommended)
+python -m venv venv
+
+# Activate on Windows:
+venv\Scripts\activate
+
+# Activate on Unix/macOS:
+source venv/bin/activate
+
+# 3. Install dependencies
 pip install -r requirements.txt
 ```
 
-**Packages installed (14 total):**
-- Flask 3.0 + SocketIO 5.3.6 (Web framework)
-- psutil 5.9.8 (Process monitoring)
-- NumPy 1.24.3 (Statistical analysis)
-- Twilio 8.10.0 (SMS notifications)
-- bcrypt, openpyxl, reportlab, flasgger, etc.
+### Memory System Setup
 
-#### 3. Run the Application
-```bash
-python app.py
+The dashboard reads logs from `~/.claude/memory/`. You need to install the
+3-level architecture hooks first.
+
+**Option A — Automatic (Recommended):**
+
+Windows (PowerShell):
+```powershell
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+.\scripts\setup-global-claude.ps1
 ```
 
-**Access the dashboard:**
-- URL: http://localhost:5000
+Unix / macOS / WSL:
+```bash
+chmod +x scripts/setup-global-claude.sh
+./scripts/setup-global-claude.sh
+```
+
+The setup script will:
+1. Create `~/.claude/memory/current/` with enforcement scripts
+2. Install hooks in `~/.claude/settings.json`
+3. Install the global CLAUDE.md (3-level architecture, no project-specific info)
+
+**Option B — Manual:**
+
+See [CLAUDE.md](CLAUDE.md) for step-by-step manual setup instructions.
+
+**Verify setup is working:**
+
+After restarting Claude Code, send any message. You should see:
+```
+[LEVEL -1] AUTO-FIX ENFORCEMENT (BLOCKING)  [OK]
+[LEVEL 1] SYNC SYSTEM                        [OK] Context: XX% | Session: SESSION-...
+[LEVEL 2] STANDARDS SYSTEM                   [OK] 14 standards loaded
+[LEVEL 3] EXECUTION SYSTEM (12 steps)        [OK] All steps verified
+```
+
+### Running the Dashboard
+
+```bash
+# Start the Flask server (default port 5000)
+python run.py
+
+# Custom port
+python run.py --port 8080
+```
+
+Open http://localhost:5000 in your browser.
+
+**Default credentials:**
 - Username: `admin`
 - Password: `admin`
 
-#### 4. Deploy Memory System Files (Optional)
-```bash
-# Windows (PowerShell)
-xcopy /E /I /Y claude-memory-system\* %USERPROFILE%\.claude\memory\
-
-# Linux/Mac
-cp -r claude-memory-system/* ~/.claude/memory/
-```
-
-**Start the daemons:**
-```bash
-# Windows
-powershell -ExecutionPolicy Bypass -File ~/.claude/memory/setup-windows-startup.ps1
-
-# Linux/Mac
-bash ~/.claude/memory/startup-hook.sh
-```
+> Change these in `src/auth/user_manager.py` before deploying.
 
 ---
 
-## What's Included
+## The 3-Level Architecture
 
-### Memory System Files (320+ files)
+The 3-level architecture runs automatically on every Claude Code request via hooks.
+Here is what each level does:
 
-#### 📖 Complete Documentation
-- **MASTER-README.md**: Complete consolidated guide (1,500+ lines)
-  - 14 major sections with 100+ indexed subsections
-  - All policies, Java standards, optimization strategies
-  - Security best practices, database standards
-  - Complete command reference
+### Level -1: Auto-Fix Enforcement
 
-#### 🔧 Daemon Scripts (8-9)
-- `context-daemon.py` - Monitor context usage (every 10 min)
-- `session-auto-save-daemon.py` - Auto-save sessions (every 15 min)
-- `preference-auto-tracker.py` - Learn preferences (every 20 min)
-- `skill-auto-suggester.py` - Suggest skills (every 5 min)
-- `commit-daemon.py` - Auto-commit changes (on triggers)
-- `session-pruning-daemon.py` - Clean old sessions (monthly)
-- `pattern-detection-daemon.py` - Detect patterns (monthly)
-- `failure-prevention-daemon.py` - Learn from failures (every 6 hours)
-- `token-optimization-daemon.py` - Continuous optimization (optional)
+**Runs first. Blocks all work if any critical check fails.**
 
-#### 🤖 Automation Scripts (81)
-**Context Optimization:**
-- `context-cache.py` - Tiered caching (hot/warm/cold)
-- `context-estimator.py` - Token estimation
-- `context-extractor.py` - Essential info extraction
-- `pre-execution-optimizer.py` - Pre-tool optimization
+```
+7 System Checks:
+  [1/7] Python availability          -> CRITICAL
+  [2/7] Critical files present       -> CRITICAL
+  [3/7] Blocking enforcer state      -> CRITICAL (auto-fix capable)
+  [4/7] Session state valid          -> HIGH
+  [5/7] Background daemon status     -> INFO only
+  [6/7] Git repository state         -> INFO only
+  [7/7] Windows Python Unicode check -> CRITICAL on Windows
+```
 
-**Token Optimization:**
-- `ast-code-navigator.py` - AST-based code navigation
-- `file-type-optimizer.py` - File-type specific optimization
-- `smart-file-summarizer.py` - Intelligent summarization
-- `tiered-cache.py` - Multi-tier caching
+Exit code 0 = proceed. Exit code != 0 = all work stops.
 
-**Failure Prevention:**
-- `failure-detector-v2.py` - Pattern detection
-- `failure-learner.py` - Knowledge base learning
-- `failure-solution-learner.py` - Solution tracking
-- `pre-execution-checker.py` - Pre-tool validation
+### Level 1: Sync System
 
-**Model Selection:**
-- `model-selection-enforcer.py` - Model recommendation
-- `model-selection-monitor.py` - Usage tracking
+**Context and session management.**
 
-**Policy Enforcement:**
-- `core-skills-enforcer.py` - Skills enforcement
-- `consultation-tracker.py` - User preference tracking
+- Context monitoring (checks usage %, applies optimization if >70%)
+- Session ID generation (format: `SESSION-YYYYMMDD-HHMMSS-XXXX`)
+- Loads previous session state if exists
 
-**Session Management:**
-- `auto-save-session.py` - Session auto-save
-- `session-state.py` - External memory management
-- `archive-old-sessions.py` - Session archiving
+### Level 2: Standards System
 
-**Git Automation:**
-- `auto-commit.py` - Automatic commits
-- `auto-commit-detector.py` - Commit triggers
-- `trigger-auto-commit.py` - Trigger detection
+**Loads 14 coding standards (89 rules) and selects the correct skill/agent.**
 
-**And 60+ more automation scripts!**
+Standards loaded:
+1. Project structure (packages, visibility)
+2. Config management (externalize all config)
+3. Secret management (never hardcode)
+4. Response format standards
+5. Service layer patterns
+6. Entity/model patterns
+7. Controller patterns
+8. Constants organization
+9. Common utilities
+10. Error handling
+11. API design (REST)
+12. Database standards
+13. Documentation (README + CLAUDE.md per repo)
+14. Security standards
 
-#### 📜 Policy Files (12 active + documentation)
-1. `core-skills-mandate.md` - Execution order enforcement
-2. `model-selection-enforcement.md` - Cost optimization
-3. `common-failures-prevention.md` - Self-learning fixes
-4. `CONTEXT-SESSION-INTEGRATION.md` - Memory management
-5. `file-management-policy.md` - File operations
-6. `git-auto-commit-policy.md` - Git automation
-7. `proactive-consultation-policy.md` - User collaboration
-8. `session-memory-policy.md` - Persistent memory
-9. `session-pruning-policy.md` - Session cleanup
-10. `user-preferences-policy.md` - Preference learning
-11. `cross-project-patterns-policy.md` - Pattern detection
-12. `test-case-policy.md` - Testing standards
+**Skill/Agent selection** happens here — Claude matches the task to the correct skill
+(e.g., JavaFX task → `javafx-ide-designer`, Spring Boot task → `java-spring-boot-microservices`).
 
-**Documentation (38 files):**
-- Quick start guides
-- Implementation summaries
-- Troubleshooting guides
-- API references
-- System overviews
+### Level 3: Execution System
 
-#### ☕ Java Spring Boot Documentation (10 files in `docs/`)
-- `java-project-structure.md` - Package structure and conventions
-- `spring-cloud-config.md` - Config server setup
-- `secret-management.md` - Secret management details
-- `api-design-standards.md` - REST API conventions
-- `error-handling-standards.md` - Exception patterns
-- `security-best-practices.md` - Security guidelines
-- `logging-standards.md` - Logging best practices
-- `database-standards.md` - Database patterns
-- `java-agent-strategy.md` - Agent collaboration
-- `git-and-context.md` - Git rules and context
+**12 mandatory steps before implementation:**
+
+| Step | Name | Purpose |
+|------|------|---------|
+| 3.0 | Prompt Generation | Anti-hallucination, verify examples from codebase |
+| 3.1 | Task Breakdown | Create tasks with dependencies |
+| 3.2 | Plan Mode Decision | Score 0-4: direct, 5-9: ask, 10+: plan mode |
+| 3.3 | Context Check | Re-verify, apply optimizations |
+| 3.4 | Model Selection | Haiku/Sonnet/Opus based on complexity |
+| 3.5 | Skill/Agent Selection | Invoke matched skill via Skill tool |
+| 3.6 | Tool Optimization | offset/limit on Read, head_limit on Grep |
+| 3.7 | Failure Prevention | Pre-execution checks, auto-fixes |
+| 3.8 | Parallel Analysis | Detect parallel execution opportunities |
+| 3.9 | Execute Tasks | Auto-track progress |
+| 3.10 | Session Save | Save state at milestones |
+| 3.11 | Git Auto-Commit | Commit on phase completion |
+| 3.12 | Logging | Log all policy applications |
 
 ---
 
-## Claude Memory System Overview
+## How the Hooks Work
 
-The Claude Memory System v2.2.0 is a comprehensive automation framework that makes Claude Code intelligent, efficient, and reliable.
+The hooks are configured in `~/.claude/settings.json` and run automatically:
 
-### Core Benefits
-
-🚀 **60-80% Token Savings**
-- Intelligent caching (hot/warm/cold tiers)
-- Smart file summarization
-- Diff-based editing
-- AST-based code navigation
-- 15 optimization strategies working together
-
-🛡️ **Self-Learning Failure Prevention**
-- Same error never happens twice
-- 15+ initial failure patterns
-- Auto-fix confidence scoring
-- 900-2900 tokens saved per prevented failure
-
-🎯 **Automatic Model Selection**
-- Optimal cost/performance balance
-- Haiku for search (35-45%)
-- Sonnet for implementation (50-60%)
-- Opus for architecture (3-8%)
-
-💾 **100% Local Persistent Memory**
-- Full session continuity across restarts
-- Protected session files (never deleted)
-- Automatic session save every 15 min
-- Cross-project pattern learning
-
-👤 **User Preference Learning**
-- Stops asking repeated questions
-- Tracks decision patterns
-- Project-specific preferences
-- Transparent consultation
-
-🤖 **8-9 Background Daemons**
-- Continuous optimization
-- Zero manual intervention
-- Auto-start on system login
-- Health monitoring
-
-☕ **Java Spring Boot Standards**
-- Enforced best practices
-- Package structure conventions
-- API response patterns
-- Security guidelines
-
----
-
-## Complete Documentation
-
-### Documentation Location
-
-All documentation is in the root directory:
-
-📖 **[MASTER-README.md](./claude-memory-system/MASTER-README.md)** - Complete consolidated guide
-- 14 major sections with 100+ indexed subsections
-- All policies, Java standards, optimization strategies
-- Security best practices, database standards
-- Complete command reference
-
-📁 **[docs/](./claude-memory-system/docs/)** - Java Spring Boot Documentation (10 files)
-- Project structure, patterns, conventions
-- Spring Cloud Config, Secret Management
-- API design, error handling, security
-- Logging standards, database optimization
-
-📜 **[Policies Documentation](./claude-memory-system/)** - System Policies (12 files)
-- Core skills mandate, model selection
-- Failure prevention, context optimization
-- Session memory, user preferences
-- Git auto-commit, testing strategies
-
-### Quick Links
-
-| Resource | Link |
-|----------|------|
-| **Complete Documentation** | [claude-memory-system/MASTER-README.md](./claude-memory-system/MASTER-README.md) |
-| **Java Standards** | [claude-memory-system/docs/](./claude-memory-system/docs/) |
-| **Quick Start** | [claude-memory-system/MEMORY-SYSTEM-QUICKSTART.md](./claude-memory-system/MEMORY-SYSTEM-QUICKSTART.md) |
-| **Architecture** | [claude-memory-system/HOW-IT-WORKS.md](./claude-memory-system/HOW-IT-WORKS.md) |
-| **API Reference** | [claude-memory-system/API-REFERENCE.md](./claude-memory-system/API-REFERENCE.md) |
-
----
-
-## System Architecture
-
-### 🏗️ 3-Layer Architecture
-
-The Claude Memory System v2.2.0 uses a **3-layer architecture** that separates concerns and ensures clean, maintainable automation:
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    🔵 SYNC SYSTEM                           │
-│                     (Foundation Layer)                       │
-│  ✅ ALWAYS ACTIVE - Runs First - Foundational Components   │
-├─────────────────────────────────────────────────────────────┤
-│  • Context Management - Understand current state            │
-│  • Session Management - Load/save session memory            │
-│  • User Preferences - Learn user patterns                   │
-│  • Pattern Detection - Cross-project learning               │
-│                                                             │
-│  📂 Location: 01-sync-system/                              │
-│  🎯 Purpose: Establish context and understand history      │
-└─────────────────────────────────────────────────────────────┘
-                            ↓
-┌─────────────────────────────────────────────────────────────┐
-│                  🟢 STANDARDS SYSTEM                        │
-│                    (Rules Layer)                            │
-│  ✅ Load BEFORE Execution - Standards Enforcement          │
-├─────────────────────────────────────────────────────────────┤
-│  • Coding Standards - Java Spring Boot patterns             │
-│  • Config Server Rules - What goes where                    │
-│  • Secret Management - Never hardcode                       │
-│  • API Design Standards - REST conventions                  │
-│  • Database Standards - Naming, indexes                     │
-│                                                             │
-│  📂 Location: 02-standards-system/                         │
-│  🎯 Purpose: Load all rules to enforce during coding       │
-└─────────────────────────────────────────────────────────────┘
-                            ↓
-┌─────────────────────────────────────────────────────────────┐
-│                 🔴 EXECUTION SYSTEM                         │
-│                  (Implementation Layer)                      │
-│  ✅ Follows Loaded Rules - Actual Work Execution           │
-├─────────────────────────────────────────────────────────────┤
-│  Step 0: Prompt Generation (Anti-hallucination)            │
-│  Step 1: Task Breakdown (Automatic complexity analysis)     │
-│  Step 2: Plan Mode Suggestion (Auto-suggest when needed)   │
-│  Step 3: Context Check (Token optimization)                │
-│  Step 4: Model Selection (Haiku/Sonnet/Opus)              │
-│  Step 5: Skill/Agent Selection (Auto-detect and invoke)   │
-│  Step 6: Tool Optimization (15 strategies)                 │
-│  Step 7: Failure Prevention (Pre-execution checks)         │
-│  Step 8: Execute Task (Apply all rules from layer 2)      │
-│  Step 9: Progress Tracking (Auto-update task status)      │
-│  Step 10: Git Auto-Commit (On completion)                  │
-│                                                             │
-│  📂 Location: 03-execution-system/                         │
-│  🎯 Purpose: Execute with standards enforcement            │
-└─────────────────────────────────────────────────────────────┘
-```
-
-### Layer Responsibilities
-
-#### 🔵 Layer 1: SYNC SYSTEM (Foundation)
-**Always runs first - establishes context**
-
-| Component | Files | Purpose |
-|-----------|-------|---------|
-| **Context Management** | `context-management-core/` | Understand current state, optimize token usage |
-| **Session Management** | `session-memory-policy.md`<br>`session-pruning-policy.md` | Load previous session, save current session |
-| **User Preferences** | `user-preferences-policy.md` | Learn user patterns, auto-apply preferences |
-| **Pattern Detection** | `cross-project-patterns-policy.md` | Detect patterns across projects, apply learnings |
-
-**Output:** Complete context loaded, session restored, preferences understood
-
-#### 🟢 Layer 2: STANDARDS SYSTEM (Rules)
-**Loads before execution - defines what to enforce**
-
-| Component | Files | Purpose |
-|-----------|-------|---------|
-| **Coding Standards** | `coding-standards-enforcement-policy.md` | Java Spring Boot patterns, package structure |
-| **Config Server** | `docs/spring-cloud-config.md` | What config goes where (never in microservices) |
-| **Secret Management** | `docs/secret-management.md` | Never hardcode secrets, use secret-manager |
-| **API Design** | `docs/api-design-standards.md` | REST conventions, ApiResponseDto<T> |
-| **Database Standards** | `docs/database-standards.md` | Naming, indexes, entities |
-
-**Output:** All standards loaded and ready to enforce during code generation
-
-#### 🔴 Layer 3: EXECUTION SYSTEM (Implementation)
-**Follows loaded rules - does actual work**
-
-| Step | Component | File | Purpose |
-|------|-----------|------|---------|
-| **0** | Prompt Generation | `prompt-generation-policy.md` | Anti-hallucination, find before answer |
-| **1** | Task Breakdown | `automatic-task-breakdown-policy.md` | Auto-analyze complexity, create tasks |
-| **2** | Plan Mode | `auto-plan-mode-suggestion-policy.md` | Auto-suggest plan mode when needed |
-| **3** | Context Check | `context-management-core/` | Optimize token usage |
-| **4** | Model Selection | `intelligent-model-selection-policy.md` | Choose Haiku/Sonnet/Opus |
-| **5** | Skill/Agent | `auto-skill-agent-selection-policy.md` | Auto-select skills/agents |
-| **6** | Tool Optimization | `tool-usage-optimization-policy.md` | Apply 15 optimization strategies |
-| **7** | Failure Prevention | `common-failures-prevention.md` | Pre-execution checks, auto-fixes |
-| **8** | Execute Task | *All standards from Layer 2* | Generate code following all rules |
-| **9** | Progress Tracking | `task-progress-tracking-policy.md` | Auto-update task status |
-| **10** | Git Auto-Commit | `git-auto-commit-policy.md` | Commit on completion |
-
-**Output:** Task completed following all standards and best practices
-
-### Why 3 Layers?
-
-**🎯 Separation of Concerns:**
-- Layer 1: "What do I know?" (Context)
-- Layer 2: "What are the rules?" (Standards)
-- Layer 3: "What should I do?" (Execution)
-
-**✅ Benefits:**
-1. **Clean Architecture** - Each layer has single responsibility
-2. **Easy Maintenance** - Change rules without touching execution
-3. **Guaranteed Enforcement** - Standards ALWAYS loaded before coding
-4. **No Missed Rules** - Layer 2 loads ALL standards automatically
-5. **Predictable Flow** - Always same order: Sync → Load Rules → Execute
-
-**🚫 What NOT to Do:**
-- ❌ Don't skip Layer 1 (need context first)
-- ❌ Don't skip Layer 2 (need rules before coding)
-- ❌ Don't execute without loading standards
-- ❌ Don't load standards DURING execution (too late!)
-
-### Architecture Diagram
-
-```
-USER REQUEST
-     ↓
-┌─────────────────────────────────────┐
-│  🔵 SYNC SYSTEM (Layer 1)           │
-│  Load context, session, preferences │
-│  ✅ Foundation established          │
-└─────────────────────────────────────┘
-     ↓
-┌─────────────────────────────────────┐
-│  🟢 STANDARDS SYSTEM (Layer 2)      │
-│  Load ALL coding standards          │
-│  ✅ Rules ready to enforce          │
-└─────────────────────────────────────┘
-     ↓
-┌─────────────────────────────────────┐
-│  🔴 EXECUTION SYSTEM (Layer 3)      │
-│  10 steps from prompt → commit      │
-│  ✅ Every line follows standards    │
-└─────────────────────────────────────┘
-     ↓
-RESULT: Code that follows ALL standards
-```
-
-### File Organization
-
-```
-├── policies/
-│   ├── 01-sync-system/              # 🔵 Foundation Layer
-│   │   ├── session-management/
-│   │   ├── user-preferences/
-│   │   └── pattern-detection/
-│   │
-│   ├── 02-standards-system/         # 🟢 Rules Layer
-│   │   └── coding-standards-enforcement-policy.md
-│   │
-│   └── 03-execution-system/         # 🔴 Implementation Layer
-│       ├── 00-prompt-generation/
-│       ├── 01-task-breakdown/
-│       ├── 02-plan-mode/
-│       ├── 04-model-selection/
-│       ├── 05-skill-agent-selection/
-│       ├── 06-tool-optimization/
-│       ├── 08-progress-tracking/
-│       └── 09-git-commit/
-│
-└── docs/                            # Standards referenced by Layer 2
-    ├── java-project-structure.md
-    ├── spring-cloud-config.md
-    ├── secret-management.md
-    └── ... (50+ standard docs)
-```
-
----
-
-### Execution Flow (Every Request)
-
-```
-1. Context Check (REQUIRED)
-   ↓
-   context-monitor-v2.py --current-status
-   If >70%: Apply optimizations
-
-2. Model Selection (REQUIRED)
-   ↓
-   model-selection-enforcer.py --analyze "message"
-   Use recommended model
-
-3. Skill Detection (OPTIONAL)
-   ↓
-   core-skills-enforcer.py --next-skill
-   Execute if mandatory
-
-4. Failure Prevention (BEFORE EVERY TOOL)
-   ↓
-   pre-execution-checker.py --tool {TOOL}
-   Apply auto-fixes
-
-5. Execute Task
-   ↓
-   Use optimized tool parameters
-   Apply offset/limit/head_limit
-
-6. Session Save (ON MILESTONES)
-   ↓
-   Auto-triggered by daemon
-
-7. Git Auto-Commit (ON COMPLETION)
-   ↓
-   Auto-triggered by daemon
-
-8. Logging (ALWAYS)
-   ↓
-   Log policy applications
-```
-
-### Background Automation
-
-**🤖 10 Core Daemons (v2.7.0 - ENHANCED):**
-
-All daemons run 24/7 with auto-restart capability:
-
-1. **context-daemon** - Hybrid monitoring (event + periodic, 30s)
-2. **session-auto-save-daemon** - Auto-saves at milestones
-3. **preference-auto-tracker** - Learns user preferences
-4. **skill-auto-suggester** - Recommends skills/agents
-5. **commit-daemon** - Auto-commits on phase completion
-6. **session-pruning-daemon** - Cleans old sessions weekly
-7. **pattern-detection-daemon** - Detects code patterns
-8. **failure-prevention-daemon** - Smart adaptive (10-60s intervals)
-9. **token-optimization-daemon** - Auto-optimizes context >85%
-10. **health-monitor-daemon** - Auto-restarts dead daemons (every 5 min)
-
-**✅ Daemon Management System:**
-- **daemon-manager.py** - Start/stop/status for all daemons
-- **health-monitor-daemon.py** - Monitors all 10 daemons, auto-restarts on failure
-- **daemon-logger.py** - Centralized daemon logging
-- **pid-tracker.py** - Process ID management
-- Auto-start on Windows/Linux/Mac login
-- Cross-platform support (Windows/Linux/Mac)
-- JSON status API for dashboard integration
-
-**Continuous (Every 5-60 sec):**
-- Context usage monitored (hybrid: event + 30s periodic)
-- Failure prevention (smart adaptive: 10-60s based on activity)
-- Health monitoring (every 5 min, auto-restart dead daemons)
-- Token optimization (triggered when context >85%)
-
-**Periodic (Daily/Weekly/Monthly):**
-- Sessions auto-saved (at milestones)
-- Preferences learned (continuous)
-- Skills suggested (continuous)
-- Failures analyzed and learned (adaptive intervals)
-- Cross-project patterns detected (continuous)
-- Old sessions archived (weekly)
-- System health checked (every 5 min by health-monitor)
-
-**Event-Driven:**
-- Git commits on completion
-- Context cleanup on threshold (>85%)
-- Daemon auto-restart on failure (instant)
-- Pattern detection on code changes
-
----
-
-## 14 Active Policies
-
-### 1. Core Skills Mandate
-**Purpose:** System-level enforcement of mandatory execution flow
-
-**5 Mandatory Skills (In Order):**
-1. Context Management - Always validate context first
-2. Model Selection - Always choose correct model
-3. Adaptive Skill Intelligence - Auto-detect relevant skills
-4. Task Planning Intelligence - Score complexity (0-10)
-5. Phased Execution Intelligence - Score task size (0-10)
-
-**Critical Protection:**
-- Session files NEVER deleted
-- Policy files PROTECTED
-- Logs PROTECTED
-
-### 2. Model Selection Enforcement
-**Purpose:** Ensure correct model usage for cost optimization
-
-| Task Type | Model | Savings |
-|-----------|-------|---------|
-| Search/Find | Haiku | 96% cost reduction |
-| Implementation | Sonnet | Balanced cost/performance |
-| Architecture | Opus | Maximum capability |
-
-**Healthy Distribution:**
-- Haiku: 35-45%
-- Sonnet: 50-60%
-- Opus: 3-8%
-
-### 3. Common Failures Prevention
-**Purpose:** Self-learning failure knowledge base
-
-**Auto-Fixes Applied:**
-- Bash: `del` → `rm`, `copy` → `cp`, etc.
-- Edit: Strip line number prefixes
-- Read: Auto-add offset/limit for large files
-- Grep: Auto-add head_limit
-- Git: Stage files before commit
-
-**Token Savings:** 900-2900 per prevented failure
-
-### 4. Context-Session Integration
-**Purpose:** Separate temporary vs persistent memory
-
-**Protected Directories (NEVER Cleanup):**
-- `~/.claude/memory/sessions/**`
-- `~/.claude/memory/*.md`
-- `~/.claude/settings*.json`
-- `~/.claude/memory/logs/**`
-
-**Context Thresholds:**
-- <70%: 🟢 GREEN - Continue normally
-- 70-84%: 🟡 YELLOW - Use cache, optimize
-- 85-89%: 🟠 ORANGE - Use session state
-- 90%+: 🔴 RED - Save session, compact
-
-### 5. File Management Policy
-**Purpose:** Clean working directory & intelligent large file handling
-
-**Rules:**
-1. Temporary files → Use system temp
-2. Single README.md preferred
-3. Large files >500 lines → Smart strategies
-
-**Large File Strategy:**
-- Step 1: Structure read (100 lines)
-- Step 2: Targeted read (offset+limit)
-- Step 3: Smart edit (use Edit tool)
-- **Savings:** 80-95%
-
-### 6. Git Auto-Commit Policy
-**Purpose:** Automatic commit/push on completion events
-
-**Triggers:**
-1. Phase completion
-2. Todo completion
-3. Periodic checkpoints (every 30 min or 3-5 files)
-
-**Safety Rules:**
-- NEVER force push
-- Respect hooks
-- Inform user always
-- Check .git directory
-
-**Repository Rules:**
-- Always "main" branch (NEVER "master")
-- Always private (unless explicitly public)
-
-### 7. Proactive Consultation Policy
-**Purpose:** Transparent decision-making with user collaboration
-
-**When to Ask:**
-- Planning decision (complexity 4-6)
-- Phased execution (task size 3-5)
-- Model/approach uncertainty
-- Technology/library choice
-
-**When NOT to Ask:**
-- Clear scores (0-3 or 7-10)
-- User already specified
-- Previous decision in session
-- Trivial tasks
-
-### 8. Session Memory Policy
-**Purpose:** 100% local persistent memory across sessions
-
-**How It Works:**
-1. **At Session Start:** Auto-load `project-summary.md`
-2. **During Session:** Track decisions, files, context
-3. **At Session End:** Auto-save session summary
-
-**What to Capture:**
-- Technical decisions
-- User preferences (project-specific)
-- Files modified
-- Pending work
-- Important context
-
-**Protected from Context Cleanup:** 100% Protected
-
-### 9. Session Pruning Policy
-**Purpose:** Automatic cleanup of old sessions
-
-**Pruning Rules:**
-- Keep sessions modified in last 30 days
-- Archive sessions 31-90 days old
-- Delete archived sessions >90 days old
-
-**Safe to Archive:**
-- All tasks completed
-- No pending work
-- No errors
-- Auto-commit done
-
-**Never Prune:**
-- Active sessions (<30 days)
-- Sessions with errors
-- Explicitly protected sessions
-
-### 10. User Preferences Policy
-**Purpose:** Learn and auto-apply user preferences
-
-**Preference Types:**
-- Planning mode (use/skip)
-- Testing approach (TDD/after/skip)
-- API style (REST/GraphQL)
-- Error handling (exceptions/codes)
-- Commit frequency (phase/file/manual)
-
-**Learning Strategy:**
-- Track user choices
-- Apply automatically after 2-3 consistent choices
-- Never ask same question twice
-
-### 11. Cross-Project Patterns Policy
-**Purpose:** Learn patterns across projects and auto-apply
-
-**Pattern Detection:**
-- Monthly analysis of all project sessions
-- Identify common solutions
-- Track success rates
-- Build pattern library
-
-**Auto-Application:**
-- Suggest patterns when applicable
-- Apply high-confidence patterns (>80%)
-- Learn from user feedback
-
-### 12. Test Case Policy
-**Purpose:** Consistent testing approach
-
-**Testing Strategy:**
-- Unit tests for business logic
-- Integration tests for APIs
-- E2E tests for critical flows
-
-**Coverage Targets:**
-- Business logic: 80%+
-- Controllers: 60%+
-- Overall: 70%+
-
-### 13. Task/Phase Enforcement Policy ⚡ NEW!
-**Purpose:** BLOCKING enforcement of task breakdown and phased execution
-
-**Enforcement Rules:**
-- **Complexity >= 3:** TaskCreate REQUIRED
-- **Size >= 6:** Phased execution REQUIRED
-- **Auto-analysis:** Every request analyzed automatically
-- **Blocking:** Cannot proceed without compliance
-
-**Scoring Criteria:**
-- Requirements count (0-3)
-- Domain complexity (0-2)
-- File modifications (0-2)
-- Multi-item indicators (0-2)
-- Complexity keywords (0-1)
-
-**Benefits:**
-- 🚨 Mandatory task tracking
-- ✅ No work without proper breakdown
-- 📊 Clear progress visibility
-- 🔄 Auto-commit on completion
-
-**Enforcer Script:** `task-phase-enforcer.py`
-
-### 14. Task Progress Tracking Policy 📋 NEW!
-**Purpose:** Granular progress updates for session resumability
-
-**Update Frequency:**
-- **Minimum:** Every significant action
-- **Recommended:** Every 2-3 tool calls
-- **Maximum:** Don't let >5 tool calls pass
-
-**Metadata Structure:**
 ```json
 {
-  "progress": "3/5 steps complete",
-  "current_step": "Implementing feature X",
-  "completed": ["Step1", "Step2", "Step3"],
-  "remaining": ["Step4", "Step5"],
-  "last_file": "path/to/file:line"
-}
-```
-
-**Resume Capability:**
-- Know exactly where work stopped
-- Can resume from exact file/line
-- See what's done/remaining
-- Full audit trail
-
-**Benefits:**
-- ✅ Real-time progress visibility
-- 🔄 Session exit recovery
-- 📍 Exact location tracking
-- 🎯 Clear accountability
-
----
-
-## Installation Guide
-
-### Prerequisites
-
-**Required:**
-- Python 3.7 or higher
-- pip (Python package manager)
-- Git (for cloning repository)
-
-**Optional (for Memory System):**
-- Windows/Linux/Mac OS
-- PowerShell (for Windows auto-startup)
-
-### Step-by-Step Installation
-
-#### 1. Clone Repository
-```bash
-git clone https://github.com/piyushmakhija28/claude-insight.git
-cd claude-insight
-```
-
-#### 2. Install Python Dependencies
-```bash
-pip install -r requirements.txt
-```
-
-This installs:
-- Flask 3.0 - Web framework
-- Flask-SocketIO 5.3.6 - Real-time updates
-- psutil 5.9.8 - Process monitoring
-- NumPy 1.24.3 - Statistical analysis
-- bcrypt 4.0.1 - Password hashing
-- openpyxl 3.1.2 - Excel export
-- reportlab 4.0.4 - PDF export
-- flasgger 0.9.7.1 - API docs
-- Twilio 8.10.0 - SMS alerts
-- python-engineio 4.8.0 - Engine.IO
-- python-socketio 5.10.0 - Socket.IO
-- simple-websocket 1.0.0 - WebSocket
-- wsproto 1.2.0 - WebSocket protocol
-- h11 0.14.0 - HTTP/1.1
-
-#### 3. Verify Installation
-```bash
-python verify_enhancements.py
-```
-
-Expected output:
-```
-✓ All imports successful
-✓ Flask app initialized
-✓ All utilities loaded
-✓ System ready to run
-```
-
----
-
-## Configuration
-
-### Application Settings
-
-Edit `app.py` to customize:
-
-```python
-# Secret key for session management
-app.secret_key = 'your-secret-key-here'
-
-# SocketIO CORS settings
-socketio = SocketIO(app, cors_allowed_origins="*")
-```
-
-### Memory System Configuration
-
-**Location:** `~/.claude/memory/`
-
-**Key Configuration Files:**
-- `CLAUDE.md` - Global configuration
-- `user-preferences.json` - User preferences
-- `failure-kb.json` - Failure knowledge base
-- `skills-registry.json` - Skill registry
-- `cross-project-patterns.json` - Pattern library
-
-### Email/SMS Alerts
-
-Configure in Settings page (http://localhost:5000/settings):
-
-**Email Settings:**
-- SMTP Server
-- SMTP Port
-- Username
-- Password
-- From Email
-
-**SMS Settings (Twilio):**
-- Account SID
-- Auth Token
-- From Phone Number
-
----
-
-## Memory System Setup
-
-### First Time Setup
-
-#### Windows Auto-Startup (One-Time)
-```powershell
-# Run this once to auto-start all daemons on login
-powershell -ExecutionPolicy Bypass -File ~/.claude/memory/setup-windows-startup.ps1
-```
-
-This creates:
-- ✅ Startup batch script
-- ✅ Silent wrapper (no console window)
-- ✅ Task Scheduler entry
-- ✅ All 8-9 daemons auto-start on Windows login
-
-#### Linux/Mac Setup
-```bash
-# Add to ~/.bashrc or ~/.zshrc
-~/.claude/memory/startup-hook.sh
-```
-
-### Verify Installation
-
-```bash
-# Check system health
-bash ~/.claude/memory/verify-system.sh
-
-# View dashboard
-bash ~/.claude/memory/dashboard-v2.sh
-
-# Check daemon status
-python ~/.claude/memory/daemon-manager.py --status-all
-```
-
-**Expected Result:** 8/8 or 9/9 daemons running ✅
-
-### Daily Usage
-
-**At Session Start (MANDATORY):**
-```bash
-# Single command - does everything!
-bash ~/.claude/memory/session-start.sh
-```
-
-This automatically:
-1. ✅ Starts auto-recommendation daemon (9th daemon)
-2. ✅ Checks all 9 daemon PIDs and status
-3. ✅ Shows latest recommendations (model, skills, agents)
-4. ✅ Shows context status (OK/WARNING/CRITICAL)
-5. ✅ Shows optimizations needed
-6. ✅ Provides complete system health summary
-
-**Alternative (Quick Check):**
-```bash
-# Just check latest recommendations
-python ~/.claude/memory/check-recommendations.py
-```
-
-### During Work
-
-The system works automatically:
-- ✅ Context monitored every 10 min
-- ✅ Sessions auto-saved every 15 min
-- ✅ Preferences learned every 20 min
-- ✅ Skills suggested every 5 min
-- ✅ Failures prevented on every tool call
-- ✅ Git commits triggered on completion
-- ✅ Token optimization applied continuously
-
-**You just code - the system handles everything!**
-
----
-
-## Running the Application
-
-### Start the Server
-
-```bash
-python app.py
-```
-
-Expected output:
-```
- * Running on http://127.0.0.1:5000
- * SocketIO server started
- * Dashboard ready at http://localhost:5000
-```
-
-### Access the Dashboard
-
-1. Open browser: http://localhost:5000
-2. Login:
-   - Username: `admin`
-   - Password: `admin`
-3. Explore the dashboard!
-
-### Production Deployment
-
-For production, use a WSGI server:
-
-```bash
-# Install gunicorn
-pip install gunicorn
-
-# Run with gunicorn
-gunicorn -w 4 -b 0.0.0.0:5000 --worker-class eventlet app:app
-```
-
-Or use Docker:
-
-```dockerfile
-FROM python:3.9-slim
-
-WORKDIR /app
-COPY requirements.txt .
-RUN pip install -r requirements.txt
-
-COPY . .
-
-CMD ["gunicorn", "-w", "4", "-b", "0.0.0.0:5000", "--worker-class", "eventlet", "app:app"]
-```
-
----
-
-## How to Use
-
-### Dashboard Navigation
-
-#### Main Dashboard
-- **System Health Score**: Overall health (0-100)
-- **Daemon Status**: All 8-9 daemons
-- **Policy Enforcement**: Recent policy activity
-- **Context Usage**: Real-time token consumption
-- **Model Distribution**: Haiku/Sonnet/Opus usage
-
-#### Memory System Page
-- **Daemon Health Grid**: Visual daemon status
-- **Policy Compliance**: All 12 policies
-- **Context Optimization**: Cache statistics
-- **Failure Prevention**: Auto-fix tracking
-- **Session Memory**: Active sessions
-- **Git Activity**: Recent commits
-
-#### Analytics Page
-- **Cost Analysis**: Model usage and costs
-- **Performance Metrics**: Response times
-- **Token Optimization**: Savings metrics
-- **Historical Trends**: Time-series charts
-
-#### Anomaly Detection Page
-- **AI Detection**: 6 ML algorithms
-- **Anomaly List**: Recent anomalies
-- **Insights**: Pattern analysis
-- **Management**: Acknowledge/resolve
-
-#### Predictive Analytics Page
-- **Forecasting**: 5 algorithms
-- **Capacity Planning**: Breach prediction
-- **Time Series**: Future projections
-- **Recommendations**: AI insights
-
-#### Alert Routing Page
-- **Routing Rules**: Configure routing
-- **Escalation Levels**: Set up escalation
-- **On-Call Schedule**: Weekly rotation
-- **Alert History**: Track alerts
-
-#### Logs Page
-- **Real-time Logs**: Live log streaming
-- **Filter Logs**: By daemon, level, date
-- **Export Logs**: CSV, Excel, PDF
-
-#### Settings Page
-- **Email Alerts**: Configure SMTP
-- **SMS Alerts**: Configure Twilio
-- **Themes**: 6 custom themes
-- **Alert Rules**: Quiet hours, rate limiting
-
-### Widget Builder
-
-#### Create Widget
-1. Click "Widget Builder" in sidebar
-2. Drag components from palette
-3. Configure properties
-4. Preview in real-time
-5. Edit HTML/CSS/JS code
-6. Save widget
-
-#### Publish to Marketplace
-1. Click "Publish to Marketplace"
-2. Fill in details (name, description, category)
-3. Set price (free or paid)
-4. Submit for review
-5. Widget appears in marketplace
-
-#### Collaborate on Widget
-1. Open widget in builder
-2. Click "Start Collaboration"
-3. Share session code with team
-4. Edit together in real-time
-5. See live cursors and changes
-6. Chat with collaborators
-7. Lock lines to prevent conflicts
-
-#### Version Control
-1. View version timeline
-2. Compare versions (diff viewer)
-3. Rollback to previous version
-4. Add commit messages
-
-#### Comments & Discussions
-1. Add comments to widget
-2. @mention other users
-3. React with emojis
-4. Reply to comments (threaded)
-5. Get notifications on mentions
-
----
-
-## API Reference
-
-### Memory System APIs
-
-#### Get Health Statistics
-```http
-GET /api/memory-system/health
-```
-
-**Response:**
-```json
-{
-  "overall_health_score": 85,
-  "health_status": "healthy",
-  "daemon_health": {
-    "running": 8,
-    "total": 8,
-    "percentage": 100
-  },
-  "policy_enforcement": {
-    "active_policies": 10,
-    "recent_enforcements": 45
-  },
-  "context_optimization": {
-    "cache_hits": 120,
-    "token_savings": 60000
+  "hooks": {
+    "UserPromptSubmit": [{
+      "hooks": [
+        {
+          "command": "python ~/.claude/memory/current/clear-session-handler.py",
+          "timeout": 15
+        },
+        {
+          "command": "python ~/.claude/memory/current/3-level-flow.py --summary",
+          "timeout": 30
+        }
+      ]
+    }],
+    "Stop": [{
+      "hooks": [{
+        "command": "python ~/.claude/memory/current/stop-notifier.py",
+        "timeout": 20
+      }]
+    }]
   }
 }
 ```
 
-#### Get Daemon Status
-```http
-GET /api/memory-system/daemons
-```
-
-**Response:**
-```json
-{
-  "daemons": [
-    {
-      "name": "context-daemon",
-      "status": "running",
-      "pid": 12345,
-      "last_activity": "2026-02-15T10:30:00",
-      "uptime_hours": 24.5
-    }
-  ]
-}
-```
-
-#### Get Policy Status
-```http
-GET /api/memory-system/policies
-```
-
-**Response:**
-```json
-{
-  "policies": [
-    {
-      "name": "Core Skills Mandate",
-      "status": "active",
-      "enforcements": 150,
-      "last_enforcement": "2026-02-15T10:25:00"
-    }
-  ]
-}
-```
-
-### Anomaly Detection APIs
-
-#### Get Anomalies
-```http
-GET /api/anomaly-detection/anomalies
-```
-
-#### Acknowledge Anomaly
-```http
-POST /api/anomaly-detection/anomalies/{id}/acknowledge
-```
-
-#### Resolve Anomaly
-```http
-POST /api/anomaly-detection/anomalies/{id}/resolve
-Content-Type: application/json
-
-{
-  "resolution_notes": "Resolved by scaling resources"
-}
-```
-
-### Predictive Analytics APIs
-
-#### Get Forecast
-```http
-GET /api/predictive-analytics/forecast/{metric_name}?horizon=24h&algorithm=ensemble
-```
-
-#### Get Capacity Planning
-```http
-GET /api/predictive-analytics/capacity-planning/{metric_name}?threshold=80
-```
-
-### Alert Routing APIs
-
-#### Create Routing Rule
-```http
-POST /api/alert-routing/rules
-Content-Type: application/json
-
-{
-  "name": "Critical Alerts to Ops Team",
-  "conditions": {
-    "severity": "critical",
-    "metric_type": "cpu"
-  },
-  "actions": {
-    "notify": ["ops@example.com"],
-    "escalate_after_minutes": 15
-  }
-}
-```
-
-#### Get On-Call Schedule
-```http
-GET /api/alert-routing/on-call-schedule
-```
-
-### Widget Collaboration APIs
-
-#### Start Collaboration Session
-```http
-POST /api/widgets/{id}/collaborate/start
-```
-
-#### Get Widget Versions
-```http
-GET /api/widgets/{id}/versions
-```
-
-#### Create Version
-```http
-POST /api/widgets/{id}/versions
-Content-Type: application/json
-
-{
-  "commit_message": "Added new chart component"
-}
-```
-
-#### Get Version Diff
-```http
-GET /api/widgets/{id}/versions/{v1}/diff/{v2}
-```
-
-#### Add Comment
-```http
-POST /api/widgets/{id}/comments
-Content-Type: application/json
-
-{
-  "content": "Great widget! @john consider adding dark mode support",
-  "parent_id": null
-}
-```
-
-#### Get Trending Widgets
-```http
-GET /api/widgets/trending?period=7d&limit=10
-```
-
-### Complete API Documentation
-
-Full Swagger documentation available at: **http://localhost:5000/api/docs**
+**No background daemons.** Everything runs per-request via hooks. When you send
+a message in Claude Code, the hooks fire, run the 3-level flow, write results to
+`~/.claude/memory/logs/`, and Claude Insight reads those logs.
 
 ---
 
-## Metrics Tracked
+## Dashboard Pages
 
-### System Metrics
-- **CPU Usage**: Daemon CPU consumption
-- **Memory Usage**: Daemon memory consumption
-- **Disk Usage**: Session storage size
-- **Network Usage**: API calls and bandwidth
-
-### Context Metrics
-- **Context Usage**: Token consumption percentage
-- **Cache Hit Rate**: Cache efficiency
-- **Token Savings**: Estimated tokens saved
-- **Optimizations Applied**: Count of optimizations
-
-### Policy Metrics
-- **Enforcement Count**: Times each policy applied
-- **Compliance Rate**: Policy adherence percentage
-- **Violations**: Policy violations detected
-
-### Daemon Metrics
-- **Uptime**: Running time for each daemon
-- **Last Activity**: Timestamp of last activity
-- **Restart Count**: Number of restarts
-- **Error Count**: Errors encountered
-
-### Model Metrics
-- **Haiku Usage**: Percentage and count
-- **Sonnet Usage**: Percentage and count
-- **Opus Usage**: Percentage and count
-- **Total Requests**: All API requests
-- **Cost Breakdown**: Estimated costs
-
-### Failure Metrics
-- **Failures Prevented**: Total failures caught
-- **Auto-Fixes Applied**: Automatic corrections
-- **Patterns Learned**: Knowledge base size
-- **Success Rate**: Prevention success rate
-
-### Session Metrics
-- **Active Sessions**: Sessions in last 7 days
-- **Total Sessions**: All project sessions
-- **Pruned Sessions**: Cleaned up sessions
-- **Storage Size**: Total storage used
-
-### Git Metrics
-- **Total Commits**: All auto-commits
-- **Commits Today**: Today's commits
-- **Commits This Week**: Weekly commits
-- **Commit Frequency**: Average per day
-
-### Widget Metrics
-- **Total Widgets**: All widgets created
-- **Published Widgets**: Marketplace widgets
-- **Downloads**: Widget download count
-- **Ratings**: Average rating
-- **Comments**: Comment count
-- **Active Collaborations**: Live collaboration sessions
+| Page | URL | What It Shows |
+|------|-----|---------------|
+| Dashboard | `/` | System overview, context %, session count |
+| Sessions | `/sessions` | Session list, duration, requests per session |
+| 3-Level Flow History | `/3level-flow-history` | Per-session flow execution trace |
+| Policies | `/policies` | Policy enforcement pass/fail per request |
+| Analytics | `/analytics` | Skill/agent usage, model distribution, costs |
+| Anomaly Detection | `/anomaly-detection` | Detected unusual patterns |
+| Predictive Analytics | `/predictive-analytics` | Context and usage forecasting |
+| Performance Profiling | `/performance-profiling` | Step-level response times |
+| Alert Routing | `/alert-routing` | Alert rules and escalation config |
+| Notifications | `/notifications` | Notification history and channels |
+| Advanced Search | `/advanced-search` | Search across sessions and logs |
+| Logs | `/logs` | Raw log viewer |
+| Settings | `/settings` | Dashboard configuration |
 
 ---
 
@@ -2501,1039 +351,330 @@ Full Swagger documentation available at: **http://localhost:5000/api/docs**
 
 ```
 claude-insight/
-├── app.py                          # Main Flask application (3,560 lines)
-├── requirements.txt                # Python dependencies
-├── verify_enhancements.py          # Installation verification
-├── LICENSE                         # MIT License
-├── README.md                       # This file
+├── CLAUDE.md                    <- Claude Code instructions + setup guide
+├── README.md                    <- This file
+├── CHANGELOG.md                 <- Version history
+├── LICENSE                      <- MIT license
+├── run.py                       <- App entry point
+├── requirements.txt             <- Python dependencies (17 packages)
+├── setup.py                     <- Package config
 │
-├── templates/                      # HTML templates
-│   ├── base.html                   # Base template with navigation
-│   ├── dashboard.html              # Main dashboard
-│   ├── login.html                  # Login page
-│   ├── policies.html               # Policy monitoring
-│   ├── logs.html                   # Log viewer
-│   ├── sessions.html               # Session tracking
-│   ├── analytics.html              # Analytics page
-│   ├── anomaly-detection.html      # Anomaly detection
-│   ├── predictive-analytics.html   # Forecasting
-│   ├── alert-routing.html          # Alert routing
-│   ├── notifications.html          # Notification center
-│   ├── settings.html               # Settings page
-│   ├── widgets.html                # Widget list
-│   ├── widget-builder.html         # Widget builder
-│   ├── community-marketplace.html  # Marketplace
-│   ├── comparison.html             # Comparison tool
-│   ├── 404.html                    # Error page
-│   └── 500.html                    # Error page
+├── src/                         <- Flask application
+│   ├── app.py                   <- Main app, routes, SocketIO setup
+│   ├── config.py                <- Dev/Prod/Test configuration
+│   ├── auth/
+│   │   └── user_manager.py      <- Authentication (bcrypt)
+│   ├── models/
+│   │   └── user.py              <- User model
+│   ├── routes/
+│   │   ├── claude_credentials.py
+│   │   └── session_search.py
+│   ├── middleware/
+│   │   └── enforcement_logger.py  <- Logs all enforcement actions
+│   ├── mcp/
+│   │   └── enforcement_server.py  <- MCP enforcement server
+│   ├── services/
+│   │   ├── monitoring/            <- Core monitoring logic
+│   │   │   ├── three_level_flow_tracker.py
+│   │   │   ├── policy_execution_tracker.py
+│   │   │   ├── session_tracker.py
+│   │   │   ├── metrics_collector.py
+│   │   │   ├── log_parser.py
+│   │   │   ├── skill_agent_tracker.py
+│   │   │   ├── automation_tracker.py
+│   │   │   ├── optimization_tracker.py
+│   │   │   └── performance_profiler.py
+│   │   ├── ai/
+│   │   │   ├── anomaly_detector.py
+│   │   │   ├── bottleneck_analyzer.py
+│   │   │   └── predictive_analytics.py
+│   │   ├── notifications/
+│   │   │   ├── alert_routing.py
+│   │   │   ├── alert_sender.py
+│   │   │   └── notification_manager.py
+│   │   └── widgets/
+│   │       ├── collaboration_manager.py
+│   │       ├── comments_manager.py
+│   │       ├── community_manager.py
+│   │       └── version_manager.py
+│   └── utils/
+│       ├── path_resolver.py       <- Cross-platform paths
+│       └── history_tracker.py
 │
-├── static/                         # Static files
-│   ├── css/                        # Stylesheets
-│   │   ├── main.css                # Main styles
-│   │   ├── themes.css              # Theme styles
-│   │   └── widgets.css             # Widget styles
-│   └── js/                         # JavaScript files
-│       ├── main.js                 # Main scripts
-│       ├── widgets.js              # Widget scripts
-│       ├── collaboration.js        # Collaboration scripts
-│       └── charts.js               # Chart scripts
+├── templates/                   <- 31 Jinja2 HTML templates
+│   ├── base.html                <- Base layout
+│   ├── dashboard.html           <- Main dashboard
+│   ├── 3level-flow-history.html <- Flow history page
+│   ├── sessions.html
+│   ├── policies.html
+│   ├── analytics.html
+│   └── ...
 │
-├── utils/                          # Utility modules
-│   ├── metrics.py                  # Metrics collection
-│   ├── log_parser.py               # Log parsing
-│   ├── policy_checker.py           # Policy checking
-│   ├── session_tracker.py          # Session tracking
-│   ├── history_tracker.py          # History tracking
-│   ├── notification_manager.py     # Notifications
-│   ├── alert_sender.py             # Alert sending
-│   ├── community_widgets.py        # Widget management
-│   ├── anomaly_detector.py         # Anomaly detection
-│   ├── predictive_analytics.py     # Forecasting
-│   ├── alert_routing.py            # Alert routing
-│   ├── memory_system_monitor.py    # Memory system monitoring
-│   ├── widget_version_manager.py   # Version control
-│   ├── widget_comments_manager.py  # Comments
-│   ├── collaboration_manager.py    # Collaboration
-│   └── trending_calculator.py      # Trending algorithm
+├── static/                      <- CSS, JS, i18n
+│   ├── css/
+│   ├── js/
+│   └── i18n/
+│       ├── en.json
+│       ├── hi.json
+│       ├── es.json
+│       ├── fr.json
+│       └── de.json
 │
-├── memory_files/                   # Memory System backup (deprecated)
-│   ├── scripts/                    # Old scripts
-│   ├── daemons/                    # Old daemon files
-│   └── policies/                   # Old policies
+├── scripts/                     <- Enforcement + setup scripts
+│   ├── setup-global-claude.sh   <- Unix automatic setup
+│   ├── setup-global-claude.ps1  <- Windows automatic setup
+│   ├── global-claude-md-template.md  <- Public CLAUDE.md template
+│   ├── install-auto-hooks.sh    <- Hook installer
+│   ├── 3-level-flow.py          <- Main hook entry point
+│   ├── auto-fix-enforcer.sh     <- Level -1 enforcement
+│   ├── session-start.sh         <- Level 1 session init
+│   ├── per-request-enforcer.py  <- Per-request enforcement
+│   ├── context-monitor-v2.py    <- Context monitoring
+│   ├── blocking-policy-enforcer.py
+│   ├── session-id-generator.py/.sh
+│   ├── session-logger.py
+│   ├── clear-session-handler.py <- /clear hook handler
+│   ├── stop-notifier.py         <- Stop hook handler
+│   └── detect-sync-eligibility.py
 │
-├── MASTER-README.md                # Complete documentation (1,500+ lines)
-├── CLAUDE.md                       # Global configuration (v2.4.0)
-├── FILE-INDEX.md                   # File organization index
-├── QUICK-NAVIGATION-GUIDE.md       # Navigation guide
+├── policies/                    <- Policy definitions
+│   ├── 01-sync-system/          <- Level 1 foundation policies
+│   └── 03-execution-system/     <- Level 3 execution policies
 │
-├── policies/                       # All policy files (18+ organized by layer)
-│   ├── 01-sync-system/             # Foundation layer
-│   ├── 02-standards-system/        # Standards layer
-│   ├── 03-execution-system/        # Execution layer
-│   └── testing/                    # Testing policies
+├── docs/                        <- Architecture documentation
+│   ├── ARCHITECTURE.md
+│   ├── auto-fix-enforcement.md
+│   ├── session-id-tracking.md
+│   └── ...
 │
-├── memory-docs/                    # Memory system documentation (50+ files)
-│   ├── spring-cloud-config.md
-│   ├── secret-management.md
-│   ├── java-project-structure.md
-│   ├── api-design-standards.md
-│   └── ... (50+ files)
+├── config/                      <- Runtime config JSONs
+│   ├── failure-kb.json          <- Failure knowledge base
+│   ├── skills-registry.json     <- Available skills registry
+│   └── user-preferences.json
 │
-├── memory-scripts/                 # Automation scripts (81+ files)
-│   ├── automation/                 # Core automation
-│   ├── daemons/                    # 9 daemon scripts
-│   ├── monitors/                   # Monitoring tools
-│   └── ... (81+ files)
-│
-├── AGENTS_AND_SKILLS.md            # Reference to claude-global-library
-│   # NOTE: Skills and agents are in separate repo:
-│   # https://github.com/piyushmakhija28/claude-global-library
-│
-├── config/                         # Configuration files
-│   ├── skills-registry.json
-│   ├── user-preferences.json
-│   └── ... (6+ configs)
-│
-└── archive/                        # Archived files
+└── tests/                       <- Test suite
+    ├── run_all_tests.py
+    ├── test_policy_integration.py
+    ├── test_enforcement_logger.py
+    └── ...
 ```
 
 ---
 
-## Security
+## API Reference
 
-### Authentication & Authorization
+### Sessions
 
-**Login System:**
-- Bcrypt password hashing
-- Session-based authentication
-- CSRF protection (Flask built-in)
-- Password change functionality
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/sessions` | List all sessions |
+| GET | `/api/sessions/<id>` | Get session details |
+| GET | `/api/sessions/<id>/flow-trace` | Get 3-level flow trace for session |
 
-**Default Credentials:**
-- Username: `admin`
-- Password: `admin`
-- **⚠️ Change immediately in production!**
+### Metrics
 
-### XSS Protection
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/metrics` | Current system metrics |
+| GET | `/api/metrics/history` | Historical metrics (query: `?days=7`) |
+| GET | `/api/metrics/context-usage` | Context usage over time |
+| GET | `/api/metrics/model-distribution` | Haiku/Sonnet/Opus usage |
 
-**Input Sanitization:**
-- All user inputs sanitized
-- HTML escaped in templates
-- Content Security Policy headers
-- Widget code sandboxing
+### Policies
 
-### Data Protection
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/policies` | All policy enforcement records |
+| GET | `/api/policies/summary` | Pass/fail summary |
+| GET | `/api/policies/<name>` | Specific policy history |
 
-**Sensitive Data:**
-- Passwords hashed with bcrypt
-- API keys encrypted at rest
-- HTTPS recommended for production
-- No secrets in logs
+### Analytics
 
-**Memory System Security:**
-- Local-only file access
-- No cloud uploads
-- Protected session files
-- Audit trail logging
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/analytics/skills` | Skill usage statistics |
+| GET | `/api/analytics/agents` | Agent usage statistics |
+| GET | `/api/analytics/costs` | Token costs and model usage |
+| GET | `/api/anomalies` | Detected anomalies |
+| GET | `/api/predictions` | Predictive analytics data |
 
-### Best Practices
+### Alerts
 
-1. **Change default password** immediately
-2. **Use HTTPS** in production
-3. **Restrict network access** (firewall)
-4. **Regular backups** of Memory System files
-5. **Monitor logs** for suspicious activity
-6. **Update dependencies** regularly
-7. **Enable 2FA** (future enhancement)
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/alerts` | Alert history |
+| POST | `/api/alerts/rules` | Create alert rule |
+| DELETE | `/api/alerts/rules/<id>` | Delete alert rule |
 
-### Security Checklist
+### Export
 
-- ✅ Input validation on all forms
-- ✅ SQL injection prevention (parameterized queries)
-- ✅ XSS protection (output encoding)
-- ✅ CSRF tokens on state-changing requests
-- ✅ Password complexity requirements
-- ✅ Session timeout (30 minutes)
-- ✅ Secure cookie flags (httpOnly, secure)
-- ✅ Rate limiting on login
-- ✅ Audit logging
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/export/csv` | Export metrics as CSV |
+| GET | `/api/export/excel` | Export as Excel |
+| GET | `/api/export/pdf` | Export as PDF report |
+
+---
+
+## Configuration
+
+All config is in `src/config.py`:
+
+```python
+class Config:
+    SECRET_KEY = 'your-secret-key-here'       # Change in production!
+    HOST = '0.0.0.0'
+    PORT = 5000
+    DEBUG = False
+
+class DevelopmentConfig(Config):
+    DEBUG = True
+
+class ProductionConfig(Config):
+    DEBUG = False
+```
+
+**Memory System paths** (auto-detected via `src/utils/path_resolver.py`):
+
+| Path | What It Contains |
+|------|-----------------|
+| `~/.claude/memory/logs/sessions/` | Per-session flow-trace.json files |
+| `~/.claude/memory/logs/policy-hits.log` | Policy enforcement log |
+| `~/.claude/memory/sessions/` | Session state files |
+| `~/.claude/memory/current/` | Core enforcement scripts |
+
+---
+
+## Global vs Project CLAUDE.md
+
+This repo ships with two CLAUDE.md-related files:
+
+| File | Purpose | Location |
+|------|---------|----------|
+| `CLAUDE.md` | Project-specific instructions for Claude Code | Repo root |
+| `scripts/global-claude-md-template.md` | Template for global installation | `scripts/` |
+
+**The global CLAUDE.md** (installed by setup scripts to `~/.claude/CLAUDE.md`) contains:
+- 3-level architecture enforcement rules
+- Complete skill/agent registry (21 skills + 12 agents)
+- Windows Unicode restrictions
+- Context optimization rules
+
+**The project CLAUDE.md** (`claude-insight/CLAUDE.md`) contains:
+- Project overview and structure
+- Setup instructions
+- Development commands
+- Project-specific conventions
+
+**Rule:** Global policies always take precedence. Project CLAUDE.md cannot override
+global policies. It adds context only.
+
+**Important:** Never put project-specific credentials, internal paths, or
+business logic in the global `~/.claude/CLAUDE.md`. Keep it generic.
 
 ---
 
 ## Troubleshooting
 
-### Common Issues
+### Dashboard shows no data
 
-#### Dashboard Won't Start
+The dashboard reads from `~/.claude/memory/logs/`. If there is no data:
 
-**Error:** `ModuleNotFoundError: No module named 'flask'`
+1. Verify memory system is installed:
+   ```bash
+   ls ~/.claude/memory/current/
+   ```
+2. Verify hooks are in settings.json:
+   ```bash
+   cat ~/.claude/settings.json | grep "3-level-flow"
+   ```
+3. Restart Claude Code and send a test message
+4. Check if log files are being created:
+   ```bash
+   ls ~/.claude/memory/logs/sessions/
+   ```
 
-**Solution:**
+### Hook not running
+
+1. Check settings.json exists: `cat ~/.claude/settings.json`
+2. Verify hook script exists: `ls ~/.claude/memory/current/3-level-flow.py`
+3. Re-run setup: `.\scripts\setup-global-claude.ps1` (Windows)
+
+### Python encoding errors (Windows)
+
+If you see `UnicodeEncodeError` in Python scripts:
 ```bash
+set PYTHONIOENCODING=utf-8
+set PYTHONUTF8=1
+```
+All Python scripts in this project use ASCII-only output (cp1252 safe).
+
+### Flask server won't start
+
+```bash
+# Check Python version (need 3.8+)
+python --version
+
+# Check dependencies
 pip install -r requirements.txt
+
+# Check port availability
+python run.py --port 8081
 ```
 
-#### Memory System Not Detected
+### Authentication issues
 
-**Error:** "Memory system files not found"
+Default credentials: `admin` / `admin`
 
-**Solution:**
-```bash
-# Deploy Memory System files
-cp -r claude-memory-system/* ~/.claude/memory/
-
-# Or on Windows
-xcopy /E /I /Y claude-memory-system\* %USERPROFILE%\.claude\memory\
-```
-
-#### Daemons Not Running
-
-**Error:** "0/8 daemons running"
-
-**Solution:**
-```bash
-# Start daemons manually
-bash ~/.claude/memory/startup-hook.sh
-
-# Or on Windows
-powershell -ExecutionPolicy Bypass -File ~/.claude/memory/setup-windows-startup.ps1
-```
-
-#### Daemon Status Shows "Not Started"
-
-**Solution:**
-```bash
-# Check daemon logs
-tail -f ~/.claude/memory/logs/daemons/context-daemon.log
-
-# Restart specific daemon
-python ~/.claude/memory/daemon-manager.py --restart context-daemon
-```
-
-#### WebSocket Connection Failed
-
-**Error:** "SocketIO connection failed"
-
-**Solution:**
-1. Check if port 5000 is blocked by firewall
-2. Try different browser
-3. Disable browser extensions
-4. Check console for errors
-
-#### High Memory Usage
-
-**Solution:**
-```bash
-# Check which daemon is using memory
-python ~/.claude/memory/daemon-manager.py --status-all
-
-# Restart all daemons
-bash ~/.claude/memory/startup-hook.sh
-```
-
-### Daemon Troubleshooting
-
-#### Check Daemon Status
-```bash
-python ~/.claude/memory/daemon-manager.py --status-all
-```
-
-#### View Daemon Logs
-```bash
-# All daemon logs
-ls ~/.claude/memory/logs/daemons/
-
-# Specific daemon
-tail -f ~/.claude/memory/logs/daemons/context-daemon.log
-```
-
-#### Restart Specific Daemon
-```bash
-python ~/.claude/memory/daemon-manager.py --restart context-daemon
-```
-
-#### Restart All Daemons
-```bash
-bash ~/.claude/memory/startup-hook.sh
-```
-
-### Memory System Troubleshooting
-
-#### Context Issues
-```bash
-# Check context status
-python ~/.claude/memory/context-monitor-v2.py --current-status
-
-# Clear cache if needed
-rm -rf ~/.claude/memory/.cache/*
-```
-
-#### Session Memory Issues
-```bash
-# Check sessions
-ls -lh ~/.claude/memory/sessions/
-
-# Archive old sessions
-python ~/.claude/memory/archive-old-sessions.py
-```
-
-#### Rollback if Needed
-```bash
-python ~/.claude/memory/rollback.py
-```
-
-### Health Checks
-
-#### Run Full Test Suite
-```bash
-python ~/.claude/memory/test-all-phases.py
-```
-
-#### Daily Health Check
-```bash
-bash ~/.claude/memory/daily-health-check.sh
-```
-
-#### Weekly Health Check
-```bash
-bash ~/.claude/memory/weekly-health-check.sh
-```
-
-#### Check for Conflicts
-```bash
-bash ~/.claude/memory/check-conflicts.sh
-```
-
-### Getting Help
-
-If you encounter issues:
-
-1. **Check logs**: `~/.claude/memory/logs/`
-2. **Run health check**: `bash ~/.claude/memory/verify-system.sh`
-3. **View dashboard**: `bash ~/.claude/memory/dashboard-v2.sh`
-4. **Read documentation**: `claude-memory-system/MASTER-README.md`
-5. **Open GitHub issue**: [Report issue](https://github.com/piyushmakhija28/claude-insight/issues)
+If locked out, reset in `src/auth/user_manager.py`.
 
 ---
 
 ## Contributing
 
-We welcome contributions! Here's how you can help:
+Contributions are welcome! This project is focused on the monitoring dashboard and
+core enforcement scripts. Please follow these guidelines:
 
-### How to Contribute
+1. **Fork** the repo and create a feature branch
+2. **Follow** the project conventions in `CLAUDE.md`
+3. **Test** your changes: `python -m pytest tests/ -v`
+4. **No daemons** — background monitoring is via Flask + hooks only
+5. **ASCII only** in Python files (Windows cp1252 compatibility)
+6. **Submit** a pull request with clear description
 
-1. **Fork the repository**
-2. **Create a feature branch**
-   ```bash
-   git checkout -b feature/your-feature-name
-   ```
-3. **Make your changes**
-4. **Test thoroughly**
-   ```bash
-   python verify_enhancements.py
-   ```
-5. **Commit with descriptive message**
-   ```bash
-   git commit -m "feat: Add new feature description"
-   ```
-6. **Push to your fork**
-   ```bash
-   git push origin feature/your-feature-name
-   ```
-7. **Open a Pull Request**
+**What fits in this repo:**
+- Dashboard UI improvements
+- New monitoring metrics
+- Additional analytics features
+- Bug fixes
 
-### Contribution Guidelines
-
-**Code Style:**
-- Follow PEP 8 for Python code
-- Use meaningful variable names
-- Add comments for complex logic
-- Include docstrings for functions
-
-**Commit Messages:**
-- Use conventional commits format
-- `feat:` for new features
-- `fix:` for bug fixes
-- `docs:` for documentation
-- `refactor:` for code refactoring
-- `test:` for tests
-
-**Testing:**
-- Test all changes locally
-- Ensure no breaking changes
-- Add tests for new features
-- Verify dashboard loads correctly
-
-**Documentation:**
-- Update README if needed
-- Add inline comments
-- Document new APIs
-- Update CHANGELOG
-
-### Areas for Contribution
-
-**High Priority:**
-- 🐛 Bug fixes
-- 📊 New metrics and charts
-- 🎨 UI/UX improvements
-- 📱 Mobile responsiveness
-- 🔒 Security enhancements
-
-**Medium Priority:**
-- ✨ New features
-- 📖 Documentation improvements
-- 🧪 Test coverage
-- ⚡ Performance optimization
-
-**Future Enhancements:**
-
-**✨ NEW in v2.16 (Latest Release):**
-- ✅ **Two-Factor Authentication (2FA)** - QR code setup, TOTP verification, backup codes, activity log
-- ✅ **Custom Dashboard Builder** - Drag-and-drop widgets with GridStack.js, multiple dashboards, export/import
-- ✅ **Multi-language Support (i18n)** - English, Hindi, Spanish, French, German with dynamic translation
-- ✅ **Plugin System** - Install/uninstall plugins, marketplace, auto-updates, extensibility framework
-- ✅ **Grafana & Prometheus Integration** - Metrics endpoint, pre-built dashboards, monitoring tools integration
-- ✅ **Advanced Notification Channels** - Slack, Discord, PagerDuty webhooks with custom routing rules
-
-**✨ NEW in v2.15:**
-- ✅ **Advanced Themes & Customization** - 8 new themes + custom theme builder with color pickers
-- ✅ **Advanced Search & Filtering** - Global search across all data sources with filters, saved searches, export
-- ✅ **ML Model Training UI** - 5-step wizard for training 15+ model types with real-time visualization
-- ✅ **Debugging & Troubleshooting Tools** - Real-time log streaming, daemon diagnostics, error analysis
-
-**Completed in Recent Versions:**
-- ✅ Performance profiling dashboard (v2.14)
-- ✅ Widget collaboration with real-time editing (v2.13)
-- ✅ AI-powered anomaly detection (v2.9)
-- ✅ Predictive analytics with forecasting (v2.10)
-- ✅ Alert routing and escalation (v2.11)
-
-**Planned for Future Releases:**
-- 📱 Mobile app (iOS/Android)
+**What does NOT fit:**
+- Project-specific business logic
+- Credentials or personal configuration
+- Heavy background processes or daemons
 
 ---
 
-## Quick Start Guide (60 Seconds)
+## Changelog
 
-### 1. Clone & Install
-```bash
-git clone https://github.com/piyushmakhija28/claude-insight.git
-cd claude-insight
-pip install -r requirements.txt
-```
+See [CHANGELOG.md](CHANGELOG.md) for full version history.
 
-### 2. Run the Application
-```bash
-python run.py
-```
-
-### 3. Access Dashboard
-- **URL**: http://localhost:5000
-- **Username**: `admin`
-- **Password**: `admin`
-
-### 4. Explore Features
-- 📊 **Dashboard** - Overview of system health
-- 🤖 **Automation** - Track all automation policies (NEW v2.17.1!)
-- ⚡ **Performance** - Analyze operation speeds
-- 📋 **Policies** - Monitor policy enforcement
-- 💰 **Costs** - Track token usage and costs
-
-### 5. Deploy Memory System (Optional)
-```bash
-# Windows
-xcopy /E /I /Y policies\* %USERPROFILE%\.claude\memory\
-xcopy /E /I /Y memory-scripts\* %USERPROFILE%\.claude\memory\scripts\
-xcopy /E /I /Y skills\* %USERPROFILE%\.claude\skills\
-xcopy /E /I /Y agents\* %USERPROFILE%\.claude\agents\
-
-# Linux/Mac
-cp -r policies/* ~/.claude/memory/
-cp -r memory-scripts/* ~/.claude/memory/scripts/
-cp -r skills/* ~/.claude/skills/
-cp -r agents/* ~/.claude/agents/
-```
-
----
-
-## Automation System Integration Details (v2.17.1)
-
-### What Was Added in v2.17.1
-
-**3 New Monitoring Services:**
-1. **AutomationTracker** - Session-start recommendations, 9th daemon status, task breakdown
-2. **SkillAgentTracker** - Skill/agent selection statistics, plan mode suggestions
-3. **OptimizationTracker** - 15 token optimization strategies, coding standards enforcement
-
-**16 New API Endpoints:**
-- `/api/automation/session-start-recommendations`
-- `/api/automation/daemon-9-status`
-- `/api/automation/task-breakdown-stats`
-- `/api/automation/task-tracker-stats`
-- `/api/automation/comprehensive-stats`
-- `/api/skills/selection-stats`
-- `/api/agents/usage-stats`
-- `/api/plan-mode/suggestions`
-- `/api/skills-agents/comprehensive-stats`
-- `/api/optimization/tool-metrics`
-- `/api/optimization/standards-enforcement`
-- `/api/optimization/comprehensive-stats`
-
-**New Dashboard:**
-- URL: `/automation-dashboard`
-- Features: 9 comprehensive cards tracking all automation
-- Auto-refresh: Every 30 seconds
-
-### Coverage Achieved
-
-| Component | Status |
-|-----------|--------|
-| 9 Daemons | ✅ Tracked |
-| Session-Start Recommendations | ✅ Tracked |
-| Task Breakdown Enforcement | ✅ Tracked |
-| Plan Mode Suggestions | ✅ Tracked |
-| Skill/Agent Selection | ✅ Tracked |
-| Tool Optimization (15 strategies) | ✅ Tracked |
-| Task Auto-Tracker | ✅ Tracked |
-| Standards Enforcement | ✅ Tracked |
-
-**Result: 100% Automation Coverage** 🎯
-
-### How to Use
-
-1. Start Claude Insight: `python run.py`
-2. Navigate to: http://localhost:5000
-3. Click "Automation" in menu
-4. View real-time automation metrics
-
----
-
-## Auto-Sync Guide for Contributors
-
-### Why Sync Matters
-
-Claude Insight is a **public package** that users download from GitHub. When you create new skills, agents, or policies in your local memory system, they must be synced to this repository so users get them.
-
-**If you don't sync → Users miss new features!** ❌
-
-### What Gets Synced
-
-| Type | Source | Destination | When |
-|------|--------|-------------|------|
-| **Policies** | `~/.claude/memory/policies/` | `claude-insight/policies/` | After policy updates |
-| **Docs** | `~/.claude/memory/docs/` | `claude-insight/docs/` | After doc updates |
-| **Scripts** | `~/.claude/memory/scripts/` | `claude-insight/scripts/` | After new scripts |
-
-**Note:** Skills and agents are now in a separate repository:
-- **Repository:** [claude-global-library](https://github.com/piyushmakhija28/claude-global-library)
-- **Local Path:** `../claude-global-library/`
-- Skills/agents should be synced to `claude-global-library`, NOT `claude-insight`
-
-### Quick Sync Commands
-
-**Full Sync (Core Memory System Only):**
-```bash
-cd /path/to/claude-insight
-
-# Sync core memory system files (NO skills/agents)
-cp -r ~/.claude/memory/policies/* policies/
-cp -r ~/.claude/memory/docs/* docs/
-cp -r ~/.claude/memory/scripts/* scripts/
-
-echo "✅ Core memory system sync completed!"
-```
-
-**Single Item Sync:**
-```bash
-# Updated policy
-cp ~/.claude/memory/policies/{policy-file}.md /path/to/claude-insight/policies/
-
-# Updated doc
-cp ~/.claude/memory/docs/{doc-file}.md /path/to/claude-insight/docs/
-
-# Updated script
-cp ~/.claude/memory/scripts/{script-name}.py /path/to/claude-insight/scripts/
-```
-
-**For Skills/Agents (Use claude-global-library instead):**
-```bash
-# Sync to claude-global-library (NOT claude-insight)
-cd /path/to/claude-global-library
-
-# New skill
-cp -r ~/.claude/skills/{skill-name} skills/
-
-# New agent
-cp -r ~/.claude/agents/{agent-name} agents/
-```
-
-### Verification
-
-```bash
-# Verify policy synced
-ls /path/to/claude-insight/policies/{policy-file}.md
-
-# Verify agent synced
-ls /path/to/claude-insight/agents/{agent-name}
-
-# Verify policy synced
-find /path/to/claude-insight/policies -name "{policy-file}.md"
-```
-
-### After Syncing
-
-```bash
-# Commit and push
-git add .
-git commit -m "feat: Add new skill/agent/policy"
-git push origin main
-```
-
----
-
-## Complete Package Contents
-
-This repository contains **320+ files** providing everything needed for the complete Claude Memory System v2.2.0 with monitoring.
-
-### Directory Structure
-
-```
-claude-insight/
-├── CLAUDE.md                            # Global configuration (v2.4.0)
-├── MASTER-README.md                     # Complete documentation (1,500+ lines)
-├── FILE-INDEX.md                        # File organization index
-├── QUICK-NAVIGATION-GUIDE.md            # Navigation guide
-│
-├── policies/                            # 18+ policy files (organized by layer)
-│   ├── 01-sync-system/                  # Foundation layer
-│   ├── 02-standards-system/             # Standards layer
-│   ├── 03-execution-system/             # Execution layer
-│   └── testing/                         # Testing policies
-│
-├── memory-docs/                         # 50+ documentation files
-│   ├── spring-cloud-config.md
-│   ├── secret-management.md
-│   ├── java-project-structure.md
-│   └── ... (50+ files)
-│
-├── memory-scripts/                      # 81+ automation scripts
-│   ├── automation/                      # Core automation
-│   ├── daemons/                         # 9 daemon scripts
-│   ├── monitors/                        # Monitoring tools
-│   └── ... (81+ files)
-│
-├── AGENTS_AND_SKILLS.md                 # Reference to claude-global-library
-│   # Skills/agents moved to: https://github.com/piyushmakhija28/claude-global-library
-│
-├── config/                              # 6+ configuration files
-│   ├── skills-registry.json
-│   ├── user-preferences.json
-│   └── ... (6+ configs)
-│
-├── src/                                 # Claude Insight Application
-│   ├── services/                        # Monitoring services
-│   │   ├── monitoring/                  # 9 tracking services
-│   │   ├── ai/                          # AI-powered analysis
-│   │   └── ... (more services)
-│   └── app.py                           # Main application
-│
-├── templates/                           # 25+ HTML templates
-│   ├── automation-dashboard.html        # NEW v2.17.1
-│   ├── dashboard.html
-│   └── ... (25+ templates)
-│
-├── static/                              # Static assets
-│   ├── css/
-│   ├── js/
-│   └── i18n/
-│
-└── README.md                            # This file
-```
-
-### File Count Summary
-
-| Category | Count | Description |
-|----------|-------|-------------|
-| **Policy Files** | 18+ | All automation policies (organized by layer) |
-| **Documentation** | 50+ | Complete guides, standards, references |
-| **Automation Scripts** | 81+ | Daemons, monitors, trackers, utilities |
-| **Skills** | 28+ | Complete skill library |
-| **Agents** | 12+ | Complete agent library |
-| **Monitoring Services** | 9 | Real-time tracking services |
-| **API Endpoints** | 80+ | Complete REST API |
-| **Dashboard Templates** | 25+ | UI pages and components |
-| **Total Files** | 320+ | Everything included! |
-
-### What You Get
-
-1. **Complete Claude Memory System v2.2.0**
-   - All 18+ policy files (organized by 3-layer architecture)
-   - All 81+ automation scripts
-   - All 28+ skills
-   - All 12+ agents
-   - Complete documentation (1,500+ lines)
-   - Configuration files and templates
-
-2. **Complete Monitoring Dashboard**
-   - Claude Insight application (3,500+ lines)
-   - 9 monitoring services
-   - 80+ API endpoints
-   - 25+ dashboard pages
-   - Real-time updates with WebSocket
-   - Beautiful UI with 14 themes
-
-3. **100% Automation Tracking**
-   - All 9 daemons monitored
-   - All policies tracked
-   - Session start recommendations
-   - Task breakdown enforcement
-   - Skill/agent selection
-   - Plan mode suggestions
-   - 15 optimization strategies
-   - Standards enforcement
-
-### Benefits
-
-- **Complete Package** - Everything in one repository
-- **No Setup Hassles** - All files included
-- **No Missing Files** - 320+ files ready to use
-- **Production Ready** - Fully tested and documented
-- **Active Maintenance** - Regular updates and improvements
+**Latest — v3.3.0 (2026-02-18):**
+- Switched from daemon-based to hooks-based enforcement (no background processes)
+- Added intelligence-based skill/agent selection (complete registry in CLAUDE.md)
+- Added automatic setup scripts for Windows and Unix
+- Added public global CLAUDE.md template (`scripts/global-claude-md-template.md`)
+- Removed all daemon files from project
+- Updated CLAUDE.md with comprehensive setup guide
+- Updated install-auto-hooks.sh to use settings.json format
 
 ---
 
 ## License
 
-MIT License
-
-Copyright (c) 2026 TechDeveloper
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+MIT License — see [LICENSE](LICENSE) for details.
 
 ---
 
-## Acknowledgments
-
-**Built with:**
-- Flask - Web framework
-- Socket.IO - Real-time updates
-- Chart.js - Data visualization
-- Bootstrap - UI framework
-- NumPy - Statistical analysis
-- psutil - Process monitoring
-
-**Inspired by:**
-- Claude AI by Anthropic
-- Modern DevOps practices
-- Professional monitoring solutions
-
-**Special Thanks:**
-- Anthropic team for Claude AI
-- Open source community
-- All contributors
-
----
-
-## Contact & Support
-
-**Developer:** Claude Code Community
-**GitHub:** [piyushmakhija28/claude-insight](https://github.com/piyushmakhija28/claude-insight)
-
-**Support:**
-- 🐛 [Report Bug](https://github.com/piyushmakhija28/claude-insight/issues)
-- ✨ [Request Feature](https://github.com/piyushmakhija28/claude-insight/issues)
-- 📖 [Documentation](./claude-memory-system/MASTER-README.md)
-- 💬 [Discussions](https://github.com/piyushmakhija28/claude-insight/discussions)
-
----
-
-**Made with ❤️ for Claude Code Community**
-
-**⭐ Star this repo if you find it useful!**
-
----
-
-## Version History
-
-### v2.17.1 (Feb 2026) - Complete Automation System Integration 🎉
-**MAJOR UPDATE - 100% Automation Coverage**
-
-This release completes the full integration of all CLAUDE.md automation components, providing **complete visibility** into the entire Claude Memory System v2.2.0 automation framework.
-
-**🆕 3 New Monitoring Services (1,600+ lines):**
-- **AutomationTracker** - Session start recommendations, 9th daemon, task breakdown
-- **SkillAgentTracker** - Skill/agent selection, plan mode suggestions
-- **OptimizationTracker** - 15 token optimization strategies, standards enforcement
-
-**🆕 16 New API Endpoints:**
-- 5 Automation APIs (session-start, daemon-9, task breakdown, task tracker)
-- 4 Skill/Agent APIs (skill selection, agent usage, plan mode)
-- 3 Optimization APIs (tool metrics, standards enforcement)
-- 4 Comprehensive stats endpoints
-
-**🆕 Complete Automation Dashboard:**
-- Session Start Recommendations card with model/skills/agents
-- 9th Daemon (auto-recommendation) status tracking
-- Task Breakdown Enforcement statistics
-- Task Auto-Tracker metrics
-- Skill Selection statistics (auto vs manual)
-- Agent Invocation tracking (parallel vs sequential)
-- Plan Mode Suggestions analytics
-- Tool Optimization (15 strategies) with token savings
-- Coding Standards Enforcement tracking
-- Auto-refresh every 30 seconds
-
-**📊 What's Now Tracked:**
-- ✅ 9 Daemons (added auto-recommendation daemon)
-- ✅ Session start recommendations (model, skills, agents, context status)
-- ✅ Task breakdown enforcement (complexity scoring, phases)
-- ✅ Task auto-tracker (automatic progress updates)
-- ✅ Skill selection (auto vs manual invocations)
-- ✅ Agent usage (parallel vs sequential, by type)
-- ✅ Plan mode suggestions (auto-entered, approved, declined)
-- ✅ 15 optimization strategies (response compression, diff-based editing, smart tool selection, grep optimization, tiered caching, session state, incremental updates, file type optimization, lazy loading, smart summarization, batch operations, MCP filtering, conversation pruning, AST navigation, parallel tools)
-- ✅ Coding standards enforcement (Java Spring Boot, Config Server, Secret Management, API design, Database)
-
-**🎯 Coverage:**
-- Before: 50% (8 daemons, basic policies)
-- After: **100%** (all 9 daemons, all automation components)
-
-**📁 Files Added/Modified:**
-- `src/services/monitoring/automation_tracker.py` (NEW - 250 lines)
-- `src/services/monitoring/skill_agent_tracker.py` (NEW - 300 lines)
-- `src/services/monitoring/optimization_tracker.py` (NEW - 350 lines)
-- `templates/automation-dashboard.html` (NEW - 700 lines)
-- `src/app.py` (UPDATED - added 16 APIs + 1 route)
-- `templates/base.html` (UPDATED - added navigation)
-- `AUTOMATION-SYSTEM-INTEGRATION.md` (NEW - complete documentation)
-
-**Why This Matters:**
-This release answers the fundamental question: "Is the automation system working?" Now you have **complete real-time visibility** into every automation component defined in CLAUDE.md. No more guessing - you can see exactly what's being tracked, what's being optimized, and what's being automated.
-
-### v2.16 (Feb 2026) - Enterprise Features Edition
-- Two-Factor Authentication (2FA) with QR codes and backup codes
-- Custom Dashboard Builder with drag-and-drop widgets
-- Multi-language Support (English, Hindi, Spanish, French, German)
-- Plugin System with marketplace and auto-updates
-- Grafana & Prometheus Integration with metrics endpoint
-- Advanced Notification Channels (Slack, Discord, PagerDuty)
-
-### v2.15 (Feb 2026) - Advanced Customization Edition
-- 14 preset themes + custom theme builder
-- Advanced search & filtering across all data sources
-- ML Model Training UI with 5-step wizard (15+ model types)
-- Debugging & Troubleshooting Tools with real-time log streaming
-
-### v2.14 (Feb 2026) - Performance Profiling Edition
-- Real-time performance monitoring dashboard
-- AI-powered bottleneck analysis and recommendations
-- Operation tracking for all tool types (Read, Write, Grep, Bash, Edit)
-- Performance trend analysis with historical data
-- Slow operation detection and optimization suggestions
-- Daily JSON persistence with in-memory ring buffers
-
-### v2.13 (Feb 2026) - Widget Collaboration Edition
-- Real-time collaborative widget editing
-- Version control with semantic versioning
-- Comments and discussions with @mentions
-- Featured and trending widgets
-- Backend architecture complete (33%)
-
-### v2.12 (Feb 2026) - Memory System Integration
-- Complete Claude Memory System v2.2.0 integration
-- 8 daemon health monitoring
-- 10 policy enforcement tracking
-- Context optimization metrics
-- System health scoring
-
-### v2.11 (Feb 2026) - Alert Routing Edition
-- Custom routing rules
-- Multi-level escalation
-- On-call schedules
-- Notification channels
-
-### v2.10 (Feb 2026) - Forecasting Edition
-- 5 forecasting algorithms
-- Time series predictions
-- Capacity planning
-- Breach detection
-
-### v2.9 (Feb 2026) - AI Detection Edition
-- 6 ML anomaly detection algorithms
-- Ensemble detection
-- Confidence scoring
-- Anomaly management
-
-### v2.8 (Feb 2026) - Community Marketplace
-- Widget marketplace
-- Share and discover widgets
-- Rating system
-- Download tracking
-
-### v2.7 (Feb 2026) - Advanced Widget Builder
-- Drag-and-drop editor
-- 15+ components
-- Live preview
-- Code editing
-
-### v2.6 (Feb 2026) - Email & SMS Alerts
-- Email notifications (SMTP)
-- SMS alerts (Twilio)
-- Alert rules
-- History tracking
-
-### v2.5 (Feb 2026) - Mobile & Notifications
-- 6 custom themes
-- Browser notifications
-- Mobile responsive
-- Real-time updates
-
-### v2.4 (Feb 2026) - Analytics Edition
-- Cost analysis
-- Performance metrics
-- Export options
-- API documentation
-
----
-
-**End of README** 📖
-
----
-
-## 📁 Session & Log Management
-
-### Session Storage
-
-**Global Memory System:**
-```
-~/.claude/memory/sessions/
-├── SESSION-20260217-121025-AFV3.json          # Session metadata
-├── current-session.json                        # Current active session
-└── [project-name]/                             # Project-specific sessions
-    ├── session-2026-01-25-15-00.md            # Session notes
-    └── project-summary.md                      # Project summary
-```
-
-**Claude Insight:**
-```
-claude-insight/data/sessions/
-└── [session-id]/                               # Session-specific data
-    ├── session.json                            # Session metadata
-    ├── metrics.json                            # Session metrics
-    └── events.log                              # Session events
-```
-
-### Log Storage
-
-**Global Memory System:**
-```
-~/.claude/memory/logs/
-├── policy-hits.log                             # Policy applications
-├── sessions.log                                # Session events
-├── daemons/                                    # Daemon logs
-│   ├── context-daemon.log
-│   ├── session-auto-save-daemon.log
-│   └── ...
-├── auto-enforcement.log                        # Auto-enforcement logs
-└── sessions/                                   # 🆕 Session-based logs
-    └── SESSION-YYYYMMDD-HHMMSS-XXXX/          # Per-session folder
-        ├── 00-session-start.log               # Session initialization
-        ├── 01-level-minus-1.log              # Auto-fix enforcement
-        ├── 02-level-1-sync.log               # Sync system
-        ├── 03-level-2-standards.log          # Standards loaded
-        ├── 04-level-3-execution.log          # All 12 steps
-        ├── user-prompt.txt                    # Original user request
-        ├── generated-prompt.yaml              # AI-generated prompt
-        ├── thinking-process.md                # What I thought & why
-        ├── decisions.yaml                     # All decisions made
-        ├── task-breakdown.yaml                # Tasks created
-        ├── tools-used.log                     # Tool calls made
-        └── session-summary.md                 # Complete summary
-```
-
-**Claude Insight:**
-```
-claude-insight/logs/
-├── flask.log                                   # Flask application log
-├── monitoring.log                              # Monitoring events
-├── errors.log                                  # Error log
-└── sessions/                                   # 🆕 Session-based logs
-    └── SESSION-YYYYMMDD-HHMMSS-XXXX/          # Same structure as global
-        └── (mirrors global session logs)
-```
-
-### Session-Based Logging (New Feature!)
-
-Every session now creates a dedicated folder with **COMPLETE TRANSPARENCY:**
-
-**What's Logged:**
-1. ✅ **3-Level Architecture Flow** - All steps with details
-2. ✅ **Thinking Process** - What I thought and WHY
-3. ✅ **User Prompt** - Your original request (exact copy)
-4. ✅ **Generated Prompt** - How prompt policy transformed it
-5. ✅ **Decisions** - Every decision made (model, tasks, tools, etc.)
-6. ✅ **Task Breakdown** - All tasks created automatically
-7. ✅ **Tool Calls** - Every tool used with parameters
-8. ✅ **Standards Applied** - Which coding standards enforced
-9. ✅ **Policies Triggered** - Which policies ran
-10. ✅ **Session Summary** - Complete overview
-
-**How to Access:**
-
-```bash
-# View current session logs
-SESSION_ID=$(cat ~/.claude/memory/sessions/current-session.json | grep -oP 'SESSION-[0-9-A-Z]+')
-cat ~/.claude/memory/logs/sessions/$SESSION_ID/thinking-process.md
-
-# View session summary
-cat ~/.claude/memory/logs/sessions/$SESSION_ID/session-summary.md
-
-# View all decisions
-cat ~/.claude/memory/logs/sessions/$SESSION_ID/decisions.yaml
-
-# View generated prompt
-cat ~/.claude/memory/logs/sessions/$SESSION_ID/generated-prompt.yaml
-```
-
-**Benefits:**
-- 🔍 **Full Transparency** - See exactly what Claude did and why
-- 📊 **Debugging** - Find issues in specific sessions
-- 📈 **Analytics** - Analyze patterns across sessions
-- 🤝 **Collaboration** - Share session logs with team
-- 📝 **Documentation** - Auto-documented decision process
-
-**Example Session Log:**
-```
-~/.claude/memory/logs/sessions/SESSION-20260218-094635-XYZ1/
-├── 00-session-start.log           # "Session started at 2026-02-18 09:46:35"
-├── 01-level-minus-1.log           # "Auto-fix: All systems operational"
-├── 02-level-1-sync.log            # "Context: 80%, Session: SESSION-..."
-├── 03-level-2-standards.log       # "Loaded 13 standards, 77 rules"
-├── 04-level-3-execution.log       # "Step 3.0: Prompt generated..."
-├── user-prompt.txt                # "Restructure Claude Insight..."
-├── generated-prompt.yaml          # Full structured prompt
-├── thinking-process.md            # "I need to: 1. Check docs 2. ..."
-├── decisions.yaml                 # "complexity: 5, model: HAIKU, ..."
-├── task-breakdown.yaml            # "3 tasks created: ..."
-├── tools-used.log                 # "Bash: ls -la, Read: README.md"
-└── session-summary.md             # Complete overview
-```
-
-This makes EVERY session FULLY TRACEABLE and TRANSPARENT! 🎉
-
+**Source:** https://github.com/piyushmakhija28/claude-insight
+**Version:** 3.3.0 | **Python:** 3.8+ | **Flask:** 3.0
