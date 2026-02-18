@@ -3,7 +3,6 @@ Policy Checker
 Checks status of all policies in Claude Memory System
 """
 
-import os
 import json
 import subprocess
 from pathlib import Path
@@ -11,98 +10,114 @@ import sys
 
 # Add path resolver for portable paths
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
-from utils.path_resolver import get_data_dir, get_logs_dir
+from utils.path_resolver import get_data_dir
 
 class PolicyChecker:
     def __init__(self):
         self.memory_dir = get_data_dir()
 
-        # 3-Level Architecture Policies (v3.2.0) - Auto-generated
+        # 3-Level Architecture Policies (v3.3.1) - 16 policies (1 + 2 + 1 + 12 steps)
+        # File references: hook scripts for Level -1/1, policy .md for CLAUDE.md-enforced policies
         self.policies = [
+            # LEVEL -1: Auto-Fix Enforcement (1 policy)
             {
                 'id': 'auto-fix-enforcement',
                 'name': 'Auto-Fix Enforcement',
-                'description': 'Zero-Tolerance blocking enforcement - checks all systems',
-                'files': ['auto-fix-enforcer.sh', 'blocking-policy-enforcer.py'],
+                'description': 'Zero-Tolerance blocking enforcement - checks all systems before every request',
+                'files': ['current/blocking-policy-enforcer.py', 'current/auto-fix-enforcer.sh'],
                 'phase': -1,
                 'level': 'LEVEL -1'
             },
-            {
-                'id': 'prompt-generation',
-                'name': 'Prompt Generation',
-                'description': 'Anti-hallucination verified prompt generation (Step 0)',
-                'files': ['03-execution-system/00-prompt-generation/prompt-generator.py'],
-                'phase': 0,
-                'level': 'LEVEL 3'
-            },
+
+            # LEVEL 1: Sync System - Foundation (2 policies)
             {
                 'id': 'context-management',
                 'name': 'Context Management',
-                'description': 'Proactive context optimization (-30 to -50% usage)',
-                'files': ['01-sync-system/context-management/context-monitor-v2.py'],
+                'description': 'Proactive context optimization - monitors usage and applies optimizations',
+                'files': ['current/context-monitor-v2.py'],
                 'phase': 1,
                 'level': 'LEVEL 1'
             },
             {
                 'id': 'session-management',
                 'name': 'Session Management',
-                'description': 'Session ID tracking and state management',
-                'files': ['session-id-generator.py'],
+                'description': 'Session ID tracking, state persistence, and clear-session handling',
+                'files': ['current/session-id-generator.py', 'current/clear-session-handler.py'],
                 'phase': 1,
                 'level': 'LEVEL 1'
+            },
+
+            # LEVEL 2: Standards System - Middle Layer (1 policy)
+            {
+                'id': 'coding-standards',
+                'name': 'Coding Standards',
+                'description': '14 coding standards with 89+ rules - Java, Spring Boot, API, DB, Security',
+                'files': ['02-standards-system/coding-standards-enforcement-policy.md'],
+                'phase': 2,
+                'level': 'LEVEL 2'
+            },
+
+            # LEVEL 3: Execution System - 12 Steps (12 policies)
+            {
+                'id': 'prompt-generation',
+                'name': 'Prompt Generation',
+                'description': 'Anti-hallucination verified prompt generation (Step 3.0)',
+                'files': ['03-execution-system/00-prompt-generation/prompt-generation-policy.md'],
+                'phase': 0,
+                'level': 'LEVEL 3'
             },
             {
                 'id': 'task-breakdown',
                 'name': 'Task Breakdown',
-                'description': 'Automatic task and phase breakdown (Step 1)',
-                'files': ['03-execution-system/01-task-breakdown/task-auto-analyzer.py'],
+                'description': 'Automatic task and phase breakdown with dependency chains (Step 3.1)',
+                'files': ['03-execution-system/01-task-breakdown/automatic-task-breakdown-policy.md'],
                 'phase': 1,
                 'level': 'LEVEL 3'
             },
             {
-                'id': 'standards-loader',
-                'name': 'Standards Loader',
-                'description': '13 coding standards with 77+ rules enforcement',
-                'files': ['02-standards-system/standards-loader.py'],
-                'phase': 2,
-                'level': 'LEVEL 2'
-            },
-            {
                 'id': 'plan-mode-suggestion',
                 'name': 'Plan Mode Suggestion',
-                'description': 'Auto plan mode detection based on complexity (Step 2)',
-                'files': ['03-execution-system/02-plan-mode/auto-plan-mode-suggester.py'],
+                'description': 'Auto plan mode detection based on complexity score (Step 3.2)',
+                'files': ['03-execution-system/02-plan-mode/auto-plan-mode-suggestion-policy.md'],
                 'phase': 2,
+                'level': 'LEVEL 3'
+            },
+            {
+                'id': 'context-recheck',
+                'name': 'Context Re-Check',
+                'description': 'Re-verify context usage before execution begins (Step 3.3)',
+                'files': ['current/context-monitor-v2.py'],
+                'phase': 3,
                 'level': 'LEVEL 3'
             },
             {
                 'id': 'model-selection',
                 'name': 'Model Selection',
-                'description': 'Intelligent model selection - Haiku/Sonnet/Opus (Step 4)',
-                'files': ['03-execution-system/04-model-selection/model-auto-selector.py'],
+                'description': 'Intelligent Haiku/Sonnet/Opus selection - hardcoded in CLAUDE.md (Step 3.4)',
+                'files': ['03-execution-system/04-model-selection/model-selection-enforcement.md'],
                 'phase': 4,
                 'level': 'LEVEL 3'
             },
             {
                 'id': 'skill-agent-selection',
                 'name': 'Skill & Agent Selection',
-                'description': 'Auto skill and agent recommendation (Step 5)',
-                'files': ['03-execution-system/05-skill-agent-selection/auto-skill-agent-selector.py'],
+                'description': '21 skills + 12 agents selection - hardcoded in CLAUDE.md (Step 3.5)',
+                'files': ['03-execution-system/05-skill-agent-selection/core-skills-mandate.md'],
                 'phase': 5,
                 'level': 'LEVEL 3'
             },
             {
                 'id': 'tool-optimization',
                 'name': 'Tool Optimization',
-                'description': 'Tool usage optimization - offset/limit/head_limit (Step 6)',
-                'files': ['03-execution-system/06-tool-optimization/pre-execution-optimizer.py'],
+                'description': 'Tool usage rules: offset/limit/head_limit - hardcoded in CLAUDE.md (Step 3.6)',
+                'files': ['03-execution-system/06-tool-optimization/tool-usage-optimization-policy.md'],
                 'phase': 6,
                 'level': 'LEVEL 3'
             },
             {
                 'id': 'failure-prevention',
                 'name': 'Failure Prevention',
-                'description': 'Pre-execution checks and auto-fixes (Step 7)',
+                'description': 'Pre-execution checks, auto-fixes, and failure knowledge base (Step 3.7)',
                 'files': ['03-execution-system/failure-prevention/pre-execution-checker.py'],
                 'phase': 7,
                 'level': 'LEVEL 3'
@@ -110,17 +125,33 @@ class PolicyChecker:
             {
                 'id': 'parallel-execution',
                 'name': 'Parallel Execution',
-                'description': 'Auto-detect parallel task execution opportunities (Step 8)',
+                'description': 'Auto-detect and launch parallel task execution opportunities (Step 3.8)',
                 'files': ['scripts/auto-parallel-detector.py'],
                 'phase': 8,
                 'level': 'LEVEL 3'
             },
             {
+                'id': 'session-save',
+                'name': 'Session Save',
+                'description': 'Auto-save session state on milestones and task completion (Step 3.10)',
+                'files': ['current/session-logger.py', 'current/stop-notifier.py'],
+                'phase': 10,
+                'level': 'LEVEL 3'
+            },
+            {
                 'id': 'git-auto-commit',
                 'name': 'Git Auto-Commit',
-                'description': 'Auto-commit on phase completion (Step 11)',
-                'files': ['03-execution-system/09-git-commit/auto-commit-enforcer.py'],
+                'description': 'Auto-commit on phase completion - hardcoded in CLAUDE.md (Step 3.11)',
+                'files': ['03-execution-system/09-git-commit/git-auto-commit-policy.md'],
                 'phase': 11,
+                'level': 'LEVEL 3'
+            },
+            {
+                'id': 'logging',
+                'name': 'Logging',
+                'description': 'Log all policy applications, session events, and tool usage (Step 3.12)',
+                'files': ['current/session-logger.py'],
+                'phase': 12,
                 'level': 'LEVEL 3'
             }
         ]
@@ -161,7 +192,16 @@ class PolicyChecker:
             }
 
         # Additional checks for specific policies
-        if policy['id'] == 'failure-prevention':
+        if policy['id'] == 'logging':
+            log_file = self.memory_dir / 'logs' / 'policy-hits.log'
+            if log_file.exists():
+                lines = log_file.read_text(encoding='utf-8', errors='ignore').splitlines()
+                return {
+                    'status': 'active',
+                    'details': f"{len(lines)} policy events logged"
+                }
+
+        elif policy['id'] == 'failure-prevention':
             # Check KB patterns
             kb_stats = self._get_kb_stats()
             if kb_stats['patterns'] == 0:
@@ -210,20 +250,14 @@ class PolicyChecker:
         return {'patterns': 0, 'high_conf': 0}
 
     def _get_model_stats(self):
-        """Get model usage stats"""
+        """Get model usage stats from log file directly"""
         try:
-            result = subprocess.run(
-                ['python', str(self.memory_dir / 'model-selection-monitor.py'), '--distribution', '--days', '7'],
-                capture_output=True,
-                text=True,
-                timeout=10
-            )
-
-            if result.returncode == 0:
-                stats = json.loads(result.stdout)
-                return {'requests': stats.get('total_requests', 0)}
-        except:
-            pass
+            model_log = self.memory_dir / 'logs' / 'model-usage.log'
+            if model_log.exists():
+                lines = model_log.read_text(encoding='utf-8', errors='ignore').splitlines()
+                return {'requests': len(lines)}
+        except Exception as e:
+            print(f"Error reading model log: {e}")
 
         return {'requests': 0}
 
@@ -307,10 +341,12 @@ class PolicyChecker:
         """Map daemon/script name to policy ID"""
         daemon_name_lower = daemon_name.lower()
 
-        # Map common daemon names to policy IDs
+        # Map log entry names to policy IDs
         mappings = {
             'commit': 'git-auto-commit',
+            'session-save': 'session-save',
             'session': 'session-management',
+            'context-recheck': 'context-recheck',
             'context': 'context-management',
             'task': 'task-breakdown',
             'prompt': 'prompt-generation',
@@ -321,7 +357,9 @@ class PolicyChecker:
             'plan': 'plan-mode-suggestion',
             'parallel': 'parallel-execution',
             'failure': 'failure-prevention',
-            'standards': 'standards-loader',
+            'standards': 'coding-standards',
+            'logging': 'logging',
+            'logger': 'logging',
             'auto-fix': 'auto-fix-enforcement'
         }
 
