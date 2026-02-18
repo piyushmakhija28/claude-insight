@@ -22,13 +22,6 @@
         </div>
     </div>
     <div class="col-md-3">
-        <div class="quick-action-card" onclick="showSection('daemons')">
-            <i class="fas fa-cogs fa-2x text-success"></i>
-            <h6 class="mt-2">Daemon Health</h6>
-            <small class="text-muted">Monitor all daemons</small>
-        </div>
-    </div>
-    <div class="col-md-3">
         <div class="quick-action-card" onclick="showSection('performance')">
             <i class="fas fa-tachometer-alt fa-2x text-warning"></i>
             <h6 class="mt-2">Performance</h6>
@@ -373,9 +366,7 @@ function showSection(section) {
     event.currentTarget.classList.add('active');
 
     // Load section data
-    if (section === 'daemons') {
-        loadDaemonHealth();
-    } else if (section === 'performance') {
+    if (section === 'performance') {
         loadPerformanceData();
     } else if (section === 'errors') {
         loadErrorAnalysis();
@@ -473,89 +464,6 @@ function clearLogs() {
     document.getElementById('logInfo').textContent = '0';
 }
 
-// Daemon Health
-function loadDaemonHealth() {
-    fetch('/api/debug/daemons/health')
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                displayDaemonHealth(data.daemons);
-            }
-        });
-}
-
-function displayDaemonHealth(daemons) {
-    const grid = document.getElementById('daemonHealthGrid');
-    grid.innerHTML = '';
-
-    for (const [name, info] of Object.entries(daemons)) {
-        const statusClass = info.status === 'running' ? 'success' : 'danger';
-        const statusIcon = info.status === 'running' ? 'check-circle' : 'times-circle';
-
-        const card = `
-            <div class="col-md-6">
-                <div class="daemon-card">
-                    <div class="d-flex justify-content-between align-items-start">
-                        <div>
-                            <h6 class="mb-1">
-                                <i class="fas fa-${statusIcon} text-${statusClass} me-2"></i>
-                                ${name}
-                            </h6>
-                            <small class="text-muted">PID: ${info.pid || 'N/A'}</small>
-                        </div>
-                        <span class="badge bg-${statusClass}">${info.status}</span>
-                    </div>
-                    <div class="daemon-stats mt-3">
-                        <div class="row g-2">
-                            <div class="col-4">
-                                <small class="text-muted d-block">CPU</small>
-                                <strong>${info.cpu_usage || 'N/A'}</strong>
-                            </div>
-                            <div class="col-4">
-                                <small class="text-muted d-block">Memory</small>
-                                <strong>${info.memory_usage || 'N/A'}</strong>
-                            </div>
-                            <div class="col-4">
-                                <small class="text-muted d-block">Uptime</small>
-                                <strong>${info.uptime || 'N/A'}</strong>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="daemon-actions mt-2">
-                        <button class="btn btn-sm btn-outline-primary" onclick="restartDaemon('${name}')">
-                            <i class="fas fa-sync"></i> Restart
-                        </button>
-                        <button class="btn btn-sm btn-outline-info" onclick="viewDaemonLogs('${name}')">
-                            <i class="fas fa-file-alt"></i> Logs
-                        </button>
-                    </div>
-                </div>
-            </div>
-        `;
-
-        grid.innerHTML += card;
-    }
-}
-
-function refreshDaemonHealth() {
-    document.getElementById('daemonHealthGrid').innerHTML = `
-        <div class="text-center py-5">
-            <div class="spinner-border text-primary" role="status"></div>
-            <p class="text-muted mt-2">Refreshing daemon health...</p>
-        </div>
-    `;
-    setTimeout(loadDaemonHealth, 1000);
-}
-
-function restartDaemon(name) {
-    if (confirm(`Restart daemon: ${name}?`)) {
-        alert(`Restarting ${name}...`);
-    }
-}
-
-function viewDaemonLogs(name) {
-    alert(`Viewing logs for: ${name}`);
-}
 
 // Performance Profiling
 function loadPerformanceData() {

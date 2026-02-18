@@ -32,22 +32,6 @@
         </div>
     </div>
 
-    <!-- 9th Daemon Status -->
-    <div class="card mb-4">
-        <div class="card-header bg-info text-white">
-            <h5 class="mb-0"><i class="fas fa-cog"></i> 9th Daemon - Auto-Recommendation</h5>
-        </div>
-        <div class="card-body">
-            <div id="daemon9Content">
-                <div class="text-center">
-                    <div class="spinner-border" role="status">
-                        <span class="sr-only">Loading...</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <div class="row">
         <div class="col-md-6 mb-4">
             <!-- Task Breakdown Stats -->
@@ -235,16 +219,6 @@ function loadSessionStart() {
         });
 }
 
-function loadDaemon9() {
-    fetch('/api/automation/daemon-9-status')
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                renderDaemon9(data.data);
-            }
-        });
-}
-
 function loadTaskBreakdown() {
     fetch('/api/automation/task-breakdown-stats')
         .then(response => response.json())
@@ -366,37 +340,6 @@ function renderSessionStart(data) {
         `;
     }
     document.getElementById('sessionStartContent').innerHTML = html;
-}
-
-function renderDaemon9(data) {
-    const statusClass = data.status === 'running' ? 'status-running' : (data.status === 'stopped' ? 'status-stopped' : 'status-unknown');
-    const html = `
-        <div class="row">
-            <div class="col-md-4">
-                <div class="metric-card">
-                    <div class="metric-value"><span class="status-badge ${statusClass}">${data.status.toUpperCase()}</span></div>
-                    <div class="metric-label">Status</div>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="metric-card">
-                    <div class="metric-value">${data.pid || 'N/A'}</div>
-                    <div class="metric-label">Process ID</div>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="metric-card">
-                    <div class="metric-value">${data.recommendations_generated || 0}</div>
-                    <div class="metric-label">Recommendations Generated</div>
-                </div>
-            </div>
-        </div>
-        <div class="mt-2">
-            <small class="text-muted"><strong>Description:</strong> ${data.description}</small><br>
-            ${data.last_activity ? `<small class="text-muted"><strong>Last Activity:</strong> ${data.last_activity}</small>` : ''}
-        </div>
-    `;
-    document.getElementById('daemon9Content').innerHTML = html;
 }
 
 function renderTaskBreakdown(data) {
@@ -654,7 +597,6 @@ function renderStandards(data) {
 
 function refreshAllData() {
     loadSessionStart();
-    loadDaemon9();
     loadTaskBreakdown();
     loadTaskTracker();
     loadSkills();

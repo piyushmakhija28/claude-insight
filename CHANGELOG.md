@@ -9,6 +9,48 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [3.3.1] - 2026-02-18
+
+### Fixed
+- **Removed dead daemon API routes from `app.py`**
+  - Removed `POST /api/daemon/restart/<daemon_name>` (called removed daemon-manager.py)
+  - Removed `GET /api/debug/daemons/health` (returned simulated PID data, no real daemons)
+  - Removed `GET /api/automation/daemon-9-status` (daemon-9 removed in v3.3.0)
+
+- **Removed outdated test cases**
+  - Deleted `tests/test-monitoring.py` (manual script testing removed daemon APIs)
+  - Removed `test_get_system_health_success`, `test_get_system_health_degraded`, `test_get_daemon_status` from `tests/test_monitoring_services.py`
+  - Removed `test_log_daemon_activity` from `tests/test_enforcement_logger.py`
+
+- **Fixed `three_level_flow_tracker.py` model field parsing**
+  - `_parse_flow_trace_json()` was reading `fd.get('model')` but global system writes `model_selected`
+  - Fixed to `fd.get('model_selected')` so model field is correctly populated in session history
+
+- **Fixed `metrics_collector.py` paths and dead methods**
+  - Fixed context-monitor path: `memory_dir/context-monitor-v2.py` -> `memory_dir/current/context-monitor-v2.py`
+  - Removed dead `restart_daemon()` method (called non-existent daemon-manager.py)
+  - Removed dead `get_failure_kb_stats()` method (called pre-execution-checker.py at wrong path)
+
+- **Fixed `memory_system_monitor.py` multiple path/logic bugs**
+  - Fixed `failures.log` path: `memory_dir/failures.log` -> `logs_dir/failures.log`
+  - Fixed `get_session_memory_stats()`: now reads `logs/sessions/` (contains SESSION-* dirs with flow-trace.json) instead of `sessions/` (state files only)
+  - Fixed `get_session_memory_stats()`: checks `flow-trace.json` for active status instead of non-existent `project-summary.md`
+  - Fixed all 10 policy file paths in `get_policy_status()` from memory root to correct 3-level subdirectory paths
+
+- **Fixed `policy_checker.py` daemon infrastructure remnants**
+  - Removed `daemon-infrastructure` policy entry (referenced non-existent `utilities/daemon-manager.py` and `utilities/pid-tracker.py`)
+  - Removed `if policy['id'] == 'daemon-infrastructure'` check block
+  - Removed `_check_daemons()` method
+  - Fixed `_get_kb_stats()` subprocess path to correct `03-execution-system/failure-prevention/pre-execution-checker.py`
+  - Removed `'daemon': 'daemon-infrastructure'` mapping from `_map_daemon_to_policy_id()`
+  - Removed unused `MemorySystemMonitor` import from `__init__`
+
+- **Fixed template 404 calls**
+  - `automation-dashboard.html`: removed "9th Daemon Status" card and `loadDaemon9()`/`renderDaemon9()` JS functions
+  - `debugging-tools.html`: removed "Daemon Health" card and `loadDaemonHealth()`/`displayDaemonHealth()`/`refreshDaemonHealth()`/`restartDaemon()`/`viewDaemonLogs()` JS functions
+
+---
+
 ## [3.3.0] - 2026-02-18
 
 ### Added

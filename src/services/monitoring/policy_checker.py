@@ -16,9 +16,6 @@ from utils.path_resolver import get_data_dir, get_logs_dir
 class PolicyChecker:
     def __init__(self):
         self.memory_dir = get_data_dir()
-        # Import MemorySystemMonitor for daemon checks
-        from services.monitoring.memory_system_monitor import MemorySystemMonitor
-        self.memory_monitor = MemorySystemMonitor()
 
         # 3-Level Architecture Policies (v3.2.0) - Auto-generated
         self.policies = [
@@ -77,14 +74,6 @@ class PolicyChecker:
                 'files': ['03-execution-system/02-plan-mode/auto-plan-mode-suggester.py'],
                 'phase': 2,
                 'level': 'LEVEL 3'
-            },
-            {
-                'id': 'daemon-infrastructure',
-                'name': 'Daemon Infrastructure',
-                'description': 'Cross-platform daemon management (10 core daemons)',
-                'files': ['utilities/daemon-manager.py', 'utilities/pid-tracker.py'],
-                'phase': 2,
-                'level': 'Infrastructure'
             },
             {
                 'id': 'model-selection',
@@ -172,16 +161,7 @@ class PolicyChecker:
             }
 
         # Additional checks for specific policies
-        if policy['id'] == 'daemon-infrastructure':
-            # Check if daemons are running
-            daemon_status = self._check_daemons()
-            if daemon_status['running'] < daemon_status['total']:
-                return {
-                    'status': 'warning',
-                    'details': f"Only {daemon_status['running']}/{daemon_status['total']} daemons running"
-                }
-
-        elif policy['id'] == 'failure-prevention':
+        if policy['id'] == 'failure-prevention':
             # Check KB patterns
             kb_stats = self._get_kb_stats()
             if kb_stats['patterns'] == 0:
@@ -208,23 +188,11 @@ class PolicyChecker:
             'details': 'All files present and operational'
         }
 
-    def _check_daemons(self):
-        """Check daemon status"""
-        try:
-            # Use MemorySystemMonitor directly instead of subprocess
-            daemon_status = self.memory_monitor.get_daemon_status()
-            running = len([d for d in daemon_status if d.get('status') == 'running'])
-            total = len(daemon_status)
-            return {'running': running, 'total': total}
-        except Exception as e:
-            print(f"Error checking daemons: {e}")
-            return {'running': 0, 'total': 10}
-
     def _get_kb_stats(self):
         """Get failure KB stats"""
         try:
             result = subprocess.run(
-                ['python', str(self.memory_dir / 'pre-execution-checker.py'), '--stats'],
+                ['python', str(self.memory_dir / '03-execution-system' / 'failure-prevention' / 'pre-execution-checker.py'), '--stats'],
                 capture_output=True,
                 text=True,
                 timeout=10
@@ -351,7 +319,6 @@ class PolicyChecker:
             'agent': 'skill-agent-selection',
             'tool': 'tool-optimization',
             'plan': 'plan-mode-suggestion',
-            'daemon': 'daemon-infrastructure',
             'parallel': 'parallel-execution',
             'failure': 'failure-prevention',
             'standards': 'standards-loader',
