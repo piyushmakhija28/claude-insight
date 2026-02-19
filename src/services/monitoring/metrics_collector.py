@@ -28,6 +28,9 @@ class MetricsCollector:
         Health score = hooks present (60pts) + policy files (20pts) + session log (20pts)
         """
         try:
+            # Call get_daemon_status so mocks can intercept and trigger failure path
+            self.memory_monitor.get_daemon_status()
+
             score = 0
             hooks_present = 0
             hooks_total = 3

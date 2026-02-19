@@ -26,13 +26,56 @@ class AutomationTracker:
         self.logs_dir = self.memory_dir / 'logs'
         self.sessions_dir = self.memory_dir / 'sessions'
 
+    def get_auto_commit_stats(self):
+        """Get git auto-commit automation statistics"""
+        git_log = self.logs_dir / 'git-auto-commit.log'
+        stats = {
+            'total_commits': 0,
+            'commits_today': 0,
+            'auto_triggered': 0,
+            'recent_commits': []
+        }
+        if git_log.exists():
+            try:
+                lines = git_log.read_text(encoding='utf-8', errors='ignore').splitlines()
+                stats['total_commits'] = len([l for l in lines if 'COMMIT' in l])
+                stats['auto_triggered'] = len([l for l in lines if 'AUTO' in l.upper()])
+                stats['recent_commits'] = [l for l in lines[-10:] if 'COMMIT' in l]
+            except Exception as e:
+                stats['error'] = str(e)
+        return stats
+
     def get_session_start_recommendations(self):
         """
         Get latest session-start recommendations.
-        Derives from most recent flow-trace.json final_decision.
+        Primary: most recent flow-trace.json final_decision.
+        Fallback: .last-automation-check.json (legacy).
         """
         sessions_dir = self.logs_dir / 'sessions'
+
+        # Fallback: check legacy .last-automation-check.json
+        def _load_from_check_file():
+            check_file = self.memory_dir / '.last-automation-check.json'
+            if not check_file.exists():
+                return None
+            try:
+                data = json.loads(check_file.read_text(encoding='utf-8', errors='ignore'))
+                return {
+                    'available': True,
+                    'model_recommendation': data.get('model', 'SONNET'),
+                    'skills_recommended': data.get('skills', []),
+                    'agents_recommended': [],
+                    'context_status': data.get('context_status', 'GREEN'),
+                    'context_percentage': data.get('context_percentage', 0),
+                    'source': 'check-file'
+                }
+            except Exception:
+                return None
+
         if not sessions_dir.exists():
+            fallback = _load_from_check_file()
+            if fallback:
+                return fallback
             return {
                 'available': False,
                 'message': 'No sessions found. Send a message to Claude Code first.',
@@ -47,6 +90,9 @@ class AutomationTracker:
             )
 
             if not trace_files:
+                fallback = _load_from_check_file()
+                if fallback:
+                    return fallback
                 return {
                     'available': False,
                     'message': 'No flow-trace sessions found.',

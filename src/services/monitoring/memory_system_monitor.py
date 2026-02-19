@@ -56,7 +56,7 @@ class MemorySystemMonitor:
             exists = script_path.exists()
             status = {
                 'name': name,
-                'status': 'running' if exists else 'not_started',
+                'status': 'running' if exists else 'stopped',
                 'pid': None,
                 'last_activity': None,
                 'description': description,
@@ -393,6 +393,18 @@ class MemorySystemMonitor:
             'hooks_present': hooks_present,
             'hooks_total': len(hook_scripts),
             'status': 'healthy' if total_score >= 80 else 'degraded' if total_score >= 60 else 'critical'
+        }
+
+    def get_system_overview(self):
+        """Get a high-level system overview dict"""
+        health = self.get_system_health_score()
+        return {
+            'health_score': health['overall_score'],
+            'status': health['status'],
+            'hooks_present': health['hooks_present'],
+            'hooks_total': health['hooks_total'],
+            'daemons': self.get_daemon_status(),
+            'timestamp': datetime.now().isoformat()
         }
 
     def get_comprehensive_stats(self):

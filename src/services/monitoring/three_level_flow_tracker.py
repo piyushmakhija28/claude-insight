@@ -69,7 +69,7 @@ class ThreeLevelFlowTracker:
             'mode': 'summary',
             'level_minus_1': {'status': 'unknown'},
             'level_1': {'context_pct': None, 'session_id': None},
-            'level_2': {'standards': None, 'rules': None},
+            'level_2': {'standards': None, 'rules': None, 'status': 'unknown'},
             'level_3': {
                 'complexity': None,
                 'task_type': None,
@@ -342,8 +342,9 @@ class ThreeLevelFlowTracker:
             data['model_reason'] = fd.get('model_reason')
 
             # Enrich level_3 from final_decision (more accurate than .log regex)
-            if fd.get('model_selected'):
-                data['level_3']['model'] = fd['model_selected']
+            model_val = fd.get('model_selected') or fd.get('model')
+            if model_val:
+                data['level_3']['model'] = model_val
             if fd.get('complexity') is not None:
                 data['level_3']['complexity'] = fd['complexity']
             if fd.get('task_type'):

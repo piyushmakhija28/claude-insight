@@ -107,9 +107,9 @@ class NotificationManager:
 
         # Filter by date range
         from datetime import timedelta
-        cutoff_date = datetime.now(timezone.utc) - timedelta(days=days)
+        cutoff_date = datetime.now() - timedelta(days=days)
 
-        filtered = [n for n in notifications if datetime.fromisoformat(n['timestamp']) > cutoff_date]
+        filtered = [n for n in notifications if datetime.fromisoformat(n['timestamp'].replace('Z', '+00:00')).replace(tzinfo=None) > cutoff_date]
 
         # Count by type
         type_counts = {}

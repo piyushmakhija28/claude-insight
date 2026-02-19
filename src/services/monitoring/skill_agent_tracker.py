@@ -260,6 +260,14 @@ class SkillAgentTracker:
 
         return stats
 
+    def get_plan_mode_stats(self):
+        """Alias for get_plan_mode_suggestions()"""
+        return self.get_plan_mode_suggestions()
+
+    def get_agent_invocation_stats(self):
+        """Alias for get_agent_usage_stats()"""
+        return self.get_agent_usage_stats()
+
     def get_comprehensive_stats(self):
         """
         Get all skill/agent statistics in one call

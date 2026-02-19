@@ -22,6 +22,9 @@ class PerformanceProfiler:
         """Initialize the performance profiler"""
         if storage_dir is None:
             storage_dir = os.path.expanduser("~/.claude/memory/performance")
+            self._is_default_storage = True
+        else:
+            self._is_default_storage = False
 
         self.storage_dir = Path(storage_dir)
         self.storage_dir.mkdir(parents=True, exist_ok=True)
@@ -60,9 +63,10 @@ class PerformanceProfiler:
             except Exception as e:
                 print(f"Error loading recent operations: {e}")
 
-        # Fallback: read from flow-trace.json session logs
+        # Fallback: read from flow-trace.json session logs (only for default storage)
         # 3-level-flow.py writes these for every request with real duration_ms per step
-        self._load_from_flow_traces()
+        if self._is_default_storage:
+            self._load_from_flow_traces()
 
     def _load_from_flow_traces(self):
         """

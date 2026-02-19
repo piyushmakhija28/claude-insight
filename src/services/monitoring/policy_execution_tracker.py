@@ -48,27 +48,29 @@ class PolicyExecutionTracker:
             if self.enforcer_state.exists():
                 with open(self.enforcer_state, 'r') as f:
                     state = json.load(f)
-                # Only use if it was written recently (< 1 hour)
+                # Use the file if it exists; optionally skip if it's older than 1 hour
                 ts = state.get('session_start_time')
+                is_recent = True
                 if ts:
                     try:
                         age = datetime.now() - datetime.fromisoformat(ts)
-                        if age.total_seconds() < 3600:
-                            return {
-                                'session_started': state.get('session_started', False),
-                                'standards_loaded': state.get('standards_loaded', False),
-                                'prompt_generated': state.get('prompt_generated', False),
-                                'tasks_created': state.get('tasks_created', False),
-                                'plan_mode_decided': state.get('plan_mode_decided', False),
-                                'model_selected': state.get('model_selected', False),
-                                'skills_agents_checked': state.get('skills_agents_checked', False),
-                                'context_checked': state.get('context_checked', False),
-                                'total_violations': state.get('total_violations', 0),
-                                'last_violation': state.get('last_violation'),
-                                'session_start_time': state.get('session_start_time')
-                            }
+                        is_recent = age.total_seconds() < 3600
                     except Exception:
-                        pass
+                        is_recent = True  # Can't determine age, treat as valid
+                if is_recent or ts is None:
+                    return {
+                        'session_started': state.get('session_started', False),
+                        'standards_loaded': state.get('standards_loaded', False),
+                        'prompt_generated': state.get('prompt_generated', False),
+                        'tasks_created': state.get('tasks_created', False),
+                        'plan_mode_decided': state.get('plan_mode_decided', False),
+                        'model_selected': state.get('model_selected', False),
+                        'skills_agents_checked': state.get('skills_agents_checked', False),
+                        'context_checked': state.get('context_checked', False),
+                        'total_violations': state.get('total_violations', 0),
+                        'last_violation': state.get('last_violation'),
+                        'session_start_time': state.get('session_start_time')
+                    }
         except Exception:
             pass
 

@@ -274,6 +274,28 @@ class OptimizationTracker:
 
         return stats
 
+    def get_context_savings(self):
+        """Get context token savings summary"""
+        metrics = self.get_tool_optimization_metrics()
+        strategies = metrics.get('strategies', {})
+        return {
+            'total_tokens_saved': metrics.get('total_tokens_saved', 0),
+            'total_optimizations': metrics.get('total_optimizations', 0),
+            'estimated_savings_percentage': metrics.get('estimated_savings_percentage', 0),
+            'top_strategies': metrics.get('top_strategies', []),
+            'sessions_analyzed': metrics.get('sessions_analyzed', 0)
+        }
+
+    def get_optimization_summary(self):
+        """Get a compact optimization summary"""
+        metrics = self.get_tool_optimization_metrics()
+        standards = self.get_standards_enforcement_stats()
+        return {
+            'tool_optimization': metrics,
+            'standards_enforcement': standards,
+            'timestamp': datetime.now().isoformat()
+        }
+
     def get_comprehensive_optimization_stats(self):
         """
         Get all optimization statistics in one call

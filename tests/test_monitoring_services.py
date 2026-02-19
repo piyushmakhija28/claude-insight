@@ -136,10 +136,8 @@ class TestPolicyChecker(unittest.TestCase):
     def setUp(self):
         """Set up test fixtures"""
         self.temp_dir = tempfile.mkdtemp()
-        # PolicyChecker imports MemorySystemMonitor - patch it to avoid subprocess calls
-        with patch('services.monitoring.policy_checker.MemorySystemMonitor'):
-            from services.monitoring.policy_checker import PolicyChecker
-            self.checker = PolicyChecker()
+        from services.monitoring.policy_checker import PolicyChecker
+        self.checker = PolicyChecker()
         self.checker.memory_dir = Path(self.temp_dir)
 
     def tearDown(self):

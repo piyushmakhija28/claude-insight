@@ -156,6 +156,23 @@ class PolicyChecker:
             }
         ]
 
+    def get_all_policies(self):
+        """Return the list of policy definitions (id, name, description, level)"""
+        return self.policies
+
+    def check_policy_status(self, policy_id):
+        """Check status of a policy by its id string"""
+        for policy in self.policies:
+            if policy['id'] == policy_id:
+                result = self._check_policy_status(policy)
+                return {
+                    'id': policy_id,
+                    'exists': result['status'] != 'error',
+                    'status': result['status'],
+                    'details': result['details']
+                }
+        return {'id': policy_id, 'exists': False, 'status': 'unknown', 'details': 'Policy not found'}
+
     def get_all_policies_status(self):
         """Get status of all policies"""
         statuses = []
