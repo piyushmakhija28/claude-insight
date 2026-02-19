@@ -372,9 +372,19 @@ class ThreeLevelFlowTracker:
             data['duration'] = meta['duration_seconds']
             data['level_3']['duration'] = meta['duration_seconds']
 
-        # Level -1 status from pipeline (more accurate)
+        # Set started from flow_start if not already set from .log files
+        if not data.get('started') and meta.get('flow_start'):
+            try:
+                data['started'] = datetime.fromisoformat(meta['flow_start'][:19]).strftime('%Y-%m-%d %H:%M:%S')
+            except Exception:
+                data['started'] = meta['flow_start'][:19]
+
+        # Level -1 and Level 3 status from pipeline (more accurate than .log parsing)
+        level3_steps_seen = 0
         for step in trace.get('pipeline', []):
-            if step.get('step') == 'LEVEL_MINUS_1':
+            step_name = step.get('step', '')
+
+            if step_name == 'LEVEL_MINUS_1':
                 step_out = step.get('policy_output', {})
                 status = step_out.get('status', '')
                 if status in ('SUCCESS', 'PASS'):
@@ -384,7 +394,15 @@ class ThreeLevelFlowTracker:
                 checks = step_out.get('checks', {})
                 if checks:
                     data['level_minus_1']['checks'] = checks
-                break
+
+            if step_name.startswith('LEVEL_3_STEP_'):
+                level3_steps_seen += 1
+
+        # Level 3 status: OK if we saw at least 5 execution steps
+        if level3_steps_seen >= 5:
+            data['level_3']['status'] = 'OK'
+        elif fd.get('proceed', False) and level3_steps_seen > 0:
+            data['level_3']['status'] = 'OK'
 
     # -------------------------------------------------------------------------
     # Aggregated Stats

@@ -250,57 +250,65 @@ class LogParser:
         return results
 
     def get_policy_history(self, days=7):
-        """Get policy execution history"""
-        history = {
-            'context_optimization': [],
-            'failure_prevention': [],
-            'model_selection': [],
-            'consultation': []
+        """
+        Get policy execution history counts from flow-trace.json files.
+        Counts sessions within the last N days for each policy category:
+        - context_optimization: sessions where context >= 70% (optimization applied)
+        - failure_prevention: sessions where Level -1 auto-fix enforcement passed
+        - model_selection: all sessions (model always selected)
+        - consultation: sessions where plan_mode was triggered
+        """
+        counts = {
+            'context_optimization': 0,
+            'failure_prevention': 0,
+            'model_selection': 0,
+            'consultation': 0
         }
 
-        policy_log = self.logs_dir / 'policy-hits.log'
+        sessions_dir = Path.home() / '.claude' / 'memory' / 'logs' / 'sessions'
+        if not sessions_dir.exists():
+            return counts
 
-        if policy_log.exists():
-            try:
-                with open(policy_log, 'r', encoding='utf-8') as f:
-                    lines = f.readlines()
+        cutoff = datetime.now() - timedelta(days=days)
 
-                cutoff_date = datetime.now(timezone.utc) - timedelta(days=days)
-
-                for line in lines:
-                    line = line.strip()
-                    if not line:
+        try:
+            import json as _json
+            trace_files = sessions_dir.glob('*/flow-trace.json')
+            for tf in trace_files:
+                try:
+                    # Quick mtime check before parsing
+                    if datetime.fromtimestamp(tf.stat().st_mtime) < cutoff:
                         continue
 
-                    # Extract timestamp
-                    match = re.match(r'\[(.*?)\]', line)
-                    if match:
-                        try:
-                            timestamp = datetime.strptime(match.group(1), '%Y-%m-%d %H:%M:%S').replace(tzinfo=timezone.utc)
-                            if timestamp < cutoff_date:
-                                continue
-                        except:
-                            pass
+                    data = _json.loads(tf.read_text(encoding='utf-8', errors='ignore'))
+                    fd = data.get('final_decision', {})
 
-                    if 'CONTEXT_OPTIMIZATION' in line:
-                        history['context_optimization'].append(line)
-                    elif 'FAILURE_PREVENTION' in line:
-                        history['failure_prevention'].append(line)
-                    elif 'MODEL_SELECTION' in line:
-                        history['model_selection'].append(line)
-                    elif 'CONSULTATION' in line:
-                        history['consultation'].append(line)
+                    # model_selection: always (every session selects a model)
+                    if fd.get('model_selected'):
+                        counts['model_selection'] += 1
 
-            except Exception as e:
-                print(f"Error reading policy history: {e}")
+                    # failure_prevention: Level -1 ran (auto-fix enforcement)
+                    for step in data.get('pipeline', []):
+                        if step.get('step') == 'LEVEL_MINUS_1':
+                            counts['failure_prevention'] += 1
+                            break
 
-        # Return counts for each policy
-        return {
-            'context_optimization': len(history['context_optimization']),
-            'failure_prevention': len(history['failure_prevention']),
-            'model_selection': len(history['model_selection']),
-            'consultation': len(history['consultation'])
-        }
+                    # context_optimization: context >= 70% triggered optimization
+                    ctx_pct = fd.get('context_pct', 0)
+                    if ctx_pct >= 70:
+                        counts['context_optimization'] += 1
+
+                    # consultation: plan_mode was triggered
+                    if fd.get('plan_mode', False):
+                        counts['consultation'] += 1
+
+                except Exception:
+                    continue
+
+        except Exception as e:
+            print(f"Error reading policy history from flow-traces: {e}")
+
+        return counts
 
     # -------------------------------------------------------------------------
     # 3-Level Flow Session Log Parsing
