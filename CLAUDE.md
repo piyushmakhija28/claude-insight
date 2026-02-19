@@ -117,7 +117,7 @@ Every message you send will trigger the 3-level flow automatically:
 ```
 [LEVEL -1] AUTO-FIX ENFORCEMENT (BLOCKING)  [OK] All 7 checks passed
 [LEVEL 1] SYNC SYSTEM                        [OK] Context: 80% | Session: SESSION-...
-[LEVEL 2] STANDARDS SYSTEM                   [OK] 14 standards, 89 rules loaded
+[LEVEL 2] STANDARDS SYSTEM                   [OK] 15 standards, 156 rules loaded
 [LEVEL 3] EXECUTION SYSTEM (12 steps)        [OK] All steps verified
 ```
 

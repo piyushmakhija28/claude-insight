@@ -193,7 +193,7 @@ After restarting Claude Code, send any message. You should see:
 ```
 [LEVEL -1] AUTO-FIX ENFORCEMENT (BLOCKING)  [OK]
 [LEVEL 1] SYNC SYSTEM                        [OK] Context: XX% | Session: SESSION-...
-[LEVEL 2] STANDARDS SYSTEM                   [OK] 14 standards loaded
+[LEVEL 2] STANDARDS SYSTEM                   [OK] 15 standards, 156 rules loaded
 [LEVEL 3] EXECUTION SYSTEM (12 steps)        [OK] All steps verified
 ```
 
@@ -249,7 +249,7 @@ Exit code 0 = proceed. Exit code != 0 = all work stops.
 
 ### Level 2: Standards System
 
-**Loads 14 coding standards (89 rules) and selects the correct skill/agent.**
+**Loads 15 coding standards (156 rules) and selects the correct skill/agent.**
 
 Standards loaded:
 1. Project structure (packages, visibility)
@@ -265,7 +265,8 @@ Standards loaded:
 11. API design (REST)
 12. Database standards
 13. Documentation (README + CLAUDE.md per repo)
-14. Security standards
+14. Kubernetes network policies
+15. K8s/Docker/Jenkins Infrastructure Standards (K8s archetypes, Dockerfile templates, Jenkins pipelines)
 
 **Skill/Agent selection** happens here — Claude matches the task to the correct skill
 (e.g., JavaFX task → `javafx-ide-designer`, Spring Boot task → `java-spring-boot-microservices`).

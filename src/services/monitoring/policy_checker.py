@@ -51,7 +51,7 @@ class PolicyChecker:
             {
                 'id': 'coding-standards',
                 'name': 'Coding Standards',
-                'description': '14 coding standards with 89+ rules - Java, Spring Boot, API, DB, Security',
+                'description': '15 coding standards with 156 rules - Java, Spring Boot, API, DB, Security, K8s/Docker/Jenkins Infrastructure',
                 'files': ['02-standards-system/coding-standards-enforcement-policy.md'],
                 'phase': 2,
                 'level': 'LEVEL 2'
