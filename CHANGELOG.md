@@ -9,6 +9,51 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [3.5.0] - 2026-02-19
+
+### Fixed
+- **Comprehensive flow-trace data source migration for 5 monitoring services**
+  - All services now read from `flow-trace.json` (real data) instead of
+    non-existent log files, PID files, and policy-hits.log keyword mismatches
+
+- **`skill_agent_tracker.py`** (3 methods):
+  - `get_skill_selection_stats()`: reads `LEVEL_3_STEP_3_5.policy_output.selected_name`
+    (selected_type=skill) from flow-traces - now shows 50 real skill usages
+  - `get_agent_usage_stats()`: reads `selected_type=agent` from flow-traces -
+    now shows 12 real agent usages (ui-ux-designer, orchestrator-agent, etc.)
+  - `get_plan_mode_suggestions()`: reads `final_decision.plan_mode` and
+    `complexity` from flow-traces - now shows real complexity distribution
+
+- **`memory_system_monitor.py`** (3 methods):
+  - `get_daemon_status()`: replaced dead PID file checks with hook script
+    presence checks (daemons removed in v3.3.0, hooks are the new enforcement)
+  - `get_system_health_score()`: hooks-based formula (60pts + 20pts + 20pts)
+    instead of daemon-based (always 0) - now returns real 100% health
+  - `get_model_selection_distribution()`: reads `final_decision.model_selected`
+    from flow-traces - now shows 96.8% Haiku, 3.2% Sonnet
+
+- **`optimization_tracker.py`** (2 methods):
+  - `get_tool_optimization_metrics()`: derives strategy counts from flow-trace
+    `context_pct`, `complexity`, `execution_mode` - now shows 421 optimizations,
+    148K tokens saved estimate
+  - `get_standards_enforcement_stats()`: reads `final_decision.standards_active`
+    and `rules_active` from flow-traces - now shows 14 standards, 89 rules avg
+
+- **`policy_execution_tracker.py`** (2 methods):
+  - `get_enforcer_state()`: derives step completion from most recent flow-trace
+    pipeline steps (LEVEL_1_SESSION, LEVEL_2_STANDARDS, LEVEL_3_STEP_3_4, etc.)
+  - `parse_policy_log()`: primary source now flow-trace pipeline steps mapped to
+    policy categories; policy-hits.log kept as supplementary source (90K daemon
+    entries provide real background enforcement data)
+
+- **`automation_tracker.py`** (2 methods):
+  - `get_session_start_recommendations()`: derives from most recent flow-trace
+    `final_decision` (model, context %, standards count, tech_stack, skill/agent)
+  - `get_task_breakdown_stats()`: reads `final_decision.task_count` and
+    `complexity` from all sessions with bucketed distribution
+
+---
+
 ## [3.4.0] - 2026-02-18
 
 ### Added
