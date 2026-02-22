@@ -935,6 +935,7 @@ def main():
     pr_out = ''
     pr_dur = 0
     enhanced_prompt_summary = ''
+    rewritten_prompt = ''
     if prompt_script.exists():
         pr_out, _, _, pr_dur = run_script(prompt_script, [user_message], timeout=15)
         for line in pr_out.splitlines():
@@ -945,21 +946,32 @@ def main():
                     pass
             if line.startswith('task_type:'):
                 task_type = line.split(':', 1)[1].strip()
+            if line.startswith('rewritten_prompt:'):
+                rewritten_prompt = line.split(':', 1)[1].strip()
             if line.startswith('enhanced_prompt:'):
                 enhanced_prompt_summary = line.split(':', 1)[1].strip()
 
-        # Show enhanced prompt to user - ALL modes
-        if enhanced_prompt_summary:
+        # Use rewritten_prompt as the effective prompt (prefer over enhanced_prompt)
+        effective_prompt = rewritten_prompt if rewritten_prompt else enhanced_prompt_summary
+
+        # Show rewritten prompt to user - ALL modes
+        if rewritten_prompt:
+            print(f"   [3.0] Rewritten Prompt: {rewritten_prompt[:200]}")
+        elif enhanced_prompt_summary:
             print(f"   [3.0] Enhanced Prompt: {enhanced_prompt_summary[:150]}")
         if mode == 'verbose' and pr_out:
             print(f"   [3.0] Prompt Generator Output:")
             for ln in pr_out.splitlines()[:10]:
                 print(f"         {ln}")
+    else:
+        effective_prompt = user_message
 
     step_3_0_output = {
         "estimated_complexity": complexity,
         "task_type": task_type,
+        "rewritten_prompt": rewritten_prompt if rewritten_prompt else "NOT_GENERATED",
         "enhanced_prompt": enhanced_prompt_summary if enhanced_prompt_summary else "NOT_GENERATED",
+        "effective_prompt": effective_prompt if effective_prompt else user_message,
         "script_exists": prompt_script.exists()
     }
     step_3_0_decision = f"Complexity={complexity}, Type={task_type} - proceed with analysis"
@@ -977,16 +989,17 @@ def main():
             "user_message": user_message,
             "standards_active": standards_count,
             "rules_active": rules_count,
-            "purpose": "Analyze request, determine complexity and task type"
+            "purpose": "Analyze request, rewrite to proper English, determine complexity and task type"
         },
         "policy": {
             "script": "prompt-generator.py",
             "args": [user_message],
             "rules_applied": [
-                "analyze_user_intent",
+                "analyze_user_intent_any_language",
+                "rewrite_to_proper_english_prompt",
                 "estimate_complexity_score_0_to_25",
                 "classify_task_type",
-                "search_existing_code_before_answering",
+                "extract_entities_and_operations",
                 "flag_uncertainties_and_assumptions"
             ]
         },
@@ -995,10 +1008,14 @@ def main():
         "passed_to_next": {
             "complexity": complexity,
             "task_type": task_type,
-            "user_message": user_message
+            "user_message": user_message,
+            "rewritten_prompt": rewritten_prompt if rewritten_prompt else user_message,
+            "use_rewritten_prompt": bool(rewritten_prompt)
         }
     })
     print(f"   [3.0] Prompt Generation: Complexity={complexity}, Type={task_type}")
+    if rewritten_prompt:
+        print(f"   [3.0] CLAUDE_MUST: Use REWRITTEN_PROMPT as task description (not raw original)")
     prev_output = {"complexity": complexity, "task_type": task_type}
 
     # ------------------------------------------------------------------
@@ -1602,9 +1619,18 @@ def main():
     print(f"    - Agent/Skill      : {skill_agent_name}")
     print(f"    - Plan mode        : {plan_str}")
     print(f"    - Context usage    : {context_pct2}%")
+    if rewritten_prompt:
+        print(f"    - Rewritten Prompt : {rewritten_prompt[:160]}")
     print()
     print("  CLAUDE_MUST: Tell user to review above file and WAIT for confirmation.")
     print("  DO NOT start writing code until user says 'proceed' or 'ok'.")
+    if rewritten_prompt:
+        print()
+        print("  REWRITTEN PROMPT (Claude MUST use this as task description):")
+        print(f"  >> {rewritten_prompt}")
+        print()
+        print("  CLAUDE_INSTRUCTION: The user wrote in Hinglish/informal language.")
+        print("  Claude must solve the REWRITTEN_PROMPT above, not react to the raw message.")
     print()
     print(SEP)
     print("[OK] ALL 3 LEVELS + 12 STEPS VERIFIED - WORK STARTED")

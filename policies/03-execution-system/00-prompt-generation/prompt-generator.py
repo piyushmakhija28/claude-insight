@@ -4,6 +4,21 @@ Prompt Generation & Structuring Script
 Converts natural language to structured prompts with examples
 """
 
+# Fix encoding for Windows console (cp1252 safe)
+import sys
+if sys.stdout.encoding and sys.stdout.encoding.lower() != 'utf-8':
+    try:
+        sys.stdout.reconfigure(encoding='utf-8')
+    except AttributeError:
+        import io
+        sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
+if sys.stderr.encoding and sys.stderr.encoding.lower() != 'utf-8':
+    try:
+        sys.stderr.reconfigure(encoding='utf-8')
+    except AttributeError:
+        import io
+        sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
+
 import yaml
 import json
 import re
@@ -495,6 +510,107 @@ class PromptGenerator:
 
         return examples
 
+    def build_rewritten_prompt(self, user_message, task_type, entities, operations, complexity):
+        """
+        Convert any user input (Hinglish, informal, any language) into a proper English task description.
+        Claude will use this rewritten prompt as the actual task to solve, not the raw original.
+        """
+        msg_lower = user_message.lower()
+        words = msg_lower.split()
+
+        # --- Extract subject: what is being worked on ---
+        subject = None
+        # Hinglish pattern: "X wala/wali/wale" -> subject is X
+        for i, word in enumerate(words):
+            if word in ('wala', 'wali', 'wale') and i > 0:
+                candidate = words[i - 1]
+                if len(candidate) > 3:
+                    subject = candidate
+                    break
+        # Fall back to first entity or generic
+        if not subject and entities:
+            subject = entities[0]
+        if not subject:
+            subject = "the system"
+
+        # --- Extract problem descriptions from Hinglish/informal patterns ---
+        problem_parts = []
+        hinglish_problems = {
+            "nahi ban raha": "is not being generated/created",
+            "nahi bana raha": "is not generating",
+            "ni ban raha": "is not being generated",
+            "ni ara": "is not showing/working",
+            "same cheej": "passes through the same input unchanged (no transformation happening)",
+            "same lere": "takes the same input without any processing",
+            "same le raha": "takes the same input without processing",
+            "kaam nahi kar": "is not functioning correctly",
+            "kaam nhi kar": "is not functioning correctly",
+            "ni lagta": "does not appear to be working correctly",
+            "doubt hai": "behavior is uncertain/incorrect",
+            "actually me": "in the actual implementation",
+            "not working": "is not working correctly",
+            "not generating": "is not generating the expected output",
+        }
+        for pattern, desc in hinglish_problems.items():
+            if pattern in msg_lower:
+                problem_parts.append(desc)
+
+        # --- Extract goal descriptions from Hinglish/informal patterns ---
+        goal_parts = []
+        hinglish_goals = {
+            "fix kar": "fix this issue",
+            "theek kar": "correct this behavior",
+            "banana hai": "generate/create properly",
+            "banao": "create this",
+            "dena ha": "pass to the next step",
+            "acha prompt": "generate a proper well-structured English prompt",
+            "jaise bhi language": "regardless of the input language used by the user",
+            "khud ko dena": "pass the rewritten prompt to itself for processing",
+            "sabse pehle": "first (before anything else)",
+            "fir khud ko": "then pass it back to itself",
+        }
+        for pattern, desc in hinglish_goals.items():
+            if pattern in msg_lower:
+                goal_parts.append(desc)
+
+        # --- Build task-specific base description ---
+        task_descs = {
+            "Bug Fix": "Fix the bug/issue in",
+            "API Creation": "Create REST API for",
+            "Authentication": "Implement authentication for",
+            "Authorization": "Implement authorization for",
+            "Database": "Fix/design database schema for",
+            "Configuration": "Configure",
+            "UI/UX": "Fix the UI/UX for",
+            "Dashboard": "Fix/implement dashboard for",
+            "Refactoring": "Refactor",
+            "Testing": "Write tests for",
+            "Security": "Implement security for",
+            "Documentation": "Document",
+            "Frontend": "Implement frontend for",
+        }
+        action = task_descs.get(task_type, "Implement/fix")
+        base_desc = f"{action} {subject}"
+
+        # --- Assemble the final rewritten prompt ---
+        parts = [f"[{task_type}] {base_desc}."]
+
+        if problem_parts:
+            unique_problems = list(dict.fromkeys(problem_parts))[:2]
+            parts.append("Problem identified: " + "; ".join(unique_problems) + ".")
+
+        if goal_parts:
+            unique_goals = list(dict.fromkeys(goal_parts))[:2]
+            parts.append("Expected behavior: " + "; ".join(unique_goals) + ".")
+
+        if operations and task_type not in ("Bug Fix", "Refactoring"):
+            ops_str = ", ".join(operations)
+            parts.append(f"Operations required: {ops_str}.")
+
+        parts.append(f"Complexity: {complexity}/10.")
+
+        return " ".join(parts)
+
     def generate(self, user_message: str) -> Dict:
         """Main method: Generate structured prompt with anti-hallucination phases"""
 
@@ -626,6 +742,23 @@ def main():
 
     generator = PromptGenerator()
     structured_prompt = generator.generate(user_message)
+
+    # Extract analysis results for machine-readable output
+    task_type_out = structured_prompt.get("task_type", "General Task")
+    complexity_out = structured_prompt.get("metadata", {}).get("estimated_complexity", 1)
+    entities = structured_prompt.get("analysis", {}).get("entities", [])
+    operations = structured_prompt.get("analysis", {}).get("operations", [])
+
+    # Build proper rewritten prompt from analysis (NOT just a label of the original message)
+    rewritten = generator.build_rewritten_prompt(
+        user_message, task_type_out, entities, operations, complexity_out
+    )
+
+    # Machine-readable output lines (parsed by 3-level-flow.py)
+    print(f"estimated_complexity: {complexity_out}")
+    print(f"task_type: {task_type_out}")
+    print(f"rewritten_prompt: {rewritten}")
+    print(f"enhanced_prompt: {rewritten}")
 
     # Output as YAML
     print("=" * 80)
