@@ -1,4 +1,4 @@
-# Claude Insight v3.6.0
+# Claude Insight v3.8.0
 
 **Real-time Monitoring Dashboard for the Claude Memory System (3-Level Architecture)**
 
@@ -6,7 +6,7 @@
 [![Python](https://img.shields.io/badge/Python-3.8+-blue?logo=python)](https://www.python.org/)
 [![Flask](https://img.shields.io/badge/Flask-3.0-green?logo=flask)](https://flask.palletsprojects.com/)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/Version-3.6.0-brightgreen)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/Version-3.8.0-brightgreen)](CHANGELOG.md)
 
 Claude Insight is a Python Flask dashboard that monitors how Claude Code follows the
 **3-Level Architecture enforcement policies** in real-time. Track policy execution,
@@ -96,6 +96,7 @@ Real-time charts, analytics, alerts
 | **3-Level Flow Tracker** | Shows each Level (-1, 1, 2, 3) execution per session |
 | **Policy Execution Tracker** | Which policies ran, pass/fail per request |
 | **Session Analytics** | Session duration, requests per session, context usage |
+| **Session Chaining** | Parent/child session relationships, tag-based linking, cross-session summaries |
 | **Skill/Agent Usage** | Which skills and agents were invoked and how often |
 | **Context Monitoring** | Context % per request, optimization actions taken |
 | **Model Selection Tracking** | Haiku/Sonnet/Opus distribution across requests |
@@ -241,11 +242,13 @@ Exit code 0 = proceed. Exit code != 0 = all work stops.
 
 ### Level 1: Sync System
 
-**Context and session management.**
+**Context, session management, and session chaining.**
 
 - Context monitoring (checks usage %, applies optimization if >70%)
 - Session ID generation (format: `SESSION-YYYYMMDD-HHMMSS-XXXX`)
 - Loads previous session state if exists
+- **Session Chaining** - Links sessions in parent/child relationships with auto-tagging
+- **Session Summaries** - Accumulates per-request data, generates summaries on `/clear`
 
 ### Level 2: Standards System
 
@@ -359,7 +362,10 @@ There are **4 hook types**, each enforcing different levels of the architecture:
 
 **`UserPromptSubmit` → `clear-session-handler.py` + `3-level-flow.py`**
 - Detects `/clear` command and saves old session, starts new one
+- On `/clear`: finalizes session summary, links new session as child of old session
 - Runs the full 3-level architecture check (Level -1 through Level 3 all 12 steps)
+- Auto-tags sessions with keywords from prompt, skill, task type, and project
+- Accumulates per-request summary data for session summaries
 - Writes `flow-trace.json` to the session log folder
 - Claude Insight reads this file for all its monitoring data
 
@@ -495,11 +501,15 @@ claude-insight/
 │   ├── session-logger.py
 │   ├── clear-session-handler.py <- /clear hook handler
 │   ├── stop-notifier.py         <- Stop hook handler
+│   ├── session-chain-manager.py <- Session chaining (parent/child/tags)
+│   ├── session-summary-manager.py <- Per-session summaries
 │   └── detect-sync-eligibility.py
 │
-├── policies/                    <- Policy definitions
+├── policies/                    <- Policy definitions (organized by level)
 │   ├── 01-sync-system/          <- Level 1 foundation policies
-│   └── 03-execution-system/     <- Level 3 execution policies
+│   ├── 02-standards-system/     <- Level 2 coding standards policies
+│   ├── 03-execution-system/     <- Level 3 execution policies
+│   └── testing/                 <- Test case policies
 │
 ├── docs/                        <- Architecture documentation
 │   ├── ARCHITECTURE.md
@@ -719,14 +729,12 @@ core enforcement scripts. Please follow these guidelines:
 
 See [CHANGELOG.md](CHANGELOG.md) for full version history.
 
-**Latest — v3.3.0 (2026-02-18):**
-- Switched from daemon-based to hooks-based enforcement (no background processes)
-- Added intelligence-based skill/agent selection (complete registry in CLAUDE.md)
-- Added automatic setup scripts for Windows and Unix
-- Added public global CLAUDE.md template (`scripts/global-claude-md-template.md`)
-- Removed all daemon files from project
-- Updated CLAUDE.md with comprehensive setup guide
-- Updated install-auto-hooks.sh to use settings.json format
+**Latest — v3.8.0 (2026-02-23):**
+- Added session chaining system (parent/child session relationships, auto-tagging, summaries)
+- Added 02-standards-system policies folder (coding-standards-enforcement-policy)
+- Cleaned up duplicate flat policy files (all policies now in organized sub-folders only)
+- Updated all hook scripts with loophole hardening fixes (19 loopholes, 18 fixed)
+- Added session-chain-manager.py and session-summary-manager.py scripts
 
 ---
 
@@ -737,4 +745,4 @@ MIT License — see [LICENSE](LICENSE) for details.
 ---
 
 **Source:** https://github.com/piyushmakhija28/claude-insight
-**Version:** 3.3.0 | **Python:** 3.8+ | **Flask:** 3.0
+**Version:** 3.8.0 | **Python:** 3.8+ | **Flask:** 3.0

@@ -2,7 +2,7 @@
 
 **Project:** Claude Insight
 **Type:** Python Flask Monitoring Dashboard
-**Version:** 3.6.0
+**Version:** 3.8.0
 **Status:** Active Development
 
 ---
@@ -224,11 +224,15 @@ claude-insight/
 │   ├── 3-level-flow.py             <- Main hook entry script
 │   ├── auto-fix-enforcer.sh        <- Level -1 enforcement
 │   ├── session-start.sh            <- Level 1 session init
+│   ├── session-chain-manager.py    <- Session chaining (parent/child/tags)
+│   ├── session-summary-manager.py  <- Per-session summaries
 │   └── (other enforcement scripts)
 │
-├── policies/                       <- Policy definitions
+├── policies/                       <- Policy definitions (organized by level)
 │   ├── 01-sync-system/             <- Foundation layer policies
-│   └── 03-execution-system/        <- 12-step execution policies
+│   ├── 02-standards-system/        <- Coding standards policies
+│   ├── 03-execution-system/        <- 12-step execution policies
+│   └── testing/                    <- Test case policies
 │
 ├── docs/                           <- Architecture documentation
 ├── config/                         <- Runtime configuration JSONs
@@ -280,11 +284,13 @@ python scripts/bump-version.py --patch
 | 3-level flow execution | `~/.claude/memory/logs/sessions/*/flow-trace.json` | /3level-flow-history |
 | Policy enforcement | `~/.claude/memory/logs/policy-hits.log` | /policies |
 | Session analytics | `~/.claude/memory/sessions/` | /sessions |
+| Session chaining | `~/.claude/memory/sessions/chain-index.json` | /sessions |
+| Session summaries | `~/.claude/memory/logs/sessions/*/session-summary.json` | /sessions |
 | Skill/agent usage | flow-trace.json data | /analytics |
 | Context usage % | Context monitor logs | /dashboard |
 
 ---
 
-**Version:** 3.6.0
-**Last Updated:** 2026-02-18
+**Version:** 3.8.0
+**Last Updated:** 2026-02-23
 **Source:** https://github.com/piyushmakhija28/claude-insight
