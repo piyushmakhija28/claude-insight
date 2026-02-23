@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 # Script Name: pre-tool-enforcer.py
-# Version: 2.0.0
+# Version: 2.1.0
 # Last Modified: 2026-02-23
 # Description: PreToolUse hook - L3.1/3.5 blocking + L3.3 checkpoint + L3.6 hints + L3.7 prevention
+# v2.1.0: Enhanced optimization hints with consistent [OPTIMIZATION] format and clearer guidance
 # Author: Claude Memory System
 #
 # Hook Type: PreToolUse
@@ -370,8 +371,8 @@ def check_grep(tool_input):
 
     if not head_limit:
         hints.append(
-            '[PRE-TOOL L3.6] Grep hint: head_limit not set - '
-            'add head_limit=100 to save tokens (CLAUDE.md default rule)'
+            '[OPTIMIZATION] Grep: Add head_limit=100 to prevent excessive output. '
+            'Default CLAUDE.md rule: ALWAYS set head_limit on Grep calls.'
         )
 
     return hints, []
@@ -385,8 +386,8 @@ def check_read(tool_input):
 
     if not limit and not offset:
         hints.append(
-            '[PRE-TOOL L3.6] Read hint: No limit/offset set - '
-            'if file >500 lines, use offset+limit to save tokens'
+            '[OPTIMIZATION] Read: No limit/offset set. '
+            'For files >500 lines, use offset+limit to save context tokens.'
         )
 
     return hints, []

@@ -9,6 +9,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [4.0.0] - 2026-02-23
+
+### Added
+- **5 new documentation files** extracted from optimized CLAUDE.md:
+  - `docs/CHANGELOG-SYSTEM.md` - Complete system changelog (v2.1.0 to v4.0.0)
+  - `docs/troubleshooting-guide.md` - 9-step troubleshooting sequence
+  - `docs/claude-md-merge-policy.md` - Global vs project CLAUDE.md merge rules
+  - `docs/claude-insight-sync-guide.md` - Consolidated sync guide (3 sections merged)
+  - `docs/session-management-guide.md` - Session ID tracking + chaining guide
+
+### Changed
+- **Global CLAUDE.md optimized** from 2,951 to 389 lines (87% reduction, ~26K tokens saved per request)
+- **pre-tool-enforcer.py** v2.1.0: Consistent [OPTIMIZATION] format for Grep/Read hints
+- **post-tool-tracker.py** v2.1.0: File change tracking for git commit reminders (warns at 10+ files)
+- **3-level-flow.py** v3.3.0: Auto-detects project CLAUDE.md and prints [MERGE] reminder
+- 9 redundant architecture sections consolidated into 1 unified structure
+- Reference content moved to dedicated doc files with pointers in CLAUDE.md
+
+---
+
+
 ## [3.8.0] - 2026-02-23
 
 ### Added

@@ -22,7 +22,7 @@ if sys.platform == 'win32':
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
     sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
 
-VERSION = "3.2.0"
+VERSION = "3.3.0"
 SCRIPT_NAME = "3-level-flow.py"
 MEMORY_BASE = Path.home() / '.claude' / 'memory'
 CURRENT_DIR = MEMORY_BASE / 'current'
@@ -842,6 +842,32 @@ def main():
     print(SEP)
     print(f"Message: {user_message}")
     print(SEP)
+    print()
+
+    # =========================================================================
+    # CLAUDE.MD MERGE DETECTION
+    # =========================================================================
+    project_claude_md = None
+    if hook_cwd:
+        candidate = Path(hook_cwd) / 'CLAUDE.md'
+        if candidate.exists():
+            project_claude_md = str(candidate)
+    if not project_claude_md:
+        # Check current working directory
+        cwd_candidate = Path.cwd() / 'CLAUDE.md'
+        if cwd_candidate.exists():
+            project_claude_md = str(cwd_candidate)
+
+    if project_claude_md:
+        print('[MERGE] Project CLAUDE.md detected: ' + project_claude_md)
+        print('[MERGE] Global policies CANNOT be overridden by project CLAUDE.md')
+        print('[MERGE] Rule: Global = BOSS, Project = ADDITIONAL context only')
+        trace['merge_detection'] = {
+            'project_claude_md': project_claude_md,
+            'policy': 'Global policies immutable, project adds context only'
+        }
+    else:
+        trace['merge_detection'] = {'project_claude_md': None}
     print()
 
     # =========================================================================

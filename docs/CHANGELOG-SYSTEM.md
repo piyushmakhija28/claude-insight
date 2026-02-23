@@ -1,0 +1,249 @@
+# Claude Memory System - CHANGELOG
+All notable changes to the Claude Memory System.
+
+---
+
+- v4.0.0 (2026-02-23): Global CLAUDE.md Optimization + Hook Enhancement:
+  - Reduced CLAUDE.md from 2,951 to 389 lines (87% reduction, ~30K tokens saved per request)
+  - Moved 5 reference sections to dedicated doc files:
+    - CHANGELOG -> ~/.claude/CHANGELOG-SYSTEM.md
+    - Troubleshooting -> memory/docs/troubleshooting-guide.md
+    - Merge Policy -> memory/docs/claude-md-merge-policy.md
+    - Claude Insight Sync -> memory/docs/claude-insight-sync-guide.md (consolidated 3 sections)
+    - Session Management -> memory/docs/session-management-guide.md (consolidated 2 sections)
+  - Consolidated 9 redundant architecture sections into 1 unified structure
+  - Removed duplicate content already in memory/docs/ (Java structure, JPA, Auth, DevOps, Quick Reference)
+  - Enhanced pre-tool-enforcer.py v2.1.0: Consistent [OPTIMIZATION] format for hints
+  - Enhanced post-tool-tracker.py v2.1.0: File change tracking for git commit reminders (10+ files warning)
+  - Enhanced 3-level-flow.py v3.3.0: CLAUDE.md merge detection (auto-detects project CLAUDE.md)
+  - All content preserved - reorganized to reduce context token waste
+  - Backup at: ~/.claude/CLAUDE.md.backup-v3.9.3
+
+- v3.9.3 (2026-02-23): Session Chaining + Python System Scripting Skill:
+  - NEW SKILL: python-system-scripting (v1.0.0) - Windows-safe Python patterns for hooks, sessions, automation
+  - Located: ~/.claude/skills/system/python-system-scripting/SKILL.md
+  - Covers: hook patterns, flag IPC, session access, file locking, Windows encoding, exit codes
+  - NEW SYSTEM: Session Chaining (v1.0.0) - tracks session relationships across /clear boundaries
+  - Created: session-chain-manager.py with 7 CLI commands (link, tag, relate, context, chain, search, auto-tag)
+  - Data model: parent/children chain, related sessions, tags, tag_index, auto-relate by shared tags
+  - Integration: clear-session-handler.py auto-links new -> parent on /clear
+  - Integration: 3-level-flow.py auto-tags sessions and displays chain context in output
+  - Auto-tag extraction: from prompt keywords, task type, skill name, project directory
+  - Auto-relate: sessions with 2+ shared tags are automatically linked
+  - Chain context: ancestors, related, tag-related shown in flow summary when available
+  - Added SYSTEM category to skill registry in CLAUDE.md
+  - Updated INDEX.md with new skill entry and symlink
+- v3.9.2 (2026-02-22): Always-Invoke Skill/Agent + Proactive Suggestion:
+  - REMOVED complexity-based selection (was: <10 = Skill, >=10 = Agent)
+  - NEW: Tech match = ALWAYS invoke, regardless of complexity score
+  - Skill vs Agent now decided by TASK NATURE (guidance = Skill, autonomous workflow = Agent)
+  - Added PROACTIVE SUGGESTION: If no match in registry, suggest new skill/agent to user
+  - User decides whether to create new skill/agent or use adaptive-skill-intelligence fallback
+  - Updated 3 sections: SKILL vs AGENT block, STEP 3.5, "What I Must Decide" 3.5
+  - Pattern tracking: Same unmatched domain 2+ times = stronger suggestion
+- v3.9.1 (2026-02-22): Plan Mode Recommend-Then-Ask Pattern:
+  - Changed Step 3.2 score 5-9 from blind "ask user" to "recommend with reasoning, then ask"
+  - Score 5-7: Lean toward direct proceed (standard patterns, few files)
+  - Score 8-9: Lean toward plan mode (multi-project, DB changes, many files)
+  - Updated 4 files: CLAUDE.md, 3-level-flow.py, auto-plan-mode-suggester.py, policy.md
+  - Pattern: Analyze task signals -> form recommendation -> present reasoning -> ask to confirm
+  - Result: User gets intelligent guidance instead of blind question
+- v3.9.0 (2026-02-22): Complete Loophole Hardening -- 19 Loopholes Audited, 18 Fixed:
+  - **COMPREHENSIVE SECURITY AUDIT** of entire hook enforcement system (2 rounds)
+  - **Round 1 (13 loopholes):** #1-#13 identified and fixed across 4 hook scripts
+  - **Round 2 (6 loopholes):** #14-#19 found in fresh re-audit, all fixed
+  - **Scripts updated:** post-tool-tracker.py v1.4.0, 3-level-flow.py v3.0.0+, pre-tool-enforcer.py v1.2.0
+  - Loophole #1 (HIGH): CLAUDE.md behavioral-only enforcement -> hook-level blocking
+  - Loophole #2 (HIGH): Approval word false positives ('a','b') -> removed from APPROVAL_WORDS
+  - Loophole #3 (HIGH): Checkpoint not enforced at hook level -> pre-tool-enforcer.py blocks Write/Edit/Bash
+  - Loophole #5 (MEDIUM): No context after /clear -> clear-session-handler prints previous session context
+  - Loophole #6 (MEDIUM): Subagents can't call TaskUpdate -> 3 fixes (hooks work, return reminder, phase guard)
+  - Loophole #7 (MEDIUM): Step 3.1/3.5 not enforced -> hook-level flag blocking for TaskCreate and Skill
+  - Loophole #8 (LOW): Progress tracking by line count -> content-aware character counting
+  - Loophole #9 (LOW): 'a'/'b' false approvals -> removed from APPROVAL_WORDS, 30-char max
+  - Loophole #10 (LOW): Stale flags persist -> 60-minute auto-expiry
+  - Loophole #11 (LOW): Concurrent window flag overwrite -> session-specific flag filenames
+  - Loophole #12 (LOW): Context estimate inaccurate -> actual response content character tracking
+  - Loophole #13 (LOW): Hook timeout bypass -> WON'T FIX (10s is 100x more than needed)
+  - Loophole #14 (MEDIUM): Checkpoint blocks ALL requests -> non-coding message detection (30+ indicators)
+  - Loophole #15 (LOW): Dummy TaskCreate bypass -> validate subject/description >= 10 chars
+  - Loophole #16 (LOW): Wrong Skill clears flag -> verify required_skill matches actual invocation
+  - Loophole #17 (LOW): tasks_completed double-counted -> removed Write/Edit increment, TaskUpdate only
+  - Loophole #18 (LOW-MEDIUM): Flag writing at script end (timeout risk) -> early flag writing after session_id
+  - Loophole #19 (LOW): Parallel tool race condition -> msvcrt file locking on session-progress.json
+  - **Result: 18/19 fixed, 1 won't fix (theoretical). Hook system fully hardened.**
+- v3.8.0 (2026-02-22): Loophole #3 Fix - Hook-Level Review Checkpoint Enforcement:
+  - Problem: CLAUDE.md said "wait for ok" but Claude would code anyway (behavioral only)
+  - Fix: 3-level-flow.py writes ~/.claude/.checkpoint-pending.json after every checkpoint
+  - Fix: pre-tool-enforcer.py reads flag, BLOCKS Write/Edit/Bash/Task/NotebookEdit (exit 1)
+  - Fix: 3-level-flow.py clears flag when user message is approval ('ok','proceed','haan',etc.)
+  - Fix: clear-session-handler.py clears flag on /clear (fresh start)
+  - Auto-expire: flag older than 60 min is auto-cleared (stale flag safety)
+  - Always allowed: Read/Grep/Glob (read-only tools never blocked)
+  - Result: Claude physically CANNOT write code until user says ok - enforced at hook level
+- v3.7.9 (2026-02-22): Loophole #5 Fix - Session Context Auto-Load After /clear:
+  - Problem: /clear saved session but Claude started completely fresh with no memory
+  - Fix: Modified clear-session-handler.py to print [PREVIOUS SESSION CONTEXT] to stdout
+  - Data source: Previous session's flow-trace.json (session ID, prompt, task type, skill, model)
+  - Output: Appears in hook system-reminder on FIRST message after /clear
+  - Claude now knows: what was worked on, task type, skill used, last prompt
+  - No new files needed: uses existing flow-trace.json infrastructure
+  - ASCII-safe: no Unicode chars (Windows-safe)
+- v3.7.8 (2026-02-22): Task-Completion Git Trigger:
+  - Fixed Step 3.11 timing problem: Stop hook was too aggressive (fired every response)
+  - New rule: git commit triggers on TaskUpdate(status=completed) on LAST task of phase
+  - "Phase complete" is semantic knowledge only Claude has -- task system tracks it
+  - Claude can't forget because task completion = commit trigger (linked together)
+  - DO NOT commit mid-work; only on phase/task completion
+- v3.7.7 (2026-02-22): Always-Task Policy:
+  - Changed Step 3.1 from complexity-based to ALWAYS create tasks
+  - Every request = minimum 1 TaskCreate (policy visibility)
+  - Phases trigger at 5+ tasks (not at complexity score)
+  - Purpose: User can see policies running on every request
+- v3.7.1 (2026-02-18): 📚 **New Architecture Integration (Comprehensive CLAUDE.md Update):**
+  - Added "How I (Claude) Use the New Architecture" section with complete path guide
+  - Updated all script references to use `~/.claude/memory/current/` paths
+  - Added comprehensive "Quick Reference" section for fast lookups
+  - Updated troubleshooting with new 9-step sequence and rollback instructions
+  - Added "How I Check This" with detailed flow execution modes (--verbose, --summary)
+  - Updated Zero-Tolerance Policy with correct current/ paths
+  - Updated "New Organized Structure" section with complete system map
+  - Updated "Policy Files" section with new directory structure
+  - Added INDEX.md references for skills (25+) and docs (118)
+  - Added script migration reference table (old -> new paths)
+  - Added common issues & fixes table in troubleshooting
+  - Added emergency reset instructions
+  - Added version quick check commands
+  - **Result:** Claude now knows HOW to use the new organized system correctly
+  - **Critical:** All old paths (root scripts) are now clearly marked as ARCHIVED
+  - **New Rule:** Always use `~/.claude/memory/current/` for all scripts
+- v3.7.0 (2026-02-18): 🏗️ **Memory Architecture Reorganization:**
+  - Consolidated 4 3-level flow scripts into one (`current/3-level-flow.sh`)
+  - Created `current/` folder with 15 versioned scripts
+  - Created MANIFEST.md, CHANGELOG.md, VERSION tracking in current/
+  - Archived 5 old script versions to `archived/2026-02-18/`
+  - Moved 32 historical docs to `docs/historical/`
+  - All scripts now have version numbers (v1.0.0, v2.0.0, etc.)
+  - Updated all CLAUDE.md references to use `current/` paths
+  - Script flags: `--verbose` for detailed output, `--summary` for brief
+  - Result: Clean architecture, easy to find current versions
+- v3.6.0 (2026-02-18): 🔐 **Kubernetes Network Policies - System Architecture Standard:**
+  - **MOVED TO STANDARDS SYSTEM:** Network policies now loaded as standard (not in global CLAUDE.md)
+  - Added as 14th standard in standards-loader.py (loaded automatically before execution)
+  - **MANDATORY:** ALL K8s services MUST have network policies (automatic creation)
+  - Created 27 service network policies (3 TechDeveloper + 12 Surgricalswale + 12 Lovepoet)
+  - Created 6 common namespace policies (PostgreSQL, MongoDB, Redis, Elasticsearch, RabbitMQ, Prometheus)
+  - Fixed critical issue: Added INGRESS policies in common namespace to allow all projects to access shared infrastructure
+  - Three-layer architecture: Service-level -> Common namespace -> Central hub
+  - Added automatic detection: Create network policy when creating new K8s service
+  - Added automatic handling: New common namespace services get policies automatically
+  - Database selection logic: PostgreSQL (TechDev/Surgrical), MongoDB (Lovepoet)
+  - Created comprehensive docs: kubernetes-network-policies.md (533 lines)
+  - Created templates: network-policy-microservice.yaml, network-policy-common-namespace.yaml
+  - Updated central-hub-policy to use specific pod selectors (not empty selector)
+  - User feedback: "common namespaces ka sab har namespace me use hoga" - ensured all projects can access common namespace
+  - Result: Database connectivity restored, Eureka registration fixed, network isolation enforced
+  - Location: Standards System (Layer 2 - loaded before execution, not global CLAUDE.md)
+- v3.5.0 (2026-02-18): 🚨 **Windows Unicode Prevention System + Session Logging:**
+  - **CRITICAL FIX:** Proactive Windows Unicode detection & auto-fix (1000+ occurrences prevented)
+  - Added Windows Python Unicode Checker (windows-python-unicode-checker.py)
+  - Enhanced Auto-Fix Enforcer with check [7/7] for Windows Unicode
+  - Added Failure Prevention Pattern: Category 0 - Python Encoding Errors
+  - Integrated Session Logging into auto-enforce-all-policies.sh (v2.0.0)
+  - Fixed session-logger.py encoding issues (all emojis -> ASCII)
+  - Added CLI arguments for all logging levels (--log-level-1, --log-level-2, etc.)
+  - Complete transparency: 7 log files per session
+  - Auto-fixed 30 Python files on first run
+  - **Result:** This error will NEVER happen again - proactive prevention!
+- v3.4.0 (2026-02-18): 🚨 **Jenkins Seed Job Automation (CRITICAL RULE):**
+  - **MANDATORY:** All new private microservices MUST be added to Jenkins seed job
+  - Added automated enforcement in DevOps Patterns section
+  - Seed job repo: jenkins-seed-config (techdeveloper-org)
+  - Auto-detection: If creating new service -> immediately add to seed job
+  - Prevents services from being missed in CI/CD pipeline
+  - Includes example seed job entry (multibranchPipelineJob)
+  - Rationale: Services without seed job = invisible to Jenkins = deployment failures
+  - Fixed: New services were being created without Jenkins pipeline setup
+  - Tool: Auto-prompt when creating new microservice repository
+- v3.3.0 (2026-02-17): 📋 **Comprehensive Documentation Policy v2.0 (Auto-Check + Auto-Create):**
+  - Created comprehensive-docs-checker.py (auto-check, auto-create, auto-update)
+  - Updated documentation-standards.md to v2.0.0 with auto-enforcement
+  - Added comprehensiveness requirements (min 50 lines, required sections)
+  - Flexible section matching (PROJECT/SERVICE/APPLICATION OVERVIEW accepted)
+  - Auto-creates missing README.md and CLAUDE.md in ALL git repos
+  - Auto-updates non-comprehensive files (with .backup preservation)
+  - Applied to surgricalswale: 14 git repos now 100% compliant
+  - All 14 services + frontend now have comprehensive README.md + CLAUDE.md
+  - Policy: Every git repo MUST have comprehensive documentation
+  - Tool: `python comprehensive-docs-checker.py <path> [--auto-create] [--auto-update]`
+- v3.2.0 (2026-02-17): 🎯 **Mandatory 3-Level Flow Display + Auto Daemon Management:**
+  - **REPLACED session-start.sh requirement** with complete 3-level flow display
+  - **MANDATORY:** Must run and show current/3-level-flow.sh before EVERY request
+  - Shows ALL 17 steps (3 levels + 12 execution steps + sub-steps) line-by-line
+  - User explicitly requested this for transparency and helpfulness
+  - **Updated Background Automation section:** All 8 daemons auto-start on Windows boot
+  - **Removed manual daemon starting:** Event-driven + smart adaptive = zero manual work
+  - **Daemon management:** Already handled by Windows Startup + auto-fix-enforcer.sh
+  - Created current/3-level-flow.sh (comprehensive test script, consolidated from 4 scripts)
+  - Verified all 17 steps execute successfully
+  - Flow shows: Context, Session, Standards, Prompt, Tasks, Plan Mode, Model, Skills, Optimizations, etc.
+  - Continue showing flow until user explicitly says to stop
+  - Rationale: Transparency, verification, debugging, trust, helpfulness
+- v3.1.1 (2026-02-17): 🏗️ **Production Infrastructure Documentation:**
+  - Created production-infrastructure.md with complete VPS/K8s setup details
+  - Documented Three-Tier Routing Architecture (Outer Nginx -> Ingress Controller -> Ingress Resources)
+  - Added ELK Stack hardening procedures (Kibana 9.2.3 migration, RBAC, PVC)
+  - Documented step-by-step process for adding new public apps
+  - Included troubleshooting guide for common infrastructure issues
+  - Added comprehensive component overview and security best practices
+  - All production setup knowledge now persistent in memory system
+- v3.1.0 (2026-02-17): 🔒 **Global CLAUDE.md Sync Block Policy:**
+  - Added explicit rule: Global CLAUDE.md should NEVER be synced to public repos
+  - Removed global CLAUDE.md from Claude Insight (was incorrectly synced)
+  - Created project-specific CLAUDE.md for Claude Insight (monitoring focused)
+  - Created project-specific CLAUDE.md for Claude Global Library (skills/agents focused)
+  - Updated detect-sync-eligibility.py to block global CLAUDE.md explicitly
+  - Updated smart-sync-to-claude-insight.sh to block --claude-md flag
+  - Added detection keyword: GLOBAL-CLAUDE-MD-DO-NOT-SYNC
+  - Added personal path patterns to SENSITIVE_PATTERNS (C:\Users\techd)
+  - Added comprehensive documentation section explaining the policy
+  - Triple-layer protection: Detection script + Smart sync + Documentation
+  - Fixed: Global CLAUDE.md was being synced to public repos (security/context issue)
+- v3.0.0 (2026-02-17): 🤖 **TRUE AUTOMATION - Auto-Hooks:**
+  - Created auto-enforce-all-policies.sh (all-in-one automatic script)
+  - Created install-auto-hooks.sh (automatic hook installer)
+  - Installed pre-request and user-prompt-submit hooks
+  - Policies now run AUTOMATICALLY before every request (no manual steps!)
+  - Added Option B (TRUE automation) + Option A (manual backup)
+  - Blocking mode: Policies must pass before response
+  - Complete 3-level architecture runs automatically
+- v2.9.0 (2026-02-17): 🔄 **Per-Request Policy Enforcement:**
+  - Created per-request-enforcer.py for continuous policy enforcement
+  - Policies now run BEFORE EVERY user request (not just session start)
+  - Added per-request state tracking (resets for each request)
+  - Added policy completion markers throughout execution flow
+  - Added final check before responding to user
+  - Fixed: Policies were only enforced once at session start
+  - Fixed: tree command replaced with find (Git Bash compatibility)
+- v2.8.0 (2026-02-17): 📋 **Documentation Standards Policy:**
+  - Added 2-file .md policy (README.md + CLAUDE.md only per project)
+  - Created documentation-standards.md with comprehensive rules
+  - Updated standards-loader.py to include documentation standards
+  - Applied to surgricalswale/backend (consolidated 6 .md files -> 1 README.md)
+  - Applied to email-service (consolidated 3 extra .md files)
+  - All projects now compliant with documentation standards
+- v2.7.0 (2026-02-17): 🚀 **Major Project Reorganization:**
+  - Created Claude Global Library (separate public repo for skills/agents)
+  - Cleaned Claude Insight (now focused on monitoring dashboard only)
+  - Updated sync rules: Skills/Agents -> claude-global-library, Core -> claude-insight
+  - Added comprehensive FUTURE-SYNC-RULES.md with decision trees
+  - Both projects pushed to GitHub
+- v2.6.0 (2026-02-17): 📚 Added comprehensive documentation:
+  - JPA Auditing Pattern (automatic audit tracking)
+  - Centralized Auth & Security Pattern (Gateway, JWT, CSRF, CORS, roles)
+  - DevOps Patterns (Docker/Jenkins/K8s standardization)
+- v2.5.0 (2026-02-16): 🚨 Added Auto-Fix Enforcement System - Zero-Tolerance Failure Policy
+- v2.4.0 (2026-02-16): Added Plan Detection System (Free/Pro/Team/Enterprise)
+- v2.3.0 (2026-02-15): Added GitHub CLI (`gh`) mandatory enforcement
+- v2.2.0 (2026-02-10): Active enforcement mode restored
+- v2.1.0 (2026-02-09): Initial memory system release

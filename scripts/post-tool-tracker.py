@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 # Script Name: post-tool-tracker.py
-# Version: 2.0.0
+# Version: 2.1.0
 # Last Modified: 2026-02-23
 # Description: PostToolUse hook - L3.9 tracking + L3.11 commit + L6 subagent + voice on task complete
+# v2.1.0: Added file change tracking for git commit reminders (10+ modified files warning)
 # Author: Claude Memory System
 #
 # Hook Type: PostToolUse
@@ -291,6 +292,16 @@ def main():
         state['last_tool'] = tool_name
         state['last_tool_at'] = entry['ts']
 
+        # Track file modifications since last commit (for git reminder)
+        if tool_name in ('Write', 'Edit', 'NotebookEdit') and not is_error:
+            file_path = (tool_input or {}).get('file_path', '') or (tool_input or {}).get('notebook_path', '')
+            if file_path:
+                modified_files = state.get('modified_files_since_commit', [])
+                short_path = '/'.join(file_path.replace('\\', '/').split('/')[-3:])
+                if short_path not in modified_files:
+                    modified_files.append(short_path)
+                state['modified_files_since_commit'] = modified_files
+
         if is_error:
             state['errors_seen'] = state.get('errors_seen', 0) + 1
 
@@ -383,6 +394,8 @@ def main():
                 if task_status == 'completed':
                     state['tasks_completed'] = state.get('tasks_completed', 0) + 1
                     completed_count = state.get('tasks_completed', 1)
+                    # Reset modified files tracker after task completion (git commit expected)
+                    state['modified_files_since_commit'] = []
                     save_session_progress(state)
                     sys.stdout.write(
                         '[POST-TOOL L3.11] Task marked COMPLETED (#'
@@ -401,6 +414,16 @@ def main():
                     # when ALL tasks are done (not per-task - too noisy)
             except Exception:
                 pass
+
+        # GIT REMINDER: When 10+ files modified without commit
+        modified_count = len(state.get('modified_files_since_commit', []))
+        if modified_count >= 10 and tool_name in ('Write', 'Edit', 'NotebookEdit'):
+            sys.stdout.write(
+                '[POST-TOOL GIT] WARNING: ' + str(modified_count) + ' files modified since last commit!\n'
+                '  ACTION: Consider running git add + git commit + git push.\n'
+                '  FILES: ' + ', '.join(state.get('modified_files_since_commit', [])[-5:]) + '...\n'
+            )
+            sys.stdout.flush()
 
         # Also write to .context-usage so it stays fresh (context-monitor fallback path)
         try:
