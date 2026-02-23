@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 # Script Name: post-tool-tracker.py
-# Version: 2.1.0
+# Version: 2.2.0
 # Last Modified: 2026-02-23
 # Description: PostToolUse hook - L3.9 tracking + L3.11 commit + L6 subagent + voice on task complete
+# v2.2.0: Auto work-done voice flag when all tasks completed (fixes unreliable voice)
 # v2.1.0: Added file change tracking for git commit reminders (10+ modified files warning)
 # Author: Claude Memory System
 #
@@ -410,8 +411,18 @@ def main():
                     )
                     sys.stdout.flush()
 
-                    # Voice: Claude writes .session-work-done with natural summary
-                    # when ALL tasks are done (not per-task - too noisy)
+                    # AUTO WORK-DONE VOICE (v2.2.0):
+                    # After each task completion, print strong reminder to Claude.
+                    # Claude must check TaskList and write .session-work-done if all done.
+                    sys.stdout.write(
+                        '[POST-TOOL VOICE] Task #' + str(completed_count) + ' completed.\n'
+                        '  CHECK: Are ALL tasks now completed?\n'
+                        '  IF YES -> Write ~/.claude/.session-work-done with session summary.\n'
+                        '  Command: python -c "from pathlib import Path; '
+                        'Path.home().joinpath(\'.claude\',\'.session-work-done\')'
+                        '.write_text(\'Sir, all tasks completed. [YOUR SUMMARY HERE]\', encoding=\'utf-8\')"\n'
+                    )
+                    sys.stdout.flush()
             except Exception:
                 pass
 

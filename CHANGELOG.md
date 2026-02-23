@@ -9,6 +9,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [4.0.1] - 2026-02-23
+
+### Fixed
+- **stop-notifier.py** v3.1.0: Fixed unreliable voice notifications
+  - Root cause: `subprocess.run()` blocked for full audio playback (15-28s), exceeding 20s hook timeout
+  - Fix: Changed to `subprocess.Popen(DETACHED_PROCESS)` - fire-and-forget, exits in <2s
+  - Reduced LLM timeout from 8s to 5s for faster message generation
+- **post-tool-tracker.py** v2.2.0: Auto work-done voice reminder
+  - Prints reminder to write `.session-work-done` flag on every TaskUpdate(completed)
+  - Previously relied on manual flag writing (rarely fired)
+
+### Changed
+- Stop hook timeout increased from 20s to 60s (safety net for edge cases)
+
+---
+
 ## [4.0.0] - 2026-02-23
 
 ### Added

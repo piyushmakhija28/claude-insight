@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """
 Script Name: stop-notifier.py
-Version: 3.0.0
+Version: 3.1.0
 Last Modified: 2026-02-23
 Description: Stop hook - speaks dynamic English voice updates via LLM.
+v3.1.0: Non-blocking speak (fire-and-forget), faster LLM (5s timeout), auto work-done detection
 
 VOICE TRIGGERS (3 flag files, checked in priority order):
   1. ~/.claude/.session-start-voice   -> New session started
@@ -207,7 +208,7 @@ def generate_dynamic_message(event_type, context=''):
                 method='POST'
             )
 
-            with urllib_request.urlopen(req, timeout=8) as resp:
+            with urllib_request.urlopen(req, timeout=5) as resp:
                 result = json.loads(resp.read().decode('utf-8'))
                 message = result.get('choices', [{}])[0].get('message', {}).get('content', '').strip()
 
@@ -234,30 +235,34 @@ def generate_dynamic_message(event_type, context=''):
 # =============================================================================
 
 def speak(text):
-    """Call voice-notifier.py to speak the message"""
+    """
+    Launch voice-notifier.py as DETACHED process (fire-and-forget).
+    v3.1.0: Changed from subprocess.run (BLOCKING) to subprocess.Popen (NON-BLOCKING).
+    Root cause fix: subprocess.run waited for audio to finish, causing hook timeout kills.
+    Now the voice process runs independently - stop-notifier exits immediately.
+    """
     if not text or not text.strip():
         return
 
     if not VOICE_SCRIPT.exists():
         log_s(f"[ERROR] voice-notifier.py not found at {VOICE_SCRIPT}")
-        print(f"[VOICE] {text}")
         return
 
     try:
-        result = subprocess.run(
+        creation_flags = 0
+        if sys.platform == 'win32':
+            creation_flags = subprocess.DETACHED_PROCESS | subprocess.CREATE_NO_WINDOW
+
+        subprocess.Popen(
             [sys.executable, str(VOICE_SCRIPT), text],
-            timeout=25,
-            capture_output=True,
-            text=True,
-            encoding='utf-8',
-            errors='replace'
+            creationflags=creation_flags,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            close_fds=True,
         )
-        log_s(f"[voice] Spoke (rc={result.returncode}): {text[:80]}")
-    except subprocess.TimeoutExpired:
-        log_s("[voice] Timeout - audio still playing in background")
+        log_s(f"[voice] Launched (detached): {text[:80]}")
     except Exception as e:
-        log_s(f"[voice] Error: {e}")
-        print(f"[VOICE] {text}")
+        log_s(f"[voice] Error launching detached: {e}")
 
 
 # =============================================================================
