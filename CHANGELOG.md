@@ -26,10 +26,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - **Updated scripts** synced from global system:
   - `3-level-flow.py` - Added session chaining + summary accumulation
-  - `clear-session-handler.py` - Added session finalize + chain linking
-  - `pre-tool-enforcer.py` - Loophole fixes (19 loopholes hardened)
-  - `post-tool-tracker.py` - Content-aware progress tracking
-  - `stop-notifier.py` - LLM-powered dynamic voice notifications
+  - `clear-session-handler.py` - Added session finalize + chain linking + previous session context on /clear
+  - `pre-tool-enforcer.py` - Hook-level enforcement for review checkpoint, task creation, skill selection
+  - `post-tool-tracker.py` - Content-aware progress tracking (character counting instead of line counting)
+  - `stop-notifier.py` - LLM-powered dynamic English voice notifications (en-IN-NeerjaNeural)
+
+### Security - 19 Loopholes Audited, 18 Fixed (2 audit rounds)
+
+Complete security hardening of the hook enforcement system. Each loophole identified, severity rated, and fixed:
+
+**Round 1 - 13 Loopholes:**
+
+| # | Severity | Problem | Fix | Script |
+|---|----------|---------|-----|--------|
+| 1 | HIGH | CLAUDE.md enforcement was behavioral only - Claude could ignore rules since nothing physically blocked it | Added hook-level blocking: `pre-tool-enforcer.py` now reads flag files and exits with code 1 to physically block Write/Edit/Bash tools | `pre-tool-enforcer.py` |
+| 2 | HIGH | Approval word detection had false positives - single letters like 'a', 'b' matched as approval words, so any message starting with these would clear the checkpoint | Removed 'a' and 'b' from APPROVAL_WORDS list; added 30-character max length for approval detection | `3-level-flow.py` |
+| 3 | HIGH | Review checkpoint was not enforced at hook level - CLAUDE.md said "wait for ok" but Claude could code anyway since no tool was physically blocked | `3-level-flow.py` writes `~/.claude/.checkpoint-pending.json` flag; `pre-tool-enforcer.py` reads it and BLOCKS Write/Edit/Bash/Task/NotebookEdit (exit 1) until user approves; flag cleared on approval or /clear | `3-level-flow.py`, `pre-tool-enforcer.py`, `clear-session-handler.py` |
+| 4 | MEDIUM | (Included in #3 fix scope) | Checkpoint enforcement via flag-based IPC | - |
+| 5 | MEDIUM | No context continuity after /clear - session was saved but Claude started completely fresh with no memory of what was worked on | Modified `clear-session-handler.py` to print [PREVIOUS SESSION CONTEXT] to stdout, reading from previous session's flow-trace.json (session ID, prompt, task type, skill, model) | `clear-session-handler.py` |
+| 6 | MEDIUM | Subagents (Task tool) cannot call TaskUpdate - work done by subagents was invisible to progress tracking | Three fixes: (1) hooks still work inside subagents, (2) return reminder text to main agent, (3) phase completion guard in main agent context | `post-tool-tracker.py` |
+| 7 | MEDIUM | Steps 3.1 (TaskCreate) and 3.5 (Skill/Agent) were not enforced at hook level - Claude could skip creating tasks or invoking skills | Added flag-based blocking: `3-level-flow.py` writes pending flags, `pre-tool-enforcer.py` blocks Write/Edit until TaskCreate and Skill tools are called | `3-level-flow.py`, `pre-tool-enforcer.py` |
+| 8 | LOW | Progress tracking used line count which was inaccurate - a 1-line Write that creates 500 chars tracked same as 1-line Read | Changed to content-aware character counting: measures actual response content length for accurate progress estimation | `post-tool-tracker.py` |
+| 9 | LOW | Single-letter approval words ('a', 'b') caused false positives in checkpoint clearing | Removed from APPROVAL_WORDS, added 30-character max length check | `3-level-flow.py` |
+| 10 | LOW | Stale enforcement flags persisted indefinitely - if a flag was written but never cleared (crash, timeout), it blocked forever | Added 60-minute auto-expiry: all flag reads check `created_at` timestamp, delete if older than 60 minutes | `pre-tool-enforcer.py`, `3-level-flow.py` |
+| 11 | LOW | Concurrent Claude windows overwrote each other's flags - two sessions could interfere with enforcement | Changed to session-specific flag filenames: `.checkpoint-pending-SESSION-XXX.json` instead of `.checkpoint-pending.json` | All flag-writing scripts |
+| 12 | LOW | Context usage estimate was inaccurate - estimated from prompt length only, not actual response content | Added actual response content character tracking in PostToolUse hook, accumulates real usage per session | `post-tool-tracker.py` |
+| 13 | LOW | Hook timeout could theoretically bypass enforcement (10s timeout) | WON'T FIX - 10 seconds is 100x more than scripts need (typical: 50-100ms). Theoretical only, no practical risk | - |
+
+**Round 2 - 6 Additional Loopholes (found in re-audit):**
+
+| # | Severity | Problem | Fix | Script |
+|---|----------|---------|-----|--------|
+| 14 | MEDIUM | Checkpoint blocked ALL requests including non-coding messages - asking "what time is it?" was blocked until approval | Added 30+ non-coding message indicators (greetings, questions, "hello", "thanks", etc.) that auto-clear the checkpoint flag | `3-level-flow.py` |
+| 15 | LOW | Dummy TaskCreate could bypass Step 3.1 - creating a task with empty or 1-char subject/description satisfied the check | Added validation: subject and description must each be >= 10 characters to count as real task creation | `pre-tool-enforcer.py` |
+| 16 | LOW | Wrong Skill invocation cleared the skill-selection flag - invoking any skill (even wrong one) satisfied Step 3.5 | Added verification: `required_skill` field in flag must match the actual skill invoked | `pre-tool-enforcer.py` |
+| 17 | LOW | `tasks_completed` counter double-counted - Write/Edit tool calls incremented the counter alongside TaskUpdate, inflating progress | Removed Write/Edit increment from progress tracking; only TaskUpdate(completed) increments `tasks_completed` | `post-tool-tracker.py` |
+| 18 | LOW-MEDIUM | Flag files written at end of script - if script timed out before reaching the write, enforcement was skipped | Moved flag writing to immediately after session_id is known (early in script), before any heavy processing | `3-level-flow.py` |
+| 19 | LOW | Parallel tool calls caused race condition on session-progress.json - two PostToolUse hooks writing simultaneously could corrupt data | Added Windows file locking (`msvcrt.locking`) for read-modify-write operations on shared JSON files | `post-tool-tracker.py` |
+
+**Result:** 18 of 19 loopholes fixed. Loophole #13 marked WON'T FIX (theoretical only, 10s timeout is 100x safety margin).
 
 ### Removed
 - **14 duplicate flat policy files** from `policies/` root - all policies now ONLY in organized sub-folders (01-sync-system, 02-standards-system, 03-execution-system, testing)
