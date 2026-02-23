@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
 Script Name: clear-session-handler.py
-Version: 1.0.0
-Last Modified: 2026-02-18
+Version: 2.0.0
+Last Modified: 2026-02-23
 Description: Detects /clear command usage via UserPromptSubmit hook.
              Compares current transcript message count vs last known count.
              If count decreased or transcript changed = /clear was used.
@@ -13,6 +13,9 @@ Detection Logic:
   - If msg_count < last_msg_count  -> /clear detected (count dropped)
   - If transcript_path changed     -> new conversation/window detected
   - If msg_count == 0 + no prior   -> fresh start
+
+Voice: Writes .session-start-voice flag for stop-notifier.py to speak.
+       Does NOT speak directly - single voice pipeline via stop-notifier.
 
 Windows-Safe: No Unicode chars (ASCII only, cp1252 compatible)
 """
@@ -36,7 +39,9 @@ SESSIONS_DIR = MEMORY_BASE / 'sessions'
 CURRENT_SESSION_FILE = MEMORY_BASE / '.current-session.json'
 HOOK_STATE_FILE = Path.home() / '.claude' / '.hook-state.json'
 CLEAR_LOG = MEMORY_BASE / 'logs' / 'clear-events.log'
-VOICE_SCRIPT = CURRENT_DIR / 'voice-notifier.py'
+SESSION_START_VOICE_FLAG = Path.home() / '.claude' / '.session-start-voice'
+# Flag directory for session-specific enforcement flags (Loophole #11 fix)
+FLAG_DIR = Path.home() / '.claude'
 
 
 # =============================================================================
@@ -252,70 +257,75 @@ def close_current_session(session_id):
     return True
 
 
-def speak_fast_pyttsx3(text):
+def write_voice_flag(message):
     """
-    Fast offline TTS using pyttsx3 - no network, no edge-tts delay.
-    Launches as DETACHED subprocess so it survives after hook exits.
-    Text passed as sys.argv[1] to avoid all quoting/escaping issues.
-    Primary method for clear notifications (instant, offline).
+    Write .session-start-voice flag for stop-notifier.py to pick up.
+    Single voice pipeline: flag -> stop-notifier -> voice-notifier -> audio.
     """
-    # Inline script reads text from sys.argv[1] - no quoting issues
-    inline = (
-        "import sys,pyttsx3;"
-        "e=pyttsx3.init();"
-        "voices=e.getProperty('voices');"
-        "kws=['zira','heera','hazel','female','aria','jenny','neerja'];"
-        "fid=next((v.id for v in voices if any(k in v.name.lower() for k in kws)),None);"
-        "fid=fid or (voices[1].id if len(voices)>1 else (voices[0].id if voices else None));"
-        "e.setProperty('voice',fid) if fid else None;"
-        "e.setProperty('rate',155);"
-        "e.setProperty('volume',0.95);"
-        "e.say(sys.argv[1]);"
-        "e.runAndWait()"
-    )
     try:
-        subprocess.Popen(
-            [sys.executable, '-c', inline, text],  # text passed as argv[1], no shell escaping needed
-            creationflags=(subprocess.DETACHED_PROCESS | subprocess.CREATE_NO_WINDOW)
-            if sys.platform == 'win32' else 0,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-        )
-        log_event(f"[pyttsx3-fast] Detached process launched: {text[:60]}")
+        SESSION_START_VOICE_FLAG.write_text(message, encoding='utf-8')
+        log_event(f"[voice] Flag written for stop-notifier: {message[:60]}")
     except Exception as e:
-        log_event(f"[pyttsx3-fast] Failed: {e} - trying edge-tts")
-        speak_async_edgetts(text)
+        log_event(f"[voice] Failed to write voice flag: {e}")
 
 
-def speak_async_edgetts(text):
+def get_previous_session_context(session_id):
     """
-    Fallback: Launch voice-notifier.py (edge-tts) as detached process.
-    Slower (needs network) but better Indian voice quality.
+    Read the previous session's flow-trace.json to build a context summary.
+    Printed to stdout so Claude sees it on the first message after /clear.
+    Returns formatted string or None if no data available.
     """
-    if not VOICE_SCRIPT.exists():
-        log_event(f"[voice] voice-notifier.py not found at {VOICE_SCRIPT}")
-        return
+    if not session_id:
+        return None
+
+    logs_dir = MEMORY_BASE / 'logs' / 'sessions' / session_id
+    flow_trace = logs_dir / 'flow-trace.json'
+
+    if not flow_trace.exists():
+        log_event(f"No flow-trace found for session {session_id} at {flow_trace}")
+        return None
+
     try:
-        subprocess.Popen(
-            [sys.executable, str(VOICE_SCRIPT), text],
-            creationflags=(subprocess.DETACHED_PROCESS | subprocess.CREATE_NO_WINDOW)
-            if sys.platform == 'win32' else 0,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-            close_fds=True
-        )
-        log_event(f"[voice] EdgeTTS async launched: {text[:60]}")
+        with open(flow_trace, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+
+        user_input = data.get('user_input', {})
+        final_decision = data.get('final_decision', {})
+        meta = data.get('meta', {})
+
+        prompt = user_input.get('prompt', 'Unknown')
+        task_type = final_decision.get('task_type', 'Unknown')
+        skill = final_decision.get('skill_or_agent', 'Unknown')
+        complexity = final_decision.get('complexity', '?')
+        model = final_decision.get('model_selected', 'Unknown')
+        started_at = meta.get('flow_start', '')[:19].replace('T', ' ')
+
+        # Truncate long prompts
+        if len(prompt) > 300:
+            prompt = prompt[:300] + '...'
+
+        lines = [
+            '',
+            '[PREVIOUS SESSION CONTEXT - AUTO-LOADED AFTER /clear]',
+            '=' * 65,
+            f'Session ID  : {session_id}',
+            f'Started At  : {started_at}',
+            f'Task Type   : {task_type} (Complexity: {complexity})',
+            f'Skill/Agent : {skill}',
+            f'Model Used  : {model}',
+            f'Last Prompt : {prompt}',
+            '=' * 65,
+            '[CONTINUITY] Resume work from where the previous session left off.',
+            '[CONTINUITY] The user did /clear but you can reference this context.',
+            '',
+        ]
+
+        log_event(f"Previous session context loaded for {session_id}")
+        return '\n'.join(lines)
+
     except Exception as e:
-        log_event(f"[voice] EdgeTTS failed to launch: {e}")
-
-
-def speak_async(text):
-    """
-    Main speak entry: edge-tts PRIMARY (Indian Neerja voice), pyttsx3 fallback.
-    edge-tts = Indian en-IN-NeerjaNeural voice (needs network, 2-3s delay but sounds Indian)
-    pyttsx3  = British/US voice (offline, instant but NOT Indian sounding)
-    """
-    speak_async_edgetts(text)
+        log_event(f"Error reading previous session context: {e}")
+        return None
 
 
 def create_new_session(reason=''):
@@ -345,6 +355,8 @@ def create_new_session(reason=''):
 
         if new_session_id:
             log_event(f"New session created: {new_session_id} (reason: {reason})")
+            # Reset session-progress.json so context % starts fresh for new session
+            _reset_session_progress(new_session_id)
             return new_session_id
         else:
             log_event(f"ERROR: Could not parse session ID from output: {result.stdout[:200]}")
@@ -353,6 +365,88 @@ def create_new_session(reason=''):
     except Exception as e:
         log_event(f"ERROR creating session: {e}")
         return None
+
+
+def _reset_session_progress(new_session_id=''):
+    """
+    Reset session-progress.json when a new session starts.
+    This ensures context % estimate starts from 0 (fresh session)
+    instead of accumulating from previous sessions.
+    """
+    session_progress_file = MEMORY_BASE / 'logs' / 'session-progress.json'
+    try:
+        fresh = {
+            'total_progress': 0,
+            'tool_counts': {},
+            'content_chars': 0,
+            'started_at': datetime.now().strftime('%Y-%m-%dT%H:%M:%S'),
+            'tasks_completed': 0,
+            'errors_seen': 0,
+            'context_estimate_pct': 15,
+            'session_id': new_session_id,
+            'reset_reason': 'new session after /clear'
+        }
+        session_progress_file.parent.mkdir(parents=True, exist_ok=True)
+        with open(session_progress_file, 'w', encoding='utf-8') as f:
+            import json as _json
+            _json.dump(fresh, f, indent=2)
+        log_event(f"session-progress.json reset for new session {new_session_id}")
+    except Exception as e:
+        log_event(f"WARNING: Could not reset session-progress.json: {e}")
+
+
+# =============================================================================
+# SESSION CHAINING
+# =============================================================================
+
+def _finalize_session_summary(session_id):
+    """
+    Finalize session summary (generate session-summary.md) before closing.
+    Called by clear-session-handler on /clear.
+    """
+    summary_script = CURRENT_DIR / 'session-summary-manager.py'
+    if not summary_script.exists():
+        log_event(f"[WARN] session-summary-manager.py not found, skipping finalize")
+        return
+
+    try:
+        result = subprocess.run(
+            [sys.executable, str(summary_script), 'finalize',
+             '--session', session_id],
+            capture_output=True, text=True,
+            encoding='utf-8', errors='replace', timeout=10
+        )
+        if result.returncode == 0:
+            log_event(f"[SUMMARY] Finalized for {session_id}")
+        else:
+            log_event(f"[SUMMARY WARN] Finalize failed: {result.stderr[:100]}")
+    except Exception as e:
+        log_event(f"[SUMMARY ERROR] {e}")
+
+
+def _link_session_chain(child_session, parent_session):
+    """
+    Link new session to its parent via session-chain-manager.py.
+    Called after /clear creates a new session.
+    """
+    chain_script = CURRENT_DIR / 'session-chain-manager.py'
+    if not chain_script.exists():
+        log_event(f"[WARN] session-chain-manager.py not found, skipping chain link")
+        return
+
+    try:
+        result = subprocess.run(
+            [sys.executable, str(chain_script), 'link',
+             '--child', child_session, '--parent', parent_session],
+            capture_output=True, text=True,
+            encoding='utf-8', errors='replace', timeout=10
+        )
+        if result.returncode == 0:
+            log_event(f"[CHAIN] Linked {child_session} -> parent: {parent_session}")
+        else:
+            log_event(f"[CHAIN WARN] Link failed: {result.stderr[:100]}")
+    except Exception as e:
+        log_event(f"[CHAIN ERROR] {e}")
 
 
 # =============================================================================
@@ -390,25 +484,60 @@ def main():
         current_session = get_current_session_id()
 
         if current_session:
+            # Load previous session context BEFORE closing (reads flow-trace.json)
+            prev_context = get_previous_session_context(current_session)
+
+            # Finalize session summary BEFORE closing
+            _finalize_session_summary(current_session)
+
             # Save and close the old session
             print(f"[SESSION] /clear detected - saving: {current_session}")
             close_current_session(current_session)
             print(f"[SESSION] Old session saved: {current_session}")
+
+            # Print previous context AFTER session markers so Claude sees it clearly
+            if prev_context:
+                print(prev_context)
+
+            # Clear ALL enforcement flags from ALL sessions - /clear = fresh start
+            # Loophole #11: flags are now session-specific, use glob to find all
+            import glob as _glob
+            for pattern, flag_name in [
+                ('.checkpoint-pending-*.json', 'Checkpoint'),
+                ('.task-breakdown-pending-*.json', 'Task-breakdown'),
+                ('.skill-selection-pending-*.json', 'Skill-selection'),
+            ]:
+                for flag_file in _glob.glob(str(FLAG_DIR / pattern)):
+                    try:
+                        Path(flag_file).unlink()
+                        log_event(f"{flag_name} flag cleared on /clear: {Path(flag_file).name}")
+                    except Exception:
+                        pass
 
             # Create fresh session
             new_session = create_new_session(reason=reason)
             if new_session:
                 print(f"[SESSION] New session started: {new_session}")
                 log_event(f"Session transition complete: {current_session} -> {new_session}")
-                # Voice: emotional girlfriend style - short, expressive
+
+                # Chain link: new session -> parent (old session)
+                _link_session_chain(new_session, current_session)
+                # Voice: English, professional boss-assistant style
                 import random
-                gf_messages = [
-                    "Arre yaar, naya session! Bata kya soch raha hai.",
-                    "Oye oye, clear kar diya tune. Chalo kya plan hai.",
-                    "Aww, fresh start mil gaya. Bol ab kya karna hai.",
-                    "Haha, clear! Theek hai, bata kya hai agenda.",
+                hour = datetime.now().hour
+                if hour < 12:
+                    greet = 'Good morning'
+                elif hour < 17:
+                    greet = 'Good afternoon'
+                else:
+                    greet = 'Good evening'
+                clear_messages = [
+                    f"{greet} Sir. Session cleared and refreshed. Ready for your next task.",
+                    f"{greet} Sir. Fresh session started. What would you like to work on?",
+                    f"{greet} Sir. Previous session saved. I am ready for new commands.",
+                    f"{greet} Sir. Session reset complete. Let me know what you need.",
                 ]
-                speak_async(random.choice(gf_messages))
+                write_voice_flag(random.choice(clear_messages))
             else:
                 print(f"[SESSION] Warning: Could not create new session")
                 log_event("Warning: Failed to create new session after /clear")
@@ -419,14 +548,21 @@ def main():
             new_session = create_new_session(reason=reason)
             if new_session:
                 print(f"[SESSION] First session created: {new_session}")
-                # Voice: first session - warm, welcoming emotion
+                # Voice: first session - professional welcome
                 import random
+                hour = datetime.now().hour
+                if hour < 12:
+                    greet = 'Good morning'
+                elif hour < 17:
+                    greet = 'Good afternoon'
+                else:
+                    greet = 'Good evening'
                 first_messages = [
-                    "Arre, aa gaya tu. Naya session ready hai, bata kya karna hai.",
-                    "Aww, finally. Main yahaan hun, bol kya chahiye.",
-                    "Oye, session shuru. Kya plan hai aaj.",
+                    f"{greet} Sir. First session started. I am ready to assist you.",
+                    f"{greet} Sir. Welcome. Tell me what you would like to work on today.",
+                    f"{greet} Sir. New session initialized. Ready for your commands.",
                 ]
-                speak_async(random.choice(first_messages))
+                write_voice_flag(random.choice(first_messages))
 
     else:
         log_event(f"Ongoing conversation ({reason}) - no session change")

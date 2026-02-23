@@ -22,11 +22,213 @@ if sys.platform == 'win32':
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
     sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
 
-VERSION = "3.0.0"
+VERSION = "3.2.0"
 SCRIPT_NAME = "3-level-flow.py"
 MEMORY_BASE = Path.home() / '.claude' / 'memory'
 CURRENT_DIR = MEMORY_BASE / 'current'
 PYTHON = sys.executable
+
+# Flag directory for session-specific enforcement flags (Loophole #11 fix)
+FLAG_DIR = Path.home() / '.claude'
+
+
+def checkpoint_flag_path(session_id):
+    """Session-specific checkpoint flag path."""
+    return FLAG_DIR / f'.checkpoint-pending-{session_id}.json'
+
+
+def task_breakdown_flag_path(session_id):
+    """Session-specific task breakdown flag path."""
+    return FLAG_DIR / f'.task-breakdown-pending-{session_id}.json'
+
+
+def skill_selection_flag_path(session_id):
+    """Session-specific skill selection flag path."""
+    return FLAG_DIR / f'.skill-selection-pending-{session_id}.json'
+
+# Short approval words that clear the checkpoint flag
+# MUST be <= 30 chars total
+APPROVAL_WORDS = {
+    'ok', 'okay', 'proceed', 'yes', 'yep', 'sure', 'go',
+    'haan', 'han', 'hao', 'theek hai', 'chalo', 'karo',
+    'go ahead', 'done', 'continue', 'approved', 'confirm',
+    'ok proceed', 'yes proceed', 'okay proceed', 'haan karo',
+    'ok go', 'yes go', 'ok done', 'ok sure', 'haan chalo',
+}
+
+
+def is_approval_message(msg):
+    """
+    True if the message is a short user confirmation like 'ok', 'proceed', 'haan'.
+    Must be <= 30 chars. Checks:
+      1. Exact match against APPROVAL_WORDS (handles 'ok proceed', 'yes go', etc.)
+      2. All words in message are individually approval words (handles any combo)
+    """
+    m = msg.strip().lower()
+    if len(m) > 30:
+        return False
+    # Exact match (includes compound phrases like 'ok proceed')
+    if m in APPROVAL_WORDS:
+        return True
+    # All-words match: every word must be an approval word
+    # This handles any combination like 'ok proceed go' without listing all combos
+    words = m.split()
+    if words and all(w in APPROVAL_WORDS for w in words):
+        return True
+    return False
+
+
+# Loophole #14 fix: non-coding messages skip checkpoint enforcement
+NON_CODING_INDICATORS = [
+    'what is', 'what are', 'how does', 'how do', 'how to', 'why does', 'why is',
+    'explain', 'describe', 'tell me', 'show me', 'list all', 'list the',
+    'can you', 'could you explain', 'what does', 'whats the', "what's the",
+    'kya hai', 'kaise hai', 'kaise kare', 'kya hota', 'samjha do', 'bata do',
+    'batao', 'samjhao', 'dikhao', 'kya matlab', 'meaning of',
+    'difference between', 'compare', 'versus', 'vs ',
+    'summary', 'status', 'progress', 'kitna hua', 'kahan tak',
+]
+
+
+def is_non_coding_message(msg):
+    """
+    Detect if the user message is a question/research/info request (not coding).
+    These messages should NOT trigger checkpoint enforcement.
+    Returns True if the message appears to be non-coding (question/info).
+    """
+    m = msg.strip().lower()
+    # Very short messages (< 15 chars) that aren't approvals are likely quick questions
+    if len(m) < 15 and '?' in m:
+        return True
+    # Check for question mark with non-coding indicator
+    if '?' in m and any(indicator in m for indicator in NON_CODING_INDICATORS):
+        return True
+    # Pure question indicators (even without ?)
+    if any(m.startswith(indicator) for indicator in NON_CODING_INDICATORS):
+        return True
+    return False
+
+
+def get_session_progress(session_id):
+    """
+    Read session-progress.json to check what tools have already been called.
+    Used to detect mid-session continuations where TaskCreate/Skill were already done.
+    Returns dict with tool_counts, tasks_completed, etc.
+    """
+    progress_file = MEMORY_BASE / 'logs' / 'session-progress.json'
+    try:
+        if progress_file.exists():
+            with open(progress_file, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+            # Only return data if it belongs to the current session
+            if data.get('session_id', '') == session_id:
+                return data
+    except Exception:
+        pass
+    return {}
+
+
+def is_mid_session_continuation(session_id):
+    """
+    Detect if this is a follow-up message in an active session where
+    checkpoint approval, TaskCreate, and Skill invocation already happened.
+    Returns True if enforcement flags should NOT be re-created.
+    """
+    progress = get_session_progress(session_id)
+    if not progress:
+        return False
+
+    tool_counts = progress.get('tool_counts', {})
+    tasks_completed = progress.get('tasks_completed', 0)
+
+    # If TaskCreate was called AND Skill/Task was invoked -> mid-session continuation
+    has_task_create = tool_counts.get('TaskCreate', 0) > 0
+    has_skill = tool_counts.get('Skill', 0) > 0
+    has_task_agent = tool_counts.get('Task', 0) > 0
+
+    return has_task_create and (has_skill or has_task_agent)
+
+
+def clear_all_enforcement_flags(reason=''):
+    """Delete ALL enforcement flags (checkpoint + task-breakdown + skill-selection) on approval."""
+    try:
+        import glob as _glob
+        cleared = 0
+        for pattern in ['.checkpoint-pending-*.json', '.task-breakdown-pending-*.json', '.skill-selection-pending-*.json']:
+            for flag_file in _glob.glob(str(FLAG_DIR / pattern)):
+                Path(flag_file).unlink()
+                cleared += 1
+        if cleared > 0:
+            print(f'[ENFORCEMENT] {cleared} flag(s) cleared - {reason}')
+        else:
+            print(f'[ENFORCEMENT] No flags to clear - {reason}')
+    except Exception:
+        pass
+
+
+def clear_checkpoint_flag(reason=''):
+    """Alias - clears ALL enforcement flags (backward compat)."""
+    clear_all_enforcement_flags(reason)
+
+
+def write_checkpoint_flag(session_id, prompt_preview):
+    """Write session-specific checkpoint flag so pre-tool-enforcer can block code tools."""
+    try:
+        flag_path = checkpoint_flag_path(session_id)
+        flag_path.parent.mkdir(parents=True, exist_ok=True)
+        with open(flag_path, 'w', encoding='utf-8') as f:
+            json.dump({
+                'session_id': session_id,
+                'created_at': datetime.now().isoformat(),
+                'prompt_preview': prompt_preview[:100],
+                'reason': 'awaiting_user_ok'
+            }, f)
+    except Exception:
+        pass
+
+
+def write_task_breakdown_flag(session_id, prompt_preview):
+    """
+    Step 3.1 enforcement flag (session-specific).
+    Cleared by post-tool-tracker.py when TaskCreate is detected.
+    pre-tool-enforcer.py blocks Write/Edit/Bash until this flag is gone.
+    """
+    try:
+        flag_path = task_breakdown_flag_path(session_id)
+        flag_path.parent.mkdir(parents=True, exist_ok=True)
+        with open(flag_path, 'w', encoding='utf-8') as f:
+            json.dump({
+                'session_id': session_id,
+                'created_at': datetime.now().isoformat(),
+                'prompt_preview': prompt_preview[:100],
+                'reason': 'step_3_1_task_breakdown_required',
+                'policy': 'TaskCreate MUST be called before any Write/Edit/Bash'
+            }, f)
+    except Exception:
+        pass
+
+
+def write_skill_selection_flag(session_id, required_skill, required_type):
+    """
+    Step 3.5 enforcement flag (session-specific).
+    Only written for non-adaptive skills (adaptive needs no tool invocation).
+    Cleared by post-tool-tracker.py when Skill or Task tool is detected.
+    pre-tool-enforcer.py blocks Write/Edit/Bash until this flag is gone.
+    """
+    try:
+        flag_path = skill_selection_flag_path(session_id)
+        flag_path.parent.mkdir(parents=True, exist_ok=True)
+        with open(flag_path, 'w', encoding='utf-8') as f:
+            json.dump({
+                'session_id': session_id,
+                'created_at': datetime.now().isoformat(),
+                'required_skill': required_skill,
+                'required_type': required_type,
+                'reason': 'step_3_5_skill_selection_required',
+                'policy': 'Skill/Task tool MUST be invoked before any Write/Edit/Bash'
+            }, f)
+    except Exception:
+        pass
 
 
 # =============================================================================
@@ -127,11 +329,31 @@ def detect_tech_stack(cwd=None):
     Detect actual tech stack from project files.
     Returns list of detected technologies.
     Priority: read actual files, not just check existence.
+
+    IMPORTANT: Skip home directory and system directories.
+    Scanning home dir causes false-positive tech detection (e.g., a stray
+    requirements.txt with flask maps to ui-ux-designer for ALL queries).
+    Only scan directories that look like actual project directories.
     """
+    home = Path.home()
+    # Directories that are NOT project directories - skip them
+    skip_dirs = {home, home / '.claude', home / '.claude' / 'memory',
+                 home / '.claude' / 'memory' / 'current'}
+
     search_dirs = []
     if cwd:
-        search_dirs.append(Path(cwd))
-    search_dirs.append(Path.cwd())
+        candidate = Path(cwd)
+        if candidate not in skip_dirs:
+            search_dirs.append(candidate)
+
+    # Only add process CWD if it differs from hook cwd and is a project dir
+    proc_cwd = Path.cwd()
+    if proc_cwd not in skip_dirs and proc_cwd not in search_dirs:
+        search_dirs.append(proc_cwd)
+
+    # If no valid project dirs found, return unknown immediately
+    if not search_dirs:
+        return ['unknown']
 
     stack = []
 
@@ -220,8 +442,9 @@ def detect_tech_stack(cwd=None):
 # PRIORITY RULES:
 #   1. TASK TYPE is PRIMARY - matches by what the user wants to DO, not project files
 #   2. TECH STACK is SECONDARY - matches by detected project technology
-#   3. AGENTS are preferred over skills for complex tasks
-#   4. No match -> adaptive-skill-intelligence (creates new per policy)
+#   3. Skill vs Agent by TASK NATURE (not complexity): guidance=Skill, autonomous=Agent
+#   4. ALWAYS invoke matching skill/agent (no complexity threshold)
+#   5. No match -> SUGGEST new skill/agent to user (not silently adaptive)
 # =============================================================================
 
 # TASK TYPE REGISTRY - Primary selection based on WHAT user is trying to do
@@ -282,6 +505,10 @@ TASK_TYPE_TO_AGENT = {
 
     # --- SEO ---
     'SEO':               ('dynamic-seo-agent', 'agent'),
+
+    # --- System/Script tasks (about the Claude memory system itself) ---
+    'System/Script':     ('adaptive-skill-intelligence', 'skill'),
+    'Sync/Update':       ('adaptive-skill-intelligence', 'skill'),
 
     # --- Intentionally NOT mapped (let tech stack or adaptive decide) ---
     # 'Bug Fix':         depends on what is being fixed (tech stack is better)
@@ -345,6 +572,24 @@ AGENT_KEYWORD_SCORES = {
         'multi service', 'multiple service', 'cross service', 'full stack',
         'end to end', 'orchestrat', 'coordinate', 'across service',
     ],
+    # System/meta tasks about the Claude memory system itself
+    # These queries have NO tech stack and NO project files -> they were
+    # falling all the way to Layer 3 (tech stack) and picking wrong agents.
+    # Adding explicit keyword detection here fixes Layer 2 for meta queries.
+    'adaptive-skill-intelligence': [
+        # System/memory system keywords
+        'loophole', 'loophole hai', 'koi loophole',  # 2-3 hits on "aur koi loophole hai"
+        'hook', 'memory system', 'flow.py', 'flow.sh',
+        '3-level', 'session handler', 'auto-fix', 'skill detection',
+        'skill selection', 'pre-tool', 'post-tool', 'stop-notifier',
+        'standards-loader', 'context-monitor', 'blocking-policy',
+        'task-auto-analyzer', 'plan-mode', 'model-selection',
+        'claude system', 'claude memory', 'prompt-generator',
+        # Hinglish git/sync/confirm queries (2+ hits needed)
+        'sync ho gaya', 'push ho gaya', 'sab sync', 'push kar',
+        'confirm kar', 'push diya', 'push kar diya',  # for "push kar diya confirm kar"
+        'kya sync', 'sync hua', 'ho gaya push', 'commit kar',
+    ],
 }
 
 KEYWORD_MIN_SCORE = 2  # At least 2 keyword matches to select an agent
@@ -358,6 +603,11 @@ def select_by_prompt_keywords(user_message):
     This is the dynamic layer - works on natural language prompts
     without requiring pre-classification or API calls.
     """
+    # Skills that use Skill tool (not Task tool with agent)
+    SKILL_NAMES = {'adaptive-skill-intelligence', 'rdbms-core', 'nosql-core',
+                   'java-spring-boot-microservices', 'docker', 'kubernetes',
+                   'jenkins-pipeline'}
+
     msg = user_message.lower()
     scores = {}
 
@@ -375,7 +625,8 @@ def select_by_prompt_keywords(user_message):
     if best_score < KEYWORD_MIN_SCORE:
         return None, None, best_score  # Not confident enough
 
-    return best_agent, 'agent', best_score
+    agent_type = 'skill' if best_agent in SKILL_NAMES else 'agent'
+    return best_agent, agent_type, best_score
 
 
 # PRIMARY: Agents (~/.claude/agents/) - highest priority
@@ -386,8 +637,10 @@ AGENTS_REGISTRY = {
     'angular':      'angular-engineer',
     'react':        'ui-ux-designer',
     'vue':          'ui-ux-designer',
-    'flask':        'ui-ux-designer',        # Flask Jinja templates / HTML/CSS
-    'django':       'ui-ux-designer',        # Django templates / HTML/CSS
+    # flask/django removed — they are Python backend frameworks, NOT UI tools.
+    # mapping them to ui-ux-designer was causing wrong skill selection for all
+    # queries where requirements.txt had flask/django in the scanned directory.
+    # They now fall through to adaptive-skill-intelligence (Layer 4).
     'swiftui':      'swiftui-designer',
     'swift':        'swift-backend-engineer',
     'kotlin':       'android-backend-engineer',
@@ -505,13 +758,14 @@ def get_agent_and_skills(tech_stack, task_type='General', user_message=''):
         return skill_fallback, 'skill', [], reason
 
     # =========================================================================
-    # LAYER 4: adaptive-skill-intelligence
-    # Signals Claude to create a new skill on-the-fly via adaptive tool
-    # This IS the "create new if not present" mechanism
+    # LAYER 4: adaptive-skill-intelligence (PROACTIVE SUGGESTION MODE)
+    # When no match found, Claude MUST suggest creating a new skill/agent
+    # to the user instead of silently proceeding. User decides YES/NO.
+    # If same unmatched domain appears 2+ times -> stronger suggestion.
     # =========================================================================
     reason = (
         f"[L4-Adaptive] No match: task_type='{task_type}', tech=[{', '.join(tech_stack)}], "
-        f"keywords=low -> adaptive-skill-intelligence creates temp skill"
+        f"keywords=low -> SUGGEST new skill/agent to user (fallback: adaptive-skill-intelligence)"
     )
     return 'adaptive-skill-intelligence', 'skill', [], reason
 
@@ -547,6 +801,12 @@ def main():
     # Last resort fallback - clearly marked as fallback (not dummy data)
     if not user_message:
         user_message = "[NO MESSAGE - hook did not pass user prompt]"
+
+    # CHECKPOINT ENFORCEMENT: Clear ALL flags if user is confirming with 'ok'/'proceed' etc.
+    # This MUST run before anything else so pre-tool-enforcer sees cleared flags.
+    _is_approval = is_approval_message(user_message)
+    if _is_approval:
+        clear_all_enforcement_flags(reason='user said: ' + user_message.strip()[:20])
 
     SEP = "=" * 80
     flow_start = datetime.now()
@@ -686,7 +946,7 @@ def main():
     ctx_stdout, _, ctx_rc, ctx_dur = run_script(ctx_script, ['--current-status'], timeout=15)
     ctx_data = safe_json(ctx_stdout)
 
-    context_pct = ctx_data.get('percentage', 80.0)
+    context_pct = ctx_data.get('percentage', 0)
     context_level = ctx_data.get('level', 'unknown')
     ctx_recommendations = ctx_data.get('recommendations', [])
 
@@ -782,12 +1042,76 @@ def main():
             if line.startswith('SESSION-'):
                 session_id = line
                 break
+        # Reset session-progress.json so context % starts fresh (tool counts from old session don't bleed in)
+        try:
+            session_progress_file = MEMORY_BASE / 'logs' / 'session-progress.json'
+            fresh_progress = {
+                'total_progress': 0,
+                'tool_counts': {},
+                'started_at': datetime.now().strftime('%Y-%m-%dT%H:%M:%S'),
+                'tasks_completed': 0,
+                'errors_seen': 0,
+                'context_estimate_pct': 15,
+                'session_id': session_id,
+                'reset_reason': 'new session auto-created by 3-level-flow.py'
+            }
+            session_progress_file.parent.mkdir(parents=True, exist_ok=True)
+            with open(session_progress_file, 'w', encoding='utf-8') as spf:
+                json.dump(fresh_progress, spf, indent=2)
+        except Exception:
+            pass
+
+        # Voice notification: write flag for stop-notifier to speak on new session
+        # Only write if flag doesn't already exist (clear-session-handler may have set it)
+        try:
+            import datetime as _dt
+            _voice_flag = Path.home() / '.claude' / '.session-start-voice'
+            if not _voice_flag.exists():
+                _hour = _dt.datetime.now().hour
+                if _hour < 12:
+                    _greet = 'Good morning'
+                elif _hour < 17:
+                    _greet = 'Good afternoon'
+                else:
+                    _greet = 'Good evening'
+                _voice_msg = _greet + ' Sir. New session started. I am ready for your commands.'
+                _voice_flag.write_text(_voice_msg, encoding='utf-8')
+        except Exception:
+            pass
 
     # Set up session log directory NOW that we have session_id
     session_log_dir = MEMORY_BASE / 'logs' / 'sessions' / session_id
     session_log_dir.mkdir(parents=True, exist_ok=True)
     trace["meta"]["session_id"] = session_id
     trace["meta"]["log_dir"] = str(session_log_dir)
+
+    # =========================================================================
+    # EARLY FLAG WRITING (Loophole #18 fix)
+    # Write checkpoint + task-breakdown flags IMMEDIATELY after session_id is known.
+    # This ensures enforcement is active even if the script times out later.
+    # Skill-selection flag is written later (needs skill detection at step 3.5).
+    #
+    # Loophole #14 fix: SKIP flags for non-coding messages (questions/research).
+    # Non-coding messages don't need checkpoint review or task breakdown.
+    #
+    # v3.1.0 fix: SKIP flags for mid-session continuations where TaskCreate
+    # and Skill were already called. Follow-up messages (error feedback,
+    # corrections, additional requests) should NOT re-create blocking flags.
+    # =========================================================================
+    _is_continuation = is_mid_session_continuation(session_id)
+    _needs_enforcement = (
+        not _is_approval
+        and not is_non_coding_message(user_message)
+        and not _is_continuation
+    )
+    if _needs_enforcement:
+        # AUTO_PROCEED v1.0: Checkpoint text shows in trace but does NOT block.
+        # User approved auto-proceed (2026-02-23) - trusts Claude's decisions.
+        # write_checkpoint_flag() removed - no more .checkpoint-pending-*.json written.
+        write_task_breakdown_flag(
+            session_id=session_id or 'unknown',
+            prompt_preview=user_message
+        )
 
     trace["pipeline"].append({
         "step": "LEVEL_1_SESSION",
@@ -1098,7 +1422,7 @@ def main():
     elif adj_complexity >= 10:
         plan_reason = "COMPLEX (10-19) - Plan mode strongly recommended"
     elif adj_complexity >= 5:
-        plan_reason = "MODERATE (5-9) - Ask user preference"
+        plan_reason = "MODERATE (5-9) - Recommend-then-ask (give recommendation with reasoning, then confirm)"
     else:
         plan_reason = "SIMPLE (<5) - Proceed directly"
 
@@ -1127,7 +1451,7 @@ def main():
                 "check_security_critical",
                 "adjust_complexity_score",
                 "score_0_4_no_plan",
-                "score_5_9_ask_user",
+                "score_5_9_recommend_then_ask",
                 "score_10_19_recommend",
                 "score_20plus_mandatory"
             ]
@@ -1564,6 +1888,67 @@ def main():
         write_json(session_json_file, sess_data)
 
     # =========================================================================
+    # SESSION CHAINING - Auto-tag + load chain context
+    # =========================================================================
+    chain_script = CURRENT_DIR / 'session-chain-manager.py'
+    chain_context_str = ""
+    if chain_script.exists() and session_id and session_id != 'UNKNOWN':
+        try:
+            # Detect project from cwd
+            cwd_str = hook_data.get('cwd', '') or os.getcwd()
+
+            # Auto-tag this session
+            tag_args = [
+                sys.executable, str(chain_script), 'auto-tag',
+                '--session', session_id,
+                '--prompt', user_message[:300],
+                '--task-type', task_type or '',
+                '--skill', skill_agent_name or '',
+                '--cwd', cwd_str,
+            ]
+            subprocess.run(
+                tag_args, capture_output=True, text=True,
+                encoding='utf-8', errors='replace', timeout=5
+            )
+
+            # Load chain context for display
+            ctx_result = subprocess.run(
+                [sys.executable, str(chain_script), 'context',
+                 '--session', session_id],
+                capture_output=True, text=True,
+                encoding='utf-8', errors='replace', timeout=5
+            )
+            if ctx_result.returncode == 0 and ctx_result.stdout.strip():
+                chain_output = ctx_result.stdout.strip()
+                # Only show if there's actual chain data (not just "First session")
+                if 'Parent:' in chain_output or 'Related:' in chain_output or 'Tag-related:' in chain_output:
+                    chain_context_str = chain_output
+        except Exception:
+            pass  # Chain is non-blocking, never fail the flow
+
+    # =========================================================================
+    # SESSION SUMMARY - Accumulate this request's data
+    # =========================================================================
+    summary_script = CURRENT_DIR / 'session-summary-manager.py'
+    if summary_script.exists() and session_id and session_id != 'UNKNOWN':
+        try:
+            cwd_str = hook_data.get('cwd', '') or os.getcwd()
+            subprocess.run(
+                [sys.executable, str(summary_script), 'accumulate',
+                 '--session', session_id,
+                 '--prompt', user_message[:300],
+                 '--task-type', task_type or '',
+                 '--skill', skill_agent_name or '',
+                 '--complexity', str(adj_complexity),
+                 '--model', selected_model or '',
+                 '--cwd', cwd_str],
+                capture_output=True, text=True,
+                encoding='utf-8', errors='replace', timeout=5
+            )
+        except Exception:
+            pass  # Summary is non-blocking
+
+    # =========================================================================
     # CONSOLE OUTPUT
     # =========================================================================
     print(SEP)
@@ -1601,40 +1986,90 @@ def main():
     print("[JSON TRACE]:")
     print(f"   {session_log_dir / 'flow-trace.json'}")
     print()
+    if chain_context_str:
+        print(chain_context_str)
+        print()
     # =========================================================================
     # PRE-CODING REVIEW CHECKPOINT
+    # Skip if: approval message, non-coding message, or mid-session continuation
+    # These don't need a new checkpoint - user already approved or is just asking
     # =========================================================================
-    trace_path = str(session_log_dir / 'flow-trace.json')
-    print(SEP)
-    print("[REVIEW CHECKPOINT] CONFIRM DECISIONS BEFORE CODING STARTS")
-    print(SEP)
-    print()
-    print(f"  Session ID : {session_id}")
-    print(f"  Trace File : {trace_path}")
-    print()
-    print("  Review this file to confirm:")
-    print(f"    - Model selected   : {selected_model}")
-    print(f"    - Complexity       : {adj_complexity}")
-    print(f"    - Task type        : {task_type}")
-    print(f"    - Agent/Skill      : {skill_agent_name}")
-    print(f"    - Plan mode        : {plan_str}")
-    print(f"    - Context usage    : {context_pct2}%")
-    if rewritten_prompt:
-        print(f"    - Rewritten Prompt : {rewritten_prompt[:160]}")
-    print()
-    print("  CLAUDE_MUST: Tell user to review above file and WAIT for confirmation.")
-    print("  DO NOT start writing code until user says 'proceed' or 'ok'.")
-    if rewritten_prompt:
+    if _needs_enforcement:
+        trace_path = str(session_log_dir / 'flow-trace.json')
+        print(SEP)
+        print("[REVIEW CHECKPOINT] CONFIRM DECISIONS BEFORE CODING STARTS")
+        print(SEP)
         print()
-        print("  REWRITTEN PROMPT (Claude MUST use this as task description):")
-        print(f"  >> {rewritten_prompt}")
+        print(f"  Session ID : {session_id}")
+        print(f"  Trace File : {trace_path}")
         print()
-        print("  CLAUDE_INSTRUCTION: The user wrote in Hinglish/informal language.")
-        print("  Claude must solve the REWRITTEN_PROMPT above, not react to the raw message.")
-    print()
-    print(SEP)
-    print("[OK] ALL 3 LEVELS + 12 STEPS VERIFIED - WORK STARTED")
-    print(SEP)
+
+        # --- PROMPT VERIFICATION (Step 3.0) ---
+        # Show original vs rewritten so user can verify the system understood correctly
+        print("  [PROMPT VERIFICATION] Did the system understand your request correctly?")
+        print(f"    You said     : {user_message[:200]}")
+        if rewritten_prompt:
+            print(f"    Understood as: {rewritten_prompt[:200]}")
+        else:
+            print(f"    Understood as: (no rewrite - using original message)")
+        print(f"    Task type    : {task_type}")
+        print(f"    Complexity   : {adj_complexity}/25")
+        print()
+
+        # --- DECISIONS ---
+        _ctx_window_tokens = 200000
+        _ctx_used_tokens = int(_ctx_window_tokens * context_pct2 / 100)
+        _ctx_remaining_tokens = _ctx_window_tokens - _ctx_used_tokens
+
+        print("  [DECISIONS]")
+        print(f"    - Model selected   : {selected_model}")
+        print(f"    - Agent/Skill      : {skill_agent_name}")
+        print(f"    - Plan mode        : {plan_str}")
+        print(f"    - Context usage    : {context_pct2}%")
+        print(f"    - Context window   : {_ctx_window_tokens:,} tokens (Pro plan)")
+        print(f"    - Context used     : ~{_ctx_used_tokens:,} tokens")
+        print(f"    - Context remaining: ~{_ctx_remaining_tokens:,} tokens")
+        print()
+        print("  CLAUDE_MUST: Tell user to review above and WAIT for confirmation.")
+        print("  DO NOT start writing code until user says 'proceed' or 'ok'.")
+        if rewritten_prompt:
+            print()
+            print("  REWRITTEN PROMPT (Claude MUST use this as task description):")
+            print(f"  >> {rewritten_prompt}")
+            print()
+            print("  CLAUDE_INSTRUCTION: The user wrote in informal language.")
+            print("  Claude must solve the REWRITTEN_PROMPT above, not react to the raw message.")
+        print()
+        print(SEP)
+        print("[OK] ALL 3 LEVELS + 12 STEPS VERIFIED - WORK STARTED")
+        print(SEP)
+    else:
+        print(SEP)
+        if _is_approval:
+            print("[CHECKPOINT CLEARED] User approved - coding allowed, no new checkpoint needed")
+        elif _is_continuation:
+            print("[MID-SESSION] Continuation detected - no new checkpoint needed")
+        else:
+            print("[NON-CODING] Question/research detected - no checkpoint needed")
+        print(SEP)
+
+    # LOOPHOLE #18 FIX: Checkpoint + task-breakdown flags are written EARLY (line ~968)
+    # so they survive even if this script times out before reaching here.
+    # Only skill-selection flag is written here (needs skill_agent_name from step 3.5).
+    # LOOPHOLE #14 FIX: Skip for non-coding messages (questions/research).
+    # v3.1.0 FIX: Skip for mid-session continuations (already approved + invoked).
+    # v3.2.0 FIX: Skip for approval messages (user said ok - don't re-create flags!).
+    if _needs_enforcement:
+        # Step 3.5 enforcement: block coding until Skill/Task tool is invoked
+        # SKIP for adaptive-skill-intelligence: suggestion is behavioral (CLAUDE.md),
+        # not hook-enforced. Writing a flag for adaptive creates unresolvable block
+        # because Claude may choose to suggest instead of invoking a tool.
+        if skill_agent_name and skill_agent_name != 'adaptive-skill-intelligence':
+            write_skill_selection_flag(
+                session_id=session_id or 'unknown',
+                required_skill=skill_agent_name,
+                required_type=agent_type
+            )
 
     sys.exit(0)
 

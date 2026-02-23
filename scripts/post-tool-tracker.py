@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 # Script Name: post-tool-tracker.py
-# Version: 1.0.0
-# Last Modified: 2026-02-19
-# Description: PostToolUse hook - Level 3.9 (task auto-tracking)
+# Version: 2.0.0
+# Last Modified: 2026-02-23
+# Description: PostToolUse hook - L3.9 tracking + L3.11 commit + L6 subagent + voice on task complete
 # Author: Claude Memory System
 #
 # Hook Type: PostToolUse
@@ -23,8 +23,16 @@
 
 import sys
 import json
+import glob as _glob
 from pathlib import Path
 from datetime import datetime
+
+# Loophole #19 fix: file locking for Windows (parallel tool call safety)
+try:
+    import msvcrt
+    HAS_MSVCRT = True
+except ImportError:
+    HAS_MSVCRT = False
 
 # Progress delta per tool call (approximate % contribution)
 PROGRESS_DELTA = {
@@ -44,13 +52,144 @@ PROGRESS_DELTA = {
 SESSION_STATE_FILE = Path.home() / '.claude' / 'memory' / 'logs' / 'session-progress.json'
 TRACKER_LOG = Path.home() / '.claude' / 'memory' / 'logs' / 'tool-tracker.jsonl'
 
+# Flag directory for session-specific enforcement flags (Loophole #11 fix)
+FLAG_DIR = Path.home() / '.claude'
 
-def load_session_progress():
-    """Load current session progress."""
+
+def _get_session_id_from_progress():
+    """Get current session ID from session-progress.json."""
     try:
         if SESSION_STATE_FILE.exists():
             with open(SESSION_STATE_FILE, 'r', encoding='utf-8') as f:
                 data = json.load(f)
+            return data.get('session_id', '')
+    except Exception:
+        pass
+    return ''
+
+
+def _clear_session_flags(pattern_prefix, session_id):
+    """Clear session-specific flag file(s) matching the given session ID."""
+    if session_id:
+        # Direct path for known session
+        flag_path = FLAG_DIR / f'{pattern_prefix}-{session_id}.json'
+        if flag_path.exists():
+            flag_path.unlink()
+            return
+    # Fallback: glob all and clear matching session_id from content
+    for flag_file in _glob.glob(str(FLAG_DIR / (pattern_prefix + '-*.json'))):
+        try:
+            fp = Path(flag_file)
+            with open(fp, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+            if not session_id or data.get('session_id', '') == session_id:
+                fp.unlink()
+        except Exception:
+            pass
+
+
+def get_response_content_length(tool_response):
+    """
+    Extract approximate character count from tool response.
+    This measures actual content size instead of using flat per-tool estimates.
+    """
+    if not tool_response:
+        return 0
+    if isinstance(tool_response, dict):
+        content = tool_response.get('content', '')
+        if isinstance(content, str):
+            return len(content)
+        if isinstance(content, list):
+            total = 0
+            for item in content:
+                if isinstance(item, dict):
+                    total += len(str(item.get('text', '')))
+                elif isinstance(item, str):
+                    total += len(item)
+            return total
+    if isinstance(tool_response, str):
+        return len(tool_response)
+    return 0
+
+
+def estimate_context_pct(tool_counts, content_chars=0):
+    """
+    Estimate context window usage % based on actual content size.
+
+    v2.0.0: Accurate estimation using transcript file + fixed overhead.
+
+    Context window breakdown (from /context analysis):
+      - System prompt:    ~1.5%
+      - Tools:            ~8.8%
+      - Memory files:     ~16.8%  (CLAUDE.md, skills, etc.)
+      - Agents:           ~0.3%
+      - Skills:           ~0.4%
+      - Autocompact buf:  ~16.5%
+      FIXED OVERHEAD:     ~44.5%
+
+      - Messages:         ~49.9%  (user + Claude responses + tool results)
+      DYNAMIC CONTENT:    varies per session
+
+    Hooks only see tool responses (~28% of all content).
+    Messages (user prompts, Claude responses) are invisible to hooks.
+    So we use a 3.5x multiplier on tracked content, or transcript file size.
+
+    Caps at 95% (never report 100%).
+    """
+    CONTEXT_WINDOW = 200000  # Pro plan token limit
+    FIXED_OVERHEAD_PCT = 44.5  # system prompt + tools + agents + memory + skills + autocompact
+
+    # Estimate message portion using tracked content with 3.5x multiplier
+    # Transcript file method removed: includes compacted/old messages, overcounts badly
+    message_pct = 0.0
+    if content_chars > 0:
+        content_tokens = content_chars / 4.0
+        # Hooks see ~28% of all content, so multiply by 3.5 to estimate total
+        message_pct = (content_tokens / CONTEXT_WINDOW) * 100.0 * 3.5
+    else:
+        # Fallback: count-based heuristic (least accurate but better than nothing)
+        message_pct = (
+            tool_counts.get('Read', 0) * 5 +
+            tool_counts.get('Write', 0) * 3 +
+            tool_counts.get('Edit', 0) * 3 +
+            tool_counts.get('Bash', 0) * 3 +
+            tool_counts.get('Grep', 0) * 2 +
+            tool_counts.get('Glob', 0) * 1 +
+            tool_counts.get('Task', 0) * 6 +
+            tool_counts.get('WebFetch', 0) * 5 +
+            tool_counts.get('WebSearch', 0) * 4
+        )
+
+    return min(95, int(FIXED_OVERHEAD_PCT + message_pct))
+
+
+def _lock_file(f):
+    """Lock file for exclusive access (Windows msvcrt, no-op on other OS)."""
+    if HAS_MSVCRT:
+        try:
+            msvcrt.locking(f.fileno(), msvcrt.LK_NBLCK, 1)
+        except (IOError, OSError):
+            pass  # lock failed - proceed without lock (better than crash)
+
+
+def _unlock_file(f):
+    """Unlock file (Windows msvcrt, no-op on other OS)."""
+    if HAS_MSVCRT:
+        try:
+            f.seek(0)
+            msvcrt.locking(f.fileno(), msvcrt.LK_UNLCK, 1)
+        except (IOError, OSError):
+            pass
+
+
+def load_session_progress():
+    """Load current session progress (with file locking for parallel safety)."""
+    try:
+        if SESSION_STATE_FILE.exists():
+            with open(SESSION_STATE_FILE, 'r', encoding='utf-8') as f:
+                _lock_file(f)
+                data = json.load(f)
+                _unlock_file(f)
             return data
     except Exception:
         pass
@@ -64,11 +203,13 @@ def load_session_progress():
 
 
 def save_session_progress(state):
-    """Save current session progress."""
+    """Save current session progress (with file locking for parallel safety)."""
     try:
         SESSION_STATE_FILE.parent.mkdir(parents=True, exist_ok=True)
         with open(SESSION_STATE_FILE, 'w', encoding='utf-8') as f:
+            _lock_file(f)
             json.dump(state, f, indent=2)
+            _unlock_file(f)
     except Exception:
         pass
 
@@ -153,11 +294,127 @@ def main():
         if is_error:
             state['errors_seen'] = state.get('errors_seen', 0) + 1
 
-        # Auto-complete threshold: if Write/Edit happened, likely a task completed
-        if tool_name in ('Write', 'Edit') and not is_error:
-            state['tasks_completed'] = state.get('tasks_completed', 0) + 1
+        # Loophole #17 fix: removed Write/Edit tasks_completed increment
+        # Only TaskUpdate(status=completed) should increment (line ~320)
+        # Previous code double-counted: Write/Edit + TaskUpdate both incremented
+
+        # Track actual response content size for accurate context estimation
+        resp_chars = get_response_content_length(tool_response)
+        state['content_chars'] = state.get('content_chars', 0) + resp_chars
+
+        # Compute and store dynamic context estimate so context-monitor-v2.py reads it
+        ctx_est = estimate_context_pct(state['tool_counts'], state.get('content_chars', 0))
+        state['context_estimate_pct'] = ctx_est
 
         save_session_progress(state)
+
+        # -----------------------------------------------------------------------
+        # STEP 3.1 ENFORCEMENT: Clear task-breakdown flag when TaskCreate is called
+        # (Loophole #11: session-specific flag files)
+        # -----------------------------------------------------------------------
+        if tool_name == 'TaskCreate' and not is_error:
+            try:
+                # Loophole #15 fix: validate TaskCreate has meaningful content
+                tc_subject = (tool_input or {}).get('subject', '')
+                tc_desc = (tool_input or {}).get('description', '')
+                if len(tc_subject) >= 10 and len(tc_desc) >= 10:
+                    sid = _get_session_id_from_progress()
+                    _clear_session_flags('.task-breakdown-pending', sid)
+                # else: dummy TaskCreate ignored - flag stays
+            except Exception:
+                pass
+
+        # -----------------------------------------------------------------------
+        # STEP 3.5 ENFORCEMENT: Clear skill-selection flag when Skill or Task is called
+        # (Loophole #11: session-specific flag files)
+        # -----------------------------------------------------------------------
+        if tool_name in ('Skill', 'Task') and not is_error:
+            try:
+                sid = _get_session_id_from_progress()
+                # Loophole #16 fix: verify invoked skill/agent matches required
+                should_clear = True
+                if sid:
+                    flag_path = FLAG_DIR / f'.skill-selection-pending-{sid}.json'
+                    if flag_path.exists():
+                        with open(flag_path, 'r', encoding='utf-8') as f:
+                            flag_data = json.load(f)
+                        required = flag_data.get('required_skill', '')
+                        if required:
+                            actual = ''
+                            if tool_name == 'Skill':
+                                actual = (tool_input or {}).get('skill', '')
+                            elif tool_name == 'Task':
+                                actual = (tool_input or {}).get('subagent_type', '')
+                            if actual and required and actual != required:
+                                should_clear = False  # wrong skill invoked
+                if should_clear:
+                    _clear_session_flags('.skill-selection-pending', sid)
+            except Exception:
+                pass
+
+        # -----------------------------------------------------------------------
+        # LOOPHOLE #6 FIX 2: Subagent Return Reminder
+        # When Task tool completes (subagent returns), remind parent to review
+        # the result and call TaskUpdate if the delegated task is complete.
+        # Parent = Orchestrator, Subagent = Worker. Only parent mutates state.
+        # -----------------------------------------------------------------------
+        if tool_name == 'Task' and not is_error:
+            try:
+                subagent_type = (tool_input or {}).get('subagent_type', 'unknown')
+                sys.stdout.write(
+                    '[POST-TOOL L6.2] Subagent returned! (type: '
+                    + subagent_type + ')\n'
+                    '  REMINDER: Subagent cannot call TaskUpdate - YOU must do it.\n'
+                    '  ACTION: Review subagent result -> TaskUpdate(completed) if task is done.\n'
+                    '  RULE: Parent = Orchestrator. Only parent mutates task state.\n'
+                )
+                sys.stdout.flush()
+            except Exception:
+                pass
+
+        # -----------------------------------------------------------------------
+        # STEP 3.11 + LOOPHOLE #6 FIX 3: Phase Completion Guard
+        # When TaskUpdate is called with status=completed, print hint to stdout.
+        # Enhanced: counts completed vs total tasks to detect phase completion.
+        # -----------------------------------------------------------------------
+        if tool_name == 'TaskUpdate' and not is_error:
+            try:
+                task_status = (tool_input or {}).get('status', '')
+                if task_status == 'completed':
+                    state['tasks_completed'] = state.get('tasks_completed', 0) + 1
+                    completed_count = state.get('tasks_completed', 1)
+                    save_session_progress(state)
+                    sys.stdout.write(
+                        '[POST-TOOL L3.11] Task marked COMPLETED (#'
+                        + str(completed_count) + ')!\n'
+                        '  PHASE GUARD: Check ALL tasks in current phase.\n'
+                        '  IF no tasks remain in_progress in this phase:\n'
+                        '    -> Phase is COMPLETE -> git add + git commit + git push IMMEDIATELY.\n'
+                        '  IF tasks still in_progress:\n'
+                        '    -> Continue working on remaining tasks.\n'
+                        '  RULE: Phase completion = ALL tasks done, not just this one.\n'
+                        '  RULE: DO NOT skip git commit on phase completion.\n'
+                    )
+                    sys.stdout.flush()
+
+                    # Voice: Claude writes .session-work-done with natural summary
+                    # when ALL tasks are done (not per-task - too noisy)
+            except Exception:
+                pass
+
+        # Also write to .context-usage so it stays fresh (context-monitor fallback path)
+        try:
+            context_usage_file = Path.home() / '.claude' / 'memory' / '.context-usage'
+            context_usage_file.parent.mkdir(parents=True, exist_ok=True)
+            with open(context_usage_file, 'w', encoding='utf-8') as f:
+                json.dump({
+                    'percentage': ctx_est,
+                    'updated_at': entry['ts'],
+                    'source': 'post-tool-tracker dynamic estimate',
+                    'tool_counts': state['tool_counts']
+                }, f)
+        except Exception:
+            pass
 
     except Exception:
         pass  # NEVER block on tracking errors

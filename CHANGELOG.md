@@ -9,6 +9,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [3.8.0] - 2026-02-23
+
+### Added
+- **Session Chaining System** - Track parent/child/related session relationships
+  - New policy: `policies/01-sync-system/session-management/session-chaining-policy.md`
+  - New script: `scripts/session-chain-manager.py` (7 CLI commands: link, tag, relate, context, chain, search, auto-tag)
+  - New script: `scripts/session-summary-manager.py` (accumulate, finalize, read)
+  - Integration: 3-level-flow.py auto-tags sessions and loads chain context
+  - Integration: clear-session-handler.py finalizes summaries and links sessions on /clear
+- **02-standards-system policies** - Added missing standards system folder
+  - `policies/02-standards-system/coding-standards-enforcement-policy.md`
+  - `policies/02-standards-system/README.md`
+- **Parallel execution policy** in organized structure (`03-execution-system/`)
+
+### Changed
+- **Updated scripts** synced from global system:
+  - `3-level-flow.py` - Added session chaining + summary accumulation
+  - `clear-session-handler.py` - Added session finalize + chain linking
+  - `pre-tool-enforcer.py` - Loophole fixes (19 loopholes hardened)
+  - `post-tool-tracker.py` - Content-aware progress tracking
+  - `stop-notifier.py` - LLM-powered dynamic voice notifications
+
+### Removed
+- **14 duplicate flat policy files** from `policies/` root - all policies now ONLY in organized sub-folders (01-sync-system, 02-standards-system, 03-execution-system, testing)
+- **`nul` file** (Windows artifact cleanup)
+
+### Fixed
+- Policy structure: Eliminated duplicate flat + organized coexistence; single organized structure now
+
+---
+
 ## [3.7.2] - 2026-02-22
 
 ### Fixed

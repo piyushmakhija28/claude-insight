@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 # Script Name: pre-tool-enforcer.py
-# Version: 1.0.0
-# Last Modified: 2026-02-19
-# Description: PreToolUse hook - Level 3.6 (tool optimization) + Level 3.7 (failure prevention)
+# Version: 2.0.0
+# Last Modified: 2026-02-23
+# Description: PreToolUse hook - L3.1/3.5 blocking + L3.3 checkpoint + L3.6 hints + L3.7 prevention
 # Author: Claude Memory System
 #
 # Hook Type: PreToolUse
@@ -11,6 +11,17 @@
 # Exit 1 = BLOCK tool (prints reason to stderr)
 #
 # Policies enforced:
+#   Level 3.3 - Review Checkpoint:
+#     - Write/Edit/NotebookEdit: BLOCK if .checkpoint-pending.json exists (same session)
+#     - Bash/Task NOT blocked: needed for git, investigation, research, tests
+#   Level 3.1 - Task Breakdown (Loophole #7 Fix):
+#     - Write/Edit/NotebookEdit: BLOCK if .task-breakdown-pending.json exists (same session)
+#     - Bash/Task NOT blocked: investigation and exploration allowed before TaskCreate
+#     - Cleared when TaskCreate is called (post-tool-tracker.py)
+#   Level 3.5 - Skill/Agent Selection (Loophole #7 Fix):
+#     - Write/Edit/NotebookEdit: BLOCK if .skill-selection-pending.json exists (same session)
+#     - Bash/Task NOT blocked: Bash needed for git/tests, Task IS how Step 3.5 is done
+#     - Cleared when Skill or Task tool is called (post-tool-tracker.py)
 #   Level 3.6 - Tool Usage Optimization:
 #     - Grep: warn if missing head_limit
 #     - Read: warn if missing offset+limit (for large files)
@@ -22,6 +33,211 @@
 
 import sys
 import json
+import glob as _glob
+from pathlib import Path
+from datetime import datetime, timedelta
+
+# Flag directory (session-specific flags: Loophole #11 fix)
+FLAG_DIR = Path.home() / '.claude'
+
+# Current session file (written by session-id-generator.py via clear-session-handler)
+CURRENT_SESSION_FILE = Path.home() / '.claude' / 'memory' / '.current-session.json'
+
+# Tools that are BLOCKED while checkpoint is pending (file-modification tools ONLY)
+# Write/Edit/NotebookEdit are the ONLY tools that directly create/modify source files.
+# Bash, Task are NOT blocked: Bash is needed for git/investigation/tests.
+# Task is a delegation mechanism (subagent tools are independently checked).
+BLOCKED_WHILE_CHECKPOINT_PENDING = {'Write', 'Edit', 'NotebookEdit'}
+
+# Tools that are ALWAYS ALLOWED (everything except direct file modification)
+ALWAYS_ALLOWED = {'Read', 'Grep', 'Glob', 'WebFetch', 'WebSearch', 'Task', 'Bash'}
+
+# Max age for enforcement flags - auto-expire after 60 minutes (stale flag safety)
+CHECKPOINT_MAX_AGE_MINUTES = 60
+
+
+def get_current_session_id():
+    """
+    Read the active session ID from .current-session.json.
+    Returns empty string if not available (fail open - don't block on missing data).
+    """
+    try:
+        if CURRENT_SESSION_FILE.exists():
+            with open(CURRENT_SESSION_FILE, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+            return data.get('current_session_id', '')
+    except Exception:
+        pass
+    return ''
+
+
+def find_session_flag(pattern_prefix, current_session_id):
+    """
+    Find session-specific flag file for the current session.
+    Returns (flag_path, flag_data) or (None, None) if not found.
+    Also auto-cleans stale flags (>60 min) from ANY session.
+    Loophole #11 fix: each session has its own flag file.
+    """
+    flag_files = _glob.glob(str(FLAG_DIR / (pattern_prefix + '-*.json')))
+    target_path = None
+    target_data = None
+
+    for flag_file in flag_files:
+        try:
+            fp = Path(flag_file)
+            with open(fp, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+
+            # Auto-expire stale flags from ANY session
+            created_at_str = data.get('created_at', '')
+            if created_at_str:
+                created_at = datetime.fromisoformat(created_at_str)
+                age = datetime.now() - created_at
+                if age > timedelta(minutes=CHECKPOINT_MAX_AGE_MINUTES):
+                    fp.unlink()
+                    continue
+
+            # Check if this flag belongs to current session
+            flag_sid = data.get('session_id', '')
+            if flag_sid == current_session_id:
+                target_path = fp
+                target_data = data
+            # Other sessions' flags are LEFT ALONE (not deleted!)
+        except Exception:
+            pass
+
+    return target_path, target_data
+
+
+def check_checkpoint_pending(tool_name):
+    """
+    Level 3.3: Block code-changing tools if review checkpoint is pending.
+    User must say 'ok'/'proceed' before coding can start.
+
+    SESSION-AWARE (Loophole #11): Uses session-specific flag files.
+    Each window has its own flag file. No cross-window interference.
+
+    Returns (hints, blocks) tuple.
+    """
+    hints = []
+    blocks = []
+
+    if tool_name not in BLOCKED_WHILE_CHECKPOINT_PENDING:
+        return hints, blocks
+
+    current_session_id = get_current_session_id()
+    if not current_session_id:
+        return hints, blocks
+
+    flag_path, flag_data = find_session_flag('.checkpoint-pending', current_session_id)
+    if flag_path is None:
+        return hints, blocks
+
+    # --- Same session: block until user says ok ---
+    session_id = flag_data.get('session_id', 'unknown')
+    prompt_preview = flag_data.get('prompt_preview', '')[:80]
+
+    blocks.append(
+        '[PRE-TOOL BLOCKED] Review checkpoint is pending!\n'
+        '  Session  : ' + session_id + '\n'
+        '  Task     : ' + prompt_preview + '\n'
+        '  Tool     : ' + tool_name + ' is BLOCKED until user confirms.\n'
+        '  Required : User must reply with "ok" or "proceed" first.\n'
+        '  Reason   : CLAUDE.md policy - no coding before checkpoint review.\n'
+        '  Action   : Show the [REVIEW CHECKPOINT] to user and WAIT.'
+    )
+
+    return hints, blocks
+
+def check_task_breakdown_pending(tool_name):
+    """
+    Level 3.1: Block code-changing tools if task breakdown is pending.
+    Claude MUST call TaskCreate before any Write/Edit/Bash/Task.
+
+    SESSION-AWARE (Loophole #11): Uses session-specific flag files.
+
+    Returns (hints, blocks) tuple.
+    """
+    hints = []
+    blocks = []
+
+    # Only file-modification tools blocked. Bash/Task allowed for investigation.
+    BLOCKED_WHILE_TASK_PENDING = {'Write', 'Edit', 'NotebookEdit'}
+
+    if tool_name not in BLOCKED_WHILE_TASK_PENDING:
+        return hints, blocks
+
+    current_session_id = get_current_session_id()
+    if not current_session_id:
+        return hints, blocks
+
+    flag_path, flag_data = find_session_flag('.task-breakdown-pending', current_session_id)
+    if flag_path is None:
+        return hints, blocks
+
+    session_id = flag_data.get('session_id', 'unknown')
+    prompt_preview = flag_data.get('prompt_preview', '')[:80]
+
+    blocks.append(
+        '[PRE-TOOL BLOCKED] Step 3.1 Task Breakdown is pending!\n'
+        '  Session  : ' + session_id + '\n'
+        '  Task     : ' + prompt_preview + '\n'
+        '  Tool     : ' + tool_name + ' is BLOCKED until TaskCreate is called.\n'
+        '  Required : Call TaskCreate tool FIRST to create task(s) for this request.\n'
+        '  Reason   : CLAUDE.md Step 3.1 - TaskCreate MANDATORY before any coding.\n'
+        '  Action   : Call TaskCreate with subject and description, then continue.'
+    )
+
+    return hints, blocks
+
+
+def check_skill_selection_pending(tool_name):
+    """
+    Level 3.5: Block code-changing tools if skill/agent selection is pending.
+    Claude MUST invoke Skill tool or Task(agent) before any Write/Edit.
+
+    Note: Task/Bash NOT blocked - Task IS how Step 3.5 is done, Bash needed for git/tests.
+    SESSION-AWARE (Loophole #11): Uses session-specific flag files.
+
+    Returns (hints, blocks) tuple.
+    """
+    hints = []
+    blocks = []
+
+    # Only file-modification tools blocked. Bash allowed for git/investigation/tests.
+    BLOCKED_WHILE_SKILL_PENDING = {'Write', 'Edit', 'NotebookEdit'}
+
+    if tool_name not in BLOCKED_WHILE_SKILL_PENDING:
+        return hints, blocks
+
+    current_session_id = get_current_session_id()
+    if not current_session_id:
+        return hints, blocks
+
+    flag_path, flag_data = find_session_flag('.skill-selection-pending', current_session_id)
+    if flag_path is None:
+        return hints, blocks
+
+    session_id = flag_data.get('session_id', 'unknown')
+    required_skill = flag_data.get('required_skill', 'unknown')
+    required_type = flag_data.get('required_type', 'skill')
+
+    if required_type == 'agent':
+        action_required = 'Launch agent via Task tool: Task(subagent_type="' + required_skill + '")'
+    else:
+        action_required = 'Invoke skill via Skill tool: Skill(skill="' + required_skill + '")'
+
+    blocks.append(
+        '[PRE-TOOL BLOCKED] Step 3.5 Skill/Agent Selection is pending!\n'
+        '  Session  : ' + session_id + '\n'
+        '  Tool     : ' + tool_name + ' is BLOCKED until Skill/Agent is invoked.\n'
+        '  Required : ' + action_required + '\n'
+        '  Reason   : CLAUDE.md Step 3.5 - Skill/Agent MUST be invoked before coding.\n'
+        '  Action   : Invoke the skill/agent first, then continue coding.'
+    )
+
+    return hints, blocks
+
 
 # Unicode chars that CRASH Python on Windows (cp1252 encoding)
 # Listed as escape sequences so THIS file stays ASCII-safe
@@ -195,6 +411,50 @@ def main():
 
     all_hints = []
     all_blocks = []
+
+    # CHECKPOINT ENFORCEMENT (Level 3.3 - runs first, before all other checks)
+    h, b = check_checkpoint_pending(tool_name)
+    all_hints.extend(h)
+    all_blocks.extend(b)
+
+    # If already blocked by checkpoint, skip other checks (no need to pile on)
+    # Exit code 2 = blocking error (Claude Code docs: stderr fed to Claude, tool blocked)
+    if all_blocks:
+        for hint in all_hints:
+            sys.stdout.write(hint + '\n')
+        sys.stdout.flush()
+        for block in all_blocks:
+            sys.stderr.write(block + '\n')
+        sys.stderr.flush()
+        sys.exit(2)
+
+    # TASK BREAKDOWN ENFORCEMENT (Level 3.1 - TaskCreate must be called first)
+    h, b = check_task_breakdown_pending(tool_name)
+    all_hints.extend(h)
+    all_blocks.extend(b)
+
+    if all_blocks:
+        for hint in all_hints:
+            sys.stdout.write(hint + '\n')
+        sys.stdout.flush()
+        for block in all_blocks:
+            sys.stderr.write(block + '\n')
+        sys.stderr.flush()
+        sys.exit(2)
+
+    # SKILL/AGENT SELECTION ENFORCEMENT (Level 3.5 - Skill/Task must be invoked first)
+    h, b = check_skill_selection_pending(tool_name)
+    all_hints.extend(h)
+    all_blocks.extend(b)
+
+    if all_blocks:
+        for hint in all_hints:
+            sys.stdout.write(hint + '\n')
+        sys.stdout.flush()
+        for block in all_blocks:
+            sys.stderr.write(block + '\n')
+        sys.stderr.flush()
+        sys.exit(2)
 
     # Route to appropriate checker
     if tool_name == 'Bash':
