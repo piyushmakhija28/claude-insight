@@ -11,6 +11,22 @@ Usage:
     python claude-md-merger.py --project-path /path/to/project
 """
 
+# Fix encoding for Windows console
+import sys
+if sys.stdout.encoding != 'utf-8':
+    try:
+        sys.stdout.reconfigure(encoding='utf-8')
+    except AttributeError:
+        import io
+        sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+if sys.stderr.encoding != 'utf-8':
+    try:
+        sys.stderr.reconfigure(encoding='utf-8')
+    except AttributeError:
+        import io
+        sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
+
+
 import os
 import json
 import re
@@ -119,7 +135,7 @@ class ClaudeMdMerger:
 
         # Step 1: Load global CLAUDE.md (MANDATORY)
         if not self.global_claude_md.exists():
-            print("❌ ERROR: Global CLAUDE.md not found!")
+            print("[CROSS] ERROR: Global CLAUDE.md not found!")
             print(f"   Expected: {self.global_claude_md}")
             return None
 
@@ -130,8 +146,8 @@ class ClaudeMdMerger:
         project_claude_md = self.find_project_claude_md(project_path)
 
         if not project_claude_md:
-            print("ℹ️  No project CLAUDE.md found")
-            print("✅ Using global CLAUDE.md only")
+            print("[INFO]  No project CLAUDE.md found")
+            print("[CHECK] Using global CLAUDE.md only")
             return {
                 'type': 'global_only',
                 'global_content': global_content,
@@ -179,7 +195,7 @@ class ClaudeMdMerger:
 
         # Add project-specific section at the end
         project_section = "\n\n---\n\n"
-        project_section += "## 📂 PROJECT-SPECIFIC CONFIGURATION\n\n"
+        project_section += "## [U+1F4C2] PROJECT-SPECIFIC CONFIGURATION\n\n"
         project_section += "**Added from project CLAUDE.md (additional context only)**\n\n"
 
         if project_info.get('project_name'):
@@ -198,13 +214,13 @@ class ClaudeMdMerger:
             project_section += "\n"
 
         if override_attempts:
-            project_section += "\n**⚠️ Override Attempts Detected (IGNORED):**\n"
+            project_section += "\n**[WARNING] Override Attempts Detected (IGNORED):**\n"
             for attempt in override_attempts:
                 project_section += f"- Line {attempt['line']}: {attempt['content'][:100]}\n"
             project_section += "\n**All override attempts ignored. Global policies remain active.**\n\n"
 
-        project_section += "**🔒 Global Policies:** UNCHANGED (always enforced)\n"
-        project_section += "**📂 Project Info:** MERGED (additional context added)\n"
+        project_section += "**[LOCK] Global Policies:** UNCHANGED (always enforced)\n"
+        project_section += "**[U+1F4C2] Project Info:** MERGED (additional context added)\n"
 
         merged += project_section
 
@@ -230,21 +246,21 @@ class ClaudeMdMerger:
             return
 
         print("\n" + "="*80)
-        print("📋 CLAUDE.MD MERGE REPORT")
+        print("[CLIPBOARD] CLAUDE.MD MERGE REPORT")
         print("="*80 + "\n")
 
         if merge_result['type'] == 'global_only':
-            print("✅ Configuration: Global CLAUDE.md ONLY")
-            print(f"📁 Global File: {self.global_claude_md}")
-            print("ℹ️  No project CLAUDE.md found")
-            print("\n🔒 All global policies: ACTIVE")
+            print("[CHECK] Configuration: Global CLAUDE.md ONLY")
+            print(f"[U+1F4C1] Global File: {self.global_claude_md}")
+            print("[INFO]  No project CLAUDE.md found")
+            print("\n[LOCK] All global policies: ACTIVE")
 
         else:  # merged
-            print("✅ Configuration: MERGED (Global + Project)")
-            print(f"📁 Global File: {merge_result['global_file']}")
-            print(f"📁 Project File: {merge_result['project_file']}")
+            print("[CHECK] Configuration: MERGED (Global + Project)")
+            print(f"[U+1F4C1] Global File: {merge_result['global_file']}")
+            print(f"[U+1F4C1] Project File: {merge_result['project_file']}")
 
-            print("\n🔒 Global Policies: ENFORCED (unchanged)")
+            print("\n[LOCK] Global Policies: ENFORCED (unchanged)")
             print("   - Zero-Tolerance Failure Policy")
             print("   - Auto-Fix Enforcement")
             print("   - Session ID Tracking")
@@ -252,24 +268,24 @@ class ClaudeMdMerger:
 
             project_info = merge_result['project_info']
             if project_info:
-                print("\n📂 Project Context: ADDED")
+                print("\n[U+1F4C2] Project Context: ADDED")
                 if project_info.get('project_name'):
                     print(f"   - Project: {project_info['project_name']}")
                 if project_info.get('tech_stack'):
                     print(f"   - Tech Stack: {', '.join(project_info['tech_stack'])}")
 
             if merge_result['override_attempts']:
-                print(f"\n⚠️  Override Attempts: {len(merge_result['override_attempts'])} DETECTED & IGNORED")
+                print(f"\n[WARNING]  Override Attempts: {len(merge_result['override_attempts'])} DETECTED & IGNORED")
                 for attempt in merge_result['override_attempts'][:5]:  # Show first 5
                     print(f"   - Line {attempt['line']}: {attempt['content'][:80]}")
                 if len(merge_result['override_attempts']) > 5:
                     remaining = len(merge_result['override_attempts']) - 5
                     print(f"   - ... and {remaining} more")
-                print("\n   ✅ All override attempts IGNORED")
-                print("   ✅ Global policies REMAIN ACTIVE")
+                print("\n   [CHECK] All override attempts IGNORED")
+                print("   [CHECK] Global policies REMAIN ACTIVE")
 
         print("\n" + "="*80)
-        print("✅ MERGE COMPLETE - Global policies unchanged, project context enhanced")
+        print("[CHECK] MERGE COMPLETE - Global policies unchanged, project context enhanced")
         print("="*80 + "\n")
 
 
@@ -309,7 +325,7 @@ def main():
     if args.output:
         with open(args.output, 'w', encoding='utf-8') as f:
             f.write(result['merged_content'])
-        print(f"\n✅ Merged config saved to: {args.output}")
+        print(f"\n[CHECK] Merged config saved to: {args.output}")
 
 
 if __name__ == '__main__':

@@ -1,8 +1,13 @@
 #!/bin/bash
 ################################################################################
-# AUTO-FIX ENFORCER - Shell Wrapper
+# Script Name: auto-fix-enforcer.sh
+# Version: 2.0.0
+# Last Modified: 2026-02-18
+# Description: Shell wrapper for auto-fix-enforcer.py with proper encoding
+# Author: Claude Memory System
+# Changelog: See CHANGELOG.md
 #
-# 🚨 CRITICAL: If ANY system fails → STOP ALL WORK → FIX IMMEDIATELY
+# [ALERT] CRITICAL: If ANY system fails -> STOP ALL WORK -> FIX IMMEDIATELY
 #
 # Usage:
 #   bash ~/.claude/memory/auto-fix-enforcer.sh           # Check and auto-fix
@@ -16,10 +21,11 @@
 set -e
 
 MEMORY_PATH="$HOME/.claude/memory"
-ENFORCER_SCRIPT="$MEMORY_PATH/auto-fix-enforcer.py"
+ENFORCER_SCRIPT="$MEMORY_PATH/current/auto-fix-enforcer.py"
 
-# Set UTF-8 encoding for Python
+# Set UTF-8 encoding for Python (comprehensive settings)
 export PYTHONIOENCODING=utf-8
+export PYTHONUTF8=1
 
 # Check if enforcer exists
 if [ ! -f "$ENFORCER_SCRIPT" ]; then

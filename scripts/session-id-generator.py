@@ -1,16 +1,20 @@
 #!/usr/bin/env python
 """
-SESSION ID GENERATOR v1.0.0
-============================
+Script Name: session-id-generator.py
+Version: 1.0.0
+Last Modified: 2026-02-16
+Description: Generates unique session IDs for tracking purposes
+Author: Claude Memory System
+Changelog: See CHANGELOG.md
 
 Generates unique session IDs for tracking purposes.
 Every session and work item gets a traceable ID.
 
-Format: SESS-YYYYMMDD-HHMMSS-XXXX
-Example: SESS-20260216-143055-A7B3
+Format: SESSION-YYYYMMDD-HHMMSS-XXXX
+Example: SESSION-20260216-143055-A7B3
 
 Components:
-- SESS = Session prefix
+- SESSION = Session prefix
 - YYYYMMDD = Date
 - HHMMSS = Time
 - XXXX = Random 4-char hash

@@ -1,7 +1,11 @@
 #!/usr/bin/env python
 """
-AUTO-FIX ENFORCER v1.0.0
-========================
+Script Name: auto-fix-enforcer.py
+Version: 2.0.0
+Last Modified: 2026-02-18
+Description: Auto-fix enforcement with blocking mode and Windows Unicode detection
+Author: Claude Memory System
+Changelog: See CHANGELOG.md
 
 [ALERT] CRITICAL: If ANY policy or system fails -> STOP ALL WORK -> FIX IMMEDIATELY
 
@@ -10,6 +14,7 @@ This enforcer:
 2. BLOCKS all work until failures are fixed
 3. Auto-fixes common issues
 4. Provides clear fix instructions for manual issues
+5. Checks for Windows Unicode issues in Python files (v2.0.0)
 
 MANDATORY: Run BEFORE every action!
 """
@@ -68,7 +73,8 @@ class AutoFixEnforcer:
         print("[SEARCH] [1/7] Checking Python...")
         try:
             result = subprocess.run(['python', '--version'],
-                                  capture_output=True, text=True, timeout=5)
+                                  capture_output=True, text=True, timeout=5,
+                                  encoding='utf-8', errors='replace')
             if result.returncode == 0:
                 version = result.stdout.strip()
                 print(f"   [CHECK] Python available: {version}")
@@ -95,8 +101,8 @@ class AutoFixEnforcer:
         print("\n[SEARCH] [2/7] Checking critical files...")
 
         critical_files = {
-            'blocking-policy-enforcer.py': 'Blocking enforcer',
-            'session-start.sh': 'Session start script',
+            'current/blocking-policy-enforcer.py': 'Blocking enforcer',
+            'current/session-start.sh': 'Session start script',
             'scripts/plan-detector.py': 'Plan detector',
             'scripts/plan-detector.sh': 'Plan detector shell wrapper'
         }
@@ -130,7 +136,7 @@ class AutoFixEnforcer:
 
         state_file = self.memory_path / '.blocking-state.json'
         if not state_file.exists():
-            print("   [WARNING]️  Blocking enforcer state not found")
+            print("   [WARNING]  Blocking enforcer state not found")
             # Try to initialize
             if self._auto_fix_blocking_enforcer():
                 print("   [CHECK] Auto-fixed: Blocking enforcer initialized")
@@ -144,7 +150,7 @@ class AutoFixEnforcer:
                     'auto_fixable': True,
                     'fix_instructions': [
                         'Run: export PYTHONIOENCODING=utf-8',
-                        'Run: bash ~/.claude/memory/session-start.sh'
+                        'Run: bash ~/.claude/memory/current/session-start.sh'
                     ]
                 })
                 return False
@@ -155,7 +161,7 @@ class AutoFixEnforcer:
 
             # Check if session started
             if not state.get('session_started', False):
-                print("   [WARNING]️  Session not started")
+                print("   [WARNING]  Session not started")
                 self.failures.append({
                     'type': 'CRITICAL',
                     'component': 'Session',
@@ -163,7 +169,7 @@ class AutoFixEnforcer:
                     'auto_fixable': True,
                     'fix_instructions': [
                         'Run: export PYTHONIOENCODING=utf-8',
-                        'Run: bash ~/.claude/memory/session-start.sh'
+                        'Run: bash ~/.claude/memory/current/session-start.sh'
                     ]
                 })
                 return False
@@ -187,7 +193,7 @@ class AutoFixEnforcer:
 
         state_file = self.memory_path / '.blocking-state.json'
         if not state_file.exists():
-            print("   [WARNING]️  No session state")
+            print("   [WARNING]  No session state")
             return False
 
         try:
@@ -206,7 +212,7 @@ class AutoFixEnforcer:
                     missing.append(desc)
 
             if missing:
-                print(f"   [WARNING]️  Missing: {', '.join(missing)}")
+                print(f"   [WARNING]  Missing: {', '.join(missing)}")
                 # Not critical, just warning
             else:
                 print("   [CHECK] Session state valid")
@@ -226,8 +232,8 @@ class AutoFixEnforcer:
 
         pid_dir = self.memory_path / '.pids'
         if not pid_dir.exists():
-            print("   [WARNING]️  No daemon PID directory (daemons not started)")
-            print("   [INFO]️  System will work, but automation is disabled")
+            print("   [WARNING]  No daemon PID directory (daemons not started)")
+            print("   [INFO]  System will work, but automation is disabled")
             return True
 
         daemon_names = [
@@ -253,7 +259,8 @@ class AutoFixEnforcer:
                     # Check if process is running (Windows compatible)
                     try:
                         subprocess.run(['tasklist', '/FI', f'PID eq {pid}'],
-                                     capture_output=True, timeout=2)
+                                     capture_output=True, timeout=2,
+                                     encoding='utf-8', errors='replace')
                         running += 1
                     except:
                         stopped += 1
@@ -262,8 +269,8 @@ class AutoFixEnforcer:
             else:
                 stopped += 1
 
-        print(f"   [INFO]️  Daemons: {running} running, {stopped} stopped")
-        print("   [INFO]️  Daemon status is informational only (not blocking)")
+        print(f"   [INFO]  Daemons: {running} running, {stopped} stopped")
+        print("   [INFO]  Daemon status is informational only (not blocking)")
         return True
 
     def _check_git_repos(self):
@@ -273,19 +280,21 @@ class AutoFixEnforcer:
         # Check if we're in a git repo
         try:
             result = subprocess.run(['git', 'rev-parse', '--git-dir'],
-                                  capture_output=True, text=True, timeout=5)
+                                  capture_output=True, text=True, timeout=5,
+                                  encoding='utf-8', errors='replace')
             if result.returncode == 0:
                 # Check for uncommitted changes
                 result = subprocess.run(['git', 'status', '--porcelain'],
-                                      capture_output=True, text=True, timeout=5)
+                                      capture_output=True, text=True, timeout=5,
+                                      encoding='utf-8', errors='replace')
                 if result.stdout.strip():
-                    print("   [WARNING]️  Uncommitted changes detected")
-                    print("   [INFO]️  Consider committing before major changes")
+                    print("   [WARNING]  Uncommitted changes detected")
+                    print("   [INFO]  Consider committing before major changes")
                 else:
                     print("   [CHECK] Git repository clean")
                 return True
         except:
-            print("   [INFO]️  Not in a git repository (or git not available)")
+            print("   [INFO]  Not in a git repository (or git not available)")
 
         return True
 
@@ -311,7 +320,9 @@ class AutoFixEnforcer:
                 ['python', str(checker_script), '--scan-dir', str(self.memory_path)],
                 capture_output=True,
                 text=True,
-                timeout=30
+                timeout=30,
+                encoding='utf-8',
+                errors='replace'
             )
 
             if result.returncode == 0:
@@ -346,7 +357,9 @@ class AutoFixEnforcer:
                             ['python', str(checker_script), '--fix', str(py_file), '--no-backup'],
                             capture_output=True,
                             text=True,
-                            timeout=10
+                            timeout=10,
+                            encoding='utf-8',
+                            errors='replace'
                         )
                         if fix_result.returncode == 0 and fix_result.stdout and '[OK] Fixed' in fix_result.stdout:
                             fixed_count += 1

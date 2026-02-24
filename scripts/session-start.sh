@@ -1,12 +1,14 @@
 #!/bin/bash
 ################################################################################
-# SESSION START SCRIPT - WITH BLOCKING ENFORCEMENT
+# Script Name: session-start.sh
+# Version: 2.0.0
+# Last Modified: 2026-02-16
+# Description: Session start with blocking enforcement initialization
+# Author: Claude Memory System
+# Changelog: See CHANGELOG.md
 #
 # CRITICAL: This script MUST be run at the start of EVERY conversation.
 # It initializes the blocking policy enforcer and validates all daemons.
-#
-# Version: 2.0.0 (Blocking Enforcement)
-# Date: 2026-02-16
 ################################################################################
 
 echo ""
@@ -22,14 +24,15 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
-MEMORY_PATH="$HOME/.claude/memory"
+# Use direct HOME path for Git Bash compatibility
+# DO NOT use intermediate variables like $MEMORY_PATH - they cause path issues in Git Bash
 
 # ============================================================================
 # STEP 1: Initialize Blocking Enforcer
 # ============================================================================
 echo "${BLUE}[1/7] Initializing Blocking Policy Enforcer...${NC}"
 
-python "$MEMORY_PATH/blocking-policy-enforcer.py" --mark-session-started
+python "$HOME/.claude/memory/current/blocking-policy-enforcer.py" --mark-session-started
 if [ $? -eq 0 ]; then
     echo "${GREEN}✅ Blocking enforcer initialized${NC}"
     echo "${GREEN}   Session marked as started${NC}"
@@ -45,7 +48,7 @@ echo ""
 echo "${BLUE}[2/7] Starting Auto-Recommendation Daemon (9th daemon)...${NC}"
 
 # Check if already running
-PID_FILE="$MEMORY_PATH/.pids/auto-recommendation-daemon.pid"
+PID_FILE="$HOME/.claude/memory/.pids/auto-recommendation-daemon.pid"
 if [ -f "$PID_FILE" ]; then
     PID=$(cat "$PID_FILE")
     if ps -p $PID > /dev/null 2>&1; then
@@ -54,39 +57,57 @@ if [ -f "$PID_FILE" ]; then
         echo "${YELLOW}⚠️  Stale PID file found, starting daemon...${NC}"
         rm -f "$PID_FILE"
         # Start daemon (example - adjust to your actual daemon)
-        # nohup python "$MEMORY_PATH/auto-recommendation-daemon.py" start > /dev/null 2>&1 &
+        # nohup python "$HOME/.claude/memory/auto-recommendation-daemon.py" start > /dev/null 2>&1 &
         echo "${YELLOW}⚠️  Daemon script not found (auto-recommendation-daemon.py)${NC}"
     fi
 else
     echo "${YELLOW}⚠️  Daemon not running, would start here${NC}"
-    # nohup python "$MEMORY_PATH/auto-recommendation-daemon.py" start > /dev/null 2>&1 &
+    # nohup python "$HOME/.claude/memory/auto-recommendation-daemon.py" start > /dev/null 2>&1 &
 fi
 
 # ============================================================================
-# STEP 3: Check Enforcement Hooks Status
+# STEP 3: Check All 9 Daemon PIDs and Status
 # ============================================================================
 echo ""
-echo "${BLUE}[3/7] Checking enforcement hooks status...${NC}"
+echo "${BLUE}[3/7] Checking all 9 daemon statuses...${NC}"
 
-# Enforcement is now done via Claude Code hooks (not background daemons)
-# Check that hook scripts exist in current/
-CURRENT_DIR="$MEMORY_PATH/current"
-HOOKS_OK=0
+# Use daemon-manager.py for accurate status check
+python "$HOME/.claude/memory/utilities/daemon-manager.py" --status-all > /tmp/daemon-status.json 2>/dev/null
 
-for script in "3-level-flow.py" "clear-session-handler.py" "stop-notifier.py"; do
-    if [ -f "$CURRENT_DIR/$script" ]; then
-        echo "${GREEN}   [OK] $script${NC}"
-        HOOKS_OK=$((HOOKS_OK + 1))
+if [ $? -eq 0 ]; then
+    RUNNING=$(grep -c '"running": true' /tmp/daemon-status.json)
+    STOPPED=$((9 - RUNNING))
+
+    python - /tmp/daemon-status.json <<'PYEOF'
+import json, sys
+
+# Fix encoding for Windows console
+if sys.stdout.encoding != 'utf-8':
+    try:
+        sys.stdout.reconfigure(encoding='utf-8')
+    except:
+        pass
+
+with open(sys.argv[1], 'r') as f:
+    data = json.load(f)
+for daemon, info in data.items():
+    if info.get('running'):
+        print("   [OK] " + daemon + ": Running (PID: " + str(info.get('pid')) + ")")
+    else:
+        print("   [STOPPED] " + daemon + ": Stopped")
+PYEOF
+
+    echo ""
+    if [ $RUNNING -eq 9 ]; then
+        echo "${GREEN}   ✅ ALL 9 DAEMONS RUNNING PERFECTLY!${NC}"
     else
-        echo "${YELLOW}   [!] $script not found in current/${NC}"
+        echo "${GREEN}   Running: $RUNNING / 9${NC}"
+        echo "${RED}   Stopped: $STOPPED / 9${NC}"
     fi
-done
 
-echo ""
-if [ $HOOKS_OK -eq 3 ]; then
-    echo "${GREEN}   [OK] All 3 hook scripts present - enforcement active${NC}"
+    rm -f /tmp/daemon-status.json
 else
-    echo "${YELLOW}   [!] $HOOKS_OK/3 hook scripts found${NC}"
+    echo "${YELLOW}⚠️  Could not check daemon status${NC}"
 fi
 
 # ============================================================================
@@ -95,31 +116,39 @@ fi
 echo ""
 echo "${BLUE}[4/7] Loading latest recommendations...${NC}"
 
-RECOMMENDATIONS_FILE="$MEMORY_PATH/.last-automation-check.json"
+RECOMMENDATIONS_FILE="$HOME/.claude/memory/.last-automation-check.json"
 if [ -f "$RECOMMENDATIONS_FILE" ]; then
     echo "${GREEN}✅ Recommendations found:${NC}"
 
     # Extract recommendations using Python (CRITICAL - must succeed)
-    python - <<EOF
-import json, sys
+    # Use Python's pathlib to handle path resolution cross-platform
+    python - <<'PYEOF'
+import json, sys, os
+from pathlib import Path
 
 # Fix encoding for Windows console
 if sys.stdout.encoding != 'utf-8':
-    sys.stdout.reconfigure(encoding='utf-8')
+    try:
+        sys.stdout.reconfigure(encoding='utf-8')
+    except:
+        pass
 
 try:
-    with open('$RECOMMENDATIONS_FILE', 'r') as f:
+    # Use pathlib for cross-platform path handling
+    rec_file = Path.home() / '.claude' / 'memory' / '.last-automation-check.json'
+
+    with open(rec_file, 'r') as f:
         data = json.load(f)
 
-    print("   Model: ${GREEN}" + data.get('recommended_model', 'N/A') + "${NC}")
-    print("   Skills: ${GREEN}" + ', '.join(data.get('recommended_skills', [])) + "${NC}")
-    print("   Agents: ${GREEN}" + ', '.join(data.get('recommended_agents', [])) + "${NC}")
+    print("   Model: " + data.get('recommended_model', 'N/A'))
+    print("   Skills: " + ', '.join(data.get('recommended_skills', [])))
+    print("   Agents: " + ', '.join(data.get('recommended_agents', [])))
 except Exception as e:
-    print("   ${RED}❌ CRITICAL: Could not parse recommendations${NC}")
-    print("   ${RED}Error: " + str(e) + "${NC}")
-    print("   ${RED}This is a BLOCKING FAILURE - System cannot proceed!${NC}")
+    print("   [CRITICAL] Could not parse recommendations")
+    print("   Error: " + str(e))
+    print("   This is a BLOCKING FAILURE - System cannot proceed!")
     sys.exit(1)  # FAIL with exit code 1
-EOF
+PYEOF
 
     # Check if parse succeeded
     if [ $? -ne 0 ]; then
@@ -142,7 +171,7 @@ EOF
     fi
 else
     echo "${YELLOW}⚠️  No recommendations file found${NC}"
-    echo "   Run: python ~/.claude/memory/session-start-check.py"
+    echo "   Run: python ~/.claude/memory/scripts/session-start-check.py"
 fi
 
 # ============================================================================
@@ -152,13 +181,13 @@ echo ""
 echo "${BLUE}[5/7] Checking context status...${NC}"
 
 # Check context (if context monitor exists)
-if [ -f "$MEMORY_PATH/context-monitor-v2.py" ]; then
-    python "$MEMORY_PATH/context-monitor-v2.py" --current-status 2>/dev/null || {
+if [ -f "$HOME/.claude/memory/current/context-monitor-v2.py" ]; then
+    python "$HOME/.claude/memory/current/context-monitor-v2.py" --current-status 2>/dev/null || {
         echo "${YELLOW}⚠️  Context monitor not available${NC}"
     }
 
     # Mark context as checked in blocking enforcer
-    python "$MEMORY_PATH/blocking-policy-enforcer.py" --mark-context-checked
+    python "$HOME/.claude/memory/current/blocking-policy-enforcer.py" --mark-context-checked
 else
     echo "${YELLOW}⚠️  Context monitor not found${NC}"
 fi
@@ -170,8 +199,8 @@ echo ""
 echo "${BLUE}[6/7] Detecting active Claude Code plan...${NC}"
 
 # Check if plan detector exists
-if [ -f "$MEMORY_PATH/scripts/plan-detector.sh" ]; then
-    PLAN_SUMMARY=$(bash "$MEMORY_PATH/scripts/plan-detector.sh" --summary 2>/dev/null)
+if [ -f "$HOME/.claude/memory/scripts/plan-detector.sh" ]; then
+    PLAN_SUMMARY=$(bash "$HOME/.claude/memory/scripts/plan-detector.sh" --summary 2>/dev/null)
     if [ $? -eq 0 ]; then
         echo "${GREEN}✅ Active Plan: $PLAN_SUMMARY${NC}"
     else
@@ -189,10 +218,10 @@ echo "${BLUE}[7/9] Generating Session ID for tracking...${NC}"
 
 # Create new session with description
 SESSION_DESCRIPTION="Session started at $(date '+%Y-%m-%d %H:%M:%S')"
-python "$MEMORY_PATH/session-id-generator.py" create --description "$SESSION_DESCRIPTION" > /dev/null 2>&1
+python "$HOME/.claude/memory/current/session-id-generator.py" create --description "$SESSION_DESCRIPTION" > /dev/null 2>&1
 
 # Display session ID banner
-python "$MEMORY_PATH/session-id-generator.py" current 2>/dev/null || {
+python "$HOME/.claude/memory/current/session-id-generator.py" current 2>/dev/null || {
     echo "${YELLOW}⚠️  Could not generate session ID${NC}"
 }
 
@@ -202,13 +231,13 @@ python "$MEMORY_PATH/session-id-generator.py" current 2>/dev/null || {
 echo ""
 echo "${BLUE}[8/9] Auto-loading coding standards...${NC}"
 
-if [ -f "$MEMORY_PATH/02-standards-system/standards-loader.py" ]; then
-    python "$MEMORY_PATH/02-standards-system/standards-loader.py" --load-all > /tmp/standards-load.log 2>&1
+if [ -f "$HOME/.claude/memory/02-standards-system/standards-loader.py" ]; then
+    python "$HOME/.claude/memory/02-standards-system/standards-loader.py" --load-all > /tmp/standards-load.log 2>&1
     if [ $? -eq 0 ]; then
         echo "${GREEN}✅ All coding standards loaded successfully${NC}"
 
         # Mark standards as loaded in blocking enforcer
-        python "$MEMORY_PATH/blocking-policy-enforcer.py" --mark-standards-loaded 2>/dev/null
+        python "$HOME/.claude/memory/current/blocking-policy-enforcer.py" --mark-standards-loaded 2>/dev/null
 
         echo "${GREEN}   ✓ Java Project Structure${NC}"
         echo "${GREEN}   ✓ Config Server Rules${NC}"
@@ -252,6 +281,6 @@ echo ""
 
 # Show enforcer status
 echo "${BLUE}📊 Blocking Enforcer Status:${NC}"
-python "$MEMORY_PATH/blocking-policy-enforcer.py" --status
+python "$HOME/.claude/memory/current/blocking-policy-enforcer.py" --status
 
 exit 0

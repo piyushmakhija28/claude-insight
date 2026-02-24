@@ -11,9 +11,9 @@ Usage:
     python detect-sync-eligibility.py --agent "agent-name"
 
 Output:
-    ✅ SYNC: This is global/reusable
-    ❌ NO SYNC: This is project-specific (reason)
-    ⚠️  WARNING: Contains project-specific references (needs cleanup)
+    [OK] SYNC: This is global/reusable
+    [ERROR] NO SYNC: This is project-specific (reason)
+    [WARN]  WARNING: Contains project-specific references (needs cleanup)
 
 Exit Codes:
     0 = SYNC (eligible)
@@ -92,20 +92,20 @@ class SyncEligibilityDetector:
             self.file_path = Path.home() / '.claude' / 'agents' / self.agent_name / 'agent.md'
 
         if not self.file_path:
-            print("❌ ERROR: No file, skill, or agent specified")
+            print("[ERROR] ERROR: No file, skill, or agent specified")
             return 1
 
         file_path = Path(self.file_path)
 
         if not file_path.exists():
-            print(f"❌ ERROR: File not found: {file_path}")
+            print(f"[ERROR] ERROR: File not found: {file_path}")
             return 1
 
-        # 🚨 CRITICAL: Block global CLAUDE.md (NEVER sync personal config)
+        # [ALERT] CRITICAL: Block global CLAUDE.md (NEVER sync personal config)
         if file_path.name == 'CLAUDE.md':
             # Check if it's the global CLAUDE.md in ~/.claude/
             if str(file_path.parent).endswith('.claude') or '/.claude' in str(file_path) or '\\.claude\\' in str(file_path):
-                print(f"❌ NO SYNC: This is the GLOBAL CLAUDE.md (personal configuration)")
+                print(f"[ERROR] NO SYNC: This is the GLOBAL CLAUDE.md (personal configuration)")
                 print(f"   File: {file_path}")
                 print(f"   Reason: Global CLAUDE.md contains personal settings and should NEVER be synced to public repos")
                 print(f"   Action: Create project-specific CLAUDE.md instead for each public repo")
@@ -116,17 +116,17 @@ class SyncEligibilityDetector:
             with open(file_path, 'r', encoding='utf-8') as f:
                 content = f.read()
         except Exception as e:
-            print(f"❌ ERROR: Cannot read file: {e}")
+            print(f"[ERROR] ERROR: Cannot read file: {e}")
             return 1
 
         # Check for manual override
         if SYNC_MARKER in content:
-            print(f"✅ SYNC: Manual override marker found")
+            print(f"[OK] SYNC: Manual override marker found")
             print(f"   File: {file_path}")
             return 0
 
         if NO_SYNC_MARKER in content:
-            print(f"❌ NO SYNC: Manual override marker found")
+            print(f"[ERROR] NO SYNC: Manual override marker found")
             print(f"   File: {file_path}")
             return 1
 
@@ -192,7 +192,7 @@ class SyncEligibilityDetector:
 
         if not self.eligible:
             # NOT eligible - project-specific
-            print("❌ NO SYNC: This is project-specific")
+            print("[ERROR] NO SYNC: This is project-specific")
             print()
             print("Reasons:")
             for issue in self.issues:
@@ -203,7 +203,7 @@ class SyncEligibilityDetector:
 
         elif self.warnings:
             # Eligible but has warnings - needs review
-            print("⚠️  WARNING: Contains project-specific references")
+            print("[WARN]  WARNING: Contains project-specific references")
             print()
             print("Warnings:")
             for warning in self.warnings:
@@ -217,13 +217,13 @@ class SyncEligibilityDetector:
 
         else:
             # Fully eligible - no issues
-            print("✅ SYNC: This is global/reusable")
+            print("[OK] SYNC: This is global/reusable")
             print()
             print("Checks:")
-            print("   ✅ Name: No project-specific terms")
-            print("   ✅ Path: Not in project source code")
-            print("   ✅ Content: No project-specific business logic")
-            print("   ✅ Security: No sensitive information")
+            print("   [OK] Name: No project-specific terms")
+            print("   [OK] Path: Not in project source code")
+            print("   [OK] Content: No project-specific business logic")
+            print("   [OK] Security: No sensitive information")
             print()
             print("Action: Safe to sync to Claude Insight")
             return 0
@@ -241,7 +241,7 @@ def main():
     args = parser.parse_args()
 
     if not any([args.file, args.skill, args.agent]):
-        print("❌ ERROR: Must specify --file, --skill, or --agent")
+        print("[ERROR] ERROR: Must specify --file, --skill, or --agent")
         print()
         print("Usage:")
         print("  python detect-sync-eligibility.py --file 'path/to/file'")

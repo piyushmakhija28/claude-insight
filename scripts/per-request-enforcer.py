@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 """
-PER-REQUEST POLICY ENFORCER
+Script Name: per-request-enforcer.py
+Version: 1.0.0
+Last Modified: 2026-02-17
+Description: Per-request policy enforcement for continuous policy compliance
+Author: Claude Memory System
+Changelog: See CHANGELOG.md
 
 CRITICAL: This enforcer runs BEFORE EVERY user request/response.
 Policies are enforced continuously throughout the session.
-
-Version: 1.0.0
-Date: 2026-02-17
 """
 
 import os
@@ -77,7 +79,7 @@ class PerRequestEnforcer:
         self._save_state()
 
         print("\n" + "="*70)
-        print(f"🔄 REQUEST #{self.state['request_count']} - POLICY ENFORCEMENT ACTIVE")
+        print(f"[REFRESH] REQUEST #{self.state['request_count']} - POLICY ENFORCEMENT ACTIVE")
         print("="*70)
 
     def mark_policy_complete(self, policy_name):
@@ -85,21 +87,21 @@ class PerRequestEnforcer:
         if policy_name in self.state['current_request_policies']:
             self.state['current_request_policies'][policy_name] = True
             self._save_state()
-            print(f"   ✅ {policy_name}: ENFORCED")
+            print(f"   [OK] {policy_name}: ENFORCED")
 
     def check_required_policies(self):
         """
         Check if all required policies have been enforced.
         Called BEFORE generating response.
         """
-        print("\n📋 POLICY ENFORCEMENT STATUS:")
+        print("\n[CLIPBOARD] POLICY ENFORCEMENT STATUS:")
         print("-" * 70)
 
         policies = self.state['current_request_policies']
         all_complete = True
 
         for policy, status in policies.items():
-            status_icon = "✅" if status else "❌"
+            status_icon = "[OK]" if status else "[ERROR]"
             print(f"   {status_icon} {policy}: {'DONE' if status else 'PENDING'}")
             if not status:
                 all_complete = False
@@ -107,10 +109,10 @@ class PerRequestEnforcer:
         print("-" * 70)
 
         if not all_complete:
-            print("\n⚠️  WARNING: Not all policies enforced yet!")
+            print("\n[WARN]  WARNING: Not all policies enforced yet!")
             print("   Policies should run automatically before response.")
         else:
-            print("\n✅ ALL POLICIES ENFORCED - Ready to respond")
+            print("\n[OK] ALL POLICIES ENFORCED - Ready to respond")
 
         print("="*70 + "\n")
 

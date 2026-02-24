@@ -1,7 +1,13 @@
 #!/usr/bin/env python3
 """
-Context Monitor v2
-Enhanced monitoring with actionable recommendations
+Script Name: context-monitor-v2.py
+Version: 2.0.0
+Last Modified: 2026-02-18
+Description: Context monitoring with actionable recommendations
+Author: Claude Memory System
+Changelog: See CHANGELOG.md
+
+Enhanced monitoring with actionable recommendations for context optimization.
 """
 
 # Fix encoding for Windows console
@@ -41,23 +47,52 @@ class ContextMonitorV2:
         }
 
     def get_context_percentage(self):
-        """Get current context usage percentage"""
-        # Try to read from context file
-        if self.context_file.exists():
-            try:
-                data = json.loads(self.context_file.read_text())
-                return data.get('percentage', 0)
-            except:
-                pass
+        """
+        Get current context usage percentage.
+        Priority order:
+          1. session-progress.json dynamic estimate (most up-to-date, updates after every tool call)
+          2. .context-estimate JSON (metrics-based estimate from hooks)
+          3. .context-usage JSON only if written within last 30 minutes (not stale)
+          4. 0 (unknown, better than lying with 80.0)
+        """
+        # --- Priority 1: session-progress.json dynamic estimate ---
+        try:
+            session_progress = self.memory_dir / 'logs' / 'session-progress.json'
+            if session_progress.exists():
+                with open(session_progress, 'r', encoding='utf-8') as f:
+                    sp = json.load(f)
+                if 'context_estimate_pct' in sp:
+                    return float(sp['context_estimate_pct'])
+        except Exception:
+            pass
 
-        # Try estimate file
+        # --- Priority 2: .context-estimate (JSON with context_percent field) ---
         if self.estimate_file.exists():
             try:
-                data = self.estimate_file.read_text().strip()
-                return float(data)
-            except:
+                with open(self.estimate_file, 'r', encoding='utf-8') as f:
+                    est_data = json.load(f)
+                pct = est_data.get('context_percent', None)
+                if pct is not None:
+                    return float(pct)
+            except Exception:
                 pass
 
+        # --- Priority 3: .context-usage only if NOT stale (< 30 min old) ---
+        if self.context_file.exists():
+            try:
+                with open(self.context_file, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                updated_at_str = data.get('updated_at', '')
+                if updated_at_str:
+                    updated_at = datetime.fromisoformat(updated_at_str)
+                    age_minutes = (datetime.now() - updated_at).total_seconds() / 60
+                    if age_minutes < 30:
+                        return float(data.get('percentage', 0))
+                # File is stale - do not use it
+            except Exception:
+                pass
+
+        # --- Priority 4: unknown ---
         return 0
 
     def get_status_level(self, percentage):
@@ -178,7 +213,7 @@ class ContextMonitorV2:
 
         print(f"\nOptimization Suggestions:")
         for sug in self.get_optimization_suggestions():
-            print(f"  • {sug}")
+            print(f"  - {sug}")
 
         # Restore original
         self.update_percentage(original)

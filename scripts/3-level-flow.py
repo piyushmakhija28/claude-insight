@@ -2016,68 +2016,62 @@ def main():
         print(chain_context_str)
         print()
     # =========================================================================
-    # PRE-CODING REVIEW CHECKPOINT
-    # Skip if: approval message, non-coding message, or mid-session continuation
-    # These don't need a new checkpoint - user already approved or is just asking
+    # PRE-CODING REVIEW CHECKPOINT (ALWAYS SHOWN)
+    # Always display checkpoint for consistency and transparency.
+    # AUTO-ACCEPT: Checkpoint is informational only - never blocks execution.
+    # User can see all decisions made by 3-level-flow before work starts.
     # =========================================================================
-    if _needs_enforcement:
-        trace_path = str(session_log_dir / 'flow-trace.json')
-        print(SEP)
-        print("[REVIEW CHECKPOINT] CONFIRM DECISIONS BEFORE CODING STARTS")
-        print(SEP)
-        print()
-        print(f"  Session ID : {session_id}")
-        print(f"  Trace File : {trace_path}")
-        print()
+    trace_path = str(session_log_dir / 'flow-trace.json')
+    _ctx_window_tokens = 200000
+    _ctx_used_tokens = int(_ctx_window_tokens * context_pct2 / 100)
+    _ctx_remaining_tokens = _ctx_window_tokens - _ctx_used_tokens
+    _understood = rewritten_prompt[:200] if rewritten_prompt else "(no rewrite - using original message)"
 
-        # --- PROMPT VERIFICATION (Step 3.0) ---
-        # Show original vs rewritten so user can verify the system understood correctly
-        print("  [PROMPT VERIFICATION] Did the system understand your request correctly?")
-        print(f"    You said     : {user_message[:200]}")
-        if rewritten_prompt:
-            print(f"    Understood as: {rewritten_prompt[:200]}")
-        else:
-            print(f"    Understood as: (no rewrite - using original message)")
-        print(f"    Task type    : {task_type}")
-        print(f"    Complexity   : {adj_complexity}/25")
-        print()
+    print(SEP)
+    print("[REVIEW CHECKPOINT] AUTO-PROCEED - Decisions shown for reference")
+    print(SEP)
+    print()
+    print("  | Field              | Value                                              |")
+    print("  |--------------------|-----------------------------------------------------|")
+    print(f"  | Session ID         | {session_id:<51} |")
+    print(f"  | You said           | {user_message[:51]:<51} |")
+    print(f"  | Understood as      | {_understood[:51]:<51} |")
+    print(f"  | Task type          | {task_type:<51} |")
+    print(f"  | Complexity         | {adj_complexity}/25{'':<46} |")
+    print(f"  | Model selected     | {selected_model:<51} |")
+    print(f"  | Agent/Skill        | {skill_agent_name:<51} |")
+    print(f"  | Plan mode          | {plan_str:<51} |")
+    print(f"  | Context usage      | {context_pct2}% (~{_ctx_used_tokens:,} / {_ctx_window_tokens:,} tokens){'':<14} |")
+    print(f"  | Context remaining  | ~{_ctx_remaining_tokens:,} tokens{'':<33} |")
+    print()
 
-        # --- DECISIONS ---
-        _ctx_window_tokens = 200000
-        _ctx_used_tokens = int(_ctx_window_tokens * context_pct2 / 100)
-        _ctx_remaining_tokens = _ctx_window_tokens - _ctx_used_tokens
-
-        print("  [DECISIONS]")
-        print(f"    - Model selected   : {selected_model}")
-        print(f"    - Agent/Skill      : {skill_agent_name}")
-        print(f"    - Plan mode        : {plan_str}")
-        print(f"    - Context usage    : {context_pct2}%")
-        print(f"    - Context window   : {_ctx_window_tokens:,} tokens (Pro plan)")
-        print(f"    - Context used     : ~{_ctx_used_tokens:,} tokens")
-        print(f"    - Context remaining: ~{_ctx_remaining_tokens:,} tokens")
-        print()
-        print("  CLAUDE_MUST: Tell user to review above and WAIT for confirmation.")
-        print("  DO NOT start writing code until user says 'proceed' or 'ok'.")
-        if rewritten_prompt:
-            print()
-            print("  REWRITTEN PROMPT (Claude MUST use this as task description):")
-            print(f"  >> {rewritten_prompt}")
-            print()
-            print("  CLAUDE_INSTRUCTION: The user wrote in informal language.")
-            print("  Claude must solve the REWRITTEN_PROMPT above, not react to the raw message.")
-        print()
-        print(SEP)
-        print("[OK] ALL 3 LEVELS + 12 STEPS VERIFIED - WORK STARTED")
-        print(SEP)
+    # Show status based on message type
+    if _is_approval:
+        print("  STATUS: User approval message - policies cleared, auto-proceeding")
+    elif _is_continuation:
+        print("  STATUS: Mid-session continuation - resuming previous context")
+    elif is_non_coding_message(user_message):
+        print("  STATUS: Non-coding question/research - running in Q&A mode")
     else:
-        print(SEP)
-        if _is_approval:
-            print("[CHECKPOINT CLEARED] User approved - coding allowed, no new checkpoint needed")
-        elif _is_continuation:
-            print("[MID-SESSION] Continuation detected - no new checkpoint needed")
-        else:
-            print("[NON-CODING] Question/research detected - no checkpoint needed")
-        print(SEP)
+        print("  STATUS: Full execution - all policies and steps active")
+
+    print()
+    print("  CLAUDE_INSTRUCTION: Hook checkpoint shown. AUTO-PROCEED to coding.")
+    print("  DO NOT ask user for 'ok' or 'proceed'. Just start working immediately.")
+    print("  Checkpoint is AUTOMATICALLY ACCEPTED - no blocking, no confirmation needed.")
+
+    if rewritten_prompt and _needs_enforcement:
+        print()
+        print("  REWRITTEN PROMPT (Claude MUST use this as task description):")
+        print(f"  >> {rewritten_prompt}")
+        print()
+        print("  CLAUDE_INSTRUCTION: The user wrote in informal language.")
+        print("  Claude must solve the REWRITTEN_PROMPT above, not react to the raw message.")
+
+    print()
+    print(SEP)
+    print("[OK] ALL 3 LEVELS + 12 STEPS VERIFIED - WORK STARTED")
+    print(SEP)
 
     # LOOPHOLE #18 FIX: Checkpoint + task-breakdown flags are written EARLY (line ~968)
     # so they survive even if this script times out before reaching here.

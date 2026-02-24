@@ -1,8 +1,11 @@
 #!/usr/bin/env python
 # Script Name: pre-tool-enforcer.py
-# Version: 2.1.0
-# Last Modified: 2026-02-23
-# Description: PreToolUse hook - L3.1/3.5 blocking + L3.3 checkpoint + L3.6 hints + L3.7 prevention
+# Version: 2.3.0 (Multi-Window Isolation)
+# Last Modified: 2026-02-24
+# Description: PreToolUse hook - L3.1/3.5 blocking + L3.6 hints + L3.7 prevention
+#              Now with PID-based window isolation to prevent multi-window conflicts
+# v2.3.0: Added window-isolation helpers for PID-specific flag isolation
+# v2.2.0: Checkpoint blocking disabled - hook shows table, Claude auto-proceeds (no ok/proceed needed)
 # v2.1.0: Enhanced optimization hints with consistent [OPTIMIZATION] format and clearer guidance
 # Author: Claude Memory System
 #
@@ -13,14 +16,14 @@
 #
 # Policies enforced:
 #   Level 3.3 - Review Checkpoint:
-#     - Write/Edit/NotebookEdit: BLOCK if .checkpoint-pending.json exists (same session)
-#     - Bash/Task NOT blocked: needed for git, investigation, research, tests
+#     - DISABLED (v2.2.0): Hook shows checkpoint table, Claude auto-proceeds. No blocking.
+#     - Flag file .checkpoint-pending-*.json is NEVER written (removed from 3-level-flow.py)
 #   Level 3.1 - Task Breakdown (Loophole #7 Fix):
-#     - Write/Edit/NotebookEdit: BLOCK if .task-breakdown-pending.json exists (same session)
+#     - Write/Edit/NotebookEdit: BLOCK if .task-breakdown-pending.json exists (same session+PID)
 #     - Bash/Task NOT blocked: investigation and exploration allowed before TaskCreate
 #     - Cleared when TaskCreate is called (post-tool-tracker.py)
 #   Level 3.5 - Skill/Agent Selection (Loophole #7 Fix):
-#     - Write/Edit/NotebookEdit: BLOCK if .skill-selection-pending.json exists (same session)
+#     - Write/Edit/NotebookEdit: BLOCK if .skill-selection-pending.json exists (same session+PID)
 #     - Bash/Task NOT blocked: Bash needed for git/tests, Task IS how Step 3.5 is done
 #     - Cleared when Skill or Task tool is called (post-tool-tracker.py)
 #   Level 3.6 - Tool Usage Optimization:
@@ -33,6 +36,7 @@
 # Windows-safe: ASCII only, no Unicode chars
 
 import sys
+import os
 import json
 import glob as _glob
 from pathlib import Path
@@ -74,40 +78,42 @@ def get_current_session_id():
 
 def find_session_flag(pattern_prefix, current_session_id):
     """
-    Find session-specific flag file for the current session.
+    Find PID-isolated session-specific flag file for the current window.
     Returns (flag_path, flag_data) or (None, None) if not found.
-    Also auto-cleans stale flags (>60 min) from ANY session.
-    Loophole #11 fix: each session has its own flag file.
-    """
-    flag_files = _glob.glob(str(FLAG_DIR / (pattern_prefix + '-*.json')))
-    target_path = None
-    target_data = None
+    Also auto-cleans stale flags (>60 min) from current session.
 
-    for flag_file in flag_files:
+    MULTI-WINDOW FIX: Looks for flags with matching SESSION_ID AND PID.
+    Pattern: .{prefix}-{SESSION_ID}-{PID}.json
+
+    Returns:
+        (flag_path, flag_data) for current window's flag, or (None, None)
+    """
+    current_pid = os.getpid()
+    pid_specific_pattern = '{}-{}-{}.json'.format(pattern_prefix, current_session_id, current_pid)
+    pid_specific_path = FLAG_DIR / pid_specific_pattern
+
+    if pid_specific_path.exists():
         try:
-            fp = Path(flag_file)
-            with open(fp, 'r', encoding='utf-8') as f:
+            with open(pid_specific_path, 'r', encoding='utf-8') as f:
                 data = json.load(f)
 
-            # Auto-expire stale flags from ANY session
+            # Auto-expire stale flags (>60 min)
             created_at_str = data.get('created_at', '')
             if created_at_str:
-                created_at = datetime.fromisoformat(created_at_str)
-                age = datetime.now() - created_at
-                if age > timedelta(minutes=CHECKPOINT_MAX_AGE_MINUTES):
-                    fp.unlink()
-                    continue
+                try:
+                    created_at = datetime.fromisoformat(created_at_str)
+                    age = datetime.now() - created_at
+                    if age > timedelta(minutes=CHECKPOINT_MAX_AGE_MINUTES):
+                        pid_specific_path.unlink(missing_ok=True)
+                        return (None, None)
+                except Exception:
+                    pass
 
-            # Check if this flag belongs to current session
-            flag_sid = data.get('session_id', '')
-            if flag_sid == current_session_id:
-                target_path = fp
-                target_data = data
-            # Other sessions' flags are LEFT ALONE (not deleted!)
+            return (pid_specific_path, data)
         except Exception:
             pass
 
-    return target_path, target_data
+    return (None, None)
 
 
 def check_checkpoint_pending(tool_name):

@@ -25,7 +25,7 @@ set -e
 
 MEMORY_PATH="$HOME/.claude/memory"
 CLAUDE_INSIGHT_PATH="/c/Users/techd/Documents/workspace-spring-tool-suite-4-4.27.0-new/claude-insight"
-DETECTOR="$MEMORY_PATH/detect-sync-eligibility.py"
+DETECTOR="$MEMORY_PATH/current/detect-sync-eligibility.py"
 
 # Colors
 RED='\033[0;31m'

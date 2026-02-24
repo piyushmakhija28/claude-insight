@@ -1,14 +1,16 @@
 #!/usr/bin/env python3
 """
 Script Name: voice-notifier.py
-Version: 1.0.0
-Last Modified: 2026-02-18
-Description: Text-to-Speech notifier with Indian girl voice.
+Version: 2.1.0
+Last Modified: 2026-02-23
+Description: Text-to-Speech notifier with Indian English female voice.
              Uses edge-tts (Microsoft Neural TTS - FREE, no API key needed)
              with pyttsx3 as offline fallback.
 
-             Primary Voice: en-IN-NeerjaNeural (Indian English Female - perfect for Hinglish!)
+             Primary Voice: en-IN-NeerjaNeural (Indian English Female)
              Fallback Voice: Windows SAPI5 female (Microsoft Zira / Heera)
+             Personality: Boss-assistant style (addresses user as Sir)
+             Language: English only
 
              Auto-installs: edge-tts, pyttsx3 if not present
 
@@ -32,17 +34,17 @@ VOICE_LOG = Path.home() / '.claude' / 'memory' / 'logs' / 'voice-notifier.log'
 # Fixed output file - gets overwritten each time (no temp file cleanup issues)
 VOICE_OUT_FILE = Path.home() / '.claude' / 'memory' / 'logs' / 'last-voice.mp3'
 
-# Best voice for Hinglish - Indian English female, neural quality
+# Indian English female voice - neural quality, natural pronunciation
 EDGE_TTS_VOICE = "en-IN-NeerjaNeural"
 
 # Emotion profiles: (rate, pitch) adjustments for edge-tts prosody
 # rate: "+N%" faster, "-N%" slower
 # pitch: "+NHz" higher, "-NHz" lower
 EMOTION_PROFILES = {
-    'happy':     ('+12%', '+8Hz'),   # Excited, cheerful - clear/session start
+    'greeting':  ('+8%',  '+5Hz'),   # Warm, professional - session start
     'done':      ('+5%',  '+3Hz'),   # Satisfied, warm - task complete
     'calm':      ('+0%',  '+0Hz'),   # Default neutral
-    'excited':   ('+18%', '+12Hz'),  # Very excited
+    'happy':     ('+12%', '+8Hz'),   # Cheerful - all work done
     'concerned': ('-5%',  '-3Hz'),   # Worried, slower
 }
 
@@ -52,14 +54,17 @@ def detect_emotion(text):
     Returns emotion key for EMOTION_PROFILES.
     """
     text_lower = text.lower()
-    # Happy/excited signals
-    if any(w in text_lower for w in ['arre', 'oye', 'aww', 'yayy', 'waah', 'haha', 'naya session', 'clear']):
+    # Session start / greeting signals
+    if any(w in text_lower for w in ['session started', 'new session', 'ready for', 'good morning', 'good evening', 'welcome']):
+        return 'greeting'
+    # All work done signals
+    if any(w in text_lower for w in ['all tasks', 'all done', 'everything', 'all completed', 'wrapped up']):
         return 'happy'
     # Task done signals
-    if any(w in text_lower for w in ['ho gaya', 'kar diya', 'ready hai', 'complete', 'dekh le', 'check kar']):
+    if any(w in text_lower for w in ['completed', 'done', 'finished', 'marked complete', "what's next", 'next task']):
         return 'done'
     # Concerned signals
-    if any(w in text_lower for w in ['problem', 'error', 'nahi', 'fail', 'galat']):
+    if any(w in text_lower for w in ['problem', 'error', 'fail', 'issue', 'blocked']):
         return 'concerned'
     return 'calm'
 
@@ -174,7 +179,7 @@ $wmp.controls.stop()
 def speak_edge_tts(text):
     """
     Speak using Microsoft Edge TTS - completely FREE.
-    Voice: en-IN-NeerjaNeural = Indian English Female (best for Hinglish!)
+    Voice: en-IN-NeerjaNeural = Indian English Female
     No API key needed. Uses Edge browser's neural TTS infrastructure.
     """
     if not try_install('edge-tts', 'edge_tts'):
@@ -299,7 +304,7 @@ def speak(text):
     text = clean_text(text)
     log_v(f"speak() called: {text[:100]}")
 
-    # Try edge-tts first (best voice for Hinglish)
+    # Try edge-tts first (best quality Indian English voice)
     if speak_edge_tts(text):
         return
 
@@ -318,14 +323,14 @@ def speak(text):
 
 def main():
     if len(sys.argv) < 2 or sys.argv[1] in ('--help', '-h'):
-        print("voice-notifier.py v1.0.0 - Indian girl voice TTS")
+        print("voice-notifier.py v2.1.0 - Indian English voice TTS")
         print()
         print("Usage:")
         print("  python voice-notifier.py <text to speak>")
         print()
         print("Examples:")
-        print("  python voice-notifier.py \"Namaskar! Session shuru ho gaya!\"")
-        print("  python voice-notifier.py \"Bhai sab kaam ho gaya!\"")
+        print('  python voice-notifier.py "Good morning Sir. New session started."')
+        print('  python voice-notifier.py "Sir, all tasks completed successfully."')
         print()
         print("Voice: en-IN-NeerjaNeural (Indian English Female)")
         print("Requires: edge-tts (auto-installed), pyttsx3 (fallback)")

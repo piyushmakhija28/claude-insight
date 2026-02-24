@@ -1,15 +1,18 @@
 #!/usr/bin/env python3
 """
 Script Name: clear-session-handler.py
-Version: 2.0.0
-Last Modified: 2026-02-23
+Version: 3.0.0 (Multi-Window Isolation)
+Last Modified: 2026-02-24
 Description: Detects /clear command usage via UserPromptSubmit hook.
              Compares current transcript message count vs last known count.
              If count decreased or transcript changed = /clear was used.
              Action: Save old session, create new one.
 
+             MULTI-WINDOW FIX: Each window gets isolated state file (PID-based)
+             to prevent conflicts across multiple Claude Code instances.
+
 Detection Logic:
-  - Tracks transcript_path + message count in ~/.claude/.hook-state.json
+  - Tracks transcript_path + message count in ~/.claude/.hook-state-{PID}.json (WINDOW-SPECIFIC)
   - If msg_count < last_msg_count  -> /clear detected (count dropped)
   - If transcript_path changed     -> new conversation/window detected
   - If msg_count == 0 + no prior   -> fresh start
@@ -37,11 +40,32 @@ MEMORY_BASE = Path.home() / '.claude' / 'memory'
 CURRENT_DIR = MEMORY_BASE / 'current'
 SESSIONS_DIR = MEMORY_BASE / 'sessions'
 CURRENT_SESSION_FILE = MEMORY_BASE / '.current-session.json'
-HOOK_STATE_FILE = Path.home() / '.claude' / '.hook-state.json'
+# MULTI-WINDOW FIX: Get window-specific hook state file via isolator
+HOOK_STATE_FILE = None  # Initialized in _init_window_isolation()
 CLEAR_LOG = MEMORY_BASE / 'logs' / 'clear-events.log'
 SESSION_START_VOICE_FLAG = Path.home() / '.claude' / '.session-start-voice'
 # Flag directory for session-specific enforcement flags (Loophole #11 fix)
 FLAG_DIR = Path.home() / '.claude'
+
+
+# =============================================================================
+# WINDOW ISOLATION (Multi-Window Fix)
+# =============================================================================
+
+def _init_window_isolation():
+    """Initialize window/PID-specific isolation."""
+    global HOOK_STATE_FILE
+    try:
+        # Import from session-window-isolator
+        from session_window_isolator import get_window_state_file, register_window
+        HOOK_STATE_FILE = get_window_state_file()
+        # Register this window for lifecycle tracking
+        register_window('session-unknown')  # Will be updated after session is known
+        log_event(f"[INIT] Window isolation active: PID={os.getpid()}, state_file={HOOK_STATE_FILE.name}")
+    except ImportError:
+        # Fallback if isolator not available (backwards compatibility)
+        HOOK_STATE_FILE = Path.home() / '.claude' / '.hook-state.json'
+        log_event(f"[WARN] session-window-isolator not found, using shared state: {HOOK_STATE_FILE}")
 
 
 # =============================================================================
@@ -454,6 +478,9 @@ def _link_session_chain(child_session, parent_session):
 # =============================================================================
 
 def main():
+    # Initialize window isolation (PID-based state files)
+    _init_window_isolation()
+
     hook_data = read_hook_stdin()
 
     transcript_path = hook_data.get('transcript_path', '')
@@ -569,6 +596,13 @@ def main():
 
     # Always update state with current values for next call comparison
     write_state(transcript_path, current_msg_count)
+
+    # Cleanup window state on exit
+    try:
+        from session_window_isolator import cleanup_window
+        cleanup_window()
+    except Exception:
+        pass
 
     sys.exit(0)
 

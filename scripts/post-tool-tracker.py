@@ -1,8 +1,10 @@
 #!/usr/bin/env python
 # Script Name: post-tool-tracker.py
-# Version: 2.2.0
-# Last Modified: 2026-02-23
+# Version: 2.3.0 (Multi-Window Isolation)
+# Last Modified: 2026-02-24
 # Description: PostToolUse hook - L3.9 tracking + L3.11 commit + L6 subagent + voice on task complete
+#              Now with PID-based window isolation to prevent multi-window conflicts
+# v2.3.0: Added PID-based flag isolation for multi-window support
 # v2.2.0: Auto work-done voice flag when all tasks completed (fixes unreliable voice)
 # v2.1.0: Added file change tracking for git commit reminders (10+ modified files warning)
 # Author: Claude Memory System
@@ -24,6 +26,7 @@
 # Windows-safe: ASCII only, no Unicode chars
 
 import sys
+import os
 import json
 import glob as _glob
 from pathlib import Path
@@ -71,23 +74,25 @@ def _get_session_id_from_progress():
 
 
 def _clear_session_flags(pattern_prefix, session_id):
-    """Clear session-specific flag file(s) matching the given session ID."""
+    """
+    Clear PID-isolated session-specific flag file(s).
+
+    MULTI-WINDOW FIX: Clears only the current window's flag
+    Pattern: .{prefix}-{SESSION_ID}-{PID}.json
+
+    Args:
+        pattern_prefix: Flag type prefix (e.g., 'task-breakdown-pending')
+        session_id: Session ID
+    """
     if session_id:
-        # Direct path for known session
-        flag_path = FLAG_DIR / f'{pattern_prefix}-{session_id}.json'
+        # Direct path for current window's flag (includes PID)
+        current_pid = os.getpid()
+        flag_path = FLAG_DIR / f'{pattern_prefix}-{session_id}-{current_pid}.json'
         if flag_path.exists():
-            flag_path.unlink()
-            return
-    # Fallback: glob all and clear matching session_id from content
-    for flag_file in _glob.glob(str(FLAG_DIR / (pattern_prefix + '-*.json'))):
-        try:
-            fp = Path(flag_file)
-            with open(fp, 'r', encoding='utf-8') as f:
-                data = json.load(f)
-            if not session_id or data.get('session_id', '') == session_id:
-                fp.unlink()
-        except Exception:
-            pass
+            try:
+                flag_path.unlink()
+            except Exception:
+                pass
 
 
 def get_response_content_length(tool_response):
