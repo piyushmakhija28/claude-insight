@@ -9,6 +9,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [4.1.0] - 2026-02-24
+
+### Added
+- **Multi-Window Session Isolation** (System-Level Fix)
+  - New `session-window-isolator.py` utility for PID-based window isolation
+  - Each Claude Code window now gets isolated session state: `~/.claude/.hook-state-{PID}.json`
+  - Central window registry: `~/.claude/memory/window-state/active-windows.json`
+  - File locking (msvcrt) prevents concurrent write conflicts
+  - Eliminates context mixing between multiple simultaneous windows
+  - Detailed doc: `docs/multi-window-session-isolation.md`
+
+- **Review Checkpoint Consistency** (Policy-Level Fix)
+  - 3-level-flow.py v3.1.0: Checkpoint now ALWAYS shown (for all message types)
+  - Dynamic status messages explain message type (approval, continuation, non-coding, regular)
+  - Checkpoint auto-accepted immediately (never blocks)
+  - Transparent execution: user sees all 12-step decisions before work starts
+  - Detailed doc: `docs/review-checkpoint-consistency-fix.md`
+
+### Fixed
+- **Session conflicts in multi-window scenarios** - Sessions no longer interfere with each other
+- **Inconsistent checkpoint display** - Checkpoint shows reliably every time
+- **Context corruption across windows** - Each window maintains isolated context
+- **Unclear execution status** - Status message clarifies message type processing
+
+### Changed
+- **clear-session-handler.py** v3.0.0: Now uses PID-specific state files via isolator
+- **3-level-flow.py** v3.1.0: Checkpoint display unconditional, always shown with status
+
+---
+
 ## [4.0.1] - 2026-02-23
 
 ### Fixed
