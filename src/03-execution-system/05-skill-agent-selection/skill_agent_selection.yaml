@@ -1,0 +1,8 @@
+skills: []
+agents:
+- ui-ux-designer
+reasoning:
+- "Task 'Dashboard' \u2192 ui-ux-designer agent"
+- "Dashboard/Web app detected \u2192 Consider ui-ux-designer + Python backend"
+execution_plan:
+- '1. Execute: Task(subagent_type=''ui-ux-designer'', prompt=''...'')'
