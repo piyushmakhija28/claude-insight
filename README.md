@@ -30,6 +30,9 @@ detection — all from one interface.
   - [Level 2: Standards System](#level-2-standards-system)
   - [Level 3: Execution System](#level-3-execution-system)
 - [How the Hooks Work](#how-the-hooks-work)
+- [Session Management: Our Custom System vs Claude Native](#session-management-our-custom-system-vs-claude-native)
+  - [What Makes Our Session System Different?](#what-makes-our-session-system-different)
+  - [Key Benefits](#key-benefits)
 - [Dashboard Pages](#dashboard-pages)
 - [Project Structure](#project-structure)
 - [API Reference](#api-reference)
@@ -390,6 +393,122 @@ There are **4 hook types**, each enforcing different levels of the architecture:
 **No background daemons.** Everything runs per-request via hooks. When you send
 a message in Claude Code, the hooks fire, run the 3-level flow, write results to
 `~/.claude/memory/logs/`, and Claude Insight reads those logs.
+
+---
+
+## Session Management: Our Custom System vs Claude Native
+
+### What Makes Our Session System Different?
+
+Claude Code has built-in session management at the IDE level (per conversation window).
+We've built an **advanced session system** that goes beyond IDE limitations:
+
+| Feature | Claude Native | Our System |
+|---------|---|---|
+| **Persistence** | Lost on IDE close | Saved forever in `~/.claude/memory/sessions/` |
+| **Continuity** | Resets after `/clear` | Auto-chains sessions with parent/child links |
+| **Multi-Window** | Conflicts (shared state) | PID-based isolation (no conflicts) |
+| **Context Awareness** | Single window | Project-based + cross-session |
+| **Session Summaries** | None | Auto-generated with metrics |
+| **Session Tagging** | None | Tag-based organization (spring-boot, devops, etc.) |
+| **History Access** | Manual scrolling | Queryable database + Claude Insight dashboard |
+| **Parallel Work** | Not supported | Supported with isolation |
+
+### Key Benefits
+
+**1. Never Lose Work**
+- All sessions automatically saved
+- Recoverable after IDE restart
+- Complete audit trail
+- Historical comparison
+
+**2. Cross-Session Continuity**
+- Sessions chained automatically after `/clear`
+- Claude loads previous context automatically
+- Related work discovered by tags
+- Project-level awareness
+
+**3. Multi-Window Support**
+- Each window uses isolated state file (`~/.claude/.hook-state-{PID}.json`)
+- Work simultaneously without conflicts
+- No context mixing between windows
+- Clean separation per process
+
+**4. Advanced Analytics**
+- Track time per task type
+- Measure context usage trends
+- Identify skill preferences
+- Learn from past approaches
+
+### Session Storage
+
+```
+~/.claude/memory/sessions/
+├─ SESSION-20260224-130424-IQAV/
+│  ├─ flow-trace.json              # Complete 12-step execution
+│  ├─ session-summary.json         # Auto-generated summary
+│  ├─ task-metadata.json           # Task tracking
+│  └─ context-metrics.json         # Token usage
+│
+└─ chain-index.json                # Session relationships
+   {
+     "SESSION-20260224-130424-IQAV": {
+       "parent": "SESSION-20260223-151000",
+       "children": [...],
+       "tags": ["spring-boot", "monitoring", "k8s"]
+     }
+   }
+```
+
+### How Sessions Are Tracked
+
+```
+User says "/clear" in Claude Code
+    ↓
+clear-session-handler.py fires
+    ↓
+Saves old session:
+- Generates session-summary.json
+- Links parent/child relationship
+- Indexes by tags
+- Stores flow-trace.json
+    ↓
+Creates new session
+    ↓
+Claude loads previous context:
+- Reads chain-index.json
+- Loads related sessions
+- Shows: "In the previous session, we..."
+    ↓
+Claude Insight Dashboard
+- Shows session history
+- Displays relationships
+- Searchable by tag
+```
+
+### Try It Yourself
+
+1. **Run multiple Claude Code windows simultaneously**
+   - Each gets isolated state (no conflicts)
+   - Work on different projects without interference
+
+2. **Use `/clear` in one window**
+   - Previous session automatically saved
+   - Context automatically chained
+   - Claude references: "As we did before..."
+
+3. **Open Claude Insight dashboard**
+   - Sessions page: See all past sessions
+   - Relationships: View parent/child chains
+   - Tags: Filter by project or skill
+   - Search: Find sessions by topic
+
+### Complete Documentation
+
+For full details on session management, see:
+- **`docs/session-management-comparison.md`** - Complete comparison with Claude native
+- **`docs/multi-window-session-isolation.md`** - PID-based isolation technical details
+- **Sessions Dashboard** - Visual session explorer in Claude Insight
 
 ---
 

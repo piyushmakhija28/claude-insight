@@ -27,6 +27,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Transparent execution: user sees all 12-step decisions before work starts
   - Detailed doc: `docs/review-checkpoint-consistency-fix.md`
 
+- **Session Management Documentation** (User Education)
+  - New `docs/session-management-comparison.md` - Complete guide explaining differences between Claude native and our custom session system
+  - Updated README.md with comprehensive session management section
+  - Clear benefits table: persistence, continuity, multi-window support, analytics
+  - Usage examples: how to leverage custom session features
+  - Technical deep-dive: session storage, auto-chaining, tagging system
+
 ### Fixed
 - **Session conflicts in multi-window scenarios** - Sessions no longer interfere with each other
 - **Inconsistent checkpoint display** - Checkpoint shows reliably every time
@@ -36,6 +43,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - **clear-session-handler.py** v3.0.0: Now uses PID-specific state files via isolator
 - **3-level-flow.py** v3.1.0: Checkpoint display unconditional, always shown with status
+- **README.md** v3.8.1: Added comprehensive session management section with benefits explanation
+- **Table of Contents**: Added Session Management section for easy navigation
 
 ---
 
