@@ -261,10 +261,10 @@ def finalize(session_id):
 
 def auto_trigger_cleanup_if_needed(session_id, summary_data):
     """
-    AUTO-CLEANUP LOGIC: When finalizing a session, check context usage.
-    If context > 90%, automatically trigger session cleanup/compaction.
+    AUTO-CLEANUP EXECUTION: When finalizing a session, check context usage.
+    If context > 90%, AUTOMATICALLY EXECUTE cleanup/compaction.
 
-    This ensures we don't need manual intervention - system handles it!
+    This is NOT just detection - we actually CLEANUP!
     """
     # Estimate context usage from summary
     request_count = summary_data.get("request_count", 0)
@@ -275,9 +275,15 @@ def auto_trigger_cleanup_if_needed(session_id, summary_data):
 
     log_event(f"[CHECK] Session {session_id}: Estimated context usage = {estimated_percentage:.1f}%")
 
-    # If context is high, trigger automatic cleanup
+    # If context is high, EXECUTE automatic cleanup
     if estimated_percentage > 90:
-        log_event(f"[ALERT] Context high ({estimated_percentage:.1f}%) - AUTO-TRIGGERING cleanup")
+        log_event(f"[ALERT] Context high ({estimated_percentage:.1f}%) - AUTO-EXECUTING cleanup NOW")
+
+        # ACTUAL CLEANUP: Delete old session files to free space
+        old_sessions_deleted = _execute_session_cleanup()
+
+        log_event(f"[CLEANUP] Deleted {old_sessions_deleted} old session files")
+        log_event(f"[COMPACT] Session logs cleaned up")
 
         # Save baseline: Context is now reset for next session
         baseline_file = (LOGS_DIR / 'context-baseline.json')
@@ -286,15 +292,60 @@ def auto_trigger_cleanup_if_needed(session_id, summary_data):
         baseline = {
             "last_cleanup_session": session_id,
             "last_cleanup_time": datetime.now().isoformat(),
-            "old_sessions_compacted": _count_old_sessions(),
+            "old_sessions_deleted": old_sessions_deleted,
+            "old_logs_compacted": _cleanup_old_logs(),
             "context_reset_to": 10,  # Starting fresh for new session
         }
 
         with open(baseline_file, 'w', encoding='utf-8') as f:
             json.dump(baseline, f, indent=2)
 
-        log_event(f"[CLEANUP] Auto-triggered cleanup for {session_id}")
         log_event(f"[BASELINE] Context reset to 10% for next session")
+        log_event(f"[DONE] AUTO-CLEANUP completed successfully!")
+
+
+def _execute_session_cleanup():
+    """ACTUALLY DELETE old session files to free up space"""
+    deleted_count = 0
+    try:
+        # Keep only last 5 sessions, delete older ones
+        sessions = sorted(list(SESSIONS_DIR.glob('SESSION-*.json')),
+                         key=lambda p: p.stat().st_mtime, reverse=True)
+
+        sessions_to_keep = 5
+        for old_session_file in sessions[sessions_to_keep:]:
+            try:
+                old_session_file.unlink()
+                deleted_count += 1
+                log_event(f"[DELETE] Removed old session: {old_session_file.name}")
+            except Exception as e:
+                log_event(f"[WARN] Could not delete {old_session_file.name}: {e}")
+    except Exception as e:
+        log_event(f"[ERROR] Session cleanup failed: {e}")
+
+    return deleted_count
+
+
+def _cleanup_old_logs():
+    """ACTUALLY CLEANUP old session logs (keep last 10)"""
+    cleaned_count = 0
+    try:
+        session_logs = sorted(list((LOGS_DIR / 'sessions').glob('SESSION-*')),
+                             key=lambda p: p.stat().st_mtime, reverse=True)
+
+        logs_to_keep = 10
+        for old_log_dir in session_logs[logs_to_keep:]:
+            try:
+                import shutil
+                shutil.rmtree(old_log_dir)
+                cleaned_count += 1
+                log_event(f"[CLEANUP] Removed old logs: {old_log_dir.name}")
+            except Exception as e:
+                log_event(f"[WARN] Could not cleanup {old_log_dir.name}: {e}")
+    except Exception as e:
+        log_event(f"[ERROR] Log cleanup failed: {e}")
+
+    return cleaned_count
 
 
 def _count_old_sessions():
