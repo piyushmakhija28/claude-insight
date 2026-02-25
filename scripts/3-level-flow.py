@@ -2037,12 +2037,15 @@ def main():
     print(f"  | You said           | {user_message[:51]:<51} |")
     print(f"  | Understood as      | {_understood[:51]:<51} |")
     print(f"  | Task type          | {task_type:<51} |")
-    print(f"  | Complexity         | {adj_complexity}/25{'':<46} |")
+    complexity_str = f"{adj_complexity}/25"
+    print(f"  | Complexity         | {complexity_str:<51} |")
     print(f"  | Model selected     | {selected_model:<51} |")
     print(f"  | Agent/Skill        | {skill_agent_name:<51} |")
     print(f"  | Plan mode          | {plan_str:<51} |")
-    print(f"  | Context usage      | {context_pct2}% (~{_ctx_used_tokens:,} / {_ctx_window_tokens:,} tokens){'':<14} |")
-    print(f"  | Context remaining  | ~{_ctx_remaining_tokens:,} tokens{'':<33} |")
+    context_usage_str = f"{context_pct2}% (~{_ctx_used_tokens:,} / {_ctx_window_tokens:,} tokens)"
+    print(f"  | Context usage      | {context_usage_str:<51} |")
+    context_remaining_str = f"~{_ctx_remaining_tokens:,} tokens"
+    print(f"  | Context remaining  | {context_remaining_str:<51} |")
     print()
 
     # Show status based on message type
