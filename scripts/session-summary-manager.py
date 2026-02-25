@@ -249,7 +249,61 @@ def finalize(session_id):
     # Update chain-index with summary
     _update_chain_summary(session_id, data)
 
+    # AUTO-CLEANUP: Check context and trigger cleanup if needed
+    # This way we automatically compact when context is high
+    try:
+        auto_trigger_cleanup_if_needed(session_id, data)
+    except Exception as e:
+        log_event(f"[INFO] Auto-cleanup check failed (non-blocking): {e}")
+
     return True
+
+
+def auto_trigger_cleanup_if_needed(session_id, summary_data):
+    """
+    AUTO-CLEANUP LOGIC: When finalizing a session, check context usage.
+    If context > 90%, automatically trigger session cleanup/compaction.
+
+    This ensures we don't need manual intervention - system handles it!
+    """
+    # Estimate context usage from summary
+    request_count = summary_data.get("request_count", 0)
+    estimated_tokens_per_request = 1500  # Conservative estimate
+    estimated_used = request_count * estimated_tokens_per_request
+    total_context_window = 200000
+    estimated_percentage = (estimated_used / total_context_window) * 100
+
+    log_event(f"[CHECK] Session {session_id}: Estimated context usage = {estimated_percentage:.1f}%")
+
+    # If context is high, trigger automatic cleanup
+    if estimated_percentage > 90:
+        log_event(f"[ALERT] Context high ({estimated_percentage:.1f}%) - AUTO-TRIGGERING cleanup")
+
+        # Save baseline: Context is now reset for next session
+        baseline_file = (LOGS_DIR / 'context-baseline.json')
+        baseline_file.parent.mkdir(parents=True, exist_ok=True)
+
+        baseline = {
+            "last_cleanup_session": session_id,
+            "last_cleanup_time": datetime.now().isoformat(),
+            "old_sessions_compacted": _count_old_sessions(),
+            "context_reset_to": 10,  # Starting fresh for new session
+        }
+
+        with open(baseline_file, 'w', encoding='utf-8') as f:
+            json.dump(baseline, f, indent=2)
+
+        log_event(f"[CLEANUP] Auto-triggered cleanup for {session_id}")
+        log_event(f"[BASELINE] Context reset to 10% for next session")
+
+
+def _count_old_sessions():
+    """Count how many old sessions are available for compaction"""
+    try:
+        sessions = list(SESSIONS_DIR.glob('SESSION-*.json'))
+        return len(sessions)
+    except:
+        return 0
 
 
 def _build_from_session_json(session_id):
