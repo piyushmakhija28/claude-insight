@@ -2030,26 +2030,47 @@ def main():
     _ctx_remaining_tokens = _ctx_window_tokens - _ctx_used_tokens
     _understood = rewritten_prompt[:200] if rewritten_prompt else "(no rewrite - using original message)"
 
-    print(SEP)
-    print("[REVIEW CHECKPOINT] AUTO-PROCEED - Decisions shown for reference")
-    print(SEP)
-    print()
-    print("  | Field              | Value                                              |")
-    print("  |--------------------|-----------------------------------------------------|")
-    print(f"  | Session ID         | {session_id:<51} |")
-    print(f"  | You said           | {user_message[:51]:<51} |")
-    print(f"  | Understood as      | {_understood[:51]:<51} |")
-    print(f"  | Task type          | {task_type:<51} |")
+    # Build checkpoint table
+    checkpoint_lines = [
+        SEP,
+        "[REVIEW CHECKPOINT] AUTO-PROCEED - Decisions shown for reference",
+        SEP,
+        "",
+        "  | Field              | Value                                              |",
+        "  |--------------------|-----------------------------------------------------|",
+        f"  | Session ID         | {session_id:<51} |",
+        f"  | You said           | {user_message[:51]:<51} |",
+        f"  | Understood as      | {_understood[:51]:<51} |",
+        f"  | Task type          | {task_type:<51} |",
+    ]
+
     complexity_str = f"{adj_complexity}/25"
-    print(f"  | Complexity         | {complexity_str:<51} |")
-    print(f"  | Model selected     | {selected_model:<51} |")
-    print(f"  | Agent/Skill        | {skill_agent_name:<51} |")
-    print(f"  | Plan mode          | {plan_str:<51} |")
+    checkpoint_lines.append(f"  | Complexity         | {complexity_str:<51} |")
+    checkpoint_lines.append(f"  | Model selected     | {selected_model:<51} |")
+    checkpoint_lines.append(f"  | Agent/Skill        | {skill_agent_name:<51} |")
+    checkpoint_lines.append(f"  | Plan mode          | {plan_str:<51} |")
+
     context_usage_str = f"{context_pct2}% (~{_ctx_used_tokens:,} / {_ctx_window_tokens:,} tokens)"
-    print(f"  | Context usage      | {context_usage_str:<51} |")
+    checkpoint_lines.append(f"  | Context usage      | {context_usage_str:<51} |")
     context_remaining_str = f"~{_ctx_remaining_tokens:,} tokens"
-    print(f"  | Context remaining  | {context_remaining_str:<51} |")
-    print()
+    checkpoint_lines.append(f"  | Context remaining  | {context_remaining_str:<51} |")
+    checkpoint_lines.append("")
+
+    # Print checkpoint to console
+    for line in checkpoint_lines:
+        print(line)
+
+    # SAVE CHECKPOINT TO FILE (so IDE can read and display it)
+    try:
+        session_dir = MEMORY_BASE / 'logs' / 'sessions' / session_id
+        session_dir.mkdir(parents=True, exist_ok=True)
+        checkpoint_file = session_dir / 'checkpoint.txt'
+        with open(checkpoint_file, 'w', encoding='utf-8') as f:
+            f.write('\n'.join(checkpoint_lines))
+            f.write('\n')
+        print(f"\n[✓] Checkpoint saved to: {checkpoint_file}")
+    except Exception as e:
+        print(f"\n[!] Could not save checkpoint: {e}")
 
     # Show status based on message type
     if _is_approval:
