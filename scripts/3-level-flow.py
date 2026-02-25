@@ -2030,19 +2030,30 @@ def main():
     _ctx_remaining_tokens = _ctx_window_tokens - _ctx_used_tokens
     _understood = rewritten_prompt[:200] if rewritten_prompt else "(no rewrite - using original message)"
 
-    # Build checkpoint table
+    # Build checkpoint table with FULL decision chain visibility
     checkpoint_lines = [
         SEP,
-        "[REVIEW CHECKPOINT] AUTO-PROCEED - Decisions shown for reference",
+        "[REVIEW CHECKPOINT] AUTO-PROCEED - Full Decision Chain",
         SEP,
         "",
+        "📝 PROMPT TRANSFORMATION:",
         "  | Field              | Value                                              |",
         "  |--------------------|-----------------------------------------------------|",
-        f"  | Session ID         | {session_id:<51} |",
-        f"  | You said           | {user_message[:51]:<51} |",
-        f"  | Understood as      | {_understood[:51]:<51} |",
-        f"  | Task type          | {task_type:<51} |",
+        f"  | User Input         | {user_message[:51]:<51} |",
+        f"  | Understanding      | {_understood[:51]:<51} |",
     ]
+
+    # Add enhanced prompt (rewritten prompt from policy enrichment)
+    enhanced_prompt = rewritten_prompt[:51] if rewritten_prompt else "(no rewrite applied)"
+    checkpoint_lines.append(f"  | Enhanced Prompt    | {enhanced_prompt:<51} |")
+    checkpoint_lines.append("")
+
+    # Add decision analysis
+    checkpoint_lines.append("🎯 DECISION ANALYSIS:")
+    checkpoint_lines.append("  | Field              | Value                                              |")
+    checkpoint_lines.append("  |--------------------|-----------------------------------------------------|")
+    checkpoint_lines.append(f"  | Session ID         | {session_id:<51} |")
+    checkpoint_lines.append(f"  | Task type          | {task_type:<51} |")
 
     complexity_str = f"{adj_complexity}/25"
     checkpoint_lines.append(f"  | Complexity         | {complexity_str:<51} |")
