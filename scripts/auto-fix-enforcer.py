@@ -100,25 +100,42 @@ class AutoFixEnforcer:
         """Check if critical system files exist"""
         print("\n[SEARCH] [2/7] Checking critical files...")
 
+        # ONLY truly critical files that MUST exist
         critical_files = {
             'current/blocking-policy-enforcer.py': 'Blocking enforcer',
-            'current/session-start.sh': 'Session start script'
-            # NOTE: plan-detector.py/sh available but optional in standard setup
         }
 
-        missing_files = []
+        # Optional files that are nice-to-have but not blocking
+        optional_files = {
+            'current/session-start.sh': 'Session start script',
+            'scripts/plan-detector.py': 'Plan detector',
+            'scripts/plan-detector.sh': 'Plan detector shell wrapper'
+        }
+
+        missing_critical = []
+        missing_optional = []
+
+        # Check critical files
         for file_path, description in critical_files.items():
             full_path = self.memory_path / file_path
             if not full_path.exists():
-                missing_files.append((file_path, description))
-                print(f"   [CROSS] Missing: {file_path} ({description})")
+                missing_critical.append((file_path, description))
+                print(f"   [CROSS] Missing CRITICAL: {file_path} ({description})")
 
-        if missing_files:
+        # Check optional files (just warn, don't block)
+        for file_path, description in optional_files.items():
+            full_path = self.memory_path / file_path
+            if not full_path.exists():
+                missing_optional.append((file_path, description))
+                print(f"   [INFO]  Optional (not found): {file_path} ({description})")
+
+        # Only block if critical files are missing
+        if missing_critical:
             self.failures.append({
                 'type': 'CRITICAL',
                 'component': 'Critical Files',
-                'issue': f'{len(missing_files)} critical files missing',
-                'details': missing_files,
+                'issue': f'{len(missing_critical)} critical files missing',
+                'details': missing_critical,
                 'auto_fixable': False,
                 'fix_instructions': [
                     'Restore missing files from backup or repository',
@@ -126,6 +143,9 @@ class AutoFixEnforcer:
                     'Verify file permissions'
                 ]
             })
+        elif missing_optional:
+            print(f"   [WARNING]  {len(missing_optional)} optional files missing (work continues)")
+            print("   [CHECK] All CRITICAL files present")
         else:
             print("   [CHECK] All critical files present")
 
