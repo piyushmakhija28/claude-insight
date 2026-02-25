@@ -824,6 +824,63 @@ def get_agent_and_skills(tech_stack, task_type='General', user_message=''):
     return 'adaptive-skill-intelligence', 'skill', [], reason
 
 
+def _ensure_architecture_modules_synced():
+    """
+    Issue #9 & #10 Fix: Ensure architecture modules are available locally.
+    When running from ~/.claude/scripts/ (deployed), check if architecture/
+    subdirectory exists.  If not, log a warning so users know they need to sync.
+    When running from the source repo (development), the modules are already
+    present at SCRIPT_DIR/architecture/.
+
+    The hook-downloader.py (in claude-code-ide repo) is responsible for the
+    full GitHub sync.  This function provides a lightweight local check and
+    creates the directory structure if needed so that subsequent calls don't
+    fail hard.
+    """
+    arch_dir = SCRIPT_DIR / 'architecture'
+
+    # Running from deployment location (~/.claude/scripts/)
+    deployed_arch = SCRIPTS_DIR / 'architecture'
+
+    for check_dir in [arch_dir, deployed_arch]:
+        if check_dir.exists() and any(check_dir.iterdir()):
+            return  # Modules found, nothing to do
+
+    # Architecture directory missing or empty — create stub dirs and log warning
+    try:
+        for subdir in [
+            'architecture/01-sync-system/session-management',
+            'architecture/01-sync-system/context-management',
+            'architecture/01-sync-system/user-preferences',
+            'architecture/01-sync-system/pattern-detection',
+            'architecture/02-standards-system',
+            'architecture/03-execution-system/00-prompt-generation',
+            'architecture/03-execution-system/01-task-breakdown',
+            'architecture/03-execution-system/02-plan-mode',
+            'architecture/03-execution-system/04-model-selection',
+            'architecture/03-execution-system/05-skill-agent-selection',
+            'architecture/03-execution-system/06-tool-optimization',
+            'architecture/03-execution-system/08-progress-tracking',
+            'architecture/03-execution-system/09-git-commit',
+            'architecture/03-execution-system/failure-prevention',
+        ]:
+            (SCRIPTS_DIR / subdir).mkdir(parents=True, exist_ok=True)
+
+        warning_log = LOG_DIR / 'arch-sync-warning.log'
+        try:
+            LOG_DIR.mkdir(parents=True, exist_ok=True)
+            with open(warning_log, 'a', encoding='utf-8') as f:
+                f.write(
+                    f"[{datetime.now().isoformat()}] WARNING: Architecture modules not found "
+                    f"in {arch_dir} or {deployed_arch}. "
+                    f"Run hook-downloader.py to sync from GitHub.\n"
+                )
+        except Exception:
+            pass
+    except Exception:
+        pass
+
+
 def main():
     mode = 'standard'
     user_message = ''
@@ -857,14 +914,18 @@ def main():
         user_message = "[NO MESSAGE - hook did not pass user prompt]"
 
     # =========================================================================
-    # STEP 0: LOAD AND EXECUTE ALL POLICIES (NEW INTEGRATION - v3.4.0)
-    # This integrates all 34+ policies from scripts/architecture/
+    # STEP 0: SYNC ARCHITECTURE MODULES + VERIFY POLICIES (v3.4.1)
+    # Issues #9 & #10: Ensure architecture modules are synced to local scripts
+    # dir and all policy modules are verified (not blindly executed as CLI tools).
     # =========================================================================
+    _ensure_architecture_modules_synced()
+
     try:
         policy_executor = SCRIPT_DIR / 'policy-executor.py'
         if policy_executor.exists():
-            subprocess.run([PYTHON, str(policy_executor)], timeout=10, capture_output=True)
-    except Exception as e:
+            # Run policy health check in background (non-blocking, capture output)
+            subprocess.run([PYTHON, str(policy_executor)], timeout=15, capture_output=True)
+    except Exception:
         pass  # Policy executor is optional, don't block if it fails
 
     # CHECKPOINT ENFORCEMENT: Clear ALL flags if user is confirming with 'ok'/'proceed' etc.

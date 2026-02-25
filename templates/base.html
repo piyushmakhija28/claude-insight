@@ -1399,6 +1399,11 @@
                     <div class="sidebar-submenu" id="aiSubmenu">
                         <a href="{{ url_for('automation_dashboard') }}" class="sidebar-submenu-link">Automation</a>
                         <a href="{{ url_for('three_level_flow_history') }}" class="sidebar-submenu-link">Flow History</a>
+                        <a href="{{ url_for('level_1_monitor') }}" class="sidebar-submenu-link">Level 1 Monitor</a>
+                        <a href="{{ url_for('level_2_monitor') }}" class="sidebar-submenu-link">Level 2 Monitor</a>
+                        <a href="{{ url_for('level_3_monitor') }}" class="sidebar-submenu-link">Level 3 Monitor</a>
+                        <a href="{{ url_for('architecture_health') }}" class="sidebar-submenu-link">Arch Health</a>
+                        <a href="{{ url_for('policy_timeline') }}" class="sidebar-submenu-link">Policy Timeline</a>
                         <a href="{{ url_for('session_diff_view') }}" class="sidebar-submenu-link">Session Diff</a>
                         <a href="{{ url_for('anomaly_detection') }}" class="sidebar-submenu-link">AI Detection</a>
                         <a href="{{ url_for('ml_training') }}" class="sidebar-submenu-link">ML Training</a>
@@ -1473,6 +1478,8 @@
                         <a href="{{ url_for('claude_credentials.credentials_page') }}" class="sidebar-submenu-link">Claude API</a>
                         <a href="{{ url_for('twofa_settings') }}" class="sidebar-submenu-link">2FA Security</a>
                         <a href="{{ url_for('policies') }}" class="sidebar-submenu-link">Policies</a>
+                        <a href="{{ url_for('policy_compliance_report') }}" class="sidebar-submenu-link">Compliance Report</a>
+                        <a href="{{ url_for('policy_impact_analysis') }}" class="sidebar-submenu-link">Impact Analysis</a>
                     </div>
                 </div>
             </nav>
