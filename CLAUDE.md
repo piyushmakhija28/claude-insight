@@ -188,20 +188,22 @@ never overrides. You cannot disable the 3-level architecture from a project file
 claude-insight/
 ├── CLAUDE.md                       <- This file (project context)
 ├── README.md                       <- Full documentation
+├── IMPORTS.md                      <- Import patterns & GitHub URLs
 ├── CHANGELOG.md                    <- Version history
 ├── run.py                          <- App entry point
 ├── requirements.txt                <- Python dependencies
 │
-├── src/                            <- Main Flask application
+├── src/                            <- Application Code (Flask)
+│   ├── __init__.py
 │   ├── app.py                      <- Flask app, routes, SocketIO
 │   ├── config.py                   <- Dev/Prod/Test configuration
 │   ├── auth/                       <- Authentication (bcrypt)
 │   ├── models/                     <- Data models
-│   ├── routes/                     <- Additional route handlers
+│   ├── routes/                     <- Route handlers
 │   ├── middleware/                 <- Request logging middleware
 │   ├── mcp/                        <- MCP enforcement server
 │   ├── services/
-│   │   ├── monitoring/             <- Core monitoring (key folder)
+│   │   ├── monitoring/             <- Core monitoring services
 │   │   │   ├── three_level_flow_tracker.py
 │   │   │   ├── policy_execution_tracker.py
 │   │   │   ├── session_tracker.py
@@ -211,33 +213,66 @@ claude-insight/
 │   │   ├── ai/                     <- AI analytics (anomaly, prediction)
 │   │   └── notifications/          <- Alert routing system
 │   └── utils/
+│       ├── import_manager.py       <- GitHub & local imports (NEW)
 │       ├── path_resolver.py        <- Cross-platform path resolution
 │       └── history_tracker.py      <- Activity history
 │
 ├── templates/                      <- 31 Jinja2 HTML templates
 ├── static/                         <- CSS, JS, i18n files
 │
-├── scripts/                        <- Setup and enforcement scripts
+├── scripts/                        <- All Executable Scripts (61 total)
 │   ├── setup-global-claude.sh      <- Unix automatic setup
 │   ├── setup-global-claude.ps1     <- Windows automatic setup
 │   ├── global-claude-md-template.md <- Public CLAUDE.md template
 │   ├── 3-level-flow.py             <- Main hook entry script
 │   ├── auto-fix-enforcer.sh        <- Level -1 enforcement
 │   ├── session-start.sh            <- Level 1 session init
-│   ├── session-chain-manager.py    <- Session chaining (parent/child/tags)
+│   ├── session-chain-manager.py    <- Session chaining
 │   ├── session-summary-manager.py  <- Per-session summaries
-│   └── (other enforcement scripts)
+│   └── architecture/               <- 3-Level Architecture System (NEW STRUCTURE)
+│       ├── 01-sync-system/         <- Context management, patterns, sessions (38 files)
+│       ├── 02-standards-system/    <- Standards & rules (3 files)
+│       └── 03-execution-system/    <- Execution flows, task tracking (66 files)
 │
-├── policies/                       <- Policy definitions (organized by level)
-│   ├── 01-sync-system/             <- Foundation layer policies
-│   ├── 02-standards-system/        <- Coding standards policies
-│   ├── 03-execution-system/        <- 12-step execution policies
-│   └── testing/                    <- Test case policies
+├── policies/                       <- Policy Documentation (.md files only)
+│   └── (34 policy markdown files)
 │
 ├── docs/                           <- Architecture documentation
 ├── config/                         <- Runtime configuration JSONs
 └── tests/                          <- Test suite
 ```
+
+---
+
+## IMPORTS & MODULE LOADING
+
+### Local Imports (Same Project)
+All imports within the project use relative paths:
+
+```python
+# ✅ CORRECT - Relative imports from src/
+from services.monitoring.metrics_collector import MetricsCollector
+from services.ai.anomaly_detector import AnomalyDetector
+from utils.import_manager import ImportManager
+```
+
+### External Imports (claude-global-library)
+Use `ImportManager` for GitHub-hosted resources:
+
+```python
+from utils.import_manager import ImportManager
+
+# Load skills
+docker_skill = ImportManager.get_skill('docker')
+
+# Load agents
+orchestrator = ImportManager.get_agent('orchestrator-agent')
+
+# GitHub URL directly (if needed)
+# https://raw.githubusercontent.com/piyushmakhija28/claude-global-library/main/skills/docker/skill.md
+```
+
+**See `IMPORTS.md` for complete import patterns and GitHub URLs.**
 
 ---
 

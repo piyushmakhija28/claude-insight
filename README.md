@@ -24,6 +24,7 @@ detection — all from one interface.
   - [Installation](#installation)
   - [Memory System Setup](#memory-system-setup)
   - [Running the Dashboard](#running-the-dashboard)
+- [Imports & Module Loading](#imports--module-loading)
 - [The 3-Level Architecture](#the-3-level-architecture)
   - [Level -1: Auto-Fix Enforcement](#level--1-auto-fix-enforcement)
   - [Level 1: Sync System](#level-1-sync-system)
@@ -218,6 +219,51 @@ Open http://localhost:5000 in your browser.
 - Password: `admin`
 
 > Change these in `src/auth/user_manager.py` before deploying.
+
+---
+
+## Imports & Module Loading
+
+### Local Imports (Same Project)
+
+All imports within the project use **relative paths**:
+
+```python
+# ✅ CORRECT - Use relative imports
+from services.monitoring.metrics_collector import MetricsCollector
+from services.ai.anomaly_detector import AnomalyDetector
+from utils.import_manager import ImportManager
+```
+
+**Why:** Easier to refactor, works across different environments, no hardcoded paths.
+
+### External Imports (claude-global-library)
+
+Use `ImportManager` utility to load skills, agents, and policies from GitHub:
+
+```python
+from utils.import_manager import ImportManager
+
+# Load a skill from claude-global-library
+docker_skill = ImportManager.get_skill('docker')
+kubernetes = ImportManager.get_skill('kubernetes')
+
+# Load an agent
+orchestrator = ImportManager.get_agent('orchestrator-agent')
+devops = ImportManager.get_agent('devops-engineer')
+
+# Load a policy
+sync_policy = ImportManager.get_policy('01-sync-system/README.md')
+```
+
+**GitHub URLs used:**
+```
+Skills:  https://raw.githubusercontent.com/piyushmakhija28/claude-global-library/main/skills/{name}/skill.md
+Agents:  https://raw.githubusercontent.com/piyushmakhija28/claude-global-library/main/agents/{name}/agent.md
+Policies: https://raw.githubusercontent.com/piyushmakhija28/claude-insight/main/scripts/architecture/...
+```
+
+**See [IMPORTS.md](IMPORTS.md) for complete import patterns and examples.**
 
 ---
 
