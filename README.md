@@ -1,4 +1,4 @@
-# Claude Insight v3.8.0
+# Claude Insight v3.10.0
 
 **Real-time Monitoring Dashboard for the Claude Memory System (3-Level Architecture)**
 
@@ -6,7 +6,7 @@
 [![Python](https://img.shields.io/badge/Python-3.8+-blue?logo=python)](https://www.python.org/)
 [![Flask](https://img.shields.io/badge/Flask-3.0-green?logo=flask)](https://flask.palletsprojects.com/)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/Version-3.9.0-brightgreen)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/Version-3.10.0-brightgreen)](CHANGELOG.md)
 
 Claude Insight is a Python Flask dashboard that monitors how Claude Code follows the
 **3-Level Architecture enforcement policies** in real-time. Track policy execution,
@@ -30,6 +30,7 @@ detection — all from one interface.
   - [Level 1: Sync System](#level-1-sync-system)
   - [Level 2: Standards System](#level-2-standards-system)
   - [Level 3: Execution System](#level-3-execution-system)
+- [All Policies Reference](#all-policies-reference)
 - [How the Hooks Work](#how-the-hooks-work)
 - [Session Management: Our Custom System vs Claude Native](#session-management-our-custom-system-vs-claude-native)
   - [What Makes Our Session System Different?](#what-makes-our-session-system-different)
@@ -342,6 +343,127 @@ Standards loaded:
 | 3.10 | Session Save | Save state at milestones |
 | 3.11 | Git Auto-Commit | Commit on phase completion |
 | 3.12 | Logging | Log all policy applications |
+
+---
+
+## All Policies Reference
+
+Complete catalog of all 34+ policies across the 3-level architecture with their purposes and file locations.
+
+### Level 1: Sync System Policies (Context & Session Management)
+
+| Policy Name | Category | Purpose | Location |
+|---|---|---|---|
+| **Session Memory Policy** | Session Management | Stores session state, loads previous sessions by ID, maintains session continuity | `policies/01-sync-system/session-management/session-memory-policy.md` |
+| **Session Chaining Policy** | Session Management | Links parent/child session relationships, auto-tags sessions with keywords, generates per-request summaries | `policies/01-sync-system/session-management/session-chaining-policy.md` |
+| **Session Pruning Policy** | Session Management | Manages session cleanup, removes stale sessions, maintains performance | `policies/01-sync-system/session-management/session-pruning-policy.md` |
+| **Context Management** | Context Management | Monitors context usage %, optimizes token consumption, applies cleanup when >70% | `policies/01-sync-system/context-management/` |
+| **User Preferences Policy** | User Preferences | Learns user coding preferences, remembers architectural choices, applies preferences automatically | `policies/01-sync-system/user-preferences/user-preferences-policy.md` |
+| **Cross-Project Patterns Policy** | Pattern Detection | Detects patterns from existing code, replicates patterns across services, ensures consistency | `policies/01-sync-system/pattern-detection/cross-project-patterns-policy.md` |
+
+### Level 2: Standards System Policies (Coding Standards & Rules)
+
+| Policy Name | Category | Purpose | Location |
+|---|---|---|---|
+| **Coding Standards Enforcement Policy** | Standards Enforcement | Loads 15 coding standards with 156 rules (project structure, config, secrets, responses, services, entities, controllers, constants, utilities, error handling, API design, database, documentation, K8s, Docker/Jenkins) | `policies/02-standards-system/coding-standards-enforcement-policy.md` |
+
+### Level 3: Execution System Policies (12-Step Execution Flow)
+
+| Policy Name | Category | Purpose | Location |
+|---|---|---|---|
+| **Prompt Generation Policy** | Step 3.0 | Verifies examples from codebase, prevents hallucinations, ensures accuracy | `policies/03-execution-system/00-prompt-generation/prompt-generation-policy.md` |
+| **Anti-Hallucination Enforcement** | Step 3.0 | Detects hallucinations in generated code, validates against actual codebase | `policies/03-execution-system/00-prompt-generation/anti-hallucination-enforcement.md` |
+| **Automatic Task Breakdown Policy** | Step 3.1 | Creates tasks with dependencies, breaks down complex work, enables parallel execution | `policies/03-execution-system/01-task-breakdown/automatic-task-breakdown-policy.md` |
+| **Auto Plan Mode Suggestion Policy** | Step 3.2 | Scores complexity 0-4 (direct), 5-9 (ask user), 10+ (suggest plan mode) | `policies/03-execution-system/02-plan-mode/auto-plan-mode-suggestion-policy.md` |
+| **Intelligent Model Selection Policy** | Step 3.4 | Selects Haiku/Sonnet/Opus based on task complexity and type | `policies/03-execution-system/04-model-selection/intelligent-model-selection-policy.md` |
+| **Model Selection Enforcement** | Step 3.4 | Enforces correct model selection, prevents wrong model usage | `policies/03-execution-system/04-model-selection/model-selection-enforcement.md` |
+| **Adaptive Skill Registry** | Step 3.5 | Maps tasks to 21+ available skills dynamically | `policies/03-execution-system/05-skill-agent-selection/adaptive-skill-registry.md` |
+| **Auto Skill/Agent Selection Policy** | Step 3.5 | Automatically invokes matched skill via Skill tool | `policies/03-execution-system/05-skill-agent-selection/auto-skill-agent-selection-policy.md` |
+| **Core Skills Mandate** | Step 3.5 | Ensures core skills are always available and loaded | `policies/03-execution-system/05-skill-agent-selection/core-skills-mandate.md` |
+| **Tool Usage Optimization Policy** | Step 3.6 | Applies offsets/limits on Read, head_limit on Grep, prevents tool inefficiency | `policies/03-execution-system/06-tool-optimization/tool-usage-optimization-policy.md` |
+| **Common Failures Prevention** | Step 3.7 | Pre-execution checks, auto-fixes, prevents common mistakes | `policies/03-execution-system/failure-prevention/common-failures-prevention.md` |
+| **Task Progress Tracking Policy** | Step 3.8-3.9 | Tracks task completion, monitors progress via post-tool hooks | `policies/03-execution-system/08-progress-tracking/task-progress-tracking-policy.md` |
+| **Task Phase Enforcement Policy** | Step 3.8-3.9 | Ensures tasks progress through phases correctly | `policies/03-execution-system/08-progress-tracking/task-phase-enforcement-policy.md` |
+| **Git Auto-Commit Policy** | Step 3.11 | Automatically commits work when phase completes | `policies/03-execution-system/09-git-commit/git-auto-commit-policy.md` |
+| **File Management Policy** | Step 3.6 | Manages file operations, prevents data loss, optimizes file handling | `policies/03-execution-system/file-management-policy.md` |
+| **Parallel Execution Policy** | Step 3.8 | Detects parallel execution opportunities, enables concurrent work | `policies/03-execution-system/parallel-execution-policy.md` |
+| **Proactive Consultation Policy** | Step 3.2 | Proactively asks user for decisions when needed | `policies/03-execution-system/proactive-consultation-policy.md` |
+
+### Testing & Quality Policies
+
+| Policy Name | Category | Purpose | Location |
+|---|---|---|---|
+| **Test Case Policy** | Testing | Ensures comprehensive test coverage, validates functionality | `policies/testing/test-case-policy.md` |
+
+### Policy Statistics
+
+| Level | Category | Count | Scope |
+|---|---|---|---|
+| **Level 1** | Sync System (Context, Sessions, Patterns, Preferences) | 6 policies | Foundation - loads context & history |
+| **Level 2** | Standards System (Coding Standards & Rules) | 1 policy (156 rules) | Standards - validates against 15 standards |
+| **Level 3** | Execution System (12-step flow) | 17 policies | Execution - enforces 12-step process |
+| **Testing** | Quality & Testing | 1 policy | Quality assurance |
+| **TOTAL** | All Systems | **34+ policies** | Complete 3-level enforcement |
+
+### How Policies Are Organized
+
+```
+policies/
+├── 01-sync-system/                    <- Level 1 (6 policies)
+│   ├── context-management/
+│   │   └── [context policies]
+│   ├── session-management/
+│   │   ├── session-memory-policy.md
+│   │   ├── session-chaining-policy.md
+│   │   └── session-pruning-policy.md
+│   ├── pattern-detection/
+│   │   └── cross-project-patterns-policy.md
+│   └── user-preferences/
+│       └── user-preferences-policy.md
+│
+├── 02-standards-system/               <- Level 2 (1 policy + 156 rules)
+│   └── coding-standards-enforcement-policy.md
+│
+├── 03-execution-system/               <- Level 3 (17 policies)
+│   ├── 00-prompt-generation/
+│   │   ├── prompt-generation-policy.md
+│   │   └── anti-hallucination-enforcement.md
+│   ├── 01-task-breakdown/
+│   │   └── automatic-task-breakdown-policy.md
+│   ├── 02-plan-mode/
+│   │   └── auto-plan-mode-suggestion-policy.md
+│   ├── 04-model-selection/
+│   │   ├── intelligent-model-selection-policy.md
+│   │   └── model-selection-enforcement.md
+│   ├── 05-skill-agent-selection/
+│   │   ├── adaptive-skill-registry.md
+│   │   ├── auto-skill-agent-selection-policy.md
+│   │   └── core-skills-mandate.md
+│   ├── 06-tool-optimization/
+│   │   └── tool-usage-optimization-policy.md
+│   ├── 07-recommendations/
+│   ├── 08-progress-tracking/
+│   │   ├── task-progress-tracking-policy.md
+│   │   └── task-phase-enforcement-policy.md
+│   ├── 09-git-commit/
+│   │   └── git-auto-commit-policy.md
+│   ├── failure-prevention/
+│   │   └── common-failures-prevention.md
+│   ├── file-management-policy.md
+│   └── parallel-execution-policy.md
+│
+└── testing/                           <- Testing Policies (1 policy)
+    └── test-case-policy.md
+```
+
+### Quick Reference: What Each Level Does
+
+| Level | Name | Key Policies | Purpose |
+|---|---|---|---|
+| **Level 1** | Sync System | Session Memory, Session Chaining, Context Management, Preferences, Patterns | Loads context + history before execution |
+| **Level 2** | Standards System | Coding Standards Enforcement (156 rules) | Validates work against 15 coding standards |
+| **Level 3** | Execution System | 17 step-by-step policies (Steps 3.0-3.12) | Enforces 12-step execution process |
+| **Testing** | Quality Assurance | Test Case Policy | Ensures comprehensive test coverage |
 
 ---
 
@@ -935,7 +1057,16 @@ core enforcement scripts. Please follow these guidelines:
 
 See [CHANGELOG.md](CHANGELOG.md) for full version history.
 
-**Latest — v3.9.0 (2026-02-25):**
+**Latest — v3.10.0 (2026-02-25):**
+- **[DOCS]** Added comprehensive "All Policies Reference" section to README
+  - Complete table of all 34+ policies across 3-level architecture
+  - Detailed purpose and file location for each policy
+  - Policy statistics and organization charts
+  - Quick reference for policy discovery
+- **[DOCS]** Updated version badges and documentation structure
+- Organized policies into 4 main categories: Level 1 (6), Level 2 (1+156 rules), Level 3 (17), Testing (1)
+
+**Previous — v3.9.0 (2026-02-25):**
 - **[CRITICAL FIX]** Review checkpoint now displays after every message (async: false in hooks)
 - **[CLEANUP]** Removed 61 duplicate files from scripts/architecture/ directories
 - **[CLEANUP]** Moved 8 test files from scripts/ to tests/ directory
@@ -943,13 +1074,6 @@ See [CHANGELOG.md](CHANGELOG.md) for full version history.
 - **[CLEANUP]** Archived 11 operational reports from docs/ to docs/archive/
 - **[DOCS]** Updated CLAUDE.md and README.md to reflect cleaned structure
 - Removed confusing flat-root duplicates (01-sync-system, 03-execution-system now only contain subdirectories)
-
-**Previous — v3.8.0 (2026-02-23):**
-- Added session chaining system (parent/child session relationships, auto-tagging, summaries)
-- Added 02-standards-system policies folder (coding-standards-enforcement-policy)
-- Cleaned up duplicate flat policy files (all policies now in organized sub-folders only)
-- Updated all hook scripts with loophole hardening fixes (19 loopholes, 18 fixed)
-- Added session-chain-manager.py and session-summary-manager.py scripts
 
 ---
 

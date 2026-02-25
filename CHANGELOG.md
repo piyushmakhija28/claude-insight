@@ -9,6 +9,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [3.10.0] - 2026-02-25
+
+### Added
+- **All Policies Reference Documentation** (User Education)
+  - New comprehensive "All Policies Reference" section in README.md
+  - Complete table of all 34+ policies across 3-level architecture
+  - Detailed purpose and file location for each policy
+  - Policy statistics: Level 1 (6), Level 2 (1+156 rules), Level 3 (17), Testing (1)
+  - Organized policy directory structure diagram
+  - Quick reference for policy discovery and understanding
+
+### Changed
+- **README.md** v3.9.1: Added detailed policies catalog with table format
+- **Table of Contents**: Added "All Policies Reference" for easy navigation
+- **Version badges**: Updated to v3.10.0
+
+---
+
 ## [4.1.0] - 2026-02-24
 
 ### Added
