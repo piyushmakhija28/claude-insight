@@ -146,18 +146,22 @@ POLICY_URLS = {
 if __name__ == '__main__':
     # Test
     print("Testing ImportManager...")
-    
+
     # Test skill
     docker_skill = ImportManager.get_skill('docker')
     if docker_skill:
-        print(f"✓ Loaded skill: {docker_skill['name']} ({len(docker_skill['content'])} bytes)")
-    
+        print("[OK] Loaded skill: {} ({} bytes)".format(docker_skill['name'], len(docker_skill['content'])))
+    else:
+        print("[FAIL] Could not load docker skill")
+
     # Test agent
     orchestrator = ImportManager.get_agent('orchestrator-agent')
     if orchestrator:
-        print(f"✓ Loaded agent: {orchestrator['name']} ({len(orchestrator['content'])} bytes)")
-    
+        print("[OK] Loaded agent: {} ({} bytes)".format(orchestrator['name'], len(orchestrator['content'])))
+    else:
+        print("[FAIL] Could not load orchestrator agent")
+
     print("\nAvailable URLs:")
-    print(f"Skills: {list(SKILL_URLS.keys())}")
-    print(f"Agents: {list(AGENT_URLS.keys())}")
-    print(f"Policies: {list(POLICY_URLS.keys())}")
+    print("Skills: {}".format(list(SKILL_URLS.keys())))
+    print("Agents: {}".format(list(AGENT_URLS.keys())))
+    print("Policies: {}".format(list(POLICY_URLS.keys())))
