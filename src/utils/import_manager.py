@@ -5,7 +5,21 @@ Provides unified interface for accessing skills, agents, and utilities from:
 2. claude-global-library (GitHub raw URLs)
 """
 
+# Fix encoding for Windows console
 import sys
+if sys.stdout.encoding != 'utf-8':
+    try:
+        sys.stdout.reconfigure(encoding='utf-8')
+    except AttributeError:
+        import io
+        sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+if sys.stderr.encoding != 'utf-8':
+    try:
+        sys.stderr.reconfigure(encoding='utf-8')
+    except AttributeError:
+        import io
+        sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
+
 import urllib.request
 import json
 from pathlib import Path
