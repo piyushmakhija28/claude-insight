@@ -25,7 +25,10 @@ if sys.platform == 'win32':
 VERSION = "3.3.0"
 SCRIPT_NAME = "3-level-flow.py"
 MEMORY_BASE = Path.home() / '.claude' / 'memory'
-CURRENT_DIR = MEMORY_BASE / 'current'
+SCRIPTS_DIR = Path.home() / '.claude' / 'scripts'
+# NEW: Scripts are synced to ~/.claude/scripts/ by hook-downloader
+# Fallback to memory/current for backwards compatibility
+CURRENT_DIR = SCRIPTS_DIR if SCRIPTS_DIR.exists() else (MEMORY_BASE / 'current')
 PYTHON = sys.executable
 
 # Flag directory for session-specific enforcement flags (Loophole #11 fix)

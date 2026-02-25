@@ -46,7 +46,11 @@ class AutoFixEnforcer:
     """Detects and auto-fixes all system failures"""
 
     def __init__(self):
+        self.scripts_path = Path.home() / '.claude' / 'scripts'
         self.memory_path = Path.home() / '.claude' / 'memory'
+        # Fallback to memory/current for backwards compatibility
+        if not self.scripts_path.exists():
+            self.scripts_path = self.memory_path / 'current'
         self.failures = []
         self.auto_fixed = []
         self.manual_fixes_needed = []
@@ -97,37 +101,39 @@ class AutoFixEnforcer:
         return False
 
     def _check_critical_files(self):
-        """Check if critical system files exist"""
+        """Check if critical system files exist in ~/.claude/scripts/"""
         print("\n[SEARCH] [2/7] Checking critical files...")
 
-        # ONLY truly critical files that MUST exist
+        # ONLY truly critical files that MUST exist (in ~/.claude/scripts/)
         critical_files = {
-            'current/blocking-policy-enforcer.py': 'Blocking enforcer',
+            'blocking-policy-enforcer.py': 'Blocking enforcer',
         }
 
         # Optional files that are nice-to-have but not blocking
         optional_files = {
-            'current/session-start.sh': 'Session start script',
-            'scripts/plan-detector.py': 'Plan detector',
-            'scripts/plan-detector.sh': 'Plan detector shell wrapper'
+            'plan-detector.py': 'Plan detector',
+            'plan-detector.sh': 'Plan detector shell wrapper',
+            'session-start.sh': 'Session start script'
         }
 
         missing_critical = []
         missing_optional = []
 
-        # Check critical files
-        for file_path, description in critical_files.items():
-            full_path = self.memory_path / file_path
+        # Check critical files in ~/.claude/scripts/
+        for file_name, description in critical_files.items():
+            full_path = self.scripts_path / file_name
             if not full_path.exists():
-                missing_critical.append((file_path, description))
-                print(f"   [CROSS] Missing CRITICAL: {file_path} ({description})")
+                missing_critical.append((file_name, description))
+                print(f"   [CROSS] Missing CRITICAL: {file_name} ({description})")
+            else:
+                print(f"   [CHECK] Found: {file_name}")
 
-        # Check optional files (just warn, don't block)
-        for file_path, description in optional_files.items():
-            full_path = self.memory_path / file_path
+        # Check optional files in ~/.claude/scripts/ (just warn, don't block)
+        for file_name, description in optional_files.items():
+            full_path = self.scripts_path / file_name
             if not full_path.exists():
-                missing_optional.append((file_path, description))
-                print(f"   [INFO]  Optional (not found): {file_path} ({description})")
+                missing_optional.append((file_name, description))
+                print(f"   [INFO]  Optional (not found): {file_name} ({description})")
 
         # Only block if critical files are missing
         if missing_critical:
