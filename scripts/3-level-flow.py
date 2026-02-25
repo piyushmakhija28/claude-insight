@@ -34,6 +34,56 @@ PYTHON = sys.executable
 
 # Flag directory for session-specific enforcement flags (Loophole #11 fix)
 FLAG_DIR = Path.home() / '.claude'
+POLICIES_DIR = Path.home() / '.claude' / 'policies'
+
+
+def load_policy_rules() -> dict:
+    """Load all policy documentation from ~/.claude/policies/ directories."""
+    policies = {
+        'level-1': {},
+        'level-2': {},
+        'level-3': {}
+    }
+
+    try:
+        if not POLICIES_DIR.exists():
+            return policies
+
+        # Load Level 1 policies (Sync System)
+        level_1_dir = POLICIES_DIR / '01-sync-system'
+        if level_1_dir.exists():
+            for policy_file in level_1_dir.glob('*.md'):
+                try:
+                    content = policy_file.read_text(encoding='utf-8')
+                    policies['level-1'][policy_file.stem] = content[:500]
+                except Exception:
+                    pass
+
+        # Load Level 2 policies (Standards System)
+        level_2_dir = POLICIES_DIR / '02-standards-system'
+        if level_2_dir.exists():
+            for policy_file in level_2_dir.glob('*.md'):
+                try:
+                    content = policy_file.read_text(encoding='utf-8')
+                    policies['level-2'][policy_file.stem] = content[:500]
+                except Exception:
+                    pass
+
+        # Load Level 3 policies (Execution System)
+        level_3_dir = POLICIES_DIR / '03-execution-system'
+        if level_3_dir.exists():
+            for policy_file in level_3_dir.glob('*.md'):
+                try:
+                    content = policy_file.read_text(encoding='utf-8')
+                    policies['level-3'][policy_file.stem] = content[:500]
+                except Exception:
+                    pass
+
+        return policies
+
+    except Exception as e:
+        print(f"[WARN] Failed to load policies: {e}", file=sys.stderr)
+        return policies
 
 
 def checkpoint_flag_path(session_id):
