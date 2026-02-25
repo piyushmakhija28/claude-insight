@@ -247,6 +247,16 @@ def is_error_response(tool_response):
 
 
 def main():
+    # INTEGRATION: Load progress tracking policies from scripts/architecture/
+    try:
+        script_dir = Path(__file__).parent
+        progress_script = script_dir / 'architecture' / '03-execution-system' / '08-progress-tracking' / 'check-incomplete-work.py'
+        if progress_script.exists():
+            import subprocess
+            subprocess.run([sys.executable, str(progress_script)], timeout=3, capture_output=True)
+    except:
+        pass  # Policy execution is optional
+
     # Read tool result from stdin
     try:
         raw = sys.stdin.read()

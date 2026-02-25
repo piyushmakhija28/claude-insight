@@ -481,6 +481,15 @@ def main():
     # Initialize window isolation (PID-based state files)
     _init_window_isolation()
 
+    # INTEGRATION: Load session management policies from scripts/architecture/
+    try:
+        script_dir = Path(__file__).parent
+        session_loader = script_dir / 'architecture' / '01-sync-system' / 'session-management' / 'session-loader.py'
+        if session_loader.exists():
+            subprocess.run([sys.executable, str(session_loader)], timeout=3, capture_output=True)
+    except:
+        pass  # Policy execution is optional
+
     hook_data = read_hook_stdin()
 
     transcript_path = hook_data.get('transcript_path', '')

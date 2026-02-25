@@ -340,6 +340,17 @@ def get_work_done_default():
 # =============================================================================
 
 def main():
+    # INTEGRATION: Load git commit policies from scripts/architecture/
+    try:
+        from pathlib import Path
+        import subprocess
+        script_dir = Path(__file__).parent
+        git_commit_script = script_dir / 'architecture' / '03-execution-system' / '09-git-commit' / 'auto-commit-enforcer.py'
+        if git_commit_script.exists():
+            subprocess.run([sys.executable, str(git_commit_script)], timeout=5, capture_output=True)
+    except:
+        pass  # Policy execution is optional
+
     hook_data = read_hook_stdin()
 
     # Track which flags we found

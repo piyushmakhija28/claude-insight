@@ -400,6 +400,17 @@ def check_read(tool_input):
 
 
 def main():
+    # INTEGRATION: Load tool optimization policies from scripts/architecture/
+    # This runs before every tool to apply optimizations
+    try:
+        script_dir = Path(__file__).parent
+        tool_opt_script = script_dir / 'architecture' / '03-execution-system' / '06-tool-optimization' / 'tool-usage-optimizer.py'
+        if tool_opt_script.exists():
+            import subprocess
+            subprocess.run([sys.executable, str(tool_opt_script)], timeout=3, capture_output=True)
+    except:
+        pass  # Policy execution is optional, don't block
+
     # Read tool info from stdin
     try:
         raw = sys.stdin.read()

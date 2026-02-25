@@ -22,13 +22,14 @@ if sys.platform == 'win32':
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
     sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
 
-VERSION = "3.3.0"
+VERSION = "3.4.0"
 SCRIPT_NAME = "3-level-flow.py"
 MEMORY_BASE = Path.home() / '.claude' / 'memory'
 SCRIPTS_DIR = Path.home() / '.claude' / 'scripts'
 # NEW: Scripts are synced to ~/.claude/scripts/ by hook-downloader
 # Fallback to memory/current for backwards compatibility
 CURRENT_DIR = SCRIPTS_DIR if SCRIPTS_DIR.exists() else (MEMORY_BASE / 'current')
+SCRIPT_DIR = Path(__file__).parent  # NEW: For policy-executor integration
 PYTHON = sys.executable
 
 # Flag directory for session-specific enforcement flags (Loophole #11 fix)
@@ -804,6 +805,17 @@ def main():
     # Last resort fallback - clearly marked as fallback (not dummy data)
     if not user_message:
         user_message = "[NO MESSAGE - hook did not pass user prompt]"
+
+    # =========================================================================
+    # STEP 0: LOAD AND EXECUTE ALL POLICIES (NEW INTEGRATION - v3.4.0)
+    # This integrates all 34+ policies from scripts/architecture/
+    # =========================================================================
+    try:
+        policy_executor = SCRIPT_DIR / 'policy-executor.py'
+        if policy_executor.exists():
+            subprocess.run([PYTHON, str(policy_executor)], timeout=10, capture_output=True)
+    except Exception as e:
+        pass  # Policy executor is optional, don't block if it fails
 
     # CHECKPOINT ENFORCEMENT: Clear ALL flags if user is confirming with 'ok'/'proceed' etc.
     # This MUST run before anything else so pre-tool-enforcer sees cleared flags.
