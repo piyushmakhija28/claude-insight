@@ -36,26 +36,33 @@ class PolicyExecutor:
         self.failed = []
 
     def run_policy(self, level_dir, script_name):
-        """Execute single policy script"""
+        """Execute single policy script with proper error reporting"""
         script = ARCH_DIR / level_dir / script_name
         if not script.exists():
+            self.failed.append(f"{level_dir}/{script_name} (NOT FOUND)")
             return False
 
         try:
+            # Windows encoding fix: use encoding='utf-8', errors='replace'
             result = subprocess.run(
                 [PYTHON, str(script)],
                 timeout=5,
                 capture_output=True,
-                text=True
+                encoding='utf-8',
+                errors='replace'
             )
             if result.returncode == 0:
                 self.executed.append(f"{level_dir}/{script_name}")
                 return True
             else:
-                self.failed.append(f"{level_dir}/{script_name}")
+                error_msg = result.stderr[:100] if result.stderr else "Unknown error"
+                self.failed.append(f"{level_dir}/{script_name} (exit {result.returncode}: {error_msg})")
                 return False
-        except:
-            self.failed.append(f"{level_dir}/{script_name}")
+        except subprocess.TimeoutExpired:
+            self.failed.append(f"{level_dir}/{script_name} (TIMEOUT)")
+            return False
+        except Exception as e:
+            self.failed.append(f"{level_dir}/{script_name} (ERROR: {str(e)[:50]})")
             return False
 
     def execute_level_1(self):
@@ -141,6 +148,13 @@ class PolicyExecutor:
         total = l1 + l2 + l3
         print("\n" + "="*70)
         print(f"✓ INTEGRATION COMPLETE: {total} policies executed")
+
+        # Show failures for debugging
+        if self.failed:
+            print(f"\n⚠️  {len(self.failed)} policies FAILED:")
+            for failed_policy in self.failed:
+                print(f"   ❌ {failed_policy}")
+
         print("="*70 + "\n")
 
         return total > 0
