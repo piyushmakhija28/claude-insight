@@ -103,7 +103,7 @@ class AutoFixEnforcer:
         critical_files = {
             'current/blocking-policy-enforcer.py': 'Blocking enforcer',
             'current/session-start.sh': 'Session start script'
-            # NOTE: plan-detector.py/sh removed - not deployed in standard setup
+            # NOTE: plan-detector.py/sh available but optional in standard setup
         }
 
         missing_files = []
