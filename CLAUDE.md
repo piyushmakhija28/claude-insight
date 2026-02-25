@@ -2,7 +2,7 @@
 
 **Project:** Claude Insight
 **Type:** Python Flask Monitoring Dashboard
-**Version:** 3.8.0
+**Version:** 3.9.0
 **Status:** Active Development
 
 ---
@@ -220,26 +220,45 @@ claude-insight/
 ├── templates/                      <- 31 Jinja2 HTML templates
 ├── static/                         <- CSS, JS, i18n files
 │
-├── scripts/                        <- All Executable Scripts (61 total)
+├── scripts/                        <- All Executable Scripts (40 total, main hooks)
 │   ├── setup-global-claude.sh      <- Unix automatic setup
 │   ├── setup-global-claude.ps1     <- Windows automatic setup
 │   ├── global-claude-md-template.md <- Public CLAUDE.md template
 │   ├── 3-level-flow.py             <- Main hook entry script
-│   ├── auto-fix-enforcer.sh        <- Level -1 enforcement
-│   ├── session-start.sh            <- Level 1 session init
+│   ├── clear-session-handler.py    <- Session state hook
+│   ├── pre-tool-enforcer.py        <- Tool validation hook
+│   ├── post-tool-tracker.py        <- Progress tracking hook
+│   ├── stop-notifier.py            <- Session finalization hook
 │   ├── session-chain-manager.py    <- Session chaining
 │   ├── session-summary-manager.py  <- Per-session summaries
-│   └── architecture/               <- 3-Level Architecture System (NEW STRUCTURE)
-│       ├── 01-sync-system/         <- Context management, patterns, sessions (38 files)
+│   └── architecture/               <- 3-Level Architecture System (107 files)
+│       ├── 01-sync-system/         <- Context & session management, patterns (38 files)
+│       │   ├── context-management/ (11 files)
+│       │   ├── session-management/ (8 files)
+│       │   ├── pattern-detection/  (2 files)
+│       │   └── user-preferences/   (4 files)
 │       ├── 02-standards-system/    <- Standards & rules (3 files)
-│       └── 03-execution-system/    <- Execution flows, task tracking (66 files)
+│       └── 03-execution-system/    <- Execution flows & task tracking (66 files)
+│           ├── 00-prompt-generation/
+│           ├── 01-task-breakdown/
+│           ├── 02-plan-mode/
+│           ├── 04-model-selection/
+│           ├── 05-skill-agent-selection/
+│           ├── 06-tool-optimization/
+│           ├── 07-recommendations/
+│           ├── 08-progress-tracking/
+│           ├── 09-git-commit/
+│           └── failure-prevention/
 │
-├── policies/                       <- Policy Documentation (.md files only)
-│   └── (34 policy markdown files)
+├── policies/                       <- Policy Documentation (.md only - 34+ files)
+│   ├── 01-sync-system/
+│   ├── 02-standards-system/
+│   └── 03-execution-system/
 │
-├── docs/                           <- Architecture documentation
+├── docs/                           <- Architecture docs (no operational reports)
+│   └── archive/                    <- Archived operational reports (11 files)
 ├── config/                         <- Runtime configuration JSONs
-└── tests/                          <- Test suite
+└── tests/                          <- Test suite (16+ test files)
 ```
 
 ---
@@ -326,6 +345,19 @@ python scripts/bump-version.py --patch
 
 ---
 
-**Version:** 3.8.0
-**Last Updated:** 2026-02-23
+---
+
+## IMPORTANT: Hook Configuration for Checkpoint Display
+
+**Issue Fixed (v3.9.0):** Review checkpoint visibility
+- The checkpoint table (Session ID, complexity, model, context %) is now displayed after every message
+- **How:** Changed UserPromptSubmit hooks from `"async": true` to `"async": false`
+- **Location:** `~/.claude/settings.json`
+- **Why:** With async=true, Claude Code runs the hook in background and discards stdout
+- **Impact:** The 3-level-flow.py output is now visible to users in the checkpoint format
+
+---
+
+**Version:** 3.9.0
+**Last Updated:** 2026-02-25
 **Source:** https://github.com/piyushmakhija28/claude-insight

@@ -6,7 +6,7 @@
 [![Python](https://img.shields.io/badge/Python-3.8+-blue?logo=python)](https://www.python.org/)
 [![Flask](https://img.shields.io/badge/Flask-3.0-green?logo=flask)](https://flask.palletsprojects.com/)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/Version-3.8.0-brightgreen)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/Version-3.9.0-brightgreen)](CHANGELOG.md)
 
 Claude Insight is a Python Flask dashboard that monitors how Claude Code follows the
 **3-Level Architecture enforcement policies** in real-time. Track policy execution,
@@ -651,43 +651,53 @@ claude-insight/
 │       ├── fr.json
 │       └── de.json
 │
-├── scripts/                     <- Enforcement + setup scripts
+├── scripts/                     <- Hook scripts + setup (40 total)
 │   ├── setup-global-claude.sh   <- Unix automatic setup
 │   ├── setup-global-claude.ps1  <- Windows automatic setup
 │   ├── global-claude-md-template.md  <- Public CLAUDE.md template
-│   ├── install-auto-hooks.sh    <- Hook installer
 │   ├── 3-level-flow.py          <- Main hook entry point
-│   ├── auto-fix-enforcer.sh     <- Level -1 enforcement
-│   ├── session-start.sh         <- Level 1 session init
-│   ├── per-request-enforcer.py  <- Per-request enforcement
-│   ├── context-monitor-v2.py    <- Context monitoring
-│   ├── blocking-policy-enforcer.py
-│   ├── session-id-generator.py/.sh
-│   ├── session-logger.py
 │   ├── clear-session-handler.py <- /clear hook handler
-│   ├── stop-notifier.py         <- Stop hook handler
+│   ├── pre-tool-enforcer.py     <- Tool validation hook
+│   ├── post-tool-tracker.py     <- Progress tracking hook
+│   ├── stop-notifier.py         <- Session finalization hook
 │   ├── session-chain-manager.py <- Session chaining (parent/child/tags)
 │   ├── session-summary-manager.py <- Per-session summaries
-│   └── detect-sync-eligibility.py
+│   └── architecture/            <- 3-Level Architecture System (107 files)
+│       ├── 01-sync-system/      <- Context & session management (38 files)
+│       │   ├── context-management/
+│       │   ├── session-management/
+│       │   ├── pattern-detection/
+│       │   └── user-preferences/
+│       ├── 02-standards-system/ <- Standards & rules (3 files)
+│       └── 03-execution-system/ <- Execution flows (66 files)
+│           ├── 00-prompt-generation/
+│           ├── 01-task-breakdown/
+│           ├── 02-plan-mode/
+│           ├── 04-model-selection/
+│           ├── 05-skill-agent-selection/
+│           ├── 06-tool-optimization/
+│           ├── 07-recommendations/
+│           ├── 08-progress-tracking/
+│           ├── 09-git-commit/
+│           └── failure-prevention/
 │
-├── policies/                    <- Policy definitions (organized by level)
+├── policies/                    <- Policy definitions (.md only - 34+ files)
 │   ├── 01-sync-system/          <- Level 1 foundation policies
 │   ├── 02-standards-system/     <- Level 2 coding standards policies
-│   ├── 03-execution-system/     <- Level 3 execution policies
-│   └── testing/                 <- Test case policies
+│   └── 03-execution-system/     <- Level 3 execution policies
 │
 ├── docs/                        <- Architecture documentation
 │   ├── ARCHITECTURE.md
-│   ├── auto-fix-enforcement.md
-│   ├── session-id-tracking.md
-│   └── ...
+│   ├── session-management-comparison.md
+│   ├── multi-window-session-isolation.md
+│   └── archive/                 <- Archived operational reports (11 files)
 │
 ├── config/                      <- Runtime config JSONs
 │   ├── failure-kb.json          <- Failure knowledge base
 │   ├── skills-registry.json     <- Available skills registry
 │   └── user-preferences.json
 │
-└── tests/                       <- Test suite
+└── tests/                       <- Test suite (16+ test files)
     ├── run_all_tests.py
     ├── test_policy_integration.py
     ├── test_enforcement_logger.py
@@ -863,6 +873,37 @@ Default credentials: `admin` / `admin`
 
 If locked out, reset in `src/auth/user_manager.py`.
 
+### Review Checkpoint Not Displayed (v3.9.0 Fix)
+
+**Issue:** Checkpoint table (Session ID, complexity, model, context %) not showing after messages.
+
+**Root cause:** `async: true` in `~/.claude/settings.json` for UserPromptSubmit hooks.
+
+**Solution:** Change both UserPromptSubmit hooks from `"async": true` to `"async": false`:
+
+```json
+"UserPromptSubmit": [{
+  "hooks": [
+    {
+      "type": "command",
+      "command": "python ~/.claude/scripts/hook-downloader.py clear-session-handler.py",
+      "async": false  // <- MUST BE false
+    },
+    {
+      "type": "command",
+      "command": "python ~/.claude/scripts/hook-downloader.py 3-level-flow.py --summary",
+      "async": false  // <- MUST BE false
+    }
+  ]
+}]
+```
+
+**Why:** When `async: true`, Claude Code runs the hook in the background and discards all stdout.
+The checkpoint table is printed to stdout but never displayed to the user. With `async: false`,
+the hook runs synchronously and displays the complete checkpoint table.
+
+**After fix:** Restart Claude Code and send any message — you should see the checkpoint table.
+
 ---
 
 ## Contributing
@@ -894,7 +935,16 @@ core enforcement scripts. Please follow these guidelines:
 
 See [CHANGELOG.md](CHANGELOG.md) for full version history.
 
-**Latest — v3.8.0 (2026-02-23):**
+**Latest — v3.9.0 (2026-02-25):**
+- **[CRITICAL FIX]** Review checkpoint now displays after every message (async: false in hooks)
+- **[CLEANUP]** Removed 61 duplicate files from scripts/architecture/ directories
+- **[CLEANUP]** Moved 8 test files from scripts/ to tests/ directory
+- **[CLEANUP]** Moved 5 policy .md files from 03-execution-system/ to policies/03-execution-system/
+- **[CLEANUP]** Archived 11 operational reports from docs/ to docs/archive/
+- **[DOCS]** Updated CLAUDE.md and README.md to reflect cleaned structure
+- Removed confusing flat-root duplicates (01-sync-system, 03-execution-system now only contain subdirectories)
+
+**Previous — v3.8.0 (2026-02-23):**
 - Added session chaining system (parent/child session relationships, auto-tagging, summaries)
 - Added 02-standards-system policies folder (coding-standards-enforcement-policy)
 - Cleaned up duplicate flat policy files (all policies now in organized sub-folders only)
