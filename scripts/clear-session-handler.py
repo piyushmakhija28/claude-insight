@@ -37,7 +37,8 @@ if sys.platform == 'win32':
     sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
 
 MEMORY_BASE = Path.home() / '.claude' / 'memory'
-CURRENT_DIR = MEMORY_BASE / 'current'
+SCRIPTS_DIR = Path.home() / '.claude' / 'scripts'
+CURRENT_DIR = SCRIPTS_DIR if SCRIPTS_DIR.exists() else (MEMORY_BASE / 'current')
 SESSIONS_DIR = MEMORY_BASE / 'sessions'
 CURRENT_SESSION_FILE = MEMORY_BASE / '.current-session.json'
 # MULTI-WINDOW FIX: Get window-specific hook state file via isolator

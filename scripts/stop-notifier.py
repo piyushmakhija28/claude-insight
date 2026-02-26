@@ -50,7 +50,8 @@ if sys.platform == 'win32':
     sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
 
 MEMORY_BASE = Path.home() / '.claude' / 'memory'
-CURRENT_DIR = MEMORY_BASE / 'current'
+SCRIPTS_DIR = Path.home() / '.claude' / 'scripts'
+CURRENT_DIR = SCRIPTS_DIR if SCRIPTS_DIR.exists() else (MEMORY_BASE / 'current')
 VOICE_SCRIPT = CURRENT_DIR / 'voice-notifier.py'
 FLAG_DIR = Path.home() / '.claude'
 API_KEY_FILE = Path.home() / '.claude' / 'config' / 'openrouter-api-key'
