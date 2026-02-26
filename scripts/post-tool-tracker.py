@@ -53,12 +53,14 @@ PROGRESS_DELTA = {
     'WebSearch':     8,
 }
 
-# Session state file to accumulate progress
-SESSION_STATE_FILE = Path.home() / '.claude' / 'memory' / 'logs' / 'session-progress.json'
-TRACKER_LOG = Path.home() / '.claude' / 'memory' / 'logs' / 'tool-tracker.jsonl'
-
-# Flag directory for session-specific enforcement flags (Loophole #11 fix)
-FLAG_DIR = Path.home() / '.claude'
+# Use ide_paths for IDE self-contained installations (with fallback for standalone mode)
+try:
+    from ide_paths import (SESSION_STATE_FILE, TRACKER_LOG, FLAG_DIR)
+except ImportError:
+    # Fallback for standalone mode (no IDE_INSTALL_DIR set)
+    SESSION_STATE_FILE = Path.home() / '.claude' / 'memory' / 'logs' / 'session-progress.json'
+    TRACKER_LOG = Path.home() / '.claude' / 'memory' / 'logs' / 'tool-tracker.jsonl'
+    FLAG_DIR = Path.home() / '.claude'
 
 
 def _get_session_id_from_progress():

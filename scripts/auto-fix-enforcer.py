@@ -46,8 +46,16 @@ class AutoFixEnforcer:
     """Detects and auto-fixes all system failures"""
 
     def __init__(self):
-        self.scripts_path = Path.home() / '.claude' / 'scripts'
-        self.memory_path = Path.home() / '.claude' / 'memory'
+        # Use ide_paths for IDE self-contained installations (with fallback for standalone mode)
+        try:
+            from ide_paths import SCRIPTS_DIR, MEMORY_BASE
+            self.scripts_path = SCRIPTS_DIR
+            self.memory_path = MEMORY_BASE
+        except ImportError:
+            # Fallback for standalone mode (no IDE_INSTALL_DIR set)
+            self.scripts_path = Path.home() / '.claude' / 'scripts'
+            self.memory_path = Path.home() / '.claude' / 'memory'
+
         # Fallback to memory/current for backwards compatibility
         if not self.scripts_path.exists():
             self.scripts_path = self.memory_path / 'current'

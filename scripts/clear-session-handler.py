@@ -36,17 +36,26 @@ if sys.platform == 'win32':
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
     sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
 
-MEMORY_BASE = Path.home() / '.claude' / 'memory'
-SCRIPTS_DIR = Path.home() / '.claude' / 'scripts'
-CURRENT_DIR = SCRIPTS_DIR if SCRIPTS_DIR.exists() else (MEMORY_BASE / 'current')
-SESSIONS_DIR = MEMORY_BASE / 'sessions'
-CURRENT_SESSION_FILE = MEMORY_BASE / '.current-session.json'
+# Use ide_paths for IDE self-contained installations (with fallback for standalone mode)
+try:
+    from ide_paths import (MEMORY_BASE, SCRIPTS_DIR, CURRENT_DIR, FLAG_DIR,
+                           SESSION_START_FLAG, CURRENT_SESSION_FILE)
+    SESSIONS_DIR = MEMORY_BASE / 'sessions'
+    CLEAR_LOG = MEMORY_BASE / 'logs' / 'clear-events.log'
+    SESSION_START_VOICE_FLAG = SESSION_START_FLAG  # Use imported constant
+except ImportError:
+    # Fallback for standalone mode (no IDE_INSTALL_DIR set)
+    MEMORY_BASE = Path.home() / '.claude' / 'memory'
+    SCRIPTS_DIR = Path.home() / '.claude' / 'scripts'
+    CURRENT_DIR = SCRIPTS_DIR if SCRIPTS_DIR.exists() else (MEMORY_BASE / 'current')
+    SESSIONS_DIR = MEMORY_BASE / 'sessions'
+    CURRENT_SESSION_FILE = MEMORY_BASE / '.current-session.json'
+    CLEAR_LOG = MEMORY_BASE / 'logs' / 'clear-events.log'
+    SESSION_START_VOICE_FLAG = Path.home() / '.claude' / '.session-start-voice'
+    FLAG_DIR = Path.home() / '.claude'
+
 # MULTI-WINDOW FIX: Get window-specific hook state file via isolator
 HOOK_STATE_FILE = None  # Initialized in _init_window_isolation()
-CLEAR_LOG = MEMORY_BASE / 'logs' / 'clear-events.log'
-SESSION_START_VOICE_FLAG = Path.home() / '.claude' / '.session-start-voice'
-# Flag directory for session-specific enforcement flags (Loophole #11 fix)
-FLAG_DIR = Path.home() / '.claude'
 
 
 # =============================================================================

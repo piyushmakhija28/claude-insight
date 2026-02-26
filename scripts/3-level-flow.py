@@ -24,17 +24,20 @@ if sys.platform == 'win32':
 
 VERSION = "3.4.0"
 SCRIPT_NAME = "3-level-flow.py"
-MEMORY_BASE = Path.home() / '.claude' / 'memory'
-SCRIPTS_DIR = Path.home() / '.claude' / 'scripts'
-# NEW: Scripts are synced to ~/.claude/scripts/ by hook-downloader
-# Fallback to memory/current for backwards compatibility
-CURRENT_DIR = SCRIPTS_DIR if SCRIPTS_DIR.exists() else (MEMORY_BASE / 'current')
-SCRIPT_DIR = Path(__file__).parent  # NEW: For policy-executor integration
-PYTHON = sys.executable
 
-# Flag directory for session-specific enforcement flags (Loophole #11 fix)
-FLAG_DIR = Path.home() / '.claude'
-POLICIES_DIR = Path.home() / '.claude' / 'policies'
+# Use ide_paths for IDE self-contained installations (with fallback for standalone mode)
+try:
+    from ide_paths import (MEMORY_BASE, SCRIPTS_DIR, CURRENT_DIR, FLAG_DIR, POLICIES_DIR)
+except ImportError:
+    # Fallback for standalone mode (no IDE_INSTALL_DIR set)
+    MEMORY_BASE = Path.home() / '.claude' / 'memory'
+    SCRIPTS_DIR = Path.home() / '.claude' / 'scripts'
+    CURRENT_DIR = SCRIPTS_DIR if SCRIPTS_DIR.exists() else (MEMORY_BASE / 'current')
+    FLAG_DIR = Path.home() / '.claude'
+    POLICIES_DIR = Path.home() / '.claude' / 'policies'
+
+SCRIPT_DIR = Path(__file__).parent  # For policy-executor integration
+PYTHON = sys.executable
 
 
 def load_policy_rules() -> dict:

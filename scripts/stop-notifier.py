@@ -49,20 +49,24 @@ if sys.platform == 'win32':
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
     sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
 
-MEMORY_BASE = Path.home() / '.claude' / 'memory'
-SCRIPTS_DIR = Path.home() / '.claude' / 'scripts'
-CURRENT_DIR = SCRIPTS_DIR if SCRIPTS_DIR.exists() else (MEMORY_BASE / 'current')
+# Use ide_paths for IDE self-contained installations (with fallback for standalone mode)
+try:
+    from ide_paths import (MEMORY_BASE, SCRIPTS_DIR, CURRENT_DIR, FLAG_DIR,
+                           SESSION_START_FLAG, TASK_COMPLETE_FLAG, WORK_DONE_FLAG, STOP_LOG, CONFIG_DIR)
+    API_KEY_FILE = CONFIG_DIR / 'openrouter-api-key'
+except ImportError:
+    # Fallback for standalone mode (no IDE_INSTALL_DIR set)
+    MEMORY_BASE = Path.home() / '.claude' / 'memory'
+    SCRIPTS_DIR = Path.home() / '.claude' / 'scripts'
+    CURRENT_DIR = SCRIPTS_DIR if SCRIPTS_DIR.exists() else (MEMORY_BASE / 'current')
+    FLAG_DIR = Path.home() / '.claude'
+    SESSION_START_FLAG = FLAG_DIR / '.session-start-voice'
+    TASK_COMPLETE_FLAG = FLAG_DIR / '.task-complete-voice'
+    WORK_DONE_FLAG = FLAG_DIR / '.session-work-done'
+    STOP_LOG = MEMORY_BASE / 'logs' / 'stop-notifier.log'
+    API_KEY_FILE = Path.home() / '.claude' / 'config' / 'openrouter-api-key'
+
 VOICE_SCRIPT = CURRENT_DIR / 'voice-notifier.py'
-FLAG_DIR = Path.home() / '.claude'
-API_KEY_FILE = Path.home() / '.claude' / 'config' / 'openrouter-api-key'
-
-# Voice flag files (checked in this priority order)
-SESSION_START_FLAG = FLAG_DIR / '.session-start-voice'
-TASK_COMPLETE_FLAG = FLAG_DIR / '.task-complete-voice'
-WORK_DONE_FLAG = FLAG_DIR / '.session-work-done'
-
-# Log file
-STOP_LOG = MEMORY_BASE / 'logs' / 'stop-notifier.log'
 
 # OpenRouter config
 OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"

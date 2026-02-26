@@ -42,11 +42,13 @@ import glob as _glob
 from pathlib import Path
 from datetime import datetime, timedelta
 
-# Flag directory (session-specific flags: Loophole #11 fix)
-FLAG_DIR = Path.home() / '.claude'
-
-# Current session file (written by session-id-generator.py via clear-session-handler)
-CURRENT_SESSION_FILE = Path.home() / '.claude' / 'memory' / '.current-session.json'
+# Use ide_paths for IDE self-contained installations (with fallback for standalone mode)
+try:
+    from ide_paths import (FLAG_DIR, CURRENT_SESSION_FILE)
+except ImportError:
+    # Fallback for standalone mode (no IDE_INSTALL_DIR set)
+    FLAG_DIR = Path.home() / '.claude'
+    CURRENT_SESSION_FILE = Path.home() / '.claude' / 'memory' / '.current-session.json'
 
 # Tools that are BLOCKED while checkpoint is pending (file-modification tools ONLY)
 # Write/Edit/NotebookEdit are the ONLY tools that directly create/modify source files.
