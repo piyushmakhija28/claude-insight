@@ -1452,47 +1452,7 @@ def main():
     }
     step_3_0_decision = f"Complexity={complexity}, Type={task_type} - proceed with analysis"
 
-    trace["pipeline"].append({
-        "step": "LEVEL_3_STEP_3_0",
-        "name": "Prompt Generation (Anti-Hallucination)",
-        "level": 3,
-        "order": 4,
-        "is_blocking": False,
-        "timestamp": step_start.isoformat(),
-        "duration_ms": pr_dur,
-        "input": {
-            "from_previous": "LEVEL_2_STANDARDS",
-            "user_message": user_message,
-            "standards_active": standards_count,
-            "rules_active": rules_count,
-            "purpose": "Analyze request, rewrite to proper English, determine complexity and task type"
-        },
-        "policy": {
-            "script": "prompt-generator.py",
-            "args": [user_message],
-            "rules_applied": [
-                "analyze_user_intent_any_language",
-                "rewrite_to_proper_english_prompt",
-                "estimate_complexity_score_0_to_25",
-                "classify_task_type",
-                "extract_entities_and_operations",
-                "flag_uncertainties_and_assumptions"
-            ]
-        },
-        "policy_output": step_3_0_output,
-        "decision": step_3_0_decision,
-        "passed_to_next": {
-            "complexity": complexity,
-            "task_type": task_type,
-            "user_message": user_message,
-            "rewritten_prompt": rewritten_prompt if rewritten_prompt else user_message,
-            "use_rewritten_prompt": bool(rewritten_prompt)
-        }
-    })
-    print(f"   [3.0] Prompt Generation: Complexity={complexity}, Type={task_type}")
-    if rewritten_prompt:
-        print(f"   [3.0] CLAUDE_MUST: Use REWRITTEN_PROMPT as task description (not raw original)")
-    prev_output = {"complexity": complexity, "task_type": task_type}
+    # STEP 3.0 MOVED TO AFTER SKILL SELECTION - See STEP 3.5
 
     # ------------------------------------------------------------------
     # STEP 3.1: TASK BREAKDOWN
@@ -1513,15 +1473,15 @@ def main():
     step_3_1_output = {"task_count": task_count, "script_exists": task_script.exists()}
 
     trace["pipeline"].append({
-        "step": "LEVEL_3_STEP_3_1",
+        "step": "LEVEL_3_STEP_3_0",
         "name": "Automatic Task Breakdown",
         "level": 3,
-        "order": 5,
+        "order": 4,
         "is_blocking": False,
         "timestamp": step_start.isoformat(),
         "duration_ms": tk_dur,
         "input": {
-            "from_previous": "LEVEL_3_STEP_3_0",
+            "from_previous": "LEVEL_2_STANDARDS",
             "complexity": complexity,
             "task_type": task_type,
             "user_message": user_message,
@@ -1546,7 +1506,7 @@ def main():
             "task_type": task_type
         }
     })
-    print(f"   [3.1] Task Breakdown: {task_count} tasks")
+    print(f"   [3.0] Task Breakdown: {task_count} tasks")
     prev_output = {"task_count": task_count, "complexity": complexity, "task_type": task_type}
 
     # ------------------------------------------------------------------
@@ -1579,15 +1539,15 @@ def main():
         plan_reason = "SIMPLE (<5) - Proceed directly"
 
     trace["pipeline"].append({
-        "step": "LEVEL_3_STEP_3_2",
+        "step": "LEVEL_3_STEP_3_1",
         "name": "Plan Mode Suggestion",
         "level": 3,
-        "order": 6,
+        "order": 5,
         "is_blocking": False,
         "timestamp": step_start.isoformat(),
         "duration_ms": pl_dur,
         "input": {
-            "from_previous": "LEVEL_3_STEP_3_1",
+            "from_previous": "LEVEL_3_STEP_3_0",
             "complexity": complexity,
             "task_count": task_count,
             "task_type": task_type,
@@ -1621,7 +1581,7 @@ def main():
             "plan_str": plan_str
         }
     })
-    print(f"   [3.2] Plan Mode: {plan_str} (complexity {adj_complexity})")
+    print(f"   [3.1] Plan Mode: {plan_str} (complexity {adj_complexity})")
     prev_output = {"plan_required": plan_required, "adj_complexity": adj_complexity}
 
     # ------------------------------------------------------------------
@@ -1636,15 +1596,15 @@ def main():
     ctx2_warning = context_pct2 >= 70
 
     trace["pipeline"].append({
-        "step": "LEVEL_3_STEP_3_3",
+        "step": "LEVEL_3_STEP_3_2",
         "name": "Context Check (Pre-Execution)",
         "level": 3,
-        "order": 7,
+        "order": 6,
         "is_blocking": False,
         "timestamp": step_start.isoformat(),
         "duration_ms": ctx2_dur,
         "input": {
-            "from_previous": "LEVEL_3_STEP_3_2",
+            "from_previous": "LEVEL_3_STEP_3_1",
             "plan_required": plan_required,
             "adj_complexity": adj_complexity,
             "purpose": "Re-verify context before heavy execution begins"
@@ -1670,7 +1630,7 @@ def main():
             "safe_to_proceed": ctx2_ok
         }
     })
-    print(f"   [3.3] Context Check: {context_pct2}%")
+    print(f"   [3.2] Context Check: {context_pct2}%")
 
     # ------------------------------------------------------------------
     # STEP 3.4: MODEL SELECTION
@@ -1701,15 +1661,15 @@ def main():
             model_overrides.append("security_task_minimum_sonnet")
 
     trace["pipeline"].append({
-        "step": "LEVEL_3_STEP_3_4",
+        "step": "LEVEL_3_STEP_3_3",
         "name": "Intelligent Model Selection",
         "level": 3,
-        "order": 8,
+        "order": 7,
         "is_blocking": False,
         "timestamp": step_start.isoformat(),
         "duration_ms": 0,
         "input": {
-            "from_previous": "LEVEL_3_STEP_3_3",
+            "from_previous": "LEVEL_3_STEP_3_2",
             "adjusted_complexity": adj_complexity,
             "task_type": task_type,
             "plan_required": plan_required,
@@ -1741,7 +1701,7 @@ def main():
             "model_reason": model_reason
         }
     })
-    print(f"   [3.4] Model Selection: {selected_model}")
+    print(f"   [3.3] Model Selection: {selected_model}")
     prev_output = {"model": selected_model}
 
     # ------------------------------------------------------------------
@@ -1772,15 +1732,15 @@ def main():
         skill_reason += ' [escalated to orchestrator-agent: complexity/task count]'
 
     trace["pipeline"].append({
-        "step": "LEVEL_3_STEP_3_5",
+        "step": "LEVEL_3_STEP_3_4",
         "name": "Auto Skill and Agent Selection",
         "level": 3,
-        "order": 9,
+        "order": 8,
         "is_blocking": False,
         "timestamp": step_start.isoformat(),
         "duration_ms": 0,
         "input": {
-            "from_previous": "LEVEL_3_STEP_3_4",
+            "from_previous": "LEVEL_3_STEP_3_3",
             "model": selected_model,
             "task_type": task_type,
             "complexity": adj_complexity,
@@ -1816,7 +1776,76 @@ def main():
         }
     })
     supp_str = f" + {supplementary_skills}" if supplementary_skills else ""
-    print(f"   [3.5] Skill/Agent: {skill_agent_name} ({agent_type}){supp_str}")
+    print(f"   [3.4] Skill/Agent: {skill_agent_name} ({agent_type}){supp_str}")
+
+    # ------------------------------------------------------------------
+    # STEP 3.5: PROMPT GENERATION (WITH SKILL CONTEXT)
+    # ------------------------------------------------------------------
+    step_start = datetime.now()
+    prompt_script = MEMORY_BASE / '03-execution-system' / '00-prompt-generation' / 'prompt-generator.py'
+    pr_dur_3_5 = 0
+    if prompt_script.exists():
+        pr_out, _, _, pr_dur_3_5 = run_script(prompt_script, [user_message], timeout=15)
+        pr_data = safe_json(pr_out)
+        rewritten_prompt_3_5 = pr_data.get('rewritten_prompt', '')
+        enhanced_prompt_3_5 = pr_data.get('enhanced_prompt', '')
+    else:
+        rewritten_prompt_3_5 = rewritten_prompt
+        enhanced_prompt_3_5 = enhanced_prompt_summary
+
+    step_3_5_output = {
+        "estimated_complexity": complexity,
+        "task_type": task_type,
+        "rewritten_prompt": rewritten_prompt_3_5 if rewritten_prompt_3_5 else "NOT_GENERATED",
+        "enhanced_prompt": enhanced_prompt_3_5 if enhanced_prompt_3_5 else "NOT_GENERATED",
+        "effective_prompt": (rewritten_prompt_3_5 if rewritten_prompt_3_5 else enhanced_prompt_3_5) if (rewritten_prompt_3_5 or enhanced_prompt_3_5) else user_message,
+        "script_exists": prompt_script.exists(),
+        "skill_context_applied": True,
+        "skill_or_agent": skill_agent_name,
+        "supplementary_skills": supplementary_skills
+    }
+    step_3_5_decision = f"Enhanced prompt with skill context - using {skill_agent_name} for generation"
+
+    trace["pipeline"].append({
+        "step": "LEVEL_3_STEP_3_5",
+        "name": "Prompt Generation (With Skill Context)",
+        "level": 3,
+        "order": 9,
+        "is_blocking": False,
+        "timestamp": step_start.isoformat(),
+        "duration_ms": pr_dur_3_5,
+        "input": {
+            "from_previous": "LEVEL_3_STEP_3_4",
+            "user_message": user_message,
+            "skill_or_agent": skill_agent_name,
+            "supplementary_skills": supplementary_skills,
+            "purpose": "Generate enhanced prompt with skill context"
+        },
+        "policy": {
+            "script": "prompt-generator.py",
+            "args": [user_message],
+            "rules_applied": [
+                "analyze_user_intent_with_skill_context",
+                "rewrite_to_proper_english_prompt",
+                "enrich_with_skill_agent_context",
+                "extract_entities_and_operations",
+                "apply_supplementary_skill_patterns"
+            ]
+        },
+        "policy_output": step_3_5_output,
+        "decision": step_3_5_decision,
+        "passed_to_next": {
+            "complexity": complexity,
+            "task_type": task_type,
+            "user_message": user_message,
+            "rewritten_prompt": rewritten_prompt_3_5 if rewritten_prompt_3_5 else user_message,
+            "use_rewritten_prompt": bool(rewritten_prompt_3_5),
+            "skill_context_applied": True
+        }
+    })
+    print(f"   [3.5] Prompt Generation (with skill context): Complexity={complexity}, Type={task_type}")
+    if rewritten_prompt_3_5:
+        print(f"   [3.5] CLAUDE_MUST: Use REWRITTEN_PROMPT + {skill_agent_name} patterns")
 
     # ------------------------------------------------------------------
     # STEP 3.6: TOOL OPTIMIZATION
