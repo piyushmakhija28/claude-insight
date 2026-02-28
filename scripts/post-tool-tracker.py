@@ -435,6 +435,9 @@ def main():
                 if len(tc_subject) >= 10 and len(tc_desc) >= 10:
                     sid = _get_session_id_from_progress()
                     _clear_session_flags('.task-breakdown-pending', sid)
+                    # Track total tasks created for auto work-done detection
+                    state['tasks_created'] = state.get('tasks_created', 0) + 1
+                    save_session_progress(state)
                 # else: dummy TaskCreate ignored - flag stays
             except Exception:
                 pass
@@ -594,6 +597,26 @@ def main():
                             sys.stdout.flush()
                     except Exception:
                         pass  # Never block on build validation failures
+
+                    # AUTO WORK-DONE: Write .session-work-done flag when ALL tasks complete
+                    try:
+                        tasks_created = state.get('tasks_created', 0)
+                        tasks_completed_now = state.get('tasks_completed', 0)
+                        if tasks_created > 0 and tasks_completed_now >= tasks_created:
+                            work_done_flag = Path.home() / '.claude' / '.session-work-done'
+                            work_done_flag.parent.mkdir(parents=True, exist_ok=True)
+                            work_done_flag.write_text(
+                                'All ' + str(tasks_completed_now) + ' tasks completed. Auto-written by post-tool-tracker.',
+                                encoding='utf-8'
+                            )
+                            sys.stdout.write(
+                                '[AUTO] .session-work-done written ('
+                                + str(tasks_completed_now) + '/' + str(tasks_created)
+                                + ' tasks done) -> PR workflow will trigger on Stop hook\n'
+                            )
+                            sys.stdout.flush()
+                    except Exception:
+                        pass  # Never block on work-done flag
 
             except Exception:
                 pass

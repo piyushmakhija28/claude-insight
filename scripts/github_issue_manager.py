@@ -129,13 +129,27 @@ def extract_task_id_from_response(tool_response):
     """
     Parse task ID from a TaskCreate tool response.
 
-    The response content typically looks like:
-      "Task #1 created successfully: ..."
+    Handles multiple response formats:
+      - "Task #1 created successfully: ..."
+      - "Task created with id 1"
+      - "Created task 1: ..."
+      - {"id": "1", ...}
+      - Any string containing digits after task-related keywords
+
     Returns the task ID string (e.g. '1') or empty string.
     """
     try:
         content = ''
         if isinstance(tool_response, dict):
+            # Check for direct 'id' field in response
+            direct_id = tool_response.get('id', '')
+            if direct_id:
+                return str(direct_id)
+            # Check for taskId field
+            direct_tid = tool_response.get('taskId', '')
+            if direct_tid:
+                return str(direct_tid)
+
             c = tool_response.get('content', '')
             if isinstance(c, str):
                 content = c
@@ -148,7 +162,10 @@ def extract_task_id_from_response(tool_response):
         elif isinstance(tool_response, str):
             content = tool_response
 
-        # Pattern: "Task #N created successfully"
+        if not content:
+            return ''
+
+        # Pattern 1: "Task #N" (e.g. "Task #1 created successfully")
         if 'Task #' in content:
             after_hash = content.split('Task #', 1)[1]
             task_id = ''
@@ -157,7 +174,30 @@ def extract_task_id_from_response(tool_response):
                     task_id += ch
                 else:
                     break
-            return task_id
+            if task_id:
+                return task_id
+
+        # Pattern 2: "id N" or "id: N" or "ID: N"
+        content_lower = content.lower()
+        for marker in ['id ', 'id: ', 'id:', 'task ']:
+            idx = content_lower.find(marker)
+            if idx >= 0:
+                after = content[idx + len(marker):].strip()
+                task_id = ''
+                for ch in after:
+                    if ch.isdigit():
+                        task_id += ch
+                    elif task_id:
+                        break
+                if task_id:
+                    return task_id
+
+        # Pattern 3: First standalone number in the content
+        import re
+        match = re.search(r'\b(\d+)\b', content)
+        if match:
+            return match.group(1)
+
     except Exception:
         pass
     return ''
@@ -717,6 +757,25 @@ def close_github_issue(task_id):
         mapping = _load_issues_mapping()
         task_key = str(task_id)
         issue_data = mapping.get('task_to_issue', {}).get(task_key)
+
+        # Fallback: if exact key not found, search all entries for matching task
+        if not issue_data:
+            # Try 'unknown' key (common when extract_task_id_from_response failed)
+            issue_data = mapping.get('task_to_issue', {}).get('unknown')
+            if issue_data:
+                # Re-key this entry properly
+                mapping['task_to_issue'][task_key] = issue_data
+                if 'unknown' in mapping.get('task_to_issue', {}):
+                    del mapping['task_to_issue']['unknown']
+                _save_issues_mapping(mapping)
+
+        # Fallback 2: find any open issue in the mapping
+        if not issue_data:
+            for key, data in mapping.get('task_to_issue', {}).items():
+                if data.get('status') == 'open':
+                    issue_data = data
+                    task_key = key
+                    break
 
         if not issue_data:
             return False
