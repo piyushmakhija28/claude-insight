@@ -1,9 +1,10 @@
 # 🎯 Automatic Skill & Agent Selection Policy
 
-**VERSION:** 2.0.0 (CONSOLIDATED)
+**VERSION:** 3.0.0 (DYNAMIC PER-FILE SELECTION)
 **CREATED:** 2026-02-16
-**PRIORITY:** 🔴 CRITICAL - STEP 7 (Before Execution)
-**STATUS:** 🟢 ACTIVE
+**UPDATED:** 2026-02-28
+**PRIORITY:** CRITICAL - STEP 7 (Before Execution) + PreToolUse Dynamic Hints
+**STATUS:** ACTIVE
 
 ---
 
@@ -582,6 +583,101 @@ if __name__ == "__main__":
 
 ---
 
+## DYNAMIC PER-FILE SKILL SELECTION (v3.0.0 - NEW)
+
+### Problem (v2.0.0 and earlier)
+
+The system selected ONE skill/agent at session start and kept it fixed for the entire session.
+This broke down in mixed-stack projects:
+
+```
+Project has: .java + .py + .ts + Dockerfile + .sql
+Old behavior: Selected "spring-boot-microservices" once -> used for ALL files
+Result: Python files got Java patterns, Dockerfiles got Java hints -> WRONG
+```
+
+### Solution (v3.0.0)
+
+**Dynamic per-file skill switching** via `pre-tool-enforcer.py` (PreToolUse hook).
+
+Every time Claude touches a file (Read/Write/Edit/Grep/Glob), the hook detects the file type
+and injects the CORRECT skill context for THAT specific file:
+
+```
+Edit User.java           -> [SKILL-CONTEXT] java-spring-boot-microservices
+Edit deploy.py           -> [SKILL-CONTEXT] python-system-scripting
+Edit app.component.ts    -> [SKILL-CONTEXT] angular-engineer (agent)
+Edit Dockerfile          -> [SKILL-CONTEXT] docker
+Edit schema.sql          -> [SKILL-CONTEXT] rdbms-core
+Edit deployment.yaml     -> [SKILL-CONTEXT] kubernetes
+Edit Jenkinsfile         -> [SKILL-CONTEXT] jenkins-pipeline
+Edit styles.scss         -> [SKILL-CONTEXT] css-core
+```
+
+### How It Works
+
+**3-layer file detection** (checked in priority order):
+
+1. **Special Filenames** (highest priority)
+   - `pom.xml` -> java-spring-boot-microservices
+   - `Dockerfile` -> docker
+   - `Jenkinsfile` -> jenkins-pipeline
+   - `deployment.yaml` -> kubernetes
+   - `AndroidManifest.xml` -> android-backend-engineer
+   - `angular.json` -> angular-engineer
+
+2. **Directory Path Patterns**
+   - `/src/main/java/` -> java-spring-boot-microservices
+   - `/controller/` -> java-spring-boot-microservices
+   - `/res/layout/` -> android-ui-designer
+   - `/k8s/`, `/helm/` -> kubernetes
+   - `/deploy/`, `/ci/` -> devops-engineer
+
+3. **File Extensions** (lowest priority)
+   - `.java` -> java-spring-boot-microservices
+   - `.py` -> python-system-scripting
+   - `.ts` -> angular-engineer
+   - `.tsx`, `.jsx` -> ui-ux-designer (React)
+   - `.css`, `.scss` -> css-core
+   - `.swift` -> swift-backend-engineer
+   - `.kt` -> android-backend-engineer
+   - `.sql` -> rdbms-core
+
+### Integration Point
+
+```
+Session Start:
+  3-level-flow.py -> get_agent_and_skills() -> PRIMARY skill (session-level)
+
+Every Tool Call:
+  pre-tool-enforcer.py -> check_dynamic_skill_context() -> PER-FILE skill hint
+```
+
+The per-file hint does NOT replace the session-level selection. It ADDS context on top.
+This means the session primary (e.g., orchestrator-agent) stays active, but each file
+gets its own skill-specific guidance.
+
+### Output Format
+
+```
+[SKILL-CONTEXT] UserController.java -> java-spring-boot-microservices (skill)
+  CONTEXT: Java/Spring Boot patterns, annotations, DI, REST controllers
+  ACTION: Apply java-spring-boot-microservices patterns and best practices for this file.
+```
+
+### De-duplication
+
+To avoid spamming the same hint on consecutive tool calls to the same file type,
+the system tracks the last hint printed and skips duplicates.
+
+### Enforcement Level
+
+- **Non-blocking** (hints only, exit code 0)
+- **Additive** (adds to session selection, never overrides)
+- **Per-tool** (different skill per file in the same session)
+
+---
+
 ## ✅ CONSOLIDATION SUMMARY
 
 **This Policy:**
@@ -591,6 +687,7 @@ if __name__ == "__main__":
 - ✅ Fixes issues from `SKILL-AGENT-SELECTION-FIX-REPORT.md`
 - ✅ Makes it formal Step 7 in execution flow
 - ✅ Auto-selection based on ALL available context
+- ✅ **v3.0.0: Dynamic per-file skill switching in pre-tool-enforcer.py**
 
 **NO DUPLICATION:**
 - References registry, doesn't duplicate it
@@ -602,11 +699,12 @@ if __name__ == "__main__":
 - Context-aware selection (uses Steps 0-6 data)
 - Auto-selection algorithm
 - Integration with new pipeline
+- **v3.0.0: Per-file skill context in PreToolUse hook**
 
 ---
 
-**VERSION:** 2.0.0 (CONSOLIDATED)
+**VERSION:** 3.0.0 (DYNAMIC PER-FILE)
 **CREATED:** 2026-02-16
-**LOCATION:** `~/.claude/memory/auto-skill-agent-selection-policy.md`
-**SCRIPT:** `~/.claude/memory/auto-skill-agent-selector.py`
+**UPDATED:** 2026-02-28
+**SCRIPT:** `scripts/pre-tool-enforcer.py` (check_dynamic_skill_context)
 **REFERENCES:** adaptive-skill-registry.md, core-skills-mandate.md
