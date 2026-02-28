@@ -32,7 +32,8 @@ if sys.platform == 'win32':
 
 # Thresholds
 THRESHOLDS = {
-    "staged_files": 10,         # 10+ files staged -> commit
+    "modified_files": 1,        # 1+ modified files -> commit
+    "staged_files": 1,          # 1+ files staged -> commit
     "time_since_last_commit_min": 30,  # 30+ minutes -> commit
     "phase_completion": True,   # Phase complete -> commit
     "todo_completion": True,    # Todo complete -> commit
@@ -277,7 +278,16 @@ def check_commit_triggers(project_dir):
             "git_status": git_status,
         }
 
-    # 1. Staged files threshold
+    # 1a. Modified files threshold (unstaged changes)
+    if git_status["modified_count"] >= THRESHOLDS["modified_files"]:
+        triggers_met.append("modified_files")
+        trigger_details["modified_files"] = {
+            "count": git_status["modified_count"],
+            "threshold": THRESHOLDS["modified_files"],
+            "reason": f"{git_status['modified_count']} modified files (threshold: {THRESHOLDS['modified_files']})"
+        }
+
+    # 1b. Staged files threshold
     if git_status["staged_count"] >= THRESHOLDS["staged_files"]:
         triggers_met.append("staged_files")
         trigger_details["staged_files"] = {
@@ -350,8 +360,6 @@ def main():
         help='Output as JSON'
     )
 
-    if len(sys.argv) < 2:
-        sys.exit(0)
     args = parser.parse_args()
 
     # Default to current directory

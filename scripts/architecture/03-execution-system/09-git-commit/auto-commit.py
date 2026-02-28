@@ -179,7 +179,7 @@ def generate_commit_message(git_status, triggers, style=None):
         message += f"\n\nTriggered by: {', '.join(trigger_names)}"
 
     # Add co-author
-    message += "\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
+    message += "\n\nCo-Authored-By: Claude <noreply@anthropic.com>"
 
     return message
 
@@ -262,8 +262,12 @@ def auto_commit(project_dir, push=False, dry_run=False):
     # Step 2: Run detector
     print("Step 1: Checking commit triggers...")
     try:
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        detector_path = os.path.join(script_dir, "auto-commit-detector.py")
+        if not os.path.exists(detector_path):
+            detector_path = os.path.expanduser("~/.claude/scripts/architecture/03-execution-system/09-git-commit/auto-commit-detector.py")
         result = subprocess.run(
-            ["python", os.path.expanduser("~/.claude/memory/auto-commit-detector.py"),
+            [sys.executable, detector_path,
              "--project-dir", project_dir, "--json"],
             capture_output=True,
             text=True,
@@ -347,8 +351,6 @@ def main():
         help='Dry run (show what would happen)'
     )
 
-    if len(sys.argv) < 2:
-        sys.exit(0)
     args = parser.parse_args()
 
     # Default to current directory

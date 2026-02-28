@@ -485,7 +485,7 @@ def main():
             _commit_ok = False
             for _attempt in range(1, 4):
                 try:
-                    _r = subprocess.run([sys.executable, str(git_commit_script)], timeout=5, capture_output=True)
+                    _r = subprocess.run([sys.executable, str(git_commit_script), '--enforce-now'], timeout=60, capture_output=True)
                     if _r.returncode == 0:
                         _commit_ok = True
                         break

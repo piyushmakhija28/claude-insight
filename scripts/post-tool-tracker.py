@@ -566,6 +566,24 @@ def main():
                     except Exception:
                         pass  # Never block on GitHub failures
 
+                    # AUTO-COMMIT: Actually trigger auto-commit on task completion
+                    try:
+                        import subprocess as _subprocess
+                        _script_dir = os.path.dirname(os.path.abspath(__file__))
+                        _commit_enforcer = os.path.join(_script_dir, 'architecture', '03-execution-system', '09-git-commit', 'auto-commit-enforcer.py')
+                        if os.path.exists(_commit_enforcer):
+                            _cr = _subprocess.run(
+                                [sys.executable, _commit_enforcer, '--enforce-now'],
+                                timeout=60, capture_output=True
+                            )
+                            if _cr.returncode == 0:
+                                sys.stdout.write('[POST-TOOL L3.11] Auto-commit enforcer executed successfully\n')
+                            else:
+                                sys.stdout.write('[POST-TOOL L3.11] Auto-commit: no changes to commit or skipped\n')
+                            sys.stdout.flush()
+                    except Exception:
+                        pass  # Never block on auto-commit
+
                     # BUILD VALIDATION: Compile check on task completion
                     try:
                         script_dir = os.path.dirname(os.path.abspath(__file__))
