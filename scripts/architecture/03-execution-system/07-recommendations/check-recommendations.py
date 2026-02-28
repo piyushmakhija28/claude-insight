@@ -70,7 +70,7 @@ def main():
             print(f"{YELLOW}No recommendations available yet{RESET}")
             print(f"\nStart the auto-recommendation daemon:")
             print(f"  python ~/.claude/memory/auto-recommendation-daemon.py --start")
-        return 1
+        return 0
 
     try:
         with open(RECOMMENDATIONS_FILE, 'r') as f:

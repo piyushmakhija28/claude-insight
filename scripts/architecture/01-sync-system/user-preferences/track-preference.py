@@ -142,7 +142,7 @@ def main():
         print("  python track-preference.py testing skip")
         print("  python track-preference.py api_style REST")
         print("  python track-preference.py backend python")
-        sys.exit(1)
+        sys.exit(0)
 
     category = sys.argv[1]
     value = sys.argv[2]

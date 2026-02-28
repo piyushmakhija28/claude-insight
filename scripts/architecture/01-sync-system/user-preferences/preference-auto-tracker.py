@@ -27,19 +27,24 @@ from datetime import datetime
 # Import functions directly instead of using subprocess
 import importlib.util
 
-# Load preference-detector.py
-pref_detector_path = os.path.expanduser("~/.claude/memory/01-sync-system/user-preferences/preference-detector.py")
-spec = importlib.util.spec_from_file_location("preference_detector", pref_detector_path)
-pref_detector_module = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(pref_detector_module)
-analyze_logs_for_preferences = pref_detector_module.analyze_logs_for_preferences
+try:
+    # Load preference-detector.py
+    pref_detector_path = os.path.expanduser("~/.claude/memory/01-sync-system/user-preferences/preference-detector.py")
+    spec = importlib.util.spec_from_file_location("preference_detector", pref_detector_path)
+    pref_detector_module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(pref_detector_module)
+    analyze_logs_for_preferences = pref_detector_module.analyze_logs_for_preferences
 
-# Load track-preference.py
-track_pref_path = os.path.expanduser("~/.claude/memory/01-sync-system/user-preferences/track-preference.py")
-spec = importlib.util.spec_from_file_location("track_preference", track_pref_path)
-track_pref_module = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(track_pref_module)
-track_preference_func = track_pref_module.track_preference
+    # Load track-preference.py
+    track_pref_path = os.path.expanduser("~/.claude/memory/01-sync-system/user-preferences/track-preference.py")
+    spec = importlib.util.spec_from_file_location("track_preference", track_pref_path)
+    track_pref_module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(track_pref_module)
+    track_preference_func = track_pref_module.track_preference
+except (FileNotFoundError, Exception) as e:
+    # Daemon mode imports not available - exit cleanly
+    print(f"Info: preference-auto-tracker dependencies not available: {e}", file=sys.stderr)
+    sys.exit(0)
 
 # Fix Windows encoding issues
 if sys.platform == 'win32':

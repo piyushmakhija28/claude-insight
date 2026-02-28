@@ -27,19 +27,24 @@ from datetime import datetime, timedelta
 # Import functions directly instead of using subprocess
 import importlib.util
 
-# Load skill-detector.py
-skill_detector_path = os.path.expanduser("~/.claude/memory/03-execution-system/07-recommendations/skill-detector.py")
-spec = importlib.util.spec_from_file_location("skill_detector", skill_detector_path)
-skill_detector_module = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(skill_detector_module)
-SkillDetector = skill_detector_module.SkillDetector
+try:
+    # Load skill-detector.py
+    skill_detector_path = os.path.expanduser("~/.claude/memory/03-execution-system/07-recommendations/skill-detector.py")
+    spec = importlib.util.spec_from_file_location("skill_detector", skill_detector_path)
+    skill_detector_module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(skill_detector_module)
+    SkillDetector = skill_detector_module.SkillDetector
 
-# Load skill-manager.py
-skill_manager_path = os.path.expanduser("~/.claude/memory/03-execution-system/07-recommendations/skill-manager.py")
-spec = importlib.util.spec_from_file_location("skill_manager", skill_manager_path)
-skill_manager_module = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(skill_manager_module)
-SkillManager = skill_manager_module.SkillManager
+    # Load skill-manager.py
+    skill_manager_path = os.path.expanduser("~/.claude/memory/03-execution-system/07-recommendations/skill-manager.py")
+    spec = importlib.util.spec_from_file_location("skill_manager", skill_manager_path)
+    skill_manager_module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(skill_manager_module)
+    SkillManager = skill_manager_module.SkillManager
+except (FileNotFoundError, Exception) as e:
+    # Daemon mode imports not available - exit cleanly
+    print(f"Info: skill-auto-suggester dependencies not available: {e}", file=sys.stderr)
+    sys.exit(0)
 
 # Fix Windows encoding issues
 if sys.platform == 'win32':

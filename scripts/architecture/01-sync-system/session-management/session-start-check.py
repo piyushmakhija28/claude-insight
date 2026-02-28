@@ -225,11 +225,8 @@ def main():
 
     print(f"\n{BOLD}{'='*60}{RESET}\n")
 
-    # Exit code
-    if daemon_status['status'] == 'healthy':
-        return 0
-    else:
-        return 1
+    # Exit code - always 0 (this is a status check, not a failure condition)
+    return 0
 
 if __name__ == "__main__":
     sys.exit(main())

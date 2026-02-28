@@ -27,12 +27,37 @@ import json
 from datetime import datetime
 from pathlib import Path
 
-# Add utilities to path for subprocess_utils import
-import sys
 MEMORY_DIR = Path.home() / ".claude" / "memory"
-sys.path.insert(0, str(MEMORY_DIR / "utilities"))
 
-from subprocess_utils import run_git_command, run_system_command
+
+def run_git_command(args, timeout=30, cwd=None):
+    """Run a git command and return the result"""
+    try:
+        return subprocess.run(
+            ['git'] + args,
+            capture_output=True, text=True, timeout=timeout,
+            cwd=cwd
+        )
+    except Exception as e:
+        class _R:
+            returncode = 1
+            stdout = ''
+            stderr = str(e)
+        return _R()
+
+
+def run_system_command(cmd, timeout=30):
+    """Run a system command and return the result"""
+    try:
+        return subprocess.run(
+            cmd, capture_output=True, text=True, timeout=timeout, shell=True
+        )
+    except Exception as e:
+        class _R:
+            returncode = 1
+            stdout = ''
+            stderr = str(e)
+        return _R()
 
 # Fix Windows encoding issues
 if sys.platform == 'win32':
@@ -55,7 +80,7 @@ def check_git_repo(project_dir):
     """Check if directory is a git repo"""
     try:
         result = run_git_command(["rev-parse", "--git-dir"], cwd=project_dir, timeout=5)
-        return result['success']
+        return result.returncode == 0
     except:
         return False
 
@@ -169,7 +194,7 @@ def stage_files(project_dir, git_status):
     # Stage modified files (not untracked)
     try:
         result = run_git_command(["add", "-u"], cwd=project_dir, timeout=10)
-        return result['success']
+        return result.returncode == 0
     except Exception as e:
         print(f"Error staging files: {e}", file=sys.stderr)
         return False
@@ -186,12 +211,12 @@ def create_commit(project_dir, message, dry_run=False):
     try:
         result = run_git_command(["commit", "-m", message], cwd=project_dir, timeout=30)
 
-        if result['success']:
+        if result.returncode == 0:
             print("\n[CHECK] Commit created successfully!")
-            print(result['stdout'])
+            print(result.stdout)
             return True
         else:
-            print(f"\n[CROSS] Commit failed: {result['stderr']}", file=sys.stderr)
+            print(f"\n[CROSS] Commit failed: {result.stderr}", file=sys.stderr)
             return False
 
     except Exception as e:
@@ -207,12 +232,12 @@ def push_changes(project_dir, dry_run=False):
     try:
         result = run_git_command(["push"], cwd=project_dir, timeout=60)
 
-        if result['success']:
+        if result.returncode == 0:
             print("\n[CHECK] Pushed to remote!")
-            print(result['stdout'])
+            print(result.stdout)
             return True
         else:
-            print(f"\n[WARNING]️ Push failed: {result['stderr']}", file=sys.stderr)
+            print(f"\n[WARNING]️ Push failed: {result.stderr}", file=sys.stderr)
             return False
 
     except Exception as e:
