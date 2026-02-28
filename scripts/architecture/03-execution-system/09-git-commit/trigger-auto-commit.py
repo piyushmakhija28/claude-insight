@@ -169,6 +169,8 @@ def main():
         help='Do not push to remote (commit only)'
     )
 
+    if len(sys.argv) < 2:
+        sys.exit(0)
     args = parser.parse_args()
 
     # Default to current directory

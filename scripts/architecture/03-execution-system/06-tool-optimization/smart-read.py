@@ -110,7 +110,7 @@ def main():
         print("\nExamples:")
         print("  python smart-read.py /path/to/file.java")
         print("  python smart-read.py C:\\Users\\user\\file.ts")
-        sys.exit(1)
+        sys.exit(0)
 
     filepath = sys.argv[1]
     result = analyze_file(filepath)

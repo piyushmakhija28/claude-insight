@@ -253,6 +253,8 @@ def main():
     parser.add_argument('--stats', action='store_true', help='Show cache stats')
     parser.add_argument('--test-cache-hit', action='store_true', help='Test cache hit')
 
+    if len(sys.argv) < 2:
+        sys.exit(0)
     args = parser.parse_args()
 
     cache = ContextCache()

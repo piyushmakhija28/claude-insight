@@ -126,6 +126,8 @@ def main():
     parser.add_argument('--purpose', default='general',
                        help='Purpose: structure, recent, errors, imports, function, specific_key, section')
 
+    if len(sys.argv) < 2:
+        sys.exit(0)
     args = parser.parse_args()
 
     result = optimize_read(args.file, args.purpose)

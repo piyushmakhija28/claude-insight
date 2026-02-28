@@ -158,6 +158,8 @@ if __name__ == '__main__':
     parser.add_argument('--scan-dir', help='Scan directory for Python files with Unicode')
     parser.add_argument('--no-backup', action='store_true', help='Skip backup when fixing')
 
+    if len(sys.argv) < 2:
+        sys.exit(0)
     args = parser.parse_args()
 
     if args.fix:

@@ -106,6 +106,8 @@ def main():
     import argparse
     parser = argparse.ArgumentParser(description="Task/Phase enforcement")
     parser.add_argument('--analyze', type=str, help='Analyze task description')
+    if len(sys.argv) < 2:
+        sys.exit(0)
     args = parser.parse_args()
     
     if args.analyze:

@@ -351,6 +351,8 @@ def main():
     parser.add_argument('--task-info', required=True, help='Task information (JSON)')
     parser.add_argument('--dry-run', action='store_true', help='Dry run - no execution')
 
+    if len(sys.argv) < 2:
+        sys.exit(0)
     args = parser.parse_args()
 
     try:

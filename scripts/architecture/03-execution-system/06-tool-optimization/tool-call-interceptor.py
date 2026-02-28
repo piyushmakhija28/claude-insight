@@ -341,6 +341,8 @@ def main():
     parser.add_argument('--tool', required=True, help='Tool name')
     parser.add_argument('--params', required=True, help='Tool parameters (JSON)')
 
+    if len(sys.argv) < 2:
+        sys.exit(0)
     args = parser.parse_args()
 
     try:

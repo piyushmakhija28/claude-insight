@@ -298,6 +298,8 @@ def main():
     parser.add_argument('message', nargs='*', help='User message')
     parser.add_argument('--test', action='store_true', help='Test mode - show output only')
 
+    if len(sys.argv) < 2:
+        sys.exit(0)
     args = parser.parse_args()
 
     if not args.message:

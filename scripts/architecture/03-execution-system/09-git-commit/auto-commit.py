@@ -322,6 +322,8 @@ def main():
         help='Dry run (show what would happen)'
     )
 
+    if len(sys.argv) < 2:
+        sys.exit(0)
     args = parser.parse_args()
 
     # Default to current directory

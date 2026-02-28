@@ -377,7 +377,7 @@ def main():
         print("  python auto-skill-agent-selector.py task_type complexity.json prompt.yaml")
         print("\nExample:")
         print("  python auto-skill-agent-selector.py 'API Creation' complexity.json structured_prompt.yaml")
-        sys.exit(1)
+        sys.exit(0)
 
     task_type = sys.argv[1]
 

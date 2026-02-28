@@ -161,6 +161,8 @@ def main():
     parser.add_argument('--show-methods', action='store_true',
                        help='Show method signatures')
 
+    if len(sys.argv) < 2:
+        sys.exit(0)
     args = parser.parse_args()
 
     result = navigate_code(args.file, args.show_methods)

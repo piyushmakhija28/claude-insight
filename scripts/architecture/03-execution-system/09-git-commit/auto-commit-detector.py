@@ -350,6 +350,8 @@ def main():
         help='Output as JSON'
     )
 
+    if len(sys.argv) < 2:
+        sys.exit(0)
     args = parser.parse_args()
 
     # Default to current directory

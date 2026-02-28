@@ -170,6 +170,8 @@ def main():
         help='Simulate context percentage for testing (0-100)'
     )
 
+    if len(sys.argv) < 2:
+        sys.exit(0)
     args = parser.parse_args()
 
     # Simulate context percentage (in real usage, this would come from Claude Code)

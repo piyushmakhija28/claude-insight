@@ -233,6 +233,8 @@ def main():
     parser.add_argument('--init', action='store_true', help='Initialize enforcer')
     parser.add_argument('--test', action='store_true', help='Test model selection')
 
+    if len(sys.argv) < 2:
+        sys.exit(0)
     args = parser.parse_args()
 
     enforcer = ModelSelectionEnforcer()

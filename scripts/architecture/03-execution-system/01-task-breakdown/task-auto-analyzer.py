@@ -382,6 +382,8 @@ def main():
     parser = argparse.ArgumentParser(description='Task Auto-Analyzer (Phase 4)')
     parser.add_argument('message', nargs='+', help='User message')
 
+    if len(sys.argv) < 2:
+        sys.exit(0)
     args = parser.parse_args()
 
     user_message = ' '.join(args.message)

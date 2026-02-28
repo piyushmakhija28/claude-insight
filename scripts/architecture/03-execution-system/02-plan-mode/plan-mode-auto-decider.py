@@ -270,6 +270,8 @@ def main():
     parser = argparse.ArgumentParser(description='Plan Mode Auto-Decider (Phase 4)')
     parser.add_argument('--task-info', required=True, help='Task information (JSON)')
 
+    if len(sys.argv) < 2:
+        sys.exit(0)
     args = parser.parse_args()
 
     try:

@@ -269,7 +269,7 @@ def main():
         print("  python skill-detector.py --list")
         print("  python skill-detector.py --search 'keyword'")
         print("  python skill-detector.py --used 'skill-id'")
-        sys.exit(1)
+        sys.exit(0)
 
     command = sys.argv[1]
 
@@ -279,7 +279,7 @@ def main():
     elif command == '--search':
         if len(sys.argv) < 3:
             print("Error: --search requires a query")
-            sys.exit(1)
+            sys.exit(0)
 
         query = sys.argv[2]
         results = detector.search_skills(query)
@@ -296,7 +296,7 @@ def main():
     elif command == '--used':
         if len(sys.argv) < 3:
             print("Error: --used requires a skill ID")
-            sys.exit(1)
+            sys.exit(0)
 
         skill_id = sys.argv[2]
         detector.update_usage(skill_id)

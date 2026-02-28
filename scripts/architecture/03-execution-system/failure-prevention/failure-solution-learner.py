@@ -234,6 +234,8 @@ def main():
     parser.add_argument('--stats', action='store_true', help='Show learning statistics')
     parser.add_argument('--test', action='store_true', help='Test learning system')
 
+    if len(sys.argv) < 2:
+        sys.exit(0)
     args = parser.parse_args()
 
     learner = FailureSolutionLearner()

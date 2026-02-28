@@ -174,6 +174,8 @@ def main():
     parser.add_argument('--params', help='Tool parameters as JSON')
     parser.add_argument('--test-large-file', action='store_true', help='Test with large file')
 
+    if len(sys.argv) < 2:
+        sys.exit(0)
     args = parser.parse_args()
 
     if args.test_large_file:

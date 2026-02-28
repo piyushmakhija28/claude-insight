@@ -211,6 +211,8 @@ def main():
     parser.add_argument('--with-solutions', action='store_true', help='Include solution suggestions')
     parser.add_argument('--output', help='Output file for patterns')
 
+    if len(sys.argv) < 2:
+        sys.exit(0)
     args = parser.parse_args()
 
     extractor = FailurePatternExtractor()

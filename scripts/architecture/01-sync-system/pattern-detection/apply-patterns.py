@@ -170,7 +170,7 @@ def main():
         print("  python apply-patterns.py authentication")
         print("  python apply-patterns.py 'rest api'")
         print("  python apply-patterns.py database")
-        sys.exit(1)
+        sys.exit(0)
 
     topic = ' '.join(sys.argv[1:])
     apply_patterns(topic)

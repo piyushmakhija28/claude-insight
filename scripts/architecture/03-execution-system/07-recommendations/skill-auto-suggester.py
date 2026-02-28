@@ -271,6 +271,8 @@ def main():
         help='Check daemon status'
     )
 
+    if len(sys.argv) < 2:
+        sys.exit(0)
     args = parser.parse_args()
 
     # Handle --stop

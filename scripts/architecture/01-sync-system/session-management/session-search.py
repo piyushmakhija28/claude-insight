@@ -197,6 +197,8 @@ Examples:
     parser.add_argument('--date-to', help='End date (YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS)')
     parser.add_argument('--purpose', help='Keyword in session purpose')
 
+    if len(sys.argv) < 2:
+        sys.exit(0)
     args = parser.parse_args()
 
     # Check if any search criteria provided

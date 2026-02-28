@@ -267,6 +267,8 @@ def main():
         help='Show summary without saving'
     )
 
+    if len(sys.argv) < 2:
+        sys.exit(0)
     args = parser.parse_args()
 
     print("\n" + "=" * 70)

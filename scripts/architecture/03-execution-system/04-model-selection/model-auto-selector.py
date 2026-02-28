@@ -403,6 +403,8 @@ def main():
     parser.add_argument('--estimated-tokens', type=int, default=10000, help='Estimated token usage')
     parser.add_argument('--no-override', action='store_true', help='Disable override option')
 
+    if len(sys.argv) < 2:
+        sys.exit(0)
     args = parser.parse_args()
 
     try:

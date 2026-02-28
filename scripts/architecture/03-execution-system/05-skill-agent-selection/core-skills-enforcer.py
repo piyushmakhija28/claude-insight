@@ -237,6 +237,8 @@ def main():
     parser.add_argument('--stats', action='store_true', help='Show statistics')
     parser.add_argument('--test', action='store_true', help='Test enforcement')
 
+    if len(sys.argv) < 2:
+        sys.exit(0)
     args = parser.parse_args()
 
     enforcer = CoreSkillsEnforcer()

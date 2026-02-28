@@ -266,6 +266,8 @@ def main():
     parser.add_argument('--tool', required=True, choices=['Read', 'Grep', 'Glob'])
     parser.add_argument('--params', required=True, help='Tool parameters as JSON')
 
+    if len(sys.argv) < 2:
+        sys.exit(0)
     args = parser.parse_args()
 
     try:

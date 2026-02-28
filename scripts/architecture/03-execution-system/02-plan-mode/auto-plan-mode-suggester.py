@@ -406,7 +406,7 @@ def main():
         print("  python auto-plan-mode-suggester.py 8")
         print("  python auto-plan-mode-suggester.py 8 'Create user service'")
         print("  python auto-plan-mode-suggester.py task_breakdown.json structured_prompt.yaml")
-        sys.exit(1)
+        sys.exit(0)
 
     # Load complexity analysis (can be number or JSON file)
     complexity_arg = sys.argv[1]

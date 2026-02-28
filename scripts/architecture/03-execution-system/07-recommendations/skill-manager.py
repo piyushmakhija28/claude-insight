@@ -341,6 +341,8 @@ def main():
     import_parser = subparsers.add_parser('import', help='Import a skill')
     import_parser.add_argument('--file', required=True, help='Import file')
 
+    if len(sys.argv) < 2:
+        sys.exit(0)
     args = parser.parse_args()
 
     if not args.command:

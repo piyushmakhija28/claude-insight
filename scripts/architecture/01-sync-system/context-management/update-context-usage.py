@@ -181,6 +181,8 @@ def main():
         help='Show current tracked usage'
     )
 
+    if len(sys.argv) < 2:
+        sys.exit(0)
     args = parser.parse_args()
 
     # Show current usage

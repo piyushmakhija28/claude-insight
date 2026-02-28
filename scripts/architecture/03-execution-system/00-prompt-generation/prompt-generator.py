@@ -972,7 +972,7 @@ def main():
         print("Usage: python prompt-generator.py 'user message'")
         print("\nExample:")
         print("  python prompt-generator.py 'Create a product API with CRUD operations'")
-        sys.exit(1)
+        sys.exit(0)
 
     user_message = " ".join(sys.argv[1:])
 

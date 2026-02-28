@@ -247,6 +247,8 @@ def main():
     parser.add_argument('--test-prevention', action='store_true', help='Test failure prevention')
     parser.add_argument('--check-all', action='store_true', help='Load KB and run all checks (used by 3-level-flow)')
 
+    if len(sys.argv) < 2:
+        sys.exit(0)
     args = parser.parse_args()
 
     checker = PreExecutionChecker()

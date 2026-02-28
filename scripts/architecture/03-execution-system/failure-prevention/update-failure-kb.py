@@ -284,7 +284,7 @@ if __name__ == "__main__":
         print("  Log failure:    python update-failure-kb.py PROJECT_NAME log SIGNATURE DETAILS [SOLUTION]")
         print("  Log prevention: python update-failure-kb.py PROJECT_NAME prevent SIGNATURE SUCCESS")
         print("  Check pattern:  python update-failure-kb.py PROJECT_NAME check SIGNATURE")
-        sys.exit(1)
+        sys.exit(0)
 
     project = sys.argv[1]
     action = sys.argv[2]

@@ -156,6 +156,8 @@ def main():
                        choices=['auto', 'sandwich', 'ast'],
                        help='Summarization strategy')
 
+    if len(sys.argv) < 2:
+        sys.exit(0)
     args = parser.parse_args()
 
     # Auto-detect strategy
