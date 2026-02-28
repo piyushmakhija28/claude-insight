@@ -56,9 +56,7 @@ class AutoFixEnforcer:
             self.scripts_path = Path.home() / '.claude' / 'scripts'
             self.memory_path = Path.home() / '.claude' / 'memory'
 
-        # Fallback to memory/current for backwards compatibility
-        if not self.scripts_path.exists():
-            self.scripts_path = self.memory_path / 'current'
+        # No fallback needed - scripts should always be in ~/.claude/scripts/
         self.failures = []
         self.auto_fixed = []
         self.manual_fixes_needed = []
@@ -183,7 +181,7 @@ class AutoFixEnforcer:
                     'auto_fixable': True,
                     'fix_instructions': [
                         'Run: export PYTHONIOENCODING=utf-8',
-                        'Run: bash ~/.claude/memory/current/session-start.sh'
+                        'Run: bash ~/.claude/scripts/session-start.sh'
                     ]
                 })
                 return False
@@ -202,7 +200,7 @@ class AutoFixEnforcer:
                     'auto_fixable': True,
                     'fix_instructions': [
                         'Run: export PYTHONIOENCODING=utf-8',
-                        'Run: bash ~/.claude/memory/current/session-start.sh'
+                        'Run: bash ~/.claude/scripts/session-start.sh'
                     ]
                 })
                 return False

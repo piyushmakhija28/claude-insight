@@ -100,9 +100,9 @@ class ArchitectureModuleMonitor:
     def _find_source_arch_dir(self) -> Path:
         """Try to find the source repo architecture directory."""
         candidates = [
+            Path.home() / '.claude' / 'scripts' / 'architecture',
             Path.home() / 'Documents' / 'workspace-spring-tool-suite-4-4.27.0-new' / 'claude-insight' / 'scripts' / 'architecture',
             Path.home() / 'claude-insight' / 'scripts' / 'architecture',
-            Path('/c/Users/techd/Documents/workspace-spring-tool-suite-4-4.27.0-new/claude-insight/scripts/architecture'),
         ]
         for c in candidates:
             if c.exists():

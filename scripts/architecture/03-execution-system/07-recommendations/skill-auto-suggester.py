@@ -29,14 +29,14 @@ import importlib.util
 
 try:
     # Load skill-detector.py
-    skill_detector_path = os.path.expanduser("~/.claude/memory/03-execution-system/07-recommendations/skill-detector.py")
+    skill_detector_path = os.path.expanduser("~/.claude/scripts/architecture/03-execution-system/07-recommendations/skill-detector.py")
     spec = importlib.util.spec_from_file_location("skill_detector", skill_detector_path)
     skill_detector_module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(skill_detector_module)
     SkillDetector = skill_detector_module.SkillDetector
 
     # Load skill-manager.py
-    skill_manager_path = os.path.expanduser("~/.claude/memory/03-execution-system/07-recommendations/skill-manager.py")
+    skill_manager_path = os.path.expanduser("~/.claude/scripts/architecture/03-execution-system/07-recommendations/skill-manager.py")
     spec = importlib.util.spec_from_file_location("skill_manager", skill_manager_path)
     skill_manager_module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(skill_manager_module)

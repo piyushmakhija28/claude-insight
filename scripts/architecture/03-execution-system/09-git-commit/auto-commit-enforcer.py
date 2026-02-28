@@ -69,9 +69,9 @@ def find_git_repos_with_changes():
     """Find all git repos in workspace with uncommitted changes"""
     repos_with_changes = []
     
-    # Common project locations
-    workspace = os.path.expanduser("~/Documents/workspace-spring-tool-suite-4-4.27.0-new")
-    
+    # Detect workspace from environment or current working directory
+    workspace = os.environ.get("CLAUDE_WORKSPACE_DIR", os.getcwd())
+
     if not os.path.exists(workspace):
         return repos_with_changes
     

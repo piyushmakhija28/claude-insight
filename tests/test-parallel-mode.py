@@ -21,9 +21,9 @@ import json
 from pathlib import Path
 
 HOME = Path.home()
-CURRENT_DIR = HOME / '.claude' / 'memory' / 'current'
+CURRENT_DIR = HOME / '.claude' / 'scripts'
 DOCS_DIR = HOME / '.claude' / 'memory' / 'docs'
-MANIFEST = CURRENT_DIR / 'MANIFEST.md'
+MANIFEST = CURRENT_DIR / 'MANIFEST.md'  # Legacy - may not exist in new architecture
 SETTINGS = HOME / '.claude' / 'settings.json'
 
 
@@ -140,7 +140,7 @@ if __name__ == '__main__':
         print('\nQuick start:')
         print('  1. Run parallel agents: Task(..., run_in_background=True)')
         print('  2. System auto-detects and enables lightweight mode')
-        print('  3. Or manually: python ~/.claude/memory/current/switch-hook-mode.py lightweight')
+        print('  3. Or manually: python ~/.claude/scripts/switch-hook-mode.py lightweight')
         sys.exit(0)
     else:
         print('[NOTICE] Some test groups need attention')
