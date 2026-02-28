@@ -288,17 +288,64 @@ def main():
             'progress_delta': delta,
         }
 
-        # Add file path info for file operations (useful for tracking what was done)
+        # v2.1.0: Rich activity data per tool type (for narrative session summaries)
+        inp = tool_input or {}
+
         if tool_name in ('Read', 'Write', 'Edit', 'NotebookEdit'):
-            file_path = (
-                (tool_input or {}).get('file_path', '') or
-                (tool_input or {}).get('notebook_path', '') or
-                ''
-            )
+            file_path = inp.get('file_path', '') or inp.get('notebook_path', '') or ''
             if file_path:
-                # Shorten path for log readability
                 parts = file_path.replace('\\', '/').split('/')
                 entry['file'] = '/'.join(parts[-3:]) if len(parts) > 3 else file_path
+
+        if tool_name == 'Bash':
+            cmd = inp.get('command', '')
+            if cmd:
+                entry['command'] = cmd[:200]
+            desc = inp.get('description', '')
+            if desc:
+                entry['desc'] = desc[:150]
+
+        elif tool_name == 'Edit':
+            old_s = inp.get('old_string', '')
+            new_s = inp.get('new_string', '')
+            if old_s or new_s:
+                entry['edit_size'] = len(new_s) - len(old_s)
+                # Capture a brief hint of what changed
+                if old_s:
+                    entry['old_hint'] = old_s[:80].replace('\n', ' ').strip()
+                if new_s:
+                    entry['new_hint'] = new_s[:80].replace('\n', ' ').strip()
+
+        elif tool_name == 'Write':
+            content = inp.get('content', '')
+            if content:
+                entry['content_lines'] = content.count('\n') + 1
+
+        elif tool_name == 'Grep':
+            entry['pattern'] = inp.get('pattern', '')[:100]
+            if inp.get('path'):
+                parts = inp['path'].replace('\\', '/').split('/')
+                entry['search_path'] = '/'.join(parts[-2:]) if len(parts) > 2 else inp['path']
+
+        elif tool_name == 'Glob':
+            entry['pattern'] = inp.get('pattern', '')[:100]
+
+        elif tool_name == 'Agent':
+            entry['desc'] = inp.get('description', '')[:150]
+            entry['agent_type'] = inp.get('subagent_type', '')
+
+        elif tool_name == 'TaskCreate':
+            entry['task_subject'] = inp.get('subject', '')[:150]
+
+        elif tool_name == 'TaskUpdate':
+            entry['task_status'] = inp.get('status', '')
+            entry['task_id'] = inp.get('taskId', '')
+
+        elif tool_name == 'Skill':
+            entry['skill_name'] = inp.get('skill', '')
+
+        elif tool_name in ('WebSearch', 'WebFetch'):
+            entry['query'] = inp.get('query', inp.get('url', ''))[:150]
 
         # Log the entry
         log_tool_entry(entry)

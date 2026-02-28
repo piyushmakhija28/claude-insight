@@ -2155,6 +2155,8 @@ Work to complete: Execute phase {i} of the identified work breakdown.
     if summary_script.exists() and session_id and session_id != 'UNKNOWN':
         try:
             cwd_str = hook_data.get('cwd', '') or os.getcwd()
+            # v2.0.0: Pass additional fields for comprehensive summary
+            supp_skills_str = ','.join(supplementary_skills) if supplementary_skills else ''
             subprocess.run(
                 [sys.executable, str(summary_script), 'accumulate',
                  '--session', session_id,
@@ -2163,7 +2165,12 @@ Work to complete: Execute phase {i} of the identified work breakdown.
                  '--skill', skill_agent_name or '',
                  '--complexity', str(adj_complexity),
                  '--model', selected_model or '',
-                 '--cwd', cwd_str],
+                 '--cwd', cwd_str,
+                 '--plan-mode', str(plan_required).lower(),
+                 '--context-pct', str(int(context_pct2)),
+                 '--supplementary-skills', supp_skills_str,
+                 '--standards-count', str(standards_count),
+                 '--rules-count', str(rules_count)],
                 capture_output=True, text=True,
                 encoding='utf-8', errors='replace', timeout=5
             )

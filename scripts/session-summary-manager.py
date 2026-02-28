@@ -1,14 +1,25 @@
 #!/usr/bin/env python3
 """
 Script Name: session-summary-manager.py
-Version: 1.0.0
-Last Modified: 2026-02-23
+Version: 2.0.0
+Last Modified: 2026-02-28
 Description: Session Summary Manager - accumulates per-request data and generates
-             human-readable summaries for each session.
+             COMPREHENSIVE human-readable summaries for each session.
 
-             Every request adds an entry to session-summary.json (structured).
-             On session close (/clear), generates session-summary.md (readable).
-             Chain context reads these summaries for rich context continuity.
+             v2.0.0: Major upgrade - comprehensive summaries with:
+               - Tool usage statistics (from session-progress.json + tool-tracker.jsonl)
+               - Files modified/read tracking (from tool-tracker.jsonl)
+               - Session duration calculation
+               - Context usage tracking (start/end/peak)
+               - Pipeline decision insights (from flow-trace.json)
+               - Average/max complexity stats
+               - Supplementary skills tracking
+               - Plan mode usage tracking
+               - Git activity tracking
+               - Session insights auto-generation
+               - Rich markdown with tables and sections
+
+             v1.0.0: Basic summary (prompt, type, skill, model, complexity only)
 
 Usage:
     # Accumulate data for current request (called by 3-level-flow.py)
@@ -19,16 +30,18 @@ Usage:
         --skill "java-spring-boot-microservices" \
         --complexity 7 \
         --model "SONNET" \
-        --cwd "/path/to/project"
+        --cwd "/path/to/project" \
+        --plan-mode "false" \
+        --context-pct 45 \
+        --supplementary-skills "docker,kubernetes" \
+        --standards-count 14 \
+        --rules-count 89
 
     # Finalize summary on session close (called by clear-session-handler.py)
     python session-summary-manager.py finalize --session SESSION-ID
 
     # Read summary for a session
     python session-summary-manager.py read --session SESSION-ID
-
-    # Read summary as plain text (for chain context)
-    python session-summary-manager.py read --session SESSION-ID --format text
 
 Hook Type: Utility (called by 3-level-flow.py and clear-session-handler.py)
 Windows-Safe: No Unicode chars (ASCII only, cp1252 compatible)
@@ -92,10 +105,12 @@ def summary_md_path(session_id):
 # =============================================================================
 
 def accumulate(session_id, prompt='', task_type='', skill='', complexity=0,
-               model='', cwd=''):
+               model='', cwd='', plan_mode='false', context_pct=0,
+               supplementary_skills='', standards_count=0, rules_count=0):
     """
     Add a request entry to the session's accumulated summary.
     Called by 3-level-flow.py after every user message.
+    v2.0.0: Now captures plan_mode, context_pct, supplementary_skills, standards, rules
     """
     if not session_id:
         return False
@@ -114,7 +129,7 @@ def accumulate(session_id, prompt='', task_type='', skill='', complexity=0,
     else:
         data = _new_summary(session_id)
 
-    # Add this request as an entry
+    # Add this request as an entry (v2.0.0: enhanced fields)
     entry = {
         "timestamp": datetime.now().isoformat(),
         "prompt": prompt[:500],
@@ -123,6 +138,9 @@ def accumulate(session_id, prompt='', task_type='', skill='', complexity=0,
         "complexity": complexity,
         "model": model,
         "cwd": cwd,
+        "plan_mode": str(plan_mode).lower() == 'true',
+        "context_pct": context_pct,
+        "supplementary_skills": [s.strip() for s in supplementary_skills.split(',') if s.strip()] if supplementary_skills else [],
     }
 
     data["requests"].append(entry)
@@ -137,17 +155,45 @@ def accumulate(session_id, prompt='', task_type='', skill='', complexity=0,
     if model and model not in data["models_used"]:
         data["models_used"].append(model)
 
+    # Track supplementary skills (v2.0.0)
+    if supplementary_skills:
+        for s in supplementary_skills.split(','):
+            s = s.strip()
+            if s and s not in data.get("all_supplementary_skills", []):
+                data.setdefault("all_supplementary_skills", []).append(s)
+
+    # Track plan mode usage (v2.0.0)
+    if str(plan_mode).lower() == 'true':
+        data["plan_mode_count"] = data.get("plan_mode_count", 0) + 1
+
+    # Track context usage over time (v2.0.0)
+    try:
+        ctx = int(context_pct)
+        ctx_history = data.setdefault("context_history", [])
+        ctx_history.append(ctx)
+        data["peak_context_pct"] = max(data.get("peak_context_pct", 0), ctx)
+    except (ValueError, TypeError):
+        pass
+
+    # Track standards/rules (v2.0.0)
+    try:
+        data["standards_count"] = int(standards_count)
+        data["rules_count"] = int(rules_count)
+    except (ValueError, TypeError):
+        pass
+
     # Extract project from cwd
     if cwd:
         project = _extract_project(cwd)
         if project and project not in data["projects_touched"]:
             data["projects_touched"].append(project)
 
-    # Track max complexity
+    # Track max and total complexity (v2.0.0: also track total for average)
     try:
         c = int(complexity)
         if c > data.get("max_complexity", 0):
             data["max_complexity"] = c
+        data["total_complexity"] = data.get("total_complexity", 0) + c
     except (ValueError, TypeError):
         pass
 
@@ -163,9 +209,9 @@ def accumulate(session_id, prompt='', task_type='', skill='', complexity=0,
 
 
 def _new_summary(session_id):
-    """Create a fresh summary structure"""
+    """Create a fresh summary structure (v2.0.0: enhanced fields)"""
     return {
-        "version": "1.0.0",
+        "version": "2.0.0",
         "session_id": session_id,
         "created_at": datetime.now().isoformat(),
         "last_updated": datetime.now().isoformat(),
@@ -173,10 +219,17 @@ def _new_summary(session_id):
         "request_count": 0,
         "requests": [],
         "skills_used": [],
+        "all_supplementary_skills": [],
         "task_types": [],
         "models_used": [],
         "projects_touched": [],
         "max_complexity": 0,
+        "total_complexity": 0,
+        "plan_mode_count": 0,
+        "peak_context_pct": 0,
+        "context_history": [],
+        "standards_count": 0,
+        "rules_count": 0,
         "summary_text": None,
     }
 
@@ -199,12 +252,360 @@ def _extract_project(cwd):
 
 
 # =============================================================================
+# WORK STORY - Narrative reconstruction from tool activity
+# =============================================================================
+
+def _build_work_stories(requests, tool_entries):
+    """
+    Build a narrative 'Work Story' for each user request.
+    Groups tool entries by request time window and reconstructs
+    what was investigated, planned, changed, and the outcome.
+
+    Returns list of story dicts, one per request.
+    """
+    if not requests:
+        return []
+
+    stories = []
+
+    # Parse request timestamps for time-window grouping
+    req_times = []
+    for req in requests:
+        ts_str = req.get("timestamp", "")
+        try:
+            req_times.append(datetime.fromisoformat(ts_str))
+        except Exception:
+            req_times.append(None)
+
+    # Parse tool entry timestamps
+    parsed_entries = []
+    for entry in tool_entries:
+        ts_str = entry.get("ts", "")
+        try:
+            parsed_entries.append((datetime.fromisoformat(ts_str), entry))
+        except Exception:
+            pass
+
+    # Assign tool entries to the request they belong to (by time window)
+    for i, req in enumerate(requests):
+        start_time = req_times[i]
+        # End time = next request's start, or far future
+        if i + 1 < len(req_times) and req_times[i + 1]:
+            end_time = req_times[i + 1]
+        else:
+            end_time = datetime(2099, 12, 31)
+
+        # Collect entries in this time window
+        req_entries = []
+        if start_time:
+            for entry_time, entry in parsed_entries:
+                if start_time <= entry_time < end_time:
+                    req_entries.append(entry)
+
+        # Build the story for this request
+        story = _analyze_request_activity(req, req_entries)
+        stories.append(story)
+
+    return stories
+
+
+def _analyze_request_activity(req, entries):
+    """
+    Analyze a single request's tool activity and produce a narrative story.
+
+    Returns a dict with:
+      - task: what was asked (from prompt)
+      - investigation: what was read/searched (findings)
+      - planning: tasks created, agents delegated
+      - changes: what was written/edited (the fix/implementation)
+      - commands: what was run (tests, builds, etc.)
+      - outcome: success/errors summary
+    """
+    prompt = req.get("prompt", "")[:300]
+    task_type = req.get("task_type", "")
+
+    # Categorize activities
+    investigation = []  # Read, Grep, Glob, WebSearch, WebFetch
+    planning = []       # TaskCreate, Agent, EnterPlanMode, Skill
+    changes = []        # Write, Edit
+    commands = []       # Bash
+    errors = []         # Any error entries
+
+    for e in entries:
+        tool = e.get("tool", "")
+        status = e.get("status", "success")
+        file_path = e.get("file", "")
+
+        if status == "error":
+            err_desc = f"{tool}"
+            if file_path:
+                err_desc += f" on `{file_path}`"
+            elif e.get("command"):
+                err_desc += f": `{e['command'][:60]}`"
+            errors.append(err_desc)
+
+        if tool == "Read":
+            if file_path:
+                investigation.append(f"Read `{file_path}`")
+
+        elif tool == "Grep":
+            pattern = e.get("pattern", "")
+            search_path = e.get("search_path", "")
+            if pattern:
+                desc = f"Searched for `{pattern}`"
+                if search_path:
+                    desc += f" in `{search_path}`"
+                investigation.append(desc)
+
+        elif tool == "Glob":
+            pattern = e.get("pattern", "")
+            if pattern:
+                investigation.append(f"Found files matching `{pattern}`")
+
+        elif tool in ("WebSearch", "WebFetch"):
+            query = e.get("query", "")
+            if query:
+                investigation.append(f"Web lookup: {query[:80]}")
+
+        elif tool == "Edit":
+            if file_path:
+                old_hint = e.get("old_hint", "")
+                new_hint = e.get("new_hint", "")
+                edit_size = e.get("edit_size", 0)
+                desc = f"Edited `{file_path}`"
+                if old_hint and new_hint:
+                    desc += f" (changed `{old_hint[:40]}...` -> `{new_hint[:40]}...`)"
+                elif edit_size > 0:
+                    desc += f" (+{edit_size} chars)"
+                changes.append(desc)
+
+        elif tool == "Write":
+            if file_path:
+                lines_count = e.get("content_lines", 0)
+                desc = f"Wrote `{file_path}`"
+                if lines_count:
+                    desc += f" ({lines_count} lines)"
+                changes.append(desc)
+
+        elif tool == "Bash":
+            cmd = e.get("command", "")
+            desc_text = e.get("desc", "")
+            if desc_text:
+                commands.append(desc_text[:100])
+            elif cmd:
+                # Clean up command for readability
+                cmd_short = cmd.strip()[:80]
+                commands.append(f"`{cmd_short}`")
+
+        elif tool == "TaskCreate":
+            subject = e.get("task_subject", "")
+            if subject:
+                planning.append(f"Created task: {subject}")
+
+        elif tool == "TaskUpdate":
+            task_status = e.get("task_status", "")
+            task_id = e.get("task_id", "")
+            if task_status == "completed":
+                planning.append(f"Completed task #{task_id}")
+            elif task_status == "in_progress":
+                planning.append(f"Started task #{task_id}")
+
+        elif tool == "Agent":
+            desc_text = e.get("desc", "")
+            agent_type = e.get("agent_type", "")
+            if desc_text:
+                planning.append(f"Delegated to {agent_type}: {desc_text}")
+            elif agent_type:
+                planning.append(f"Used {agent_type} agent")
+
+        elif tool == "Skill":
+            skill_name = e.get("skill_name", "")
+            if skill_name:
+                planning.append(f"Invoked skill: {skill_name}")
+
+    # Deduplicate (keep order)
+    investigation = _dedupe_list(investigation)
+    changes = _dedupe_list(changes)
+    commands = _dedupe_list(commands)
+
+    return {
+        "task": prompt,
+        "task_type": task_type,
+        "investigation": investigation,
+        "planning": planning,
+        "changes": changes,
+        "commands": commands,
+        "errors": errors,
+        "tool_count": len(entries),
+    }
+
+
+def _dedupe_list(items):
+    """Remove duplicates while preserving order"""
+    seen = set()
+    result = []
+    for item in items:
+        if item not in seen:
+            seen.add(item)
+            result.append(item)
+    return result
+
+
+# =============================================================================
+# DATA ENRICHMENT - Pull data from other sources on finalize
+# =============================================================================
+
+def _load_tool_stats(session_id):
+    """Load tool usage stats from session-progress.json"""
+    progress_file = LOGS_DIR / 'session-progress.json'
+    try:
+        if progress_file.exists():
+            with open(progress_file, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+            # Only use if it matches this session
+            if data.get('session_id', '') == session_id:
+                return {
+                    "tool_counts": data.get("tool_counts", {}),
+                    "total_progress": data.get("total_progress", 0),
+                    "content_chars": data.get("content_chars", 0),
+                    "tasks_completed": data.get("tasks_completed", 0),
+                    "errors_seen": data.get("errors_seen", 0),
+                    "context_estimate_pct": data.get("context_estimate_pct", 0),
+                    "modified_files_since_commit": data.get("modified_files_since_commit", []),
+                }
+    except Exception as e:
+        log_event(f"[WARN] Could not load tool stats: {e}")
+    return {}
+
+
+def _load_tool_tracker_entries(session_id):
+    """Load detailed tool usage from tool-tracker.jsonl for this session"""
+    tracker_file = LOGS_DIR / 'tool-tracker.jsonl'
+    entries = []
+    files_modified = []
+    files_read = []
+    error_entries = []
+
+    if not tracker_file.exists():
+        return entries, files_modified, files_read, error_entries
+
+    # Get session start time from session JSON
+    session_start = None
+    session_file = SESSIONS_DIR / f'{session_id}.json'
+    if session_file.exists():
+        try:
+            with open(session_file, 'r', encoding='utf-8') as f:
+                sess = json.load(f)
+            start_str = sess.get('start_time', '')
+            if start_str:
+                session_start = datetime.fromisoformat(start_str)
+        except Exception:
+            pass
+
+    try:
+        with open(tracker_file, 'r', encoding='utf-8') as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    entry = json.loads(line)
+                    # Filter entries by session time window
+                    if session_start:
+                        entry_ts = entry.get('ts', '')
+                        if entry_ts:
+                            try:
+                                entry_time = datetime.fromisoformat(entry_ts)
+                                if entry_time < session_start:
+                                    continue
+                            except Exception:
+                                continue
+
+                    entries.append(entry)
+
+                    # Track files
+                    file_path = entry.get('file', '')
+                    tool = entry.get('tool', '')
+                    status = entry.get('status', '')
+
+                    if file_path:
+                        if tool in ('Write', 'Edit', 'NotebookEdit') and status == 'success':
+                            if file_path not in files_modified:
+                                files_modified.append(file_path)
+                        elif tool == 'Read' and status == 'success':
+                            if file_path not in files_read:
+                                files_read.append(file_path)
+
+                    if status == 'error':
+                        error_entries.append(entry)
+
+                except Exception:
+                    continue
+    except Exception as e:
+        log_event(f"[WARN] Could not load tool tracker: {e}")
+
+    return entries, files_modified, files_read, error_entries
+
+
+def _load_flow_trace(session_id):
+    """Load flow-trace.json for pipeline decision data"""
+    flow_trace = session_log_dir(session_id) / 'flow-trace.json'
+    if not flow_trace.exists():
+        return {}
+    try:
+        with open(flow_trace, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except Exception:
+        return {}
+
+
+def _load_session_json(session_id):
+    """Load session metadata JSON"""
+    session_file = SESSIONS_DIR / f'{session_id}.json'
+    if not session_file.exists():
+        return {}
+    try:
+        with open(session_file, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except Exception:
+        return {}
+
+
+def _calculate_duration(created_at, last_updated):
+    """Calculate human-readable duration between two ISO timestamps"""
+    try:
+        start = datetime.fromisoformat(created_at)
+        end = datetime.fromisoformat(last_updated)
+        delta = end - start
+        total_seconds = int(delta.total_seconds())
+
+        if total_seconds < 0:
+            return "0s", 0
+
+        hours = total_seconds // 3600
+        minutes = (total_seconds % 3600) // 60
+        seconds = total_seconds % 60
+
+        parts = []
+        if hours > 0:
+            parts.append(f"{hours}h")
+        if minutes > 0:
+            parts.append(f"{minutes}m")
+        parts.append(f"{seconds}s")
+
+        return ' '.join(parts), total_seconds
+    except Exception:
+        return "unknown", 0
+
+
+# =============================================================================
 # FINALIZE - Called on session close by clear-session-handler.py
 # =============================================================================
 
 def finalize(session_id):
     """
-    Generate human-readable session-summary.md from accumulated data.
+    Generate comprehensive session-summary.md from accumulated data + external sources.
+    v2.0.0: Pulls from flow-trace.json, session-progress.json, tool-tracker.jsonl
     Called when session is closed (on /clear).
     """
     if not session_id:
@@ -224,6 +625,71 @@ def finalize(session_id):
             log_event(f"[ERROR] Failed to read summary JSON for {session_id}: {e}")
             return False
 
+    # === ENRICH DATA FROM EXTERNAL SOURCES (v2.0.0) ===
+
+    # 1. Tool usage stats from session-progress.json
+    tool_stats = _load_tool_stats(session_id)
+    if tool_stats:
+        data["tool_stats"] = tool_stats
+
+    # 2. Detailed tool entries + files from tool-tracker.jsonl
+    tool_entries, files_modified, files_read, error_entries = _load_tool_tracker_entries(session_id)
+    data["files_modified"] = files_modified
+    data["files_read"] = files_read
+    data["tool_entry_count"] = len(tool_entries)
+    data["error_count"] = len(error_entries)
+    if error_entries:
+        data["errors"] = [
+            {"ts": e.get("ts", ""), "tool": e.get("tool", ""), "file": e.get("file", "")}
+            for e in error_entries[:10]  # Keep last 10 errors max
+        ]
+
+    # 3. Flow trace decisions
+    flow_trace = _load_flow_trace(session_id)
+    if flow_trace:
+        final_decision = flow_trace.get("final_decision", {})
+        data["last_flow_decision"] = {
+            "task_type": final_decision.get("task_type", ""),
+            "complexity": final_decision.get("complexity", 0),
+            "model_selected": final_decision.get("model_selected", ""),
+            "model_reason": final_decision.get("model_reason", ""),
+            "skill_or_agent": final_decision.get("skill_or_agent", ""),
+            "supplementary_skills": final_decision.get("supplementary_skills", []),
+            "tech_stack": final_decision.get("tech_stack", []),
+            "execution_mode": final_decision.get("execution_mode", ""),
+            "task_count": final_decision.get("task_count", 0),
+            "standards_active": final_decision.get("standards_active", 0),
+            "rules_active": final_decision.get("rules_active", 0),
+        }
+        meta = flow_trace.get("meta", {})
+        data["flow_version"] = meta.get("flow_version", "")
+        data["flow_duration_ms"] = int(meta.get("duration_seconds", 0) * 1000)
+
+    # 4. Session metadata (duration, status)
+    session_json = _load_session_json(session_id)
+    if session_json:
+        data["session_description"] = session_json.get("description", "")
+        data["flow_runs"] = session_json.get("flow_runs", 0)
+
+    # 5. Calculate duration
+    duration_human, duration_seconds = _calculate_duration(
+        data.get("created_at", ""),
+        data.get("last_updated", "")
+    )
+    data["duration_human"] = duration_human
+    data["duration_seconds"] = duration_seconds
+
+    # 6. Calculate average complexity
+    req_count = data.get("request_count", 0)
+    total_complexity = data.get("total_complexity", 0)
+    data["avg_complexity"] = round(total_complexity / req_count, 1) if req_count > 0 else 0
+
+    # 7. Build work stories (narrative per request)
+    work_stories = _build_work_stories(data.get("requests", []), tool_entries)
+    data["work_stories"] = work_stories
+
+    # === GENERATE OUTPUT ===
+
     # Generate markdown summary
     md = _generate_markdown(data)
 
@@ -231,7 +697,7 @@ def finalize(session_id):
     md_path = summary_md_path(session_id)
     try:
         md_path.write_text(md, encoding='utf-8')
-        log_event(f"[OK] Summary MD generated: {md_path}")
+        log_event(f"[OK] Comprehensive summary MD generated: {md_path}")
     except Exception as e:
         log_event(f"[ERROR] Failed to write summary MD for {session_id}: {e}")
         return False
@@ -250,7 +716,6 @@ def finalize(session_id):
     _update_chain_summary(session_id, data)
 
     # AUTO-CLEANUP: Check context and trigger cleanup if needed
-    # This way we automatically compact when context is high
     try:
         auto_trigger_cleanup_if_needed(session_id, data)
     except Exception as e:
@@ -263,29 +728,21 @@ def auto_trigger_cleanup_if_needed(session_id, summary_data):
     """
     AUTO-CLEANUP EXECUTION: When finalizing a session, check context usage.
     If context > 90%, AUTOMATICALLY EXECUTE cleanup/compaction.
-
-    This is NOT just detection - we actually CLEANUP!
     """
-    # Estimate context usage from summary
     request_count = summary_data.get("request_count", 0)
-    estimated_tokens_per_request = 1500  # Conservative estimate
+    estimated_tokens_per_request = 1500
     estimated_used = request_count * estimated_tokens_per_request
     total_context_window = 200000
     estimated_percentage = (estimated_used / total_context_window) * 100
 
     log_event(f"[CHECK] Session {session_id}: Estimated context usage = {estimated_percentage:.1f}%")
 
-    # If context is high, EXECUTE automatic cleanup
     if estimated_percentage > 90:
         log_event(f"[ALERT] Context high ({estimated_percentage:.1f}%) - AUTO-EXECUTING cleanup NOW")
 
-        # ACTUAL CLEANUP: Delete old session files to free space
         old_sessions_deleted = _execute_session_cleanup()
-
         log_event(f"[CLEANUP] Deleted {old_sessions_deleted} old session files")
-        log_event(f"[COMPACT] Session logs cleaned up")
 
-        # Save baseline: Context is now reset for next session
         baseline_file = (LOGS_DIR / 'context-baseline.json')
         baseline_file.parent.mkdir(parents=True, exist_ok=True)
 
@@ -294,67 +751,50 @@ def auto_trigger_cleanup_if_needed(session_id, summary_data):
             "last_cleanup_time": datetime.now().isoformat(),
             "old_sessions_deleted": old_sessions_deleted,
             "old_logs_compacted": _cleanup_old_logs(),
-            "context_reset_to": 10,  # Starting fresh for new session
+            "context_reset_to": 10,
         }
 
         with open(baseline_file, 'w', encoding='utf-8') as f:
             json.dump(baseline, f, indent=2)
 
         log_event(f"[BASELINE] Context reset to 10% for next session")
-        log_event(f"[DONE] AUTO-CLEANUP completed successfully!")
 
 
 def _execute_session_cleanup():
-    """ACTUALLY DELETE old session files to free up space"""
+    """Delete old session files to free up space"""
     deleted_count = 0
     try:
-        # Keep only last 5 sessions, delete older ones
         sessions = sorted(list(SESSIONS_DIR.glob('SESSION-*.json')),
                          key=lambda p: p.stat().st_mtime, reverse=True)
-
         sessions_to_keep = 5
         for old_session_file in sessions[sessions_to_keep:]:
             try:
                 old_session_file.unlink()
                 deleted_count += 1
-                log_event(f"[DELETE] Removed old session: {old_session_file.name}")
-            except Exception as e:
-                log_event(f"[WARN] Could not delete {old_session_file.name}: {e}")
-    except Exception as e:
-        log_event(f"[ERROR] Session cleanup failed: {e}")
-
+            except Exception:
+                pass
+    except Exception:
+        pass
     return deleted_count
 
 
 def _cleanup_old_logs():
-    """ACTUALLY CLEANUP old session logs (keep last 10)"""
+    """Cleanup old session logs (keep last 10)"""
     cleaned_count = 0
     try:
         session_logs = sorted(list((LOGS_DIR / 'sessions').glob('SESSION-*')),
                              key=lambda p: p.stat().st_mtime, reverse=True)
-
         logs_to_keep = 10
         for old_log_dir in session_logs[logs_to_keep:]:
             try:
                 import shutil
                 shutil.rmtree(old_log_dir)
                 cleaned_count += 1
-                log_event(f"[CLEANUP] Removed old logs: {old_log_dir.name}")
-            except Exception as e:
-                log_event(f"[WARN] Could not cleanup {old_log_dir.name}: {e}")
-    except Exception as e:
-        log_event(f"[ERROR] Log cleanup failed: {e}")
-
+            except Exception:
+                pass
+    except Exception:
+        pass
     return cleaned_count
-
-
-def _count_old_sessions():
-    """Count how many old sessions are available for compaction"""
-    try:
-        sessions = list(SESSIONS_DIR.glob('SESSION-*.json'))
-        return len(sessions)
-    except:
-        return 0
 
 
 def _build_from_session_json(session_id):
@@ -381,6 +821,9 @@ def _build_from_session_json(session_id):
             "complexity": sess.get("last_complexity", 0),
             "model": sess.get("last_model", ""),
             "cwd": "",
+            "plan_mode": False,
+            "context_pct": sess.get("last_context_pct", 0),
+            "supplementary_skills": [],
         })
         data["request_count"] = 1
 
@@ -389,7 +832,6 @@ def _build_from_session_json(session_id):
     if sess.get("last_model"):
         data["models_used"].append(sess["last_model"])
 
-    # Save the built data
     json_path = summary_json_path(session_id)
     json_path.parent.mkdir(parents=True, exist_ok=True)
     try:
@@ -401,25 +843,43 @@ def _build_from_session_json(session_id):
     return data
 
 
+# =============================================================================
+# SUMMARY GENERATION
+# =============================================================================
+
 def _generate_one_liner(data):
-    """Generate a single-line summary of the session"""
+    """Generate a comprehensive single-line summary of the session"""
     req_count = data.get("request_count", 0)
     projects = data.get("projects_touched", [])
     skills = data.get("skills_used", [])
     types = data.get("task_types", [])
+    duration = data.get("duration_human", "")
+    max_c = data.get("max_complexity", 0)
+    files_mod = len(data.get("files_modified", []))
+    tool_stats = data.get("tool_stats", {})
+    tool_calls = sum(tool_stats.get("tool_counts", {}).values()) if tool_stats else 0
 
     parts = []
     parts.append(f"{req_count} requests")
 
+    if duration and duration != "unknown":
+        parts.append(f"duration: {duration}")
+
     if projects:
         parts.append(f"project: {', '.join(projects[:2])}")
     if types:
-        parts.append(f"type: {', '.join(types[:2])}")
+        parts.append(f"type: {', '.join(types[:3])}")
     if skills:
-        parts.append(f"skills: {', '.join(skills[:2])}")
+        parts.append(f"skills: {', '.join(skills[:3])}")
+    if max_c > 0:
+        parts.append(f"max-complexity: {max_c}/25")
+    if tool_calls > 0:
+        parts.append(f"tool-calls: {tool_calls}")
+    if files_mod > 0:
+        parts.append(f"files-modified: {files_mod}")
 
     if data.get("requests"):
-        first_prompt = data["requests"][0].get("prompt", "")[:80]
+        first_prompt = data["requests"][0].get("prompt", "")[:60]
         if first_prompt:
             parts.append(f"started: {first_prompt}")
 
@@ -427,63 +887,324 @@ def _generate_one_liner(data):
 
 
 def _generate_markdown(data):
-    """Generate human-readable session-summary.md"""
+    """Generate COMPREHENSIVE human-readable session-summary.md (v2.0.0)"""
     session_id = data.get("session_id", "UNKNOWN")
     created = data.get("created_at", "")[:19].replace('T', ' ')
     last_updated = data.get("last_updated", "")[:19].replace('T', ' ')
     req_count = data.get("request_count", 0)
     skills = data.get("skills_used", [])
+    supp_skills = data.get("all_supplementary_skills", [])
     types = data.get("task_types", [])
     models = data.get("models_used", [])
     projects = data.get("projects_touched", [])
     max_complexity = data.get("max_complexity", 0)
+    avg_complexity = data.get("avg_complexity", 0)
     requests = data.get("requests", [])
+    duration_human = data.get("duration_human", "unknown")
+    duration_seconds = data.get("duration_seconds", 0)
+    plan_mode_count = data.get("plan_mode_count", 0)
+    peak_context = data.get("peak_context_pct", 0)
+    standards_count = data.get("standards_count", 0)
+    rules_count = data.get("rules_count", 0)
+    tool_stats = data.get("tool_stats", {})
+    files_modified = data.get("files_modified", [])
+    files_read = data.get("files_read", [])
+    error_count = data.get("error_count", 0)
+    errors = data.get("errors", [])
+    flow_decision = data.get("last_flow_decision", {})
+    flow_version = data.get("flow_version", "")
+    flow_runs = data.get("flow_runs", 0)
 
     lines = []
+
+    # ===================== HEADER =====================
     lines.append(f"# Session Summary: {session_id}")
     lines.append("")
-    lines.append(f"**Created:** {created}")
-    lines.append(f"**Last Updated:** {last_updated}")
-    lines.append(f"**Total Requests:** {req_count}")
-    lines.append(f"**Max Complexity:** {max_complexity}")
-    lines.append(f"**Status:** {data.get('status', 'UNKNOWN')}")
-    lines.append("")
 
+    # ===================== OVERVIEW TABLE =====================
+    lines.append("## Overview")
+    lines.append("")
+    lines.append("| Field | Value |")
+    lines.append("|-------|-------|")
+    lines.append(f"| Session ID | `{session_id}` |")
+    lines.append(f"| Status | **{data.get('status', 'UNKNOWN')}** |")
+    lines.append(f"| Created | {created} |")
+    lines.append(f"| Last Updated | {last_updated} |")
+    lines.append(f"| Duration | **{duration_human}** |")
+    lines.append(f"| Total Requests | **{req_count}** |")
+    lines.append(f"| Flow Runs | {flow_runs} |")
     if projects:
-        lines.append(f"**Projects:** {', '.join(projects)}")
+        lines.append(f"| Projects | {', '.join(projects)} |")
+    if flow_version:
+        lines.append(f"| Flow Version | {flow_version} |")
+    lines.append("")
+
+    # ===================== SESSION METRICS =====================
+    lines.append("## Session Metrics")
+    lines.append("")
+    lines.append("| Metric | Value |")
+    lines.append("|--------|-------|")
+    lines.append(f"| Max Complexity | **{max_complexity}/25** |")
+    lines.append(f"| Avg Complexity | {avg_complexity}/25 |")
+    lines.append(f"| Peak Context Usage | {peak_context}% |")
+    lines.append(f"| Plan Mode Used | {plan_mode_count} time(s) |")
+    lines.append(f"| Standards Active | {standards_count} |")
+    lines.append(f"| Rules Active | {rules_count} |")
+    lines.append(f"| Errors Encountered | {error_count} |")
+
+    tool_counts = tool_stats.get("tool_counts", {})
+    total_tool_calls = sum(tool_counts.values()) if tool_counts else 0
+    lines.append(f"| Total Tool Calls | {total_tool_calls} |")
+    lines.append(f"| Files Modified | {len(files_modified)} |")
+    lines.append(f"| Files Read | {len(files_read)} |")
+    tasks_completed = tool_stats.get("tasks_completed", 0)
+    if tasks_completed > 0:
+        lines.append(f"| Tasks Completed | {tasks_completed} |")
+    lines.append("")
+
+    # ===================== SKILLS & MODELS =====================
+    lines.append("## Skills & Models Used")
+    lines.append("")
     if skills:
-        lines.append(f"**Skills Used:** {', '.join(skills)}")
-    if types:
-        lines.append(f"**Task Types:** {', '.join(types)}")
-    if models:
-        lines.append(f"**Models Used:** {', '.join(models)}")
+        lines.append(f"**Primary Skills:** {', '.join(skills)}")
+    else:
+        lines.append("**Primary Skills:** None")
+    if supp_skills:
+        lines.append(f"**Supplementary Skills:** {', '.join(supp_skills)}")
+    lines.append(f"**Models:** {', '.join(models) if models else 'None'}")
+    lines.append(f"**Task Types:** {', '.join(types) if types else 'None'}")
+    if flow_decision.get("tech_stack"):
+        lines.append(f"**Tech Stack:** {', '.join(flow_decision['tech_stack'])}")
     lines.append("")
 
-    lines.append("---")
-    lines.append("")
-    lines.append("## Request Timeline")
-    lines.append("")
+    # ===================== TOOL USAGE STATS =====================
+    if tool_counts:
+        lines.append("## Tool Usage Statistics")
+        lines.append("")
+        lines.append("| Tool | Calls | Contribution |")
+        lines.append("|------|-------|-------------|")
 
-    for i, req in enumerate(requests, 1):
-        ts = req.get("timestamp", "")[:19].replace('T', ' ')
-        prompt = req.get("prompt", "")[:200]
-        task_type = req.get("task_type", "")
-        skill = req.get("skill", "")
-        model = req.get("model", "")
-        complexity = req.get("complexity", 0)
-
-        lines.append(f"### Request {i} ({ts})")
-        lines.append(f"- **Prompt:** {prompt}")
-        if task_type:
-            lines.append(f"- **Type:** {task_type}")
-        if skill:
-            lines.append(f"- **Skill:** {skill}")
-        if model:
-            lines.append(f"- **Model:** {model}")
-        if complexity:
-            lines.append(f"- **Complexity:** {complexity}")
+        # Sort by count descending
+        sorted_tools = sorted(tool_counts.items(), key=lambda x: x[1], reverse=True)
+        for tool_name, count in sorted_tools:
+            pct = round((count / total_tool_calls) * 100, 1) if total_tool_calls > 0 else 0
+            bar_len = int(pct / 5)  # Simple bar
+            bar = '#' * bar_len
+            lines.append(f"| {tool_name} | {count} | {pct}% {bar} |")
+        lines.append(f"| **TOTAL** | **{total_tool_calls}** | **100%** |")
         lines.append("")
 
+    # ===================== FILES MODIFIED =====================
+    if files_modified:
+        lines.append("## Files Modified")
+        lines.append("")
+        for i, f in enumerate(files_modified[:20], 1):
+            lines.append(f"{i}. `{f}`")
+        if len(files_modified) > 20:
+            lines.append(f"... and {len(files_modified) - 20} more files")
+        lines.append("")
+
+    # ===================== FILES READ =====================
+    if files_read:
+        lines.append("## Files Read")
+        lines.append("")
+        for i, f in enumerate(files_read[:15], 1):
+            lines.append(f"{i}. `{f}`")
+        if len(files_read) > 15:
+            lines.append(f"... and {len(files_read) - 15} more files")
+        lines.append("")
+
+    # ===================== CONTEXT USAGE TREND =====================
+    context_history = data.get("context_history", [])
+    if context_history and len(context_history) > 1:
+        lines.append("## Context Usage Trend")
+        lines.append("")
+        lines.append(f"- Start: {context_history[0]}%")
+        lines.append(f"- End: {context_history[-1]}%")
+        lines.append(f"- Peak: {max(context_history)}%")
+        lines.append(f"- Change: {context_history[-1] - context_history[0]:+d}%")
+        lines.append("")
+
+    # ===================== ERRORS =====================
+    if errors:
+        lines.append("## Errors Encountered")
+        lines.append("")
+        lines.append("| # | Time | Tool | File |")
+        lines.append("|---|------|------|------|")
+        for i, err in enumerate(errors, 1):
+            ts = err.get("ts", "")[-8:]  # HH:MM:SS
+            tool = err.get("tool", "")
+            file_path = err.get("file", "N/A")
+            lines.append(f"| {i} | {ts} | {tool} | `{file_path}` |")
+        lines.append("")
+
+    # ===================== WORK STORY (Narrative) =====================
+    work_stories = data.get("work_stories", [])
+    lines.append("---")
+    lines.append("")
+    lines.append("## Work Story")
+    lines.append("")
+
+    if work_stories and any(s.get("tool_count", 0) > 0 for s in work_stories):
+        # Render rich narrative per request
+        for i, (req, story) in enumerate(zip(requests, work_stories), 1):
+            ts = req.get("timestamp", "")[:19].replace('T', ' ')
+            prompt = req.get("prompt", "")[:300]
+            task_type = req.get("task_type", "")
+            skill = req.get("skill", "")
+            model = req.get("model", "")
+            complexity = req.get("complexity", 0)
+            plan_mode = req.get("plan_mode", False)
+            ctx_pct = req.get("context_pct", 0)
+            supp = req.get("supplementary_skills", [])
+            tool_count = story.get("tool_count", 0)
+
+            lines.append(f"### Request {i}: {task_type or 'General'} ({ts})")
+            lines.append("")
+
+            # Task description
+            lines.append(f"**Task:** {prompt}")
+            meta_parts = []
+            if complexity:
+                meta_parts.append(f"Complexity: {complexity}/25")
+            if model:
+                meta_parts.append(f"Model: {model}")
+            if skill:
+                meta_parts.append(f"Skill: {skill}")
+            if plan_mode:
+                meta_parts.append("Plan Mode: Yes")
+            if ctx_pct:
+                meta_parts.append(f"Context: {ctx_pct}%")
+            if supp:
+                meta_parts.append(f"Supplementary: {', '.join(supp)}")
+            if meta_parts:
+                lines.append(f"*{' | '.join(meta_parts)}*")
+            lines.append("")
+
+            # Investigation / Findings
+            investigation = story.get("investigation", [])
+            if investigation:
+                lines.append("**Investigation & Findings:**")
+                for item in investigation[:15]:
+                    lines.append(f"  - {item}")
+                if len(investigation) > 15:
+                    lines.append(f"  - ... and {len(investigation) - 15} more")
+                lines.append("")
+
+            # Planning / Task Breakdown
+            planning = story.get("planning", [])
+            if planning:
+                lines.append("**Planning & Delegation:**")
+                for item in planning:
+                    lines.append(f"  - {item}")
+                lines.append("")
+
+            # Changes / Implementation
+            changes = story.get("changes", [])
+            if changes:
+                lines.append("**Changes & Implementation:**")
+                for item in changes[:20]:
+                    lines.append(f"  - {item}")
+                if len(changes) > 20:
+                    lines.append(f"  - ... and {len(changes) - 20} more changes")
+                lines.append("")
+
+            # Commands Run
+            commands = story.get("commands", [])
+            if commands:
+                lines.append("**Commands Executed:**")
+                for item in commands[:10]:
+                    lines.append(f"  - {item}")
+                if len(commands) > 10:
+                    lines.append(f"  - ... and {len(commands) - 10} more commands")
+                lines.append("")
+
+            # Errors
+            story_errors = story.get("errors", [])
+            if story_errors:
+                lines.append("**Errors:**")
+                for item in story_errors[:5]:
+                    lines.append(f"  - {item}")
+                lines.append("")
+
+            # Outcome line
+            if tool_count > 0:
+                outcome_parts = [f"{tool_count} tool calls"]
+                if changes:
+                    outcome_parts.append(f"{len(changes)} file(s) changed")
+                if story_errors:
+                    outcome_parts.append(f"{len(story_errors)} error(s)")
+                else:
+                    outcome_parts.append("no errors")
+                lines.append(f"**Outcome:** {' | '.join(outcome_parts)}")
+                lines.append("")
+
+            lines.append("---")
+            lines.append("")
+
+    else:
+        # Fallback: basic request timeline (no tool data available)
+        for i, req in enumerate(requests, 1):
+            ts = req.get("timestamp", "")[:19].replace('T', ' ')
+            prompt = req.get("prompt", "")[:300]
+            task_type = req.get("task_type", "")
+            skill = req.get("skill", "")
+            model = req.get("model", "")
+            complexity = req.get("complexity", 0)
+            plan_mode = req.get("plan_mode", False)
+            ctx_pct = req.get("context_pct", 0)
+            supp = req.get("supplementary_skills", [])
+
+            lines.append(f"### Request {i} ({ts})")
+            lines.append(f"- **Prompt:** {prompt}")
+            if task_type:
+                lines.append(f"- **Type:** {task_type}")
+            if complexity:
+                lines.append(f"- **Complexity:** {complexity}/25")
+            if model:
+                lines.append(f"- **Model:** {model}")
+            if skill:
+                lines.append(f"- **Skill/Agent:** {skill}")
+            if supp:
+                lines.append(f"- **Supplementary:** {', '.join(supp)}")
+            if plan_mode:
+                lines.append(f"- **Plan Mode:** Yes")
+            if ctx_pct:
+                lines.append(f"- **Context:** {ctx_pct}%")
+            lines.append("")
+
+    # ===================== PIPELINE DECISIONS =====================
+    if flow_decision:
+        lines.append("## Last Pipeline Decision")
+        lines.append("")
+        lines.append("| Decision | Value |")
+        lines.append("|----------|-------|")
+        if flow_decision.get("task_type"):
+            lines.append(f"| Task Type | {flow_decision['task_type']} |")
+        if flow_decision.get("complexity"):
+            lines.append(f"| Complexity | {flow_decision['complexity']}/25 |")
+        if flow_decision.get("model_selected"):
+            lines.append(f"| Model | {flow_decision['model_selected']} |")
+        if flow_decision.get("model_reason"):
+            lines.append(f"| Model Reason | {flow_decision['model_reason']} |")
+        if flow_decision.get("skill_or_agent"):
+            lines.append(f"| Skill/Agent | {flow_decision['skill_or_agent']} |")
+        if flow_decision.get("execution_mode"):
+            lines.append(f"| Execution Mode | {flow_decision['execution_mode']} |")
+        if flow_decision.get("task_count"):
+            lines.append(f"| Task Count | {flow_decision['task_count']} |")
+        lines.append("")
+
+    # ===================== SESSION INSIGHTS =====================
+    insights = _generate_insights(data)
+    if insights:
+        lines.append("## Session Insights")
+        lines.append("")
+        for insight in insights:
+            lines.append(f"- {insight}")
+        lines.append("")
+
+    # ===================== TL;DR =====================
     one_liner = _generate_one_liner(data)
     lines.append("---")
     lines.append("")
@@ -491,6 +1212,94 @@ def _generate_markdown(data):
     lines.append("")
 
     return "\n".join(lines)
+
+
+def _generate_insights(data):
+    """Auto-generate session insights based on data patterns"""
+    insights = []
+    req_count = data.get("request_count", 0)
+    max_c = data.get("max_complexity", 0)
+    avg_c = data.get("avg_complexity", 0)
+    tool_stats = data.get("tool_stats", {})
+    tool_counts = tool_stats.get("tool_counts", {})
+    files_modified = data.get("files_modified", [])
+    files_read = data.get("files_read", [])
+    error_count = data.get("error_count", 0)
+    peak_ctx = data.get("peak_context_pct", 0)
+    duration_seconds = data.get("duration_seconds", 0)
+    plan_mode_count = data.get("plan_mode_count", 0)
+    types = data.get("task_types", [])
+
+    # Session type insight
+    if req_count == 1:
+        insights.append("Quick single-request session")
+    elif req_count <= 3:
+        insights.append("Short session with focused work")
+    elif req_count <= 10:
+        insights.append("Medium session with multiple requests")
+    else:
+        insights.append(f"Extended session with {req_count} requests")
+
+    # Complexity insight
+    if max_c >= 20:
+        insights.append(f"High complexity work (max {max_c}/25) - Opus-level tasks")
+    elif max_c >= 10:
+        insights.append(f"Moderate complexity work (max {max_c}/25) - Sonnet-level tasks")
+    elif max_c > 0:
+        insights.append(f"Low complexity work (max {max_c}/25) - Quick tasks")
+
+    # Tool usage insight
+    total_tools = sum(tool_counts.values()) if tool_counts else 0
+    if total_tools > 50:
+        insights.append(f"Heavy tool usage ({total_tools} calls) - significant coding session")
+    elif total_tools > 20:
+        insights.append(f"Moderate tool usage ({total_tools} calls)")
+
+    # Read vs Write ratio
+    reads = tool_counts.get('Read', 0) + tool_counts.get('Grep', 0) + tool_counts.get('Glob', 0)
+    writes = tool_counts.get('Write', 0) + tool_counts.get('Edit', 0)
+    if reads > 0 and writes > 0:
+        if reads > writes * 3:
+            insights.append("Research-heavy session (more reading than writing)")
+        elif writes > reads:
+            insights.append("Implementation-heavy session (more writing than reading)")
+
+    # File modification insight
+    if len(files_modified) > 10:
+        insights.append(f"Large scope change ({len(files_modified)} files modified)")
+    elif len(files_modified) > 0:
+        insights.append(f"Targeted changes ({len(files_modified)} files modified)")
+
+    # Error insight
+    if error_count > 0:
+        error_rate = round((error_count / total_tools) * 100, 1) if total_tools > 0 else 0
+        if error_rate > 20:
+            insights.append(f"High error rate ({error_rate}%) - debugging session likely")
+        else:
+            insights.append(f"{error_count} error(s) encountered ({error_rate}% rate)")
+
+    # Context usage insight
+    if peak_ctx > 80:
+        insights.append(f"Near context limit (peak {peak_ctx}%) - cleanup may be needed")
+    elif peak_ctx > 50:
+        insights.append(f"Moderate context usage (peak {peak_ctx}%)")
+
+    # Duration insight
+    if duration_seconds > 3600:
+        hours = duration_seconds // 3600
+        insights.append(f"Long session ({hours}+ hours of work)")
+    elif duration_seconds > 1800:
+        insights.append("Extended session (30+ minutes)")
+
+    # Plan mode insight
+    if plan_mode_count > 0:
+        insights.append(f"Used plan mode {plan_mode_count} time(s) - structured approach")
+
+    # Multi-type insight
+    if len(types) > 2:
+        insights.append(f"Multi-faceted session ({', '.join(types[:4])})")
+
+    return insights
 
 
 def _update_chain_summary(session_id, data):
@@ -564,10 +1373,10 @@ def read_summary(session_id, fmt='md'):
 # =============================================================================
 
 def main():
-    parser = argparse.ArgumentParser(description='Session Summary Manager v1.0.0')
+    parser = argparse.ArgumentParser(description='Session Summary Manager v2.0.0')
     subparsers = parser.add_subparsers(dest='command', help='Command to run')
 
-    # accumulate
+    # accumulate (v2.0.0: added new args)
     acc = subparsers.add_parser('accumulate', help='Accumulate request data')
     acc.add_argument('--session', required=True, help='Session ID')
     acc.add_argument('--prompt', default='', help='User prompt')
@@ -576,9 +1385,15 @@ def main():
     acc.add_argument('--complexity', default=0, type=int, help='Complexity score')
     acc.add_argument('--model', default='', help='Model selected')
     acc.add_argument('--cwd', default='', help='Working directory')
+    # v2.0.0 new args
+    acc.add_argument('--plan-mode', default='false', help='Whether plan mode was used')
+    acc.add_argument('--context-pct', default=0, type=int, help='Context usage percentage')
+    acc.add_argument('--supplementary-skills', default='', help='Comma-separated supplementary skills')
+    acc.add_argument('--standards-count', default=0, type=int, help='Number of active standards')
+    acc.add_argument('--rules-count', default=0, type=int, help='Number of active rules')
 
     # finalize
-    fin = subparsers.add_parser('finalize', help='Generate final summary on close')
+    fin = subparsers.add_parser('finalize', help='Generate final comprehensive summary on close')
     fin.add_argument('--session', required=True, help='Session ID')
 
     # read
@@ -602,6 +1417,11 @@ def main():
             complexity=args.complexity,
             model=args.model,
             cwd=args.cwd,
+            plan_mode=args.plan_mode,
+            context_pct=args.context_pct,
+            supplementary_skills=args.supplementary_skills,
+            standards_count=args.standards_count,
+            rules_count=args.rules_count,
         )
         if ok:
             print(f"[OK] Accumulated for {args.session}")
@@ -612,7 +1432,7 @@ def main():
     elif args.command == 'finalize':
         ok = finalize(args.session)
         if ok:
-            print(f"[OK] Summary finalized for {args.session}")
+            print(f"[OK] Comprehensive summary finalized for {args.session}")
         else:
             print(f"[ERROR] Failed to finalize summary")
             sys.exit(1)
