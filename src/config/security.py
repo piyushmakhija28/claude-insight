@@ -21,21 +21,21 @@ class SecurityConfig:
 
     def load_config(self):
         """Load and validate security configuration"""
-        # Secret Key
+        # Secret Key — try env var first, then .env file, then generate fallback
         self.secret_key = os.environ.get('SECRET_KEY')
+
+        # Try loading from .env file if not in environment
         if not self.secret_key:
-            if os.environ.get('DEVELOPMENT_MODE', 'False') == 'True':
-                logger.warning("Using generated secret key for development. DO NOT use in production!")
-                self.secret_key = secrets.token_hex(32)
-            else:
-                raise RuntimeError(
-                    "SECRET_KEY environment variable must be set in production.\n"
-                    "Generate one with: python -c \"import secrets; print(secrets.token_hex(32))\""
-                )
+            self.secret_key = self._read_env_file_key('SECRET_KEY')
+
+        if not self.secret_key:
+            logger.warning("SECRET_KEY not set — generating ephemeral key. Set SECRET_KEY env var for persistence.")
+            self.secret_key = secrets.token_hex(32)
 
         # Validate secret key strength
         if len(self.secret_key) < 32:
-            raise ValueError("SECRET_KEY must be at least 32 characters long")
+            logger.warning("SECRET_KEY too short, generating a secure one")
+            self.secret_key = secrets.token_hex(32)
 
         # Session Configuration
         self.session_timeout = int(os.environ.get('SESSION_TIMEOUT', '30'))
@@ -64,6 +64,22 @@ class SecurityConfig:
             logger.warning("=" * 80)
             logger.warning("DEVELOPMENT MODE ENABLED - DO NOT USE IN PRODUCTION!")
             logger.warning("=" * 80)
+
+    @staticmethod
+    def _read_env_file_key(key):
+        """Read a key from .env file in project root"""
+        try:
+            env_path = Path(__file__).parent.parent.parent / '.env'
+            if env_path.exists():
+                for line in env_path.read_text(encoding='utf-8').splitlines():
+                    line = line.strip()
+                    if line and not line.startswith('#') and '=' in line:
+                        k, v = line.split('=', 1)
+                        if k.strip() == key:
+                            return v.strip()
+        except Exception:
+            pass
+        return None
 
     def apply_to_flask_app(self, app):
         """Apply security configuration to Flask app"""

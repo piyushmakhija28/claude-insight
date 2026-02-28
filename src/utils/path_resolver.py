@@ -12,6 +12,7 @@ class PathResolver:
     Resolves paths for Claude Insight data storage
 
     Priority:
+    0. CLAUDE_INSIGHT_DATA_DIR env var (set by IDE when launching dashboard)
     1. If ~/.claude/memory exists (user has Claude Memory System) → use it
     2. Otherwise → use ./data/ within claude-insight (portable mode)
     """
@@ -20,16 +21,23 @@ class PathResolver:
         self.project_root = Path(__file__).parent.parent.parent
         self.global_memory = Path.home() / '.claude' / 'memory'
 
-        # Check if global memory exists
-        self.has_global_memory = self.global_memory.exists()
-
-        # Use global if available, otherwise local
-        if self.has_global_memory:
+        # Priority 0: Environment variable (set by IDE)
+        env_data_dir = os.environ.get('CLAUDE_INSIGHT_DATA_DIR')
+        if env_data_dir:
+            self.base_dir = Path(env_data_dir)
+            self.mode = "IDE"
+            self.has_global_memory = False
+            self._ensure_local_structure()
+        # Priority 1: Global ~/.claude/memory
+        elif self.global_memory.exists():
             self.base_dir = self.global_memory
             self.mode = "GLOBAL"
+            self.has_global_memory = True
+        # Priority 2: Local ./data/
         else:
             self.base_dir = self.project_root / 'data'
             self.mode = "LOCAL"
+            self.has_global_memory = False
             self._ensure_local_structure()
 
     def _ensure_local_structure(self):

@@ -5,15 +5,24 @@ from pathlib import Path
 
 # Base directory
 BASE_DIR = Path(__file__).parent.parent
-MEMORY_SYSTEM_DIR = BASE_DIR / 'claude-memory-system'
+
+# Data directory resolution (where dashboard stores its data)
+# Priority: env var > ~/.claude/memory (legacy) > ./data (portable)
+_data_dir_override = os.environ.get('CLAUDE_INSIGHT_DATA_DIR')
+if _data_dir_override:
+    MEMORY_SYSTEM_DIR = Path(_data_dir_override)
+elif (Path.home() / '.claude' / 'memory').exists():
+    MEMORY_SYSTEM_DIR = Path.home() / '.claude' / 'memory'
+else:
+    MEMORY_SYSTEM_DIR = BASE_DIR / 'data'
 
 # Flask Configuration
 class Config:
     """Base configuration"""
     SECRET_KEY = os.environ.get('SECRET_KEY', 'dev-secret-key-change-in-production')
 
-    # Memory System Paths
-    MEMORY_DIR = MEMORY_SYSTEM_DIR / 'memory'
+    # Memory System Paths (MEMORY_SYSTEM_DIR is already the data root — no double nesting)
+    MEMORY_DIR = MEMORY_SYSTEM_DIR
     LOGS_DIR = MEMORY_DIR / 'logs'
     SESSIONS_DIR = MEMORY_DIR / 'sessions'
     DOCS_DIR = MEMORY_DIR / 'docs'
