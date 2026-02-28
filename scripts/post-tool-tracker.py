@@ -456,9 +456,11 @@ def main():
                             sys.stdout.flush()
 
                             # GitHub Branch: Create issue branch on first task
+                            # Branch format: {label}/{issueId} (e.g. fix/42, feature/123)
                             branch = gim.get_session_branch()
                             if not branch:  # First task - create branch
-                                branch = gim.create_issue_branch(issue_num, tc_subject)
+                                issue_type = gim._detect_issue_type(tc_subject, tc_desc) if hasattr(gim, '_detect_issue_type') else None
+                                branch = gim.create_issue_branch(issue_num, tc_subject, issue_type)
                                 if branch:
                                     sys.stdout.write('[GH] Branch: ' + branch + '\n')
                                     sys.stdout.flush()

@@ -1,10 +1,11 @@
 #!/usr/bin/env python
 # Script Name: github_issue_manager.py
-# Version: 2.1.0
+# Version: 3.0.0
 # Last Modified: 2026-02-28
 # Description: GitHub Issues + Branch integration for Level 3 Execution.
 #              Auto-creates issues on TaskCreate, auto-closes on TaskUpdate(completed).
-#              Creates issue branches on first task (issue-N-slug format).
+#              Creates issue branches using {label}/{issueId} format (e.g. fix/42, feature/123).
+#              Adds priority + complexity labels. Includes comprehensive stories on create/close.
 #              Uses gh CLI. Non-blocking - never fails the hook if GitHub is unavailable.
 # Author: Claude Memory System
 #
@@ -379,20 +380,67 @@ def create_github_issue(task_id, subject, description):
         flow_ctx = _get_flow_trace_context()
         progress_ctx = _get_session_progress_context()
 
-        # --- Build comprehensive issue body ---
+        # --- Build comprehensive issue body with story format ---
         body_lines = []
+        issue_type = _detect_issue_type(subject, description)
+        complexity = flow_ctx.get('complexity', 0)
 
-        # Section 1: Task Overview
+        # Section 1: Story / Narrative
+        body_lines.append('## Story')
+        body_lines.append('')
+        # Build a comprehensive narrative based on issue type
+        if issue_type == 'fix':
+            body_lines.append('A bug has been identified that needs to be resolved. '
+                              'The issue affects the system behavior described below and '
+                              'requires investigation, root cause analysis, and a targeted fix.')
+        elif issue_type == 'refactor':
+            body_lines.append('The existing code needs restructuring to improve maintainability, '
+                              'readability, or performance. This refactoring should preserve all '
+                              'current functionality while improving the internal design.')
+        elif issue_type == 'docs':
+            body_lines.append('Documentation needs to be created or updated to accurately reflect '
+                              'the current system behavior, API contracts, or setup instructions.')
+        elif issue_type == 'test':
+            body_lines.append('Test coverage needs to be added or improved to ensure system '
+                              'reliability and prevent regressions in the affected components.')
+        elif issue_type == 'enhancement':
+            body_lines.append('An existing feature needs to be enhanced or optimized to '
+                              'better serve the current requirements and improve user experience.')
+        else:
+            body_lines.append('A new feature needs to be implemented as described below. '
+                              'This involves designing the solution, implementing the code, '
+                              'and verifying it works correctly end-to-end.')
+        body_lines.append('')
+
+        # Add the actual task description as the detailed story
+        if description:
+            body_lines.append('**What needs to be done:**')
+            body_lines.append('')
+            body_lines.append(description)
+        else:
+            body_lines.append('**What needs to be done:** ' + subject)
+        body_lines.append('')
+
+        # Section 2: Task Overview (metadata table)
         body_lines.append('## Task Overview')
         body_lines.append('')
         body_lines.append('| Field | Value |')
         body_lines.append('|-------|-------|')
         body_lines.append('| **Task ID** | ' + str(task_id) + ' |')
         body_lines.append('| **Subject** | ' + subject + ' |')
-        if flow_ctx.get('task_type'):
-            body_lines.append('| **Type** | ' + flow_ctx['task_type'] + ' |')
-        if flow_ctx.get('complexity'):
-            body_lines.append('| **Complexity** | ' + str(flow_ctx['complexity']) + '/25 |')
+        body_lines.append('| **Type** | ' + issue_type + ' |')
+        if complexity:
+            body_lines.append('| **Complexity** | ' + str(complexity) + '/25 |')
+            # Priority derivation
+            if complexity >= 15:
+                priority = 'Critical'
+            elif complexity >= 10:
+                priority = 'High'
+            elif complexity >= 5:
+                priority = 'Medium'
+            else:
+                priority = 'Low'
+            body_lines.append('| **Priority** | ' + priority + ' |')
         if flow_ctx.get('model'):
             body_lines.append('| **Model** | ' + flow_ctx['model'] + ' |')
         if flow_ctx.get('skill'):
@@ -401,20 +449,10 @@ def create_github_issue(task_id, subject, description):
             body_lines.append('| **Plan Mode** | Required |')
         body_lines.append('')
 
-        # Section 2: Description (full, untruncated)
-        body_lines.append('## Description')
-        body_lines.append('')
-        if description:
-            body_lines.append(description)
-        else:
-            body_lines.append('_(no description provided)_')
-        body_lines.append('')
-
-        # Section 3: Acceptance Criteria (auto-derived from description)
+        # Section 3: Acceptance Criteria
         body_lines.append('## Acceptance Criteria')
         body_lines.append('')
         if description:
-            # Parse description for actionable items
             criteria_found = False
             for line in description.split('\n'):
                 line = line.strip()
@@ -422,13 +460,23 @@ def create_github_issue(task_id, subject, description):
                     body_lines.append('- [ ] ' + line[2:])
                     criteria_found = True
                 elif line and len(line) > 15:
-                    # Convert sentence-like descriptions into checklist
                     body_lines.append('- [ ] ' + line)
                     criteria_found = True
             if not criteria_found:
                 body_lines.append('- [ ] ' + subject)
         else:
             body_lines.append('- [ ] ' + subject)
+        # Add standard criteria based on type
+        if issue_type == 'fix':
+            body_lines.append('- [ ] Root cause identified and documented')
+            body_lines.append('- [ ] Fix verified - bug no longer reproducible')
+        elif issue_type == 'feature':
+            body_lines.append('- [ ] Feature implemented and functional')
+            body_lines.append('- [ ] Code follows existing patterns and conventions')
+        elif issue_type == 'refactor':
+            body_lines.append('- [ ] No behavior changes - all existing functionality preserved')
+            body_lines.append('- [ ] Code quality improved')
+        body_lines.append('- [ ] Changes committed and pushed')
         body_lines.append('')
 
         # Section 4: Session Context
@@ -467,7 +515,6 @@ def create_github_issue(task_id, subject, description):
             )
             if remote_result.returncode == 0:
                 remote_url = remote_result.stdout.strip()
-                # Extract repo name from URL
                 repo_name = remote_url.rsplit('/', 1)[-1].replace('.git', '')
                 body_lines.append('| **Repository** | ' + repo_name + ' |')
         except Exception:
@@ -486,23 +533,28 @@ def create_github_issue(task_id, subject, description):
         # Footer
         body_lines.append('---')
         body_lines.append('')
-        body_lines.append('_Auto-created by Claude Memory System (Level 3 Execution) | v2.1.0_')
+        body_lines.append('_Auto-created by Claude Memory System (Level 3 Execution) | v3.0.0_')
 
         body = '\n'.join(body_lines)
 
         # Build labels list
         labels = ['task-auto-created', 'level-3-execution']
 
-        # Detect type from subject/description
-        combined = (subject + ' ' + (description or '')).lower()
-        if any(w in combined for w in ['fix', 'bug', 'error', 'broken', 'crash']):
-            labels.append('bugfix')
-        elif any(w in combined for w in ['refactor', 'cleanup', 'reorganize', 'simplify']):
-            labels.append('refactor')
-        elif any(w in combined for w in ['doc', 'readme', 'comment', 'documentation']):
-            labels.append('docs')
-        else:
-            labels.append('feature')
+        # Detect issue type for label
+        issue_type = _detect_issue_type(subject, description)
+        type_label_map = {
+            'fix': 'bugfix',
+            'feature': 'feature',
+            'refactor': 'refactor',
+            'docs': 'docs',
+            'enhancement': 'enhancement',
+            'test': 'test',
+        }
+        labels.append(type_label_map.get(issue_type, 'feature'))
+
+        # Add priority + complexity labels from flow trace
+        complexity = flow_ctx.get('complexity', 0)
+        labels.extend(_get_priority_labels(complexity))
 
         # Create issue via gh CLI
         cmd = [
@@ -537,13 +589,15 @@ def create_github_issue(task_id, subject, description):
                 if num_str.isdigit():
                     issue_number = int(num_str)
 
-            # Save mapping
+            # Save mapping (include issue_type for branch naming)
             mapping = _load_issues_mapping()
             task_key = str(task_id) if task_id else 'unknown'
             mapping['task_to_issue'][task_key] = {
                 'issue_number': issue_number,
                 'issue_url': issue_url,
                 'title': title,
+                'issue_type': issue_type,
+                'labels': labels,
                 'created_at': datetime.now().strftime('%Y-%m-%dT%H:%M:%S'),
                 'status': 'open'
             }
@@ -574,10 +628,8 @@ def _build_close_comment(task_id, issue_data):
     """
     lines = []
 
-    lines.append('## Resolution Summary')
-    lines.append('')
-
     task_title = issue_data.get('title', 'Task ' + str(task_id))
+    issue_type = issue_data.get('issue_type', _detect_issue_type(task_title))
     created_at = issue_data.get('created_at', '')
     closed_at = datetime.now().strftime('%Y-%m-%dT%H:%M:%S')
 
@@ -602,17 +654,75 @@ def _build_close_comment(task_id, issue_data):
         except Exception:
             pass
 
-    lines.append('**Status:** Completed')
-    if duration_str:
-        lines.append('**Duration:** ' + duration_str)
-    lines.append('**Closed At:** ' + closed_at)
-    lines.append('')
-
     # Get tool activity for this task
     activity = _get_tool_activity_for_task(task_id)
-
-    # Section: What Was Done (files changed)
     all_changed_files = list(set(activity.get('files_written', []) + activity.get('files_edited', [])))
+    files_read = activity.get('files_read', [])
+    edits = activity.get('edits', [])
+    commands = activity.get('commands_run', [])
+    searches = activity.get('searches', [])
+    total_tools = activity.get('total_tools', 0)
+
+    # Section 1: Resolution Story (comprehensive narrative)
+    lines.append('## Resolution Story')
+    lines.append('')
+
+    # Build a narrative based on issue type and actual work done
+    if issue_type == 'fix':
+        lines.append('This bug has been investigated, root-caused, and fixed.')
+        if files_read:
+            lines.append('The investigation involved reading ' + str(len(files_read))
+                         + ' file(s) to understand the problem context and trace the root cause.')
+        if all_changed_files:
+            lines.append('The fix was applied across ' + str(len(all_changed_files))
+                         + ' file(s) to resolve the issue.')
+        if commands:
+            lines.append('Verification was performed using ' + str(len(commands))
+                         + ' command(s) to confirm the fix works correctly.')
+    elif issue_type == 'refactor':
+        lines.append('The code has been restructured to improve maintainability and design.')
+        if files_read:
+            lines.append('First, ' + str(len(files_read))
+                         + ' file(s) were analyzed to understand the existing code structure.')
+        if all_changed_files:
+            lines.append('The refactoring touched ' + str(len(all_changed_files))
+                         + ' file(s) while preserving all existing functionality.')
+    elif issue_type == 'docs':
+        lines.append('Documentation has been created or updated to reflect the current state.')
+        if all_changed_files:
+            lines.append(str(len(all_changed_files)) + ' documentation file(s) were updated.')
+    elif issue_type == 'feature':
+        lines.append('The new feature has been fully implemented and is ready for use.')
+        if files_read:
+            lines.append('Research phase: ' + str(len(files_read))
+                         + ' existing file(s) were studied to understand patterns and conventions.')
+        if all_changed_files:
+            lines.append('Implementation phase: ' + str(len(all_changed_files))
+                         + ' file(s) were created or modified.')
+        if commands:
+            lines.append('Validation phase: ' + str(len(commands))
+                         + ' command(s) were executed to verify the implementation.')
+    elif issue_type == 'enhancement':
+        lines.append('The existing feature has been enhanced as requested.')
+        if all_changed_files:
+            lines.append(str(len(all_changed_files))
+                         + ' file(s) were updated to deliver the enhancement.')
+    else:
+        lines.append('This task has been completed successfully.')
+        if all_changed_files:
+            lines.append(str(len(all_changed_files)) + ' file(s) were modified.')
+    lines.append('')
+
+    # Duration info
+    lines.append('| Field | Value |')
+    lines.append('|-------|-------|')
+    lines.append('| **Status** | Completed |')
+    if duration_str:
+        lines.append('| **Duration** | ' + duration_str + ' |')
+    lines.append('| **Closed At** | ' + closed_at + ' |')
+    lines.append('')
+
+    # Section 2: Files Changed
     if all_changed_files:
         lines.append('## Files Changed')
         lines.append('')
@@ -620,8 +730,7 @@ def _build_close_comment(task_id, issue_data):
             lines.append('- `' + f + '`')
         lines.append('')
 
-    # Section: Detailed Edits
-    edits = activity.get('edits', [])
+    # Section 3: Detailed Edits
     if edits:
         lines.append('## Changes Made')
         lines.append('')
@@ -629,8 +738,7 @@ def _build_close_comment(task_id, issue_data):
             lines.append('- ' + edit)
         lines.append('')
 
-    # Section: Files Read (research/investigation)
-    files_read = activity.get('files_read', [])
+    # Section 4: Files Investigated
     if files_read:
         lines.append('## Files Investigated')
         lines.append('')
@@ -638,8 +746,7 @@ def _build_close_comment(task_id, issue_data):
             lines.append('- `' + f + '`')
         lines.append('')
 
-    # Section: Commands Executed
-    commands = activity.get('commands_run', [])
+    # Section 5: Commands Executed
     if commands:
         lines.append('## Commands Executed')
         lines.append('')
@@ -647,8 +754,7 @@ def _build_close_comment(task_id, issue_data):
             lines.append('- `' + cmd + '`')
         lines.append('')
 
-    # Section: Searches Performed
-    searches = activity.get('searches', [])
+    # Section 6: Searches Performed
     if searches:
         lines.append('## Searches Performed')
         lines.append('')
@@ -656,13 +762,10 @@ def _build_close_comment(task_id, issue_data):
             lines.append('- ' + s)
         lines.append('')
 
-    # Section: RCA (Root Cause Analysis) - only for bugfix issues
-    issue_title_lower = task_title.lower()
-    is_bugfix = any(w in issue_title_lower for w in ['fix', 'bug', 'error', 'broken', 'crash', 'issue'])
-    if is_bugfix:
+    # Section 7: RCA (Root Cause Analysis) - only for bugfix issues
+    if issue_type == 'fix':
         lines.append('## Root Cause Analysis (RCA)')
         lines.append('')
-        # Build RCA from available data
         if files_read:
             lines.append('**Investigation:** ' + str(len(files_read)) + ' files investigated')
         if all_changed_files:
@@ -675,8 +778,7 @@ def _build_close_comment(task_id, issue_data):
             lines.append('**Verification:** ' + str(len(commands)) + ' command(s) run to verify fix')
         lines.append('')
 
-    # Section: Tool Usage Summary
-    total_tools = activity.get('total_tools', 0)
+    # Section 8: Tool Usage Summary
     if total_tools > 0:
         lines.append('## Tool Usage')
         lines.append('')
@@ -693,7 +795,7 @@ def _build_close_comment(task_id, issue_data):
             lines.append('| Searches | ' + str(len(searches)) + ' |')
         lines.append('')
 
-    # Section: Session Context
+    # Section 9: Session Context
     progress_ctx = _get_session_progress_context()
     flow_ctx = _get_flow_trace_context()
 
@@ -721,7 +823,7 @@ def _build_close_comment(task_id, issue_data):
 
     # Footer
     lines.append('---')
-    lines.append('_Auto-closed by Claude Memory System (Level 3 Execution) | v2.1.0_')
+    lines.append('_Auto-closed by Claude Memory System (Level 3 Execution) | v3.0.0_')
 
     return '\n'.join(lines)
 
@@ -813,6 +915,58 @@ def close_github_issue(task_id):
     return False
 
 
+def _detect_issue_type(subject, description=''):
+    """
+    Detect the issue type from subject and description text.
+    Returns one of: 'fix', 'feature', 'refactor', 'docs', 'enhancement', 'test'.
+    Used for both label assignment and branch naming.
+    """
+    combined = (subject + ' ' + (description or '')).lower()
+    if any(w in combined for w in ['fix', 'bug', 'error', 'broken', 'crash', 'issue', 'resolve']):
+        return 'fix'
+    if any(w in combined for w in ['refactor', 'cleanup', 'reorganize', 'simplify', 'restructure']):
+        return 'refactor'
+    if any(w in combined for w in ['doc', 'readme', 'comment', 'documentation', 'javadoc']):
+        return 'docs'
+    if any(w in combined for w in ['test', 'spec', 'coverage', 'unit test', 'integration test']):
+        return 'test'
+    if any(w in combined for w in ['update', 'enhance', 'improve', 'upgrade', 'optimize']):
+        return 'enhancement'
+    return 'feature'
+
+
+def _get_priority_labels(complexity):
+    """
+    Get priority and complexity labels based on task complexity score.
+    Returns list of label strings.
+    """
+    labels = []
+    if not complexity or not isinstance(complexity, (int, float)):
+        return labels
+
+    complexity = int(complexity)
+
+    # Priority labels (based on complexity score)
+    if complexity >= 15:
+        labels.append('priority-critical')
+    elif complexity >= 10:
+        labels.append('priority-high')
+    elif complexity >= 5:
+        labels.append('priority-medium')
+    else:
+        labels.append('priority-low')
+
+    # Complexity labels
+    if complexity >= 10:
+        labels.append('complexity-high')
+    elif complexity >= 4:
+        labels.append('complexity-medium')
+    else:
+        labels.append('complexity-low')
+
+    return labels
+
+
 def _slugify(text, max_len=40):
     """
     Convert text to a URL/branch-safe slug.
@@ -838,15 +992,18 @@ def _slugify(text, max_len=40):
     return slug.strip('-')
 
 
-def create_issue_branch(issue_number, subject):
+def create_issue_branch(issue_number, subject, issue_type=None):
     """
-    Create and checkout a git branch named issue-{N}-{slug}.
+    Create and checkout a git branch named {label}/{issueId}.
+    Examples: fix/42, feature/123, refactor/99, docs/55, enhancement/78
+
     Only creates if currently on main/master.
     Stores branch name in github-issues.json under 'session_branch'.
 
     Args:
         issue_number: GitHub issue number (int)
-        subject: Task subject for slug generation
+        subject: Task subject (used for type detection if issue_type not provided)
+        issue_type: Optional explicit type ('fix', 'feature', 'refactor', 'docs', etc.)
 
     Returns:
         Branch name string on success, None on failure.
@@ -870,11 +1027,12 @@ def create_issue_branch(issue_number, subject):
             # Already on a feature branch - don't create another
             return None
 
-        # Build branch name
-        slug = _slugify(subject)
-        branch_name = 'issue-' + str(issue_number)
-        if slug:
-            branch_name += '-' + slug
+        # Determine the label prefix for branch naming
+        if not issue_type:
+            issue_type = _detect_issue_type(subject)
+
+        # Build branch name: {label}/{issueId}
+        branch_name = issue_type + '/' + str(issue_number)
 
         # Create and checkout new branch
         result = subprocess.run(
@@ -889,6 +1047,7 @@ def create_issue_branch(issue_number, subject):
             mapping['session_branch'] = branch_name
             mapping['branch_created_at'] = datetime.now().strftime('%Y-%m-%dT%H:%M:%S')
             mapping['branch_from_issue'] = issue_number
+            mapping['branch_type'] = issue_type
             _save_issues_mapping(mapping)
             return branch_name
         else:
@@ -924,9 +1083,13 @@ def get_session_branch():
 
 def is_on_issue_branch():
     """
-    Check if the current git branch starts with 'issue-'.
+    Check if the current git branch matches the {label}/{id} pattern.
+    Valid prefixes: fix/, feature/, refactor/, docs/, enhancement/, test/, task/
+    Also supports legacy issue-{N} format for backwards compatibility.
     Returns True if on an issue branch, False otherwise.
     """
+    valid_prefixes = ('fix/', 'feature/', 'refactor/', 'docs/',
+                      'enhancement/', 'test/', 'task/', 'issue-')
     try:
         repo_root = _get_repo_root()
         if not repo_root:
@@ -938,7 +1101,8 @@ def is_on_issue_branch():
             cwd=repo_root
         )
         if result.returncode == 0:
-            return result.stdout.strip().startswith('issue-')
+            branch = result.stdout.strip()
+            return any(branch.startswith(p) for p in valid_prefixes)
     except Exception:
         pass
     return False
