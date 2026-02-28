@@ -542,6 +542,38 @@ def main():
                     except Exception:
                         pass  # Never block on GitHub failures
 
+                    # BUILD VALIDATION: Compile check on task completion
+                    try:
+                        script_dir = os.path.dirname(os.path.abspath(__file__))
+                        if script_dir not in sys.path:
+                            sys.path.insert(0, script_dir)
+                        import auto_build_validator
+                        modified = state.get('modified_files_since_commit', [])
+                        build_result = auto_build_validator.validate_build(
+                            modified_files=modified
+                        )
+                        if build_result['all_passed']:
+                            sys.stdout.write(
+                                '[BUILD] ' + build_result['summary'] + '\n'
+                            )
+                            sys.stdout.flush()
+                        else:
+                            # BUILD FAILED - tell Claude to fix it
+                            sys.stdout.write(
+                                '[BUILD FAILED] ' + build_result['summary'] + '\n'
+                                '  ACTION: FIX the build errors below BEFORE moving to next task!\n'
+                                '  DO NOT mark this task complete until build passes.\n'
+                            )
+                            for r in build_result['results']:
+                                if not r['passed']:
+                                    sys.stdout.write(
+                                        '  --- ' + r['label'] + ' ---\n'
+                                        + r.get('output', '')[:1500] + '\n'
+                                    )
+                            sys.stdout.flush()
+                    except Exception:
+                        pass  # Never block on build validation failures
+
             except Exception:
                 pass
 

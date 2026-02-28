@@ -345,9 +345,9 @@ def _create_pull_request(repo_root, branch_name, issue_numbers, session_summary)
         return None
 
 
-def _auto_review_pr(repo_root, pr_number, session_summary):
+def _auto_review_pr(repo_root, pr_number, session_summary, build_result=None):
     """
-    Post an auto-review comment on the PR with session metrics.
+    Post an auto-review comment on the PR with session metrics and build status.
     Uses gh pr comment (not gh pr review --approve to avoid branch protection issues).
     """
     try:
@@ -417,6 +417,24 @@ def _auto_review_pr(repo_root, pr_number, session_summary):
                     comment_parts.append('')
         except Exception:
             pass
+
+        # Build validation results
+        if build_result:
+            comment_parts.append('### Build Status\n')
+            if build_result.get('all_passed'):
+                comment_parts.append('**Status:** PASSED')
+            else:
+                comment_parts.append('**Status:** FAILED')
+            for r in build_result.get('results', []):
+                status = 'PASS' if r['passed'] else 'FAIL'
+                if r.get('skipped'):
+                    status = 'SKIP'
+                comment_parts.append(f"- {r['label']}: **{status}**")
+                if not r['passed'] and r.get('output'):
+                    # Include first 500 chars of error in review
+                    error_preview = r['output'][:500].replace('\n', '\n  > ')
+                    comment_parts.append(f"  > {error_preview}")
+            comment_parts.append('')
 
         comment_parts.append('---')
         comment_parts.append('_Auto-review by Claude Memory System_')
@@ -569,6 +587,30 @@ def run_pr_workflow(session_id=None):
         session_summary = _load_session_summary()
         issue_numbers = _get_issue_numbers()
 
+        # Step 0: Build validation (before commit)
+        build_result = None
+        _log("Step 0: Build validation...")
+        try:
+            script_dir = os.path.dirname(os.path.abspath(__file__))
+            if script_dir not in sys.path:
+                sys.path.insert(0, script_dir)
+            import auto_build_validator
+            build_result = auto_build_validator.validate_build(repo_root)
+            if build_result['all_passed']:
+                _log("Build OK: " + build_result['summary'])
+                sys.stdout.write("[BUILD] " + build_result['summary'] + "\n")
+                sys.stdout.flush()
+            else:
+                _log("Build FAILED: " + build_result['summary'])
+                sys.stdout.write("[BUILD FAILED] " + build_result['summary'] + "\n")
+                sys.stdout.flush()
+                # Log errors but don't stop the workflow - PR will show build status
+                for r in build_result['results']:
+                    if not r['passed']:
+                        _log("  " + r['label'] + ": " + r.get('output', '')[:300])
+        except Exception as e:
+            _log(f"Build validation error (non-fatal): {e}")
+
         # Step 1: Commit changes
         _log("Step 1: Committing changes...")
         _commit_session_changes(repo_root, session_summary)
@@ -587,9 +629,9 @@ def run_pr_workflow(session_id=None):
             _log("PR creation failed - stopping workflow")
             return
 
-        # Step 4: Auto-review comment
+        # Step 4: Auto-review comment (includes build status)
         _log("Step 4: Posting auto-review...")
-        _auto_review_pr(repo_root, pr_number, session_summary)
+        _auto_review_pr(repo_root, pr_number, session_summary, build_result)
 
         # Step 5: Merge PR
         _log("Step 5: Merging PR...")
