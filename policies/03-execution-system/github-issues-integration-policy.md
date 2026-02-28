@@ -477,43 +477,81 @@ GITHUB_REPO = "claude-code-ide"    # From git origin
 
 ## Examples
 
-### Example 1: Simple Bug Fix Task
+### Example 1: Bug Fix Task (complexity 5)
 
 **Local Task Created:**
 ```json
 {
-  "id": "001",
+  "id": "1",
   "subject": "Fix authentication bug in login flow",
-  "type": "bugfix",
+  "type": "fix",
   "complexity": 5
 }
 ```
 
 **GitHub Issue Created:**
 ```
-Title: [TASK-001] Fix authentication bug in login flow
-Labels: task-auto-created, level-3-execution, type-bugfix,
-        complexity-medium, priority-medium, session-SESSION_ID
+Title: [TASK-1] Fix authentication bug in login flow
+Labels: task-auto-created, level-3-execution, bugfix, priority-medium, complexity-medium
+Branch: fix/45
 ```
 
-**Completed with Commit:**
+**Issue Body (Story Format):**
+```markdown
+## Story
+A bug has been identified that needs to be resolved. The issue affects
+the system behavior described below and requires investigation, root
+cause analysis, and a targeted fix.
+
+**What needs to be done:**
+Fix authentication bug in login flow - login fails with special characters in password.
+
+## Task Overview
+| Field | Value |
+|-------|-------|
+| **Task ID** | 1 |
+| **Type** | fix |
+| **Complexity** | 5/25 |
+| **Priority** | Medium |
+
+## Acceptance Criteria
+- [ ] Fix authentication bug in login flow
+- [ ] Root cause identified and documented
+- [ ] Fix verified - bug no longer reproducible
+- [ ] Changes committed and pushed
 ```
-$ git commit -m "Fix: Authentication bug in login flow
 
-Resolve issue where login fails with special characters in password.
-Added input validation and error handling.
+**Issue Closed (Resolution Story):**
+```markdown
+## Resolution Story
+This bug has been investigated, root-caused, and fixed.
+The investigation involved reading 4 file(s) to understand the problem context.
+The fix was applied across 2 file(s) to resolve the issue.
+Verification was performed using 3 command(s) to confirm the fix works correctly.
 
-- Completed task 001
-- Closes #45
-
-Co-Authored-By: Claude Haiku 4.5 <noreply@anthropic.com>"
-$ git push origin main
+## Root Cause Analysis (RCA)
+**Investigation:** 4 files investigated
+**Root Cause Location:** `src/auth/login.py`, `src/utils/validator.py`
+**Fix Applied:** 2 edit(s) made
+**Verification:** 3 command(s) run to verify fix
 ```
 
-**GitHub Auto-Close:**
+### Example 2: New Feature Task (complexity 12)
+
+**GitHub Issue Created:**
 ```
-Issue #45: [TASK-001] Fix authentication bug in login flow
-Status: CLOSED (via commit abc123d)
+Title: [TASK-2] Implement user dashboard analytics
+Labels: task-auto-created, level-3-execution, feature, priority-high, complexity-high
+Branch: feature/67
+```
+
+### Example 3: Refactoring Task (complexity 3)
+
+**GitHub Issue Created:**
+```
+Title: [TASK-3] Refactor database connection pooling
+Labels: task-auto-created, level-3-execution, refactor, priority-low, complexity-low
+Branch: refactor/89
 ```
 
 ---
@@ -539,6 +577,6 @@ Status: CLOSED (via commit abc123d)
 ---
 
 **Status:** ACTIVE
-**Last Updated:** 2026-02-26
+**Last Updated:** 2026-02-28
 **Maintainer:** Claude Memory System
 **Feedback:** Create issues in claude-insight repo
