@@ -1,4 +1,4 @@
-# Claude Insight v3.10.0
+# Claude Insight v3.11.0
 
 **Real-time Monitoring Dashboard for the Claude Memory System (3-Level Architecture)**
 
@@ -6,7 +6,7 @@
 [![Python](https://img.shields.io/badge/Python-3.8+-blue?logo=python)](https://www.python.org/)
 [![Flask](https://img.shields.io/badge/Flask-3.0-green?logo=flask)](https://flask.palletsprojects.com/)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/Version-3.10.0-brightgreen)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/Version-3.11.0-brightgreen)](CHANGELOG.md)
 
 Claude Insight is a Python Flask dashboard that monitors how Claude Code follows the
 **3-Level Architecture enforcement policies** in real-time. Track policy execution,
@@ -17,34 +17,40 @@ detection — all from one interface.
 
 ## Table of Contents
 
-- [What Is Claude Insight?](#what-is-claude-insight)
-- [Quick Start](#quick-start)
-  - [Prerequisites](#prerequisites)
-  - [Installation](#installation)
-  - [Memory System Setup](#memory-system-setup)
-  - [Voice Notifications Setup (Required)](#voice-notifications-setup-required)
-  - [Running the Dashboard](#running-the-dashboard)
-- [3-Level Architecture Overview](#3-level-architecture-overview)
-  - [Level -1: Auto-Fix Enforcement](#level--1-auto-fix-enforcement)
-  - [Level 1: Sync System](#level-1-sync-system)
-  - [Level 2: Standards System](#level-2-standards-system)
-  - [Level 3: Execution System (12 Steps)](#level-3-execution-system-12-steps)
-- [Hook Scripts Reference](#hook-scripts-reference)
-- [Imports & Module Loading](#imports--module-loading)
-- [Session Management](#session-management)
-- [Multi-Window Session Isolation](#multi-window-session-isolation)
-- [All Policies Reference](#all-policies-reference)
-- [How the Hooks Work](#how-the-hooks-work)
-- [Dashboard Pages](#dashboard-pages)
-- [Project Structure](#project-structure)
-- [API Reference](#api-reference)
-- [Configuration](#configuration)
-- [Global vs Project CLAUDE.md](#global-vs-project-claudemd)
-- [Deployment & Distribution](#deployment--distribution)
-- [Troubleshooting](#troubleshooting)
-- [Contributing](#contributing)
-- [Changelog](#changelog)
-- [License](#license)
+1. [What Is Claude Insight?](#what-is-claude-insight)
+2. [3-Tier Ecosystem Architecture](#3-tier-ecosystem-architecture)
+3. [The ~/.claude/ Directory](#the-claude-directory)
+4. [Quick Start](#quick-start)
+   - [Prerequisites](#prerequisites)
+   - [Installation](#installation)
+   - [Memory System Setup](#memory-system-setup)
+   - [Voice Notifications Setup](#voice-notifications-setup)
+   - [Running the Dashboard](#running-the-dashboard)
+5. [3-Level Architecture Overview](#3-level-architecture-overview)
+   - [Level -1: Auto-Fix Enforcement](#level--1-auto-fix-enforcement)
+   - [Level 1: Sync System](#level-1-sync-system)
+   - [Level 2: Standards System](#level-2-standards-system)
+   - [Level 3: Execution System (12 Steps)](#level-3-execution-system-12-steps)
+6. [Hook Scripts Reference](#hook-scripts-reference)
+   - [settings.json Configuration](#settingsjson-configuration)
+   - [What Each Hook Does](#what-each-hook-does)
+7. [Imports and Module Loading](#imports-and-module-loading)
+8. [Session Management](#session-management)
+   - [Session ID Format](#session-id-format)
+   - [Session Storage](#session-storage)
+   - [Session Chaining](#session-chaining)
+9. [Multi-Window Session Isolation](#multi-window-session-isolation)
+10. [All Policies Reference](#all-policies-reference)
+11. [Dashboard Pages](#dashboard-pages)
+12. [Project Structure](#project-structure)
+13. [API Reference](#api-reference)
+14. [Configuration](#configuration)
+15. [Global vs Project CLAUDE.md](#global-vs-project-claudemd)
+16. [Deployment and Distribution](#deployment-and-distribution)
+17. [Troubleshooting](#troubleshooting)
+18. [Contributing](#contributing)
+19. [Changelog](#changelog)
+20. [License](#license)
 
 ---
 
@@ -64,7 +70,7 @@ whether it invoked the correct skill for a task.
 ### How It Works
 
 ```
-Claude Code (your IDE)
+Claude Code (your IDE or CLI)
        |
        | Every message triggers:
        v
@@ -125,6 +131,81 @@ Real-time charts, analytics, alerts
 
 ---
 
+## 3-Tier Ecosystem Architecture
+
+Claude Insight is **Tier 2** of a 3-tier architecture:
+
+```
+Tier 1: User Interface         (claude-code-ide)
+   |  uses hooks from
+Tier 2: Policy Enforcement      (THIS PROJECT - claude-insight)
+   |  uses skills from
+Tier 3: Knowledge Base          (claude-global-library)
+```
+
+| Tier | Repository | Purpose |
+|------|-----------|---------|
+| **Tier 1** | [claude-code-ide](https://github.com/piyushmakhija28/claude-code-ide) | JavaFX IDE + hook-downloader that executes hooks |
+| **Tier 2** | [claude-insight](https://github.com/piyushmakhija28/claude-insight) | Python hook scripts, policies, Flask monitoring dashboard |
+| **Tier 3** | [claude-global-library](https://github.com/piyushmakhija28/claude-global-library) | 21 reusable skills + 12 agents for code generation |
+
+---
+
+## The ~/.claude/ Directory
+
+All three tiers converge into a single shared directory: `~/.claude/`. This is the **canonical runtime location** used by both the IDE and the CLI.
+
+### Why ~/.claude/?
+
+1. **Single source of truth** - One location for all Claude configuration
+2. **Tool-agnostic** - IDE and CLI share the same hooks, policies, and session data
+3. **Portable** - `~/` resolves correctly on Windows, macOS, and Linux
+4. **No overhead** - Files are lightweight JSON summaries, not large datasets
+5. **Persistent** - Survives IDE restarts, system reboots, and tool upgrades
+
+### Directory Layout
+
+```
+~/.claude/
+|-- CLAUDE.md                          # Global configuration (loaded every session)
+|-- settings.json                      # Hook configuration
+|
+|-- scripts/                           # Hook scripts (from claude-insight GitHub)
+|   |-- 3-level-flow.py               #   Main: 3-level architecture check
+|   |-- clear-session-handler.py       #   Handles /clear command
+|   |-- pre-tool-enforcer.py           #   Validates tool calls
+|   |-- post-tool-tracker.py           #   Tracks progress
+|   |-- stop-notifier.py              #   Session save + voice
+|   |-- auto-fix-enforcer.py          #   System health checks
+|   +-- architecture/                  #   3-Level Architecture (107 files)
+|       |-- 01-sync-system/
+|       |-- 02-standards-system/
+|       +-- 03-execution-system/
+|
+|-- memory/                            # Session data (local only)
+|   |-- logs/sessions/                 #   Per-session flow-trace.json
+|   |-- sessions/                      #   Session state
+|   |-- tasks/                         #   Task tracking
+|   +-- config/                        #   Preferences, patterns
+|
++-- policies/                          # Policy definitions (34+ .md)
+    |-- 01-sync-system/
+    |-- 02-standards-system/
+    +-- 03-execution-system/
+```
+
+### What Each Part Does
+
+| Directory | Purpose | Written By | Read By |
+|-----------|---------|-----------|---------|
+| `scripts/` | Hook scripts enforcing policies | hook-downloader (from this repo's GitHub) | Claude Code CLI + IDE |
+| `memory/logs/sessions/` | Session traces | Hook scripts | Claude Insight dashboard |
+| `memory/sessions/` | Active session state | Hook scripts | Claude (continuity) |
+| `memory/config/` | User preferences | Hook scripts | Hook scripts + dashboard |
+| `policies/` | Policy definitions | Setup script | 3-level-flow.py |
+
+---
+
 ## Quick Start
 
 ### Prerequisites
@@ -159,7 +240,7 @@ pip install -r requirements.txt
 The dashboard reads logs from `~/.claude/memory/`. You need to install the
 3-level architecture hooks first.
 
-**Option A — Automatic (Recommended):**
+**Option A - Automatic (Recommended):**
 
 Windows (PowerShell):
 ```powershell
@@ -174,13 +255,13 @@ chmod +x scripts/setup-global-claude.sh
 ```
 
 The setup script will:
-1. Create `~/.claude/memory/current/` with enforcement scripts
+1. Create `~/.claude/scripts/` with enforcement scripts
 2. Install hooks in `~/.claude/settings.json`
-3. Install the global CLAUDE.md (3-level architecture, no project-specific info)
-4. Create necessary directories (`logs/`, `sessions/`, `config/`)
+3. Install the global CLAUDE.md
+4. Create necessary directories (`memory/logs/`, `memory/sessions/`, `memory/config/`)
 5. Verify installation is working
 
-**Option B — Manual:**
+**Option B - Manual:**
 
 See [CLAUDE.md](CLAUDE.md) for step-by-step manual setup instructions.
 
@@ -194,11 +275,10 @@ After restarting Claude Code, send any message. You should see:
 [LEVEL 3] EXECUTION SYSTEM (12 steps)        [OK] All steps verified
 ```
 
-### Voice Notifications Setup (Required)
+### Voice Notifications Setup
 
 Claude Insight uses **voice notifications** to speak session summaries, greetings, and
-task completion updates via text-to-speech. This requires an **OpenRouter API key** to
-generate dynamic, context-aware voice messages using an LLM.
+task completion updates via text-to-speech. This requires an **OpenRouter API key**.
 
 **Step 1: Create an OpenRouter API key**
 
@@ -209,10 +289,7 @@ generate dynamic, context-aware voice messages using an LLM.
 **Step 2: Save the API key locally**
 
 ```bash
-# Create the config directory (if it doesn't exist)
 mkdir -p ~/.claude/config
-
-# Paste your API key into this file (replace YOUR_KEY_HERE with your actual key)
 echo "YOUR_KEY_HERE" > ~/.claude/config/openrouter-api-key
 ```
 
@@ -222,22 +299,9 @@ echo "YOUR_KEY_HERE" > ~/.claude/config/openrouter-api-key
 |-------|------|--------------|
 | Session Start | You open Claude Code or run `/clear` | Hinglish greeting with session context |
 | Task Complete | A task is marked completed | Summary of what was accomplished |
-| Work Done | Session ends with completed work | Comprehensive session summary in Hinglish |
+| Work Done | Session ends with completed work | Comprehensive session summary |
 
-Voice messages are generated dynamically by an LLM using your session summary data
-(tools used, files changed, errors encountered, work narrative) so each message is
-unique and relevant to what you actually did in the session.
-
-**Verify voice is working:**
-
-```bash
-# Check API key file exists and is not empty
-cat ~/.claude/config/openrouter-api-key
-# Should print your API key (starts with sk-or-...)
-```
-
-> **Note:** Without the OpenRouter API key, voice notifications will fall back to
-> static default messages. The key is required for dynamic, context-aware voice output.
+> **Note:** Without the OpenRouter API key, voice notifications fall back to static default messages.
 
 ### Running the Dashboard
 
@@ -265,7 +329,6 @@ Open http://localhost:5000 in your browser.
 ## 3-Level Architecture Overview
 
 The 3-level architecture runs automatically on every Claude Code request via hooks.
-Here is what each level does:
 
 ### Level -1: Auto-Fix Enforcement
 
@@ -284,39 +347,24 @@ Here is what each level does:
 
 Exit code 0 = proceed. Exit code != 0 = all work stops.
 
-**What it checks:**
-- Python 3.8+ installed and accessible
-- Critical script files exist: `3-level-flow.py`, `pre-tool-enforcer.py`, `post-tool-tracker.py`
-- Session files are valid JSON (auto-fixes corruption)
-- Git repo is in good state (no detached heads, remote tracking set up)
-- Windows: Python configured for UTF-8 output (fixes encoding errors)
-
 ### Level 1: Sync System
 
 **Context, session management, and session chaining.**
 
-The foundation layer loads context and history before execution:
-
 - **Context monitoring** - Checks usage %, applies optimization if >70%
 - **Session ID generation** - Format: `SESSION-YYYYMMDD-HHMMSS-XXXX`
-- **Previous session loading** - Automatically loads previous session state if exists
-- **Session Chaining** - Links sessions in parent/child relationships with auto-tagging
+- **Previous session loading** - Automatically loads previous session state
+- **Session Chaining** - Links sessions in parent/child relationships
 - **Session Summaries** - Accumulates per-request data, generates summaries on `/clear`
-
-**Key Benefits:**
-1. Never lose work — all sessions automatically saved
-2. Cross-session continuity — Claude loads previous context automatically
-3. Multi-window support — Each window uses isolated state file
-4. Advanced analytics — Track time per task type, measure context usage trends
 
 ### Level 2: Standards System
 
 **Loads 15 coding standards (156 rules) and selects the correct skill/agent.**
 
 Standards loaded:
-1. Project structure (packages, visibility)
-2. Config management (externalize all config)
-3. Secret management (never hardcode)
+1. Project structure
+2. Config management
+3. Secret management
 4. Response format standards
 5. Service layer patterns
 6. Entity/model patterns
@@ -326,16 +374,11 @@ Standards loaded:
 10. Error handling
 11. API design (REST)
 12. Database standards
-13. Documentation (README + CLAUDE.md per repo)
+13. Documentation
 14. Kubernetes network policies
-15. K8s/Docker/Jenkins Infrastructure Standards (K8s archetypes, Dockerfile templates, Jenkins pipelines)
-
-**Skill/Agent selection** happens here — Claude matches the task to the correct skill
-(e.g., JavaFX task → `javafx-ide-designer`, Spring Boot task → `java-spring-boot-microservices`).
+15. K8s/Docker/Jenkins infrastructure standards
 
 ### Level 3: Execution System (12 Steps)
-
-**12 mandatory steps before implementation:**
 
 | Step | Name | Purpose |
 |------|------|---------|
@@ -357,16 +400,16 @@ Standards loaded:
 ## Hook Scripts Reference
 
 The hooks are configured in `~/.claude/settings.json` and run automatically.
-There are **4 hook types**, each enforcing different levels of the architecture:
+There are **4 hook types**, each enforcing different levels:
 
 | Hook Type | Trigger | Scripts | Levels Enforced |
 |-----------|---------|---------|-----------------|
 | `UserPromptSubmit` | Every new user message | `clear-session-handler.py` + `3-level-flow.py` | Level -1, 1, 2, 3 |
-| `PreToolUse` | Before every tool call | `pre-tool-enforcer.py` | Level 3.6 (optimization hints) + 3.7 (blocking) |
-| `PostToolUse` | After every tool call | `post-tool-tracker.py` | Level 3.9 (progress tracking) |
-| `Stop` | After every Claude response | `stop-notifier.py` | Level 3.10 (session save + voice notification) |
+| `PreToolUse` | Before every tool call | `pre-tool-enforcer.py` | Level 3.6 + 3.7 |
+| `PostToolUse` | After every tool call | `post-tool-tracker.py` | Level 3.9 |
+| `Stop` | After every Claude response | `stop-notifier.py` | Level 3.10 |
 
-### Complete `~/.claude/settings.json`
+### settings.json Configuration
 
 ```json
 {
@@ -376,397 +419,233 @@ There are **4 hook types**, each enforcing different levels of the architecture:
       "hooks": [
         {
           "type": "command",
-          "command": "python ~/.claude/memory/current/clear-session-handler.py",
-          "timeout": 15,
-          "statusMessage": "Level 1: Checking session state..."
+          "command": "python ~/.claude/scripts/clear-session-handler.py",
+          "timeout": 15
         },
         {
           "type": "command",
-          "command": "python ~/.claude/memory/current/3-level-flow.py --summary",
-          "timeout": 30,
-          "statusMessage": "Level -1/1/2/3: Running 3-level architecture check..."
+          "command": "python ~/.claude/scripts/3-level-flow.py --summary",
+          "timeout": 30
         }
       ]
     }],
     "PreToolUse": [{
       "hooks": [{
         "type": "command",
-        "command": "python ~/.claude/memory/current/pre-tool-enforcer.py",
-        "timeout": 10,
-        "statusMessage": "Level 3.6/3.7: Tool optimization + failure prevention..."
+        "command": "python ~/.claude/scripts/pre-tool-enforcer.py",
+        "timeout": 10
       }]
     }],
     "PostToolUse": [{
       "hooks": [{
         "type": "command",
-        "command": "python ~/.claude/memory/current/post-tool-tracker.py",
-        "timeout": 10,
-        "statusMessage": "Level 3.9: Tracking task progress..."
+        "command": "python ~/.claude/scripts/post-tool-tracker.py",
+        "timeout": 10
       }]
     }],
     "Stop": [{
       "hooks": [{
         "type": "command",
-        "command": "python ~/.claude/memory/current/stop-notifier.py",
-        "timeout": 20,
-        "statusMessage": "Level 3.10: Session save + voice notification..."
+        "command": "python ~/.claude/scripts/stop-notifier.py",
+        "timeout": 20
       }]
     }]
   }
 }
 ```
 
+> **IMPORTANT:** All hooks must have `"async": false` (default). If set to `true`, hook output is discarded and the checkpoint table is not displayed.
+
 ### What Each Hook Does
 
-**`UserPromptSubmit` → `clear-session-handler.py` + `3-level-flow.py`**
+**`UserPromptSubmit` -> `clear-session-handler.py` + `3-level-flow.py`**
 - Detects `/clear` command and saves old session, starts new one
-- On `/clear`: finalizes session summary, links new session as child of old session
-- Runs the full 3-level architecture check (Level -1 through Level 3 all 12 steps)
-- Auto-tags sessions with keywords from prompt, skill, task type, and project
-- Accumulates per-request summary data for session summaries
+- Runs the full 3-level architecture check (Level -1 through Level 3)
+- Auto-tags sessions with keywords from prompt, skill, task type
 - Writes `flow-trace.json` to the session log folder
-- Claude Insight reads this file for all its monitoring data
+- Claude Insight reads this file for all monitoring data
 
-**`PreToolUse` → `pre-tool-enforcer.py`**
+**`PreToolUse` -> `pre-tool-enforcer.py`**
 - Runs BEFORE every tool call (Read, Write, Edit, Bash, Grep, etc.)
-- Exit 0 = allow tool (may print optimization hints to stdout for Claude to see)
-- Exit 1 = BLOCK tool (prints reason to stderr, tool call is cancelled)
-- **Level 3.6 hints (non-blocking):** Grep without `head_limit`, Read without `offset+limit`
-- **Level 3.7 blocks (blocking):** Windows commands in Bash (del, copy, dir, xcopy...), Unicode characters in Python files on Windows
+- Exit 0 = allow tool (may print optimization hints)
+- Exit 1 = BLOCK tool (prints reason, tool call cancelled)
+- Level 3.6 hints: Grep without `head_limit`, Read without `offset+limit`
+- Level 3.7 blocks: Windows commands in Bash, Unicode in Python files on Windows
 
-**`PostToolUse` → `post-tool-tracker.py`**
+**`PostToolUse` -> `post-tool-tracker.py`**
 - Runs AFTER every tool call (always exits 0, never blocks)
 - Logs to `~/.claude/memory/logs/tool-tracker.jsonl`
-- Updates `~/.claude/memory/logs/session-progress.json`
 - Progress deltas: Read +10%, Write +40%, Edit +30%, Bash +15%, Task +20%, Grep/Glob +5%
 
-**`Stop` → `stop-notifier.py`**
+**`Stop` -> `stop-notifier.py`**
 - Runs after every Claude response completes
 - Saves session state to `~/.claude/memory/logs/`
-- Triggers Hinglish voice notification using comprehensive session summary data (tools used, files changed, work narrative)
-- Reads session summary from `session-summary.json` and passes it to LLM for dynamic voice message generation
-- Handles three voice events: session start greeting, task completion, and work-done summary
-- Requires OpenRouter API key at `~/.claude/config/openrouter-api-key` (see [Voice Notifications Setup](#voice-notifications-setup-required))
+- Triggers voice notification using session summary data
+- Requires OpenRouter API key at `~/.claude/config/openrouter-api-key`
 
-**No background daemons.** Everything runs per-request via hooks. When you send
-a message in Claude Code, the hooks fire, run the 3-level flow, write results to
-`~/.claude/memory/logs/`, and Claude Insight reads those logs.
+**No background daemons.** Everything runs per-request via hooks.
 
 ---
 
-## Imports & Module Loading
+## Imports and Module Loading
 
 ### Local Imports (Same Project)
 
-All imports within the project use **relative paths**:
-
 ```python
-# ✅ CORRECT - Use relative imports
 from services.monitoring.metrics_collector import MetricsCollector
 from services.ai.anomaly_detector import AnomalyDetector
 from utils.import_manager import ImportManager
 ```
 
-**Why:** Easier to refactor, works across different environments, no hardcoded paths.
-
 ### External Imports (claude-global-library)
-
-Use `ImportManager` utility to load skills, agents, and policies from GitHub:
 
 ```python
 from utils.import_manager import ImportManager
 
-# Load a skill from claude-global-library
 docker_skill = ImportManager.get_skill('docker')
-kubernetes = ImportManager.get_skill('kubernetes')
-
-# Load an agent
 orchestrator = ImportManager.get_agent('orchestrator-agent')
-devops = ImportManager.get_agent('devops-engineer')
-
-# Load a policy
-sync_policy = ImportManager.get_policy('01-sync-system/README.md')
 ```
 
 **GitHub URLs used:**
 ```
-Skills:  https://raw.githubusercontent.com/piyushmakhija28/claude-global-library/main/skills/{name}/skill.md
-Agents:  https://raw.githubusercontent.com/piyushmakhija28/claude-global-library/main/agents/{name}/agent.md
-Policies: https://raw.githubusercontent.com/piyushmakhija28/claude-insight/main/scripts/architecture/...
+Skills:   https://raw.githubusercontent.com/.../claude-global-library/main/skills/{name}/skill.md
+Agents:   https://raw.githubusercontent.com/.../claude-global-library/main/agents/{name}/agent.md
 ```
 
 ### Path Resolution
 
-For accessing local files across platforms:
-
 ```python
 from pathlib import Path
 
-# ✅ CORRECT
 home = Path.home()
+scripts = home / '.claude' / 'scripts'
 memory = home / '.claude' / 'memory'
 sessions = memory / 'sessions'
 
-# ✅ CORRECT - Relative to script
+# Relative to script
 script_dir = Path(__file__).parent
-project_root = Path(__file__).parent.parent.parent
-
-# ❌ WRONG - Hardcoded paths
-memory = "/Users/techd/.claude/memory"
 ```
 
 ---
 
 ## Session Management
 
-### What Makes Our Session System Different?
-
-Claude Code has built-in session management at the IDE level (per conversation window).
-We've built an **advanced session system** that goes beyond IDE limitations:
-
-| Feature | Claude Native | Our System |
-|---------|---|---|
-| **Persistence** | Lost on IDE close | Saved forever in `~/.claude/memory/sessions/` |
-| **Continuity** | Resets after `/clear` | Auto-chains sessions with parent/child links |
-| **Multi-Window** | Conflicts (shared state) | PID-based isolation (no conflicts) |
-| **Context Awareness** | Single window | Project-based + cross-session |
-| **Session Summaries** | None | Auto-generated with metrics |
-| **Session Tagging** | None | Tag-based organization (spring-boot, devops, etc.) |
-| **History Access** | Manual scrolling | Queryable database + Claude Insight dashboard |
-| **Parallel Work** | Not supported | Supported with isolation |
-
 ### Session ID Format
-
-Every session gets a unique ID for tracking:
 
 ```
 SESSION-YYYYMMDD-HHMMSS-XXXX
 ```
 
-**Example:** `SESSION-20260216-173003-09RZ`
-
-### How Sessions Are Tracked
-
-```
-User says "/clear" in Claude Code
-    ↓
-clear-session-handler.py fires
-    ↓
-Saves old session:
-- Generates session-summary.json
-- Links parent/child relationship
-- Indexes by tags
-- Stores flow-trace.json
-    ↓
-Creates new session
-    ↓
-Claude loads previous context:
-- Reads chain-index.json
-- Loads related sessions
-- Shows: "In the previous session, we..."
-    ↓
-Claude Insight Dashboard
-- Shows session history
-- Displays relationships
-- Searchable by tag
-```
+Example: `SESSION-20260216-173003-09RZ`
 
 ### Session Storage
 
 ```
 ~/.claude/memory/sessions/
-├─ SESSION-20260224-130424-IQAV/
-│  ├─ flow-trace.json              # Complete 12-step execution
-│  ├─ session-summary.json         # Auto-generated summary
-│  ├─ task-metadata.json           # Task tracking
-│  └─ context-metrics.json         # Token usage
-│
-└─ chain-index.json                # Session relationships
-   {
-     "SESSION-20260224-130424-IQAV": {
-       "parent": "SESSION-20260223-151000",
-       "children": [...],
-       "tags": ["spring-boot", "monitoring", "k8s"]
-     }
-   }
+|-- SESSION-20260224-130424-IQAV/
+|   |-- flow-trace.json              # Complete 12-step execution
+|   |-- session-summary.json         # Auto-generated summary
+|   |-- task-metadata.json           # Task tracking
+|   +-- context-metrics.json         # Token usage
+|
++-- chain-index.json                 # Session relationships
 ```
 
-### Key Benefits
+### Session Chaining
 
-**1. Never Lose Work**
-- All sessions automatically saved
-- Recoverable after IDE restart
-- Complete audit trail
-- Historical comparison
+Sessions are linked in parent/child relationships:
 
-**2. Cross-Session Continuity**
-- Sessions chained automatically after `/clear`
-- Claude loads previous context automatically
-- Related work discovered by tags
-- Project-level awareness
+```
+User says "/clear" in Claude Code
+    |
+clear-session-handler.py fires
+    |
+Saves old session (summary, tags, relationships)
+    |
+Creates new session (linked to parent)
+    |
+Claude loads previous context automatically
+    |
+Claude Insight shows session history
+```
 
-**3. Multi-Window Support**
-- Each window uses isolated state file (`~/.claude/.hook-state-{PID}.json`)
-- Work simultaneously without conflicts
-- No context mixing between windows
-- Clean separation per process
-
-**4. Advanced Analytics**
-- Track time per task type
-- Measure context usage trends
-- Identify skill preferences
-- Learn from past approaches
+| Feature | Claude Native | Our System |
+|---------|---|---|
+| **Persistence** | Lost on IDE close | Saved forever |
+| **Continuity** | Resets after /clear | Auto-chains sessions |
+| **Multi-Window** | Conflicts | PID-based isolation |
+| **Session Summaries** | None | Auto-generated |
+| **History Access** | Manual scrolling | Dashboard + search |
 
 ---
 
 ## Multi-Window Session Isolation
 
-### The Problem
-
-When running multiple Claude Code windows simultaneously, they share the same session state files.
-This causes:
-- Context corruption (mixing state from different windows)
-- Session ID conflicts (both windows writing to same file)
-- Lost work when one window overwrites another's session
-
-### The Solution
-
-**PID-based isolation:** Each Claude Code window gets its own isolated session state file.
-
-#### How It Works
+Each Claude Code window gets its own isolated session state:
 
 ```
 Window 1 (PID: 1234)
-    └─ ~/.claude/.hook-state-1234.json
-    └─ Isolated session state (no conflicts)
+    +-- ~/.claude/.hook-state-1234.json (isolated)
 
 Window 2 (PID: 5678)
-    └─ ~/.claude/.hook-state-5678.json
-    └─ Isolated session state (no conflicts)
+    +-- ~/.claude/.hook-state-5678.json (isolated)
 
 Central Registry:
-    └─ ~/.claude/memory/window-state/active-windows.json
-    └─ Tracks all active windows with PIDs and state files
+    +-- ~/.claude/memory/window-state/active-windows.json
 ```
 
-#### Technical Details
-
-- File locking (msvcrt on Windows, fcntl on Unix) prevents concurrent writes
-- Window registry automatically cleans up stale PID entries
-- Each window's session is completely isolated
-- No interference between simultaneous work
+File locking (msvcrt on Windows, fcntl on Unix) prevents concurrent writes.
 
 ---
 
 ## All Policies Reference
 
-Complete catalog of all 34+ policies across the 3-level architecture with their purposes and file locations.
+### Level 1: Sync System (6 policies)
 
-### Level 1: Sync System Policies (Context & Session Management)
+| Policy | Purpose | Location |
+|--------|---------|----------|
+| Session Memory | Stores session state, loads previous sessions | `policies/01-sync-system/session-management/` |
+| Session Chaining | Links parent/child relationships, auto-tags | `policies/01-sync-system/session-management/` |
+| Session Pruning | Manages cleanup, removes stale sessions | `policies/01-sync-system/session-management/` |
+| Context Management | Monitors context %, optimizes when >70% | `policies/01-sync-system/context-management/` |
+| User Preferences | Learns coding preferences, applies automatically | `policies/01-sync-system/user-preferences/` |
+| Cross-Project Patterns | Detects and replicates patterns across services | `policies/01-sync-system/pattern-detection/` |
 
-| Policy Name | Category | Purpose | Location |
-|---|---|---|---|
-| **Session Memory Policy** | Session Management | Stores session state, loads previous sessions by ID, maintains session continuity | `policies/01-sync-system/session-management/session-memory-policy.md` |
-| **Session Chaining Policy** | Session Management | Links parent/child session relationships, auto-tags sessions with keywords, generates per-request summaries | `policies/01-sync-system/session-management/session-chaining-policy.md` |
-| **Session Pruning Policy** | Session Management | Manages session cleanup, removes stale sessions, maintains performance | `policies/01-sync-system/session-management/session-pruning-policy.md` |
-| **Context Management** | Context Management | Monitors context usage %, optimizes token consumption, applies cleanup when >70% | `policies/01-sync-system/context-management/` |
-| **User Preferences Policy** | User Preferences | Learns user coding preferences, remembers architectural choices, applies preferences automatically | `policies/01-sync-system/user-preferences/user-preferences-policy.md` |
-| **Cross-Project Patterns Policy** | Pattern Detection | Detects patterns from existing code, replicates patterns across services, ensures consistency | `policies/01-sync-system/pattern-detection/cross-project-patterns-policy.md` |
+### Level 2: Standards System (1 policy, 156 rules)
 
-### Level 2: Standards System Policies (Coding Standards & Rules)
+| Policy | Purpose | Location |
+|--------|---------|----------|
+| Coding Standards Enforcement | Loads 15 standards with 156 rules | `policies/02-standards-system/` |
 
-| Policy Name | Category | Purpose | Location |
-|---|---|---|---|
-| **Coding Standards Enforcement Policy** | Standards Enforcement | Loads 15 coding standards with 156 rules (project structure, config, secrets, responses, services, entities, controllers, constants, utilities, error handling, API design, database, documentation, K8s, Docker/Jenkins) | `policies/02-standards-system/coding-standards-enforcement-policy.md` |
+### Level 3: Execution System (17 policies)
 
-### Level 3: Execution System Policies (12-Step Execution Flow)
+| Policy | Step | Purpose | Location |
+|--------|------|---------|----------|
+| Prompt Generation | 3.0 | Anti-hallucination, verify examples | `policies/03-execution-system/00-prompt-generation/` |
+| Anti-Hallucination | 3.0 | Detects hallucinations in generated code | `policies/03-execution-system/00-prompt-generation/` |
+| Task Breakdown | 3.1 | Creates tasks with dependencies | `policies/03-execution-system/01-task-breakdown/` |
+| Plan Mode Suggestion | 3.2 | Complexity scoring for plan mode | `policies/03-execution-system/02-plan-mode/` |
+| Model Selection | 3.4 | Selects Haiku/Sonnet/Opus | `policies/03-execution-system/04-model-selection/` |
+| Model Enforcement | 3.4 | Enforces correct model usage | `policies/03-execution-system/04-model-selection/` |
+| Skill Registry | 3.5 | Maps tasks to 21+ skills | `policies/03-execution-system/05-skill-agent-selection/` |
+| Skill/Agent Selection | 3.5 | Auto-invokes matched skill | `policies/03-execution-system/05-skill-agent-selection/` |
+| Core Skills Mandate | 3.5 | Ensures core skills available | `policies/03-execution-system/05-skill-agent-selection/` |
+| Tool Optimization | 3.6 | Applies limits on Read, Grep | `policies/03-execution-system/06-tool-optimization/` |
+| Failure Prevention | 3.7 | Pre-execution checks, auto-fixes | `policies/03-execution-system/failure-prevention/` |
+| Progress Tracking | 3.8-3.9 | Tracks task completion | `policies/03-execution-system/08-progress-tracking/` |
+| Phase Enforcement | 3.8-3.9 | Ensures correct phase progression | `policies/03-execution-system/08-progress-tracking/` |
+| Git Auto-Commit | 3.11 | Commits on phase completion | `policies/03-execution-system/09-git-commit/` |
+| File Management | 3.6 | Manages file operations | `policies/03-execution-system/` |
+| Parallel Execution | 3.8 | Detects parallelism opportunities | `policies/03-execution-system/` |
+| Proactive Consultation | 3.2 | Asks user for decisions | `policies/03-execution-system/` |
 
-| Policy Name | Category | Purpose | Location |
-|---|---|---|---|
-| **Prompt Generation Policy** | Step 3.0 | Verifies examples from codebase, prevents hallucinations, ensures accuracy | `policies/03-execution-system/00-prompt-generation/prompt-generation-policy.md` |
-| **Anti-Hallucination Enforcement** | Step 3.0 | Detects hallucinations in generated code, validates against actual codebase | `policies/03-execution-system/00-prompt-generation/anti-hallucination-enforcement.md` |
-| **Automatic Task Breakdown Policy** | Step 3.1 | Creates tasks with dependencies, breaks down complex work, enables parallel execution | `policies/03-execution-system/01-task-breakdown/automatic-task-breakdown-policy.md` |
-| **Auto Plan Mode Suggestion Policy** | Step 3.2 | Scores complexity 0-4 (direct), 5-9 (ask user), 10+ (suggest plan mode) | `policies/03-execution-system/02-plan-mode/auto-plan-mode-suggestion-policy.md` |
-| **Intelligent Model Selection Policy** | Step 3.4 | Selects Haiku/Sonnet/Opus based on task complexity and type | `policies/03-execution-system/04-model-selection/intelligent-model-selection-policy.md` |
-| **Model Selection Enforcement** | Step 3.4 | Enforces correct model selection, prevents wrong model usage | `policies/03-execution-system/04-model-selection/model-selection-enforcement.md` |
-| **Adaptive Skill Registry** | Step 3.5 | Maps tasks to 21+ available skills dynamically | `policies/03-execution-system/05-skill-agent-selection/adaptive-skill-registry.md` |
-| **Auto Skill/Agent Selection Policy** | Step 3.5 | Automatically invokes matched skill via Skill tool | `policies/03-execution-system/05-skill-agent-selection/auto-skill-agent-selection-policy.md` |
-| **Core Skills Mandate** | Step 3.5 | Ensures core skills are always available and loaded | `policies/03-execution-system/05-skill-agent-selection/core-skills-mandate.md` |
-| **Tool Usage Optimization Policy** | Step 3.6 | Applies offsets/limits on Read, head_limit on Grep, prevents tool inefficiency | `policies/03-execution-system/06-tool-optimization/tool-usage-optimization-policy.md` |
-| **Common Failures Prevention** | Step 3.7 | Pre-execution checks, auto-fixes, prevents common mistakes | `policies/03-execution-system/failure-prevention/common-failures-prevention.md` |
-| **Task Progress Tracking Policy** | Step 3.8-3.9 | Tracks task completion, monitors progress via post-tool hooks | `policies/03-execution-system/08-progress-tracking/task-progress-tracking-policy.md` |
-| **Task Phase Enforcement Policy** | Step 3.8-3.9 | Ensures tasks progress through phases correctly | `policies/03-execution-system/08-progress-tracking/task-phase-enforcement-policy.md` |
-| **Git Auto-Commit Policy** | Step 3.11 | Automatically commits work when phase completes | `policies/03-execution-system/09-git-commit/git-auto-commit-policy.md` |
-| **File Management Policy** | Step 3.6 | Manages file operations, prevents data loss, optimizes file handling | `policies/03-execution-system/file-management-policy.md` |
-| **Parallel Execution Policy** | Step 3.8 | Detects parallel execution opportunities, enables concurrent work | `policies/03-execution-system/parallel-execution-policy.md` |
-| **Proactive Consultation Policy** | Step 3.2 | Proactively asks user for decisions when needed | `policies/03-execution-system/proactive-consultation-policy.md` |
+### Testing Policies (1 policy)
 
-### Testing & Quality Policies
+| Policy | Purpose | Location |
+|--------|---------|----------|
+| Test Case Policy | Ensures comprehensive test coverage | `policies/testing/` |
 
-| Policy Name | Category | Purpose | Location |
-|---|---|---|---|
-| **Test Case Policy** | Testing | Ensures comprehensive test coverage, validates functionality | `policies/testing/test-case-policy.md` |
-
-### Policy Statistics
-
-| Level | Category | Count | Scope |
-|---|---|---|---|
-| **Level 1** | Sync System (Context, Sessions, Patterns, Preferences) | 6 policies | Foundation - loads context & history |
-| **Level 2** | Standards System (Coding Standards & Rules) | 1 policy (156 rules) | Standards - validates against 15 standards |
-| **Level 3** | Execution System (12-step flow) | 17 policies | Execution - enforces 12-step process |
-| **Testing** | Quality & Testing | 1 policy | Quality assurance |
-| **TOTAL** | All Systems | **34+ policies** | Complete 3-level enforcement |
-
-### How Policies Are Organized
-
-```
-policies/
-├── 01-sync-system/                    <- Level 1 (6 policies)
-│   ├── context-management/
-│   │   └── [context policies]
-│   ├── session-management/
-│   │   ├── session-memory-policy.md
-│   │   ├── session-chaining-policy.md
-│   │   └── session-pruning-policy.md
-│   ├── pattern-detection/
-│   │   └── cross-project-patterns-policy.md
-│   └── user-preferences/
-│       └── user-preferences-policy.md
-│
-├── 02-standards-system/               <- Level 2 (1 policy + 156 rules)
-│   └── coding-standards-enforcement-policy.md
-│
-├── 03-execution-system/               <- Level 3 (17 policies)
-│   ├── 00-prompt-generation/
-│   │   ├── prompt-generation-policy.md
-│   │   └── anti-hallucination-enforcement.md
-│   ├── 01-task-breakdown/
-│   │   └── automatic-task-breakdown-policy.md
-│   ├── 02-plan-mode/
-│   │   └── auto-plan-mode-suggestion-policy.md
-│   ├── 04-model-selection/
-│   │   ├── intelligent-model-selection-policy.md
-│   │   └── model-selection-enforcement.md
-│   ├── 05-skill-agent-selection/
-│   │   ├── adaptive-skill-registry.md
-│   │   ├── auto-skill-agent-selection-policy.md
-│   │   └── core-skills-mandate.md
-│   ├── 06-tool-optimization/
-│   │   └── tool-usage-optimization-policy.md
-│   ├── 07-recommendations/
-│   ├── 08-progress-tracking/
-│   │   ├── task-progress-tracking-policy.md
-│   │   └── task-phase-enforcement-policy.md
-│   ├── 09-git-commit/
-│   │   └── git-auto-commit-policy.md
-│   ├── failure-prevention/
-│   │   └── common-failures-prevention.md
-│   ├── file-management-policy.md
-│   └── parallel-execution-policy.md
-│
-└── testing/                           <- Testing Policies (1 policy)
-    └── test-case-policy.md
-```
+**Total: 34+ policies across all levels.**
 
 ---
 
@@ -794,127 +673,72 @@ policies/
 
 ```
 claude-insight/
-├── CLAUDE.md                    <- Claude Code instructions + setup guide
-├── README.md                    <- This file (comprehensive docs)
-├── CHANGELOG.md                 <- Version history
-├── LICENSE                      <- MIT license
-├── run.py                       <- App entry point
-├── requirements.txt             <- Python dependencies (17 packages)
-├── setup.py                     <- Package config
-│
-├── src/                         <- Flask application
-│   ├── app.py                   <- Main app, routes, SocketIO setup
-│   ├── config.py                <- Dev/Prod/Test configuration
-│   ├── auth/
-│   │   └── user_manager.py      <- Authentication (bcrypt)
-│   ├── models/
-│   │   └── user.py              <- User model
-│   ├── routes/
-│   │   ├── claude_credentials.py
-│   │   └── session_search.py
-│   ├── middleware/
-│   │   └── enforcement_logger.py  <- Logs all enforcement actions
-│   ├── mcp/
-│   │   └── enforcement_server.py  <- MCP enforcement server
-│   ├── services/
-│   │   ├── monitoring/            <- Core monitoring logic
-│   │   │   ├── three_level_flow_tracker.py
-│   │   │   ├── policy_execution_tracker.py
-│   │   │   ├── session_tracker.py
-│   │   │   ├── metrics_collector.py
-│   │   │   ├── log_parser.py
-│   │   │   ├── skill_agent_tracker.py
-│   │   │   ├── automation_tracker.py
-│   │   │   ├── optimization_tracker.py
-│   │   │   └── performance_profiler.py
-│   │   ├── ai/
-│   │   │   ├── anomaly_detector.py
-│   │   │   ├── bottleneck_analyzer.py
-│   │   │   └── predictive_analytics.py
-│   │   ├── notifications/
-│   │   │   ├── alert_routing.py
-│   │   │   ├── alert_sender.py
-│   │   │   └── notification_manager.py
-│   │   └── widgets/
-│   │       ├── collaboration_manager.py
-│   │       ├── comments_manager.py
-│   │       ├── community_manager.py
-│   │       └── version_manager.py
-│   └── utils/
-│       ├── path_resolver.py       <- Cross-platform paths
-│       ├── import_manager.py       <- Load skills/agents from GitHub
-│       └── history_tracker.py
-│
-├── templates/                   <- 31 Jinja2 HTML templates
-│   ├── base.html                <- Base layout
-│   ├── dashboard.html           <- Main dashboard
-│   ├── 3level-flow-history.html <- Flow history page
-│   ├── sessions.html
-│   ├── policies.html
-│   ├── analytics.html
-│   └── ...
-│
-├── static/                      <- CSS, JS, i18n
-│   ├── css/
-│   ├── js/
-│   └── i18n/
-│       ├── en.json
-│       ├── hi.json
-│       ├── es.json
-│       ├── fr.json
-│       └── de.json
-│
-├── scripts/                     <- Hook scripts + setup (40+ total)
-│   ├── setup-global-claude.sh   <- Unix automatic setup
-│   ├── setup-global-claude.ps1  <- Windows automatic setup
-│   ├── global-claude-md-template.md  <- Public CLAUDE.md template
-│   ├── 3-level-flow.py          <- Main hook entry point
-│   ├── clear-session-handler.py <- /clear hook handler
-│   ├── pre-tool-enforcer.py     <- Tool validation hook
-│   ├── post-tool-tracker.py     <- Progress tracking hook
-│   ├── stop-notifier.py         <- Session finalization hook
-│   ├── session-chain-manager.py <- Session chaining (parent/child/tags)
-│   ├── session-summary-manager.py <- Per-session summaries
-│   └── architecture/            <- 3-Level Architecture System (107 files)
-│       ├── 01-sync-system/      <- Context & session management (38 files)
-│       │   ├── context-management/
-│       │   ├── session-management/
-│       │   ├── pattern-detection/
-│       │   └── user-preferences/
-│       ├── 02-standards-system/ <- Standards & rules (3 files)
-│       └── 03-execution-system/ <- Execution flows (66 files)
-│           ├── 00-prompt-generation/
-│           ├── 01-task-breakdown/
-│           ├── 02-plan-mode/
-│           ├── 04-model-selection/
-│           ├── 05-skill-agent-selection/
-│           ├── 06-tool-optimization/
-│           ├── 07-recommendations/
-│           ├── 08-progress-tracking/
-│           ├── 09-git-commit/
-│           └── failure-prevention/
-│
-├── policies/                    <- Policy definitions (.md only - 34+ files)
-│   ├── 01-sync-system/          <- Level 1 foundation policies
-│   ├── 02-standards-system/     <- Level 2 coding standards policies
-│   └── 03-execution-system/     <- Level 3 execution policies
-│
-├── docs/                        <- Architecture documentation
-│   ├── ARCHITECTURE.md
-│   ├── session-management-comparison.md
-│   ├── multi-window-session-isolation.md
-│   └── archive/                 <- Archived operational reports (11 files)
-│
-├── config/                      <- Runtime config JSONs
-│   ├── failure-kb.json          <- Failure knowledge base
-│   ├── skills-registry.json     <- Available skills registry
-│   └── user-preferences.json
-│
-└── tests/                       <- Test suite (16+ test files)
-    ├── run_all_tests.py
-    ├── test_policy_integration.py
-    ├── test_enforcement_logger.py
-    └── ...
+|-- CLAUDE.md                    Project instructions
+|-- README.md                    This file
+|-- CHANGELOG.md                 Version history
+|-- LICENSE                      MIT license
+|-- run.py                       App entry point
+|-- requirements.txt             Python dependencies
+|-- setup.py                     Package config
+|
+|-- src/                         Flask application
+|   |-- app.py                   Main app, routes, SocketIO
+|   |-- config.py                Dev/Prod/Test configuration
+|   |-- auth/
+|   |   +-- user_manager.py      Authentication (bcrypt)
+|   |-- models/
+|   |   +-- user.py              User model
+|   |-- routes/
+|   |   |-- claude_credentials.py
+|   |   +-- session_search.py
+|   |-- middleware/
+|   |   +-- enforcement_logger.py
+|   |-- services/
+|   |   |-- monitoring/          Core monitoring logic
+|   |   |   |-- three_level_flow_tracker.py
+|   |   |   |-- policy_execution_tracker.py
+|   |   |   |-- session_tracker.py
+|   |   |   |-- metrics_collector.py
+|   |   |   |-- log_parser.py
+|   |   |   +-- [5 more trackers]
+|   |   |-- ai/
+|   |   |   |-- anomaly_detector.py
+|   |   |   |-- bottleneck_analyzer.py
+|   |   |   +-- predictive_analytics.py
+|   |   |-- notifications/
+|   |   |   |-- alert_routing.py
+|   |   |   |-- alert_sender.py
+|   |   |   +-- notification_manager.py
+|   |   +-- widgets/
+|   +-- utils/
+|       |-- path_resolver.py     Cross-platform paths
+|       |-- import_manager.py    Load skills/agents from GitHub
+|       +-- history_tracker.py
+|
+|-- templates/                   31 Jinja2 HTML templates
+|-- static/                      CSS, JS, i18n (EN, HI, ES, FR, DE)
+|
+|-- scripts/                     Hook scripts + setup (40+ total)
+|   |-- setup-global-claude.sh   Unix setup
+|   |-- setup-global-claude.ps1  Windows setup
+|   |-- 3-level-flow.py          Main hook entry point
+|   |-- clear-session-handler.py /clear handler
+|   |-- pre-tool-enforcer.py     Tool validation
+|   |-- post-tool-tracker.py     Progress tracking
+|   |-- stop-notifier.py         Session finalization
+|   +-- architecture/            3-Level Architecture (107 files)
+|       |-- 01-sync-system/      Context & session (38 files)
+|       |-- 02-standards-system/ Standards & rules (3 files)
+|       +-- 03-execution-system/ Execution flows (66 files)
+|
+|-- policies/                    Policy definitions (34+ .md files)
+|   |-- 01-sync-system/
+|   |-- 02-standards-system/
+|   +-- 03-execution-system/
+|
+|-- config/                      Runtime config JSONs
+|-- docs/                        Architecture documentation
++-- tests/                       Test suite (16+ test files)
 ```
 
 ---
@@ -927,14 +751,14 @@ claude-insight/
 |--------|----------|-------------|
 | GET | `/api/sessions` | List all sessions |
 | GET | `/api/sessions/<id>` | Get session details |
-| GET | `/api/sessions/<id>/flow-trace` | Get 3-level flow trace for session |
+| GET | `/api/sessions/<id>/flow-trace` | Get 3-level flow trace |
 
 ### Metrics
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | GET | `/api/metrics` | Current system metrics |
-| GET | `/api/metrics/history` | Historical metrics (query: `?days=7`) |
+| GET | `/api/metrics/history` | Historical metrics (`?days=7`) |
 | GET | `/api/metrics/context-usage` | Context usage over time |
 | GET | `/api/metrics/model-distribution` | Haiku/Sonnet/Opus usage |
 
@@ -980,195 +804,63 @@ All config is in `src/config.py`:
 
 ```python
 class Config:
-    SECRET_KEY = 'your-secret-key-here'       # Change in production!
+    SECRET_KEY = 'your-secret-key-here'
     HOST = '0.0.0.0'
     PORT = 5000
-    DEBUG = False
-
-class DevelopmentConfig(Config):
-    DEBUG = True
-
-class ProductionConfig(Config):
     DEBUG = False
 ```
 
 ### Memory System Paths
 
-**Auto-detected via `src/utils/path_resolver.py`:**
+Auto-detected via `src/utils/path_resolver.py`:
 
 | Path | What It Contains |
 |------|-----------------|
-| `~/.claude/memory/logs/sessions/` | Per-session flow-trace.json files |
-| `~/.claude/memory/logs/policy-hits.log` | Policy enforcement log |
+| `~/.claude/scripts/` | Hook scripts (enforcement) |
+| `~/.claude/scripts/architecture/` | 3-Level Architecture modules |
+| `~/.claude/memory/logs/sessions/` | Per-session flow-trace.json |
 | `~/.claude/memory/sessions/` | Session state files |
-| `~/.claude/memory/current/` | Core enforcement scripts |
 | `~/.claude/memory/config/` | Configuration files (JSON) |
-
-### Configuration Files
-
-**Runtime State:**
-- `.last-automation-check.json` - Last automation check timestamp
-- `dashboard_history.json` - Dashboard history data
-
-**User Preferences:**
-- `consultation-preferences.json` - User consultation preferences
-- `user-preferences.json` - General user preferences
-
-**Pattern Detection:**
-- `cross-project-patterns.json` - Detected cross-project patterns
-- `pattern-registry.json` - Pattern registry
-
-**Session Data:**
-- `session-index.json` - Session index
+| `~/.claude/policies/` | Policy definitions |
 
 ---
 
 ## Global vs Project CLAUDE.md
 
-This repo ships with two CLAUDE.md-related files:
-
 | File | Purpose | Location |
 |------|---------|----------|
-| `CLAUDE.md` | Project-specific instructions for Claude Code | Repo root |
-| `scripts/global-claude-md-template.md` | Template for global installation | `scripts/` |
-
-**The global CLAUDE.md** (installed by setup scripts to `~/.claude/CLAUDE.md`) contains:
-- 3-level architecture enforcement rules
-- Complete skill/agent registry (21 skills + 12 agents)
-- Windows Unicode restrictions
-- Context optimization rules
-
-**The project CLAUDE.md** (`claude-insight/CLAUDE.md`) contains:
-- Project overview and structure
-- Setup instructions
-- Development commands
-- Project-specific conventions
+| Global CLAUDE.md | 3-level architecture rules, skill registry | `~/.claude/CLAUDE.md` |
+| Project CLAUDE.md | Project-specific instructions, structure | Repo root |
 
 **Rule:** Global policies always take precedence. Project CLAUDE.md cannot override
-global policies. It adds context only.
-
-**Important:** Never put project-specific credentials, internal paths, or
-business logic in the global `~/.claude/CLAUDE.md`. Keep it generic.
+global policies - it adds context only.
 
 ---
 
-## Deployment & Distribution
+## Deployment and Distribution
 
-Claude Insight is designed as the centralized source of truth for all Claude Memory System policies, scripts, and architecture.
+### How Scripts Get to ~/.claude/
 
-### Architecture: Claude Insight as Central Registry
+**Option 1: IDE (hook-downloader)**
+The Claude Code IDE uses `hook-downloader.py` to download scripts from this repo's GitHub on startup. Scripts are cached locally in `~/.claude/scripts/`.
 
-This repository is the **permanent home** for all Claude Memory System policies, scripts, and architecture. Local installations pull from here.
+**Option 2: Setup script**
+Run `scripts/setup-global-claude.sh` (Unix) or `scripts/setup-global-claude.ps1` (Windows) to manually deploy scripts to `~/.claude/scripts/`.
 
-#### Directory Structure
-
-```
-claude-insight/
-├── scripts/                    # All 26+ hook and system scripts
-│   ├── core-hooks/            # UserPromptSubmit, PreToolUse, PostToolUse, Stop
-│   ├── session-management/    # Session tracking, chaining, cleanup
-│   ├── enforcement/           # Policy enforcement scripts
-│   ├── optimization/          # Performance, parallel mode, isolation
-│   └── utilities/             # Helpers, CLI tools
-│
-├── policies/                  # 15 standards, 156 rules
-│   ├── 01-sync-system/        # Foundation layer
-│   ├── 02-standards-system/   # Coding standards
-│   └── 03-execution-system/   # 12-step execution
-│
-├── docs/                      # 120+ documentation files
-│   ├── guides/                # User guides, setup, troubleshooting
-│   ├── architecture/          # System design, data flow
-│   └── standards/             # Java, Spring Boot, API design
-│
-├── deploy/                    # Deployment automation
-│   ├── install.sh             # Cross-platform installer
-│   ├── deploy-to-local.py     # Sync from Claude Insight to ~/.claude/
-│   ├── verify-deployment.py   # Verify installation correctness
-│   └── auto-update.py         # Check for updates on startup
-│
-├── config/                    # Configuration templates
-│   ├── settings.json.template # Hook configuration
-│   └── claude-md.template     # Global CLAUDE.md template
-│
-└── VERSION                    # Semantic versioning (4.1.0)
-```
-
-### Deployment Flow
-
-#### Installation (First Time)
-
+**Option 3: Manual**
 ```bash
-# User runs:
-git clone https://github.com/piyushmakhija28/claude-insight.git
 cd claude-insight
-bash deploy/install.sh
-
-# Script does:
-1. Check Python version (3.8+)
-2. Create ~/.claude/memory/current/
-3. Copy all scripts from scripts/ to ~/.claude/memory/current/
-4. Copy policies to ~/.claude/memory/policies/
-5. Copy docs to ~/.claude/memory/docs/
-6. Generate settings.json from template
-7. Verify deployment with verify-deployment.py
-8. Done!
-```
-
-#### Auto-Update (On Startup)
-
-Claude Insight can auto-update via deployment checks:
-
-```bash
-# In ~/.claude/settings.json hooks:
-{
-  "deploy_check": {
-    "enabled": true,
-    "check_url": "https://raw.githubusercontent.com/piyushmakhija28/claude-insight/main/VERSION",
-    "interval_days": 7
-  }
-}
-
-# On first hook execution:
-deploy/auto-update.py
-    |
-    +-- Read local VERSION (~/.claude/VERSION)
-    +-- Fetch remote VERSION (GitHub)
-    +-- If different: git pull + deploy/deploy-to-local.py
-    +-- If same: skip
-```
-
-#### Manual Update
-
-```bash
-# User can always manually update:
-cd /path/to/claude-insight
-git pull origin main
 python deploy/deploy-to-local.py
-
-# Done! All scripts updated locally
 ```
 
 ### What Goes Where
 
-#### Claude Insight Repo (Permanent - Versioned)
-
-✅ All 26+ hook scripts
-✅ All 15 system policies
-✅ All 120+ documentation files
-✅ Configuration templates
-✅ Installation/deployment scripts
-✅ Version history (Git commits)
-✅ Release notes (CHANGELOG)
-
-#### Local ~/.claude/ (Temporary - Session Data)
-
-✅ Current session: `.current-session.json`
-✅ Session logs: `memory/logs/sessions/`
-✅ Flow traces: JSON for current session
-✅ User preferences: `memory/config/user-preferences.json`
-✅ Local patterns: `memory/config/cross-project-patterns.json`
-✅ Hook settings: `settings.json` (generated from template)
+| Content | Source | Deployed To |
+|---------|--------|-------------|
+| Hook scripts (40+) | `claude-insight/scripts/` | `~/.claude/scripts/` |
+| Architecture (107 files) | `claude-insight/scripts/architecture/` | `~/.claude/scripts/architecture/` |
+| Policies (34+ .md) | `claude-insight/policies/` | `~/.claude/policies/` |
+| Session data | Generated at runtime | `~/.claude/memory/` (local only) |
 
 ---
 
@@ -1176,107 +868,45 @@ python deploy/deploy-to-local.py
 
 ### Dashboard shows no data
 
-The dashboard reads from `~/.claude/memory/logs/`. If there is no data:
-
-1. Verify memory system is installed:
-   ```bash
-   ls ~/.claude/memory/current/
-   ```
-2. Verify hooks are in settings.json:
-   ```bash
-   cat ~/.claude/settings.json | grep "3-level-flow"
-   ```
+1. Verify hooks are installed: `cat ~/.claude/settings.json | grep "3-level-flow"`
+2. Verify scripts exist: `ls ~/.claude/scripts/3-level-flow.py`
 3. Restart Claude Code and send a test message
-4. Check if log files are being created:
-   ```bash
-   ls ~/.claude/memory/logs/sessions/
-   ```
+4. Check logs: `ls ~/.claude/memory/logs/sessions/`
 
 ### Hook not running
 
-1. Check settings.json exists: `cat ~/.claude/settings.json`
-2. Verify hook script exists: `ls ~/.claude/memory/current/3-level-flow.py`
-3. Re-run setup: `.\scripts\setup-global-claude.ps1` (Windows) or `./scripts/setup-global-claude.sh` (Unix)
+1. Check settings.json: `cat ~/.claude/settings.json`
+2. Verify script exists: `ls ~/.claude/scripts/3-level-flow.py`
+3. Re-run setup: `./scripts/setup-global-claude.sh`
 
 ### Python encoding errors (Windows)
 
-If you see `UnicodeEncodeError` in Python scripts:
 ```bash
 set PYTHONIOENCODING=utf-8
 set PYTHONUTF8=1
 ```
-All Python scripts in this project use ASCII-only output (cp1252 safe).
 
 ### Flask server won't start
 
 ```bash
-# Check Python version (need 3.8+)
-python --version
-
-# Check dependencies
+python --version          # Need 3.8+
 pip install -r requirements.txt
-
-# Check port availability
-python run.py --port 8081
+python run.py --port 8081  # Try different port
 ```
 
-### Authentication issues
+### Checkpoint not displayed
 
-Default credentials: `admin` / `admin`
-
-If locked out, reset in `src/auth/user_manager.py`.
-
-### Review Checkpoint Not Displayed (v3.9.0 Fix)
-
-**Issue:** Checkpoint table (Session ID, complexity, model, context %) not showing after messages.
-
-**Root cause:** `async: true` in `~/.claude/settings.json` for UserPromptSubmit hooks.
-
-**Solution:** Change both UserPromptSubmit hooks from `"async": true` to `"async": false`:
-
-```json
-"UserPromptSubmit": [{
-  "hooks": [
-    {
-      "type": "command",
-      "command": "python ~/.claude/memory/current/3-level-flow.py --summary",
-      "async": false  // <- MUST BE false
-    }
-  ]
-}]
-```
-
-**Why:** When `async: true`, Claude Code runs the hook in the background and discards all stdout.
-The checkpoint table is printed to stdout but never displayed to the user. With `async: false`,
-the hook runs synchronously and displays the complete checkpoint table.
-
-**After fix:** Restart Claude Code and send any message — you should see the checkpoint table.
+Ensure all hooks in `~/.claude/settings.json` have `"async": false` (or omit async entirely, as false is the default). When async is true, hook stdout is discarded.
 
 ---
 
 ## Contributing
 
-Contributions are welcome! This project is focused on the monitoring dashboard and
-core enforcement scripts. Please follow these guidelines:
-
 1. **Fork** the repo and create a feature branch
 2. **Follow** the project conventions in `CLAUDE.md`
 3. **Test** your changes: `python -m pytest tests/ -v`
-4. **No daemons** — background monitoring is via Flask + hooks only
-5. **ASCII only** in Python files (Windows cp1252 compatibility)
-6. **Submit** a pull request with clear description
-
-**What fits in this repo:**
-- Dashboard UI improvements
-- New monitoring metrics
-- Additional analytics features
-- Bug fixes
-- Documentation improvements
-
-**What does NOT fit:**
-- Project-specific business logic
-- Credentials or personal configuration
-- Heavy background processes or daemons
+4. **ASCII only** in Python files (Windows cp1252 compatibility)
+5. **Submit** a pull request with clear description
 
 ---
 
@@ -1284,50 +914,30 @@ core enforcement scripts. Please follow these guidelines:
 
 See [CHANGELOG.md](CHANGELOG.md) for full version history.
 
-**Latest — v3.10.0 (2026-02-25):**
-- **[DOCS]** Added comprehensive "All Policies Reference" section to README
-  - Complete table of all 34+ policies across 3-level architecture
-  - Detailed purpose and file location for each policy
-  - Policy statistics and organization charts
-  - Quick reference for policy discovery
-- **[DOCS]** Updated version badges and documentation structure
-- Organized policies into 4 main categories: Level 1 (6), Level 2 (1+156 rules), Level 3 (17), Testing (1)
+**Latest - v3.11.0 (2026-02-28):**
+- **[FIX]** All script paths corrected to canonical `~/.claude/scripts/` location
+- **[FIX]** Removed all `memory/current` references (deprecated path)
+- **[FIX]** Removed hardcoded `/c/Users/techd/` path from architecture_module_monitor
+- **[FIX]** auto-commit-enforcer uses `CLAUDE_WORKSPACE_DIR` env var instead of hardcoded path
+- **[DOCS]** README updated with ~/.claude/ directory explanation and correct paths
+- **[DOCS]** settings.json example uses correct `~/.claude/scripts/` paths
+
+**v3.10.0 (2026-02-25):**
+- Added comprehensive "All Policies Reference" section to README
+- Complete table of all 34+ policies across 3-level architecture
 
 **v3.9.0 (2026-02-25):**
-- **[CRITICAL FIX]** Review checkpoint now displays after every message (async: false in hooks)
-- **[CLEANUP]** Removed 61 duplicate files from scripts/architecture/ directories
-- **[CLEANUP]** Moved 8 test files from scripts/ to tests/ directory
-- **[CLEANUP]** Moved 5 policy .md files from 03-execution-system/ to policies/03-execution-system/
-- **[CLEANUP]** Archived 11 operational reports from docs/ to docs/archive/
-
-**v4.1.0 (2026-02-24):**
-- **[FEATURE]** Multi-Window Session Isolation - PID-based isolation for concurrent work
-- **[FEATURE]** Review Checkpoint Consistency - Checkpoint always shown for all message types
-- **[FEATURE]** Session Management Documentation - Complete comparison with Claude native sessions
-- **[FIX]** Session conflicts in multi-window scenarios - Isolated state files per window
-- **[FIX]** Inconsistent checkpoint display - Checkpoint shows reliably every time
-- **[FIX]** Context corruption across windows - Each window maintains isolated context
-
-**v4.0.1 (2026-02-23):**
-- **[FIX]** Unreliable voice notifications - Changed subprocess handling for timeout reliability
-- **[FEATURE]** Auto work-done voice reminder - Prints reminder on TaskUpdate(completed)
-- Increased Stop hook timeout from 20s to 60s for safety
-
-**v4.0.0 (2026-02-23):**
-- **[FEATURE]** 5 new documentation files extracted from CLAUDE.md
-  - CHANGELOG-SYSTEM.md, troubleshooting-guide.md, claude-md-merge-policy.md, claude-insight-sync-guide.md, session-management-guide.md
-- **[DOCS]** Global CLAUDE.md optimized from 2,951 to 389 lines (87% reduction)
-- **[IMPROVEMENT]** Consistent policy output format across all hooks
-- **[IMPROVEMENT]** File change tracking for git commit reminders
+- Review checkpoint fix (async: false)
+- Removed 61 duplicate files from scripts/architecture/
 
 ---
 
 ## License
 
-MIT License — see [LICENSE](LICENSE) for details.
+MIT License - see [LICENSE](LICENSE) for details.
 
 ---
 
 **Source:** https://github.com/piyushmakhija28/claude-insight
-**Version:** 3.10.0 | **Python:** 3.8+ | **Flask:** 3.0
-**Last Updated:** 2026-02-25
+**Version:** 3.11.0 | **Python:** 3.8+ | **Flask:** 3.0
+**Last Updated:** 2026-02-28
