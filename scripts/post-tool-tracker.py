@@ -32,6 +32,24 @@ import glob as _glob
 from pathlib import Path
 from datetime import datetime
 
+# Lazy-loaded GitHub issue manager (non-blocking, never fails the hook)
+_github_issue_manager = None
+
+
+def _get_github_issue_manager():
+    """Lazy import of github_issue_manager module. Returns module or None."""
+    global _github_issue_manager
+    if _github_issue_manager is None:
+        try:
+            script_dir = os.path.dirname(os.path.abspath(__file__))
+            sys.path.insert(0, script_dir)
+            import github_issue_manager
+            _github_issue_manager = github_issue_manager
+        except ImportError:
+            _github_issue_manager = False
+    return _github_issue_manager if _github_issue_manager is not False else None
+
+
 # Loophole #19 fix: file locking for Windows (parallel tool call safety)
 try:
     import msvcrt
@@ -400,6 +418,29 @@ def main():
             except Exception:
                 pass
 
+            # GitHub Issues: Create issue for new task
+            try:
+                gim = _get_github_issue_manager()
+                if gim:
+                    task_id = gim.extract_task_id_from_response(tool_response)
+                    tc_subject = (tool_input or {}).get('subject', '')
+                    tc_desc = (tool_input or {}).get('description', '')
+                    if tc_subject and len(tc_subject) >= 5:
+                        issue_num = gim.create_github_issue(task_id, tc_subject, tc_desc)
+                        if issue_num:
+                            sys.stdout.write('[GH] Issue #' + str(issue_num) + ' created\n')
+                            sys.stdout.flush()
+
+                            # GitHub Branch: Create issue branch on first task
+                            branch = gim.get_session_branch()
+                            if not branch:  # First task - create branch
+                                branch = gim.create_issue_branch(issue_num, tc_subject)
+                                if branch:
+                                    sys.stdout.write('[GH] Branch: ' + branch + '\n')
+                                    sys.stdout.flush()
+            except Exception:
+                pass  # Never block on GitHub failures
+
         # -----------------------------------------------------------------------
         # STEP 3.5 ENFORCEMENT: Clear skill-selection flag when Skill or Task is called
         # (Loophole #11: session-specific flag files)
@@ -487,6 +528,20 @@ def main():
                         '.write_text(\'Sir, all tasks completed. [YOUR SUMMARY HERE]\', encoding=\'utf-8\')"\n'
                     )
                     sys.stdout.flush()
+
+                    # GitHub Issues: Close issue for completed task
+                    try:
+                        gim = _get_github_issue_manager()
+                        if gim:
+                            closed_task_id = (tool_input or {}).get('taskId', '')
+                            if closed_task_id:
+                                closed = gim.close_github_issue(closed_task_id)
+                                if closed:
+                                    sys.stdout.write('[GH] Issue closed for task ' + str(closed_task_id) + '\n')
+                                    sys.stdout.flush()
+                    except Exception:
+                        pass  # Never block on GitHub failures
+
             except Exception:
                 pass
 

@@ -506,8 +506,19 @@ def main():
             extra_context=summary_context,
         )
 
-    # PRIORITY 3: All work done voice (with session summary context)
+    # PRIORITY 3: All work done - trigger PR workflow first, then voice
     if WORK_DONE_FLAG.exists():
+        # GitHub PR Workflow: commit, push, PR, review, merge (non-blocking)
+        try:
+            script_dir = Path(__file__).parent
+            if str(script_dir) not in sys.path:
+                sys.path.insert(0, str(script_dir))
+            import github_pr_workflow
+            github_pr_workflow.run_pr_workflow()
+        except Exception as e:
+            log_s(f"[PR-WORKFLOW] Error: {e}")
+
+        # Voice notification (after PR workflow)
         summary_context = get_session_summary_for_voice()
         spoke_something = handle_voice_flag(
             WORK_DONE_FLAG,
