@@ -1,6 +1,6 @@
 # GitHub Branch + PR Workflow Policy
 
-**Version:** 1.0.0
+**Version:** 2.0.0
 **Last Updated:** 2026-02-28
 **Status:** Active
 **Depends On:** github-issues-integration-policy.md
@@ -12,24 +12,41 @@
 This policy defines the automated GitHub workflow that runs during a Claude Code session:
 **Issue -> Branch -> Work -> Commit -> Push -> PR -> Auto-Review -> Merge**
 
-The workflow builds on the GitHub Issues integration (v1) by adding automatic branch creation,
+The workflow builds on the GitHub Issues integration by adding automatic branch creation,
 pull request management, and auto-review with session metrics.
 
 ---
 
 ## Branch Naming
 
-**Format:** `issue-{N}-{slug}`
+**Format:** `{label}/{issueId}`
 
-- `{N}` = GitHub issue number from the first TaskCreate
-- `{slug}` = lowercase, hyphenated, max 40 chars from task subject
-- Example: `issue-42-implement-github-pr-workflow`
+- `{label}` = issue type detected from task subject/description
+- `{issueId}` = GitHub issue number from the first TaskCreate
+
+**Valid Label Prefixes:**
+
+| Label | When Used | Example |
+|-------|-----------|---------|
+| `fix` | Bug fixes, error resolution, crash fixes | `fix/42` |
+| `feature` | New functionality (default) | `feature/123` |
+| `refactor` | Code restructuring, cleanup | `refactor/99` |
+| `docs` | Documentation changes | `docs/55` |
+| `enhancement` | Improving existing features | `enhancement/78` |
+| `test` | Adding or updating tests | `test/34` |
+
+**Examples:**
+- `fix/42` - Bug fix for issue #42
+- `feature/123` - New feature for issue #123
+- `refactor/99` - Code refactoring for issue #99
+- `docs/55` - Documentation update for issue #55
 
 **Rules:**
 - One branch per session (first TaskCreate triggers creation)
 - All subsequent tasks stay on the same branch
 - Branch is only created from `main` or `master`
 - If already on a feature branch, branch creation is skipped
+- Legacy `issue-{N}` format is still recognized for backwards compatibility
 
 ---
 
@@ -106,11 +123,20 @@ Uses `gh pr comment` instead of `gh pr review --approve` to avoid branch protect
 ```json
 {
   "task_to_issue": {
-    "1": { "issue_number": 42, "status": "open", ... }
+    "1": {
+      "issue_number": 42,
+      "issue_url": "https://github.com/user/repo/issues/42",
+      "title": "[TASK-1] Fix authentication bug",
+      "issue_type": "fix",
+      "labels": ["task-auto-created", "level-3-execution", "bugfix", "priority-medium", "complexity-medium"],
+      "created_at": "2026-02-28T10:30:00",
+      "status": "open"
+    }
   },
-  "session_branch": "issue-42-implement-github-pr-workflow",
+  "session_branch": "fix/42",
   "branch_created_at": "2026-02-28T10:30:00",
   "branch_from_issue": 42,
+  "branch_type": "fix",
   "pr_number": 15,
   "pr_url": "https://github.com/user/repo/pull/15",
   "pr_merged": true,

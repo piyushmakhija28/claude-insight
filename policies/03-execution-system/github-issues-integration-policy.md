@@ -1,9 +1,9 @@
 # GitHub Issues Integration Policy - Level 3 Execution System
 
-**Version:** 1.0.0
+**Version:** 2.0.0
 **Part of:** Level 3: Execution System (12 Steps)
 **Status:** Active
-**Date:** 2026-02-26
+**Date:** 2026-02-28
 
 ---
 
@@ -43,55 +43,88 @@ Example:
 [TASK-001] Implement GitHub Issues integration for Level 3 flow
 ```
 
-**Description/Body:**
+**Description/Body (Comprehensive Story Format):**
 ```markdown
-## Task Details
-- **Task ID**: {task_id}
-- **Status**: In Progress
-- **Complexity**: {complexity_level}
-- **Task Type**: {task_type}
-- **Created**: {timestamp}
+## Story
 
-## Description
+{Narrative describing the task context based on issue type:
+  - fix: Bug identified, needs investigation and resolution
+  - feature: New functionality to be designed and implemented
+  - refactor: Code restructuring for maintainability
+  - docs: Documentation creation or update
+  - enhancement: Improving existing feature
+  - test: Test coverage addition}
+
+**What needs to be done:**
+
 {task_description}
 
+## Task Overview
+
+| Field | Value |
+|-------|-------|
+| **Task ID** | {task_id} |
+| **Subject** | {subject} |
+| **Type** | {issue_type} |
+| **Complexity** | {complexity}/25 |
+| **Priority** | {Critical/High/Medium/Low} |
+| **Model** | {model} |
+| **Skill/Agent** | {skill} |
+
 ## Acceptance Criteria
-- [ ] All sub-tasks completed
-- [ ] Code tested and verified
-- [ ] Documentation updated
-- [ ] Commit created and pushed
-- [ ] GitHub Issue closed
+- [ ] {criteria derived from description}
+- [ ] {type-specific criteria: e.g., "Root cause identified" for fix}
+- [ ] Changes committed and pushed
 
-## Related Links
-- Session ID: {session_id}
-- Flow Trace: ~/.claude/memory/logs/sessions/{session_id}/flow-trace.json
-- Task File: ~/.claude/memory/tasks/{task_id}.json
+## Session Context
 
-## Auto-Generated
-This issue was created automatically by Level 3 Execution System.
-Do not edit this issue manually - it will be auto-updated.
+| Field | Value |
+|-------|-------|
+| **Session ID** | {session_id} |
+| **Created At** | {timestamp} |
+| **Context Usage** | {context_pct}% |
+| **Repository** | {repo_name} |
+
+---
+_Auto-created by Claude Memory System (Level 3 Execution) | v3.0.0_
 ```
 
-#### Labels
+#### Labels (Fully Implemented in v3.0.0)
 
-**Standard Labels (Auto-Applied):**
+**System Labels (Always Applied):**
 
-| Label | When Applied | Color |
-|-------|--------------|-------|
-| `task-auto-created` | Always (identifies auto-created tasks) | Blue |
-| `level-3-execution` | Always (part of Level 3 system) | Purple |
-| `complexity-low` | When complexity ≤ 3 | Green |
-| `complexity-medium` | When complexity 4-9 | Yellow |
-| `complexity-high` | When complexity ≥ 10 | Red |
-| `type-feature` | When task_type == "feature" | Green |
-| `type-bugfix` | When task_type == "bugfix" | Red |
-| `type-refactor` | When task_type == "refactor" | Orange |
-| `type-documentation` | When task_type == "documentation" | Blue |
-| `priority-critical` | When complexity ≥ 15 | Red |
-| `priority-high` | When complexity 10-14 | Orange |
-| `priority-medium` | When complexity 5-9 | Yellow |
-| `priority-low` | When complexity ≤ 4 | Green |
-| `session-{session_id}` | Always (session tracking) | Gray |
+| Label | Purpose |
+|-------|---------|
+| `task-auto-created` | Identifies auto-created tasks |
+| `level-3-execution` | Part of Level 3 system |
+
+**Type Labels (Auto-Detected from subject/description):**
+
+| Label | Detected When |
+|-------|---------------|
+| `bugfix` | Contains: fix, bug, error, broken, crash, issue, resolve |
+| `feature` | Default (no other type detected) |
+| `refactor` | Contains: refactor, cleanup, reorganize, simplify, restructure |
+| `docs` | Contains: doc, readme, comment, documentation, javadoc |
+| `enhancement` | Contains: update, enhance, improve, upgrade, optimize |
+| `test` | Contains: test, spec, coverage, unit test, integration test |
+
+**Priority Labels (Derived from complexity score):**
+
+| Label | Complexity Range |
+|-------|-----------------|
+| `priority-critical` | complexity >= 15 |
+| `priority-high` | complexity 10-14 |
+| `priority-medium` | complexity 5-9 |
+| `priority-low` | complexity <= 4 |
+
+**Complexity Labels (Derived from complexity score):**
+
+| Label | Complexity Range |
+|-------|-----------------|
+| `complexity-high` | complexity >= 10 |
+| `complexity-medium` | complexity 4-9 |
+| `complexity-low` | complexity <= 3 |
 
 #### Assignees
 
@@ -110,23 +143,75 @@ Example: "Phase 6 - Settings & Preferences"
 ### [3.11] Git Auto-Commit → Close GitHub Issues
 
 **What Happens:**
-When a task is completed and git auto-commit triggers (Step 3.11), the corresponding GitHub Issue is AUTOMATICALLY CLOSED.
+When a task is completed, the corresponding GitHub Issue is AUTOMATICALLY CLOSED with a
+**comprehensive resolution story** that narrates what was done, how it was investigated,
+what files were changed, and how it was verified.
 
 #### Close Mechanism
 
 **Trigger:**
 1. Task marked as completed (status = "completed")
-2. Git commit created successfully
-3. Commit pushed to GitHub
+2. `close_github_issue()` called with comprehensive closing comment
 
-**GitHub Issue Closure:**
+**Closing Comment Format (Resolution Story):**
 
-```
-GitHub Issue Auto-Close Pattern:
-- Issue Title: [TASK-001] ...
-- Commit Message Includes: "Close #123" or "Closes #123" or "Fixes #123"
-- GitHub auto-link detects the pattern
-- Issue automatically closed on commit push
+```markdown
+## Resolution Story
+
+{Narrative paragraph based on issue type:
+  - fix: "This bug has been investigated, root-caused, and fixed.
+          The investigation involved reading N file(s)...
+          The fix was applied across N file(s)...
+          Verification was performed using N command(s)..."
+  - feature: "The new feature has been fully implemented...
+              Research phase: N existing file(s) were studied...
+              Implementation phase: N file(s) were created or modified...
+              Validation phase: N command(s) were executed..."
+  - refactor: "The code has been restructured...
+               First, N file(s) were analyzed...
+               The refactoring touched N file(s)..."
+}
+
+| Field | Value |
+|-------|-------|
+| **Status** | Completed |
+| **Duration** | {Xh Ym / Xm Ys} |
+| **Closed At** | {timestamp} |
+
+## Files Changed
+- `file1.py`
+- `file2.py`
+
+## Changes Made
+- file1.py (+50 chars)
+- file2.py (120 lines written)
+
+## Files Investigated
+- `file3.py`
+- `file4.py`
+
+## Root Cause Analysis (RCA) [only for fix type]
+**Investigation:** N files investigated
+**Root Cause Location:** `file1.py`, `file2.py`
+**Fix Applied:** N edit(s) made
+**Verification:** N command(s) run to verify fix
+
+## Tool Usage
+| Metric | Value |
+|--------|-------|
+| Total Tool Calls | N |
+| Files Read | N |
+| Files Changed | N |
+
+## Session Context
+| Field | Value |
+|-------|-------|
+| Session | `SESSION-ID` |
+| Complexity | X/25 |
+| Model | HAIKU/SONNET |
+
+---
+_Auto-closed by Claude Memory System (Level 3 Execution) | v3.0.0_
 ```
 
 **Commit Message Format:**
@@ -136,25 +221,9 @@ GitHub Issue Auto-Close Pattern:
 {detailed_explanation}
 
 - Completed task {task_id}
-- Fixed {issue_count} GitHub issues
 - Closes #{issue_number}
 
-Co-Authored-By: Claude Haiku 4.5 <noreply@anthropic.com>
-```
-
-**Example:**
-```
-Feature: Implement GitHub Issues integration for Level 3
-
-Add automatic GitHub Issue creation and closure for all auto-created tasks.
-Integrates with Level 3 execution system for comprehensive task tracking.
-Adds labels, priorities, and session tracking to GitHub Issues.
-
-- Completed task 001
-- Fixed 1 GitHub issue
-- Closes #42
-
-Co-Authored-By: Claude Haiku 4.5 <noreply@anthropic.com>
+Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
 ```
 
 ---
