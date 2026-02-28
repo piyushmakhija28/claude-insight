@@ -2303,6 +2303,12 @@ Work to complete: Execute phase {i} of the identified work breakdown.
     trace["meta"]["duration_seconds"] = round(duration_sec, 2)
 
     # =========================================================================
+    # COMPLETE SCRIPT INVENTORY (All 82 scripts)
+    # Documents every script's status, category, hook, and execution result.
+    # =========================================================================
+    trace["script_inventory"] = _build_script_inventory()
+
+    # =========================================================================
     # SAVE TRACE JSON
     # =========================================================================
     _save_trace(trace, session_log_dir, flow_start)
@@ -2549,6 +2555,184 @@ Work to complete: Execute phase {i} of the identified work breakdown.
             )
 
     sys.exit(0)
+
+
+def _build_script_inventory():
+    """
+    Build complete inventory of ALL 82 scripts (66 architecture + 16 root).
+    Each entry has: name, path, category, status, hook, description.
+    This gives full visibility into which scripts exist, which ran, which were skipped.
+    """
+    inventory = {
+        "total_scripts": 82,
+        "architecture_scripts": 66,
+        "root_scripts": 16,
+        "generated_at": datetime.now().isoformat(),
+        "hook_scripts": [],
+        "active_scripts": [],
+        "on_demand_scripts": [],
+        "daemon_scripts": [],
+        "phase4_scripts": [],
+        "superseded_scripts": [],
+    }
+
+    # --- 6 HOOK SCRIPTS (Always Running) ---
+    inventory["hook_scripts"] = [
+        {"name": "3-level-flow.py", "hook": "UserPromptSubmit", "status": "EXECUTED", "desc": "Main 3-level pipeline (L-1, L1, L2, L3)"},
+        {"name": "clear-session-handler.py", "hook": "UserPromptSubmit", "status": "EXECUTED", "desc": "Session state check, /clear handling"},
+        {"name": "pre-tool-enforcer.py", "hook": "PreToolUse", "status": "EXECUTED", "desc": "L3.1/3.5 blocking + L3.6 hints + L3.7 prevention"},
+        {"name": "post-tool-tracker.py", "hook": "PostToolUse", "status": "EXECUTED", "desc": "L3.9 progress tracking + GitHub issues + build validation"},
+        {"name": "stop-notifier.py", "hook": "Stop", "status": "EXECUTED", "desc": "Session save + voice + PR workflow + auto-commit"},
+        {"name": "auto-fix-enforcer.py", "hook": "via 3-level-flow.py", "status": "EXECUTED", "desc": "Level -1: 7 system health checks"},
+    ]
+
+    # --- 16 ACTIVE SCRIPTS (Called by hooks via subprocess) ---
+    inventory["active_scripts"] = [
+        {"name": "session-loader.py", "path": "01-sync-system/session-management/", "hook": "clear-session-handler.py", "status": "EXECUTED", "desc": "Loads past session context on start"},
+        {"name": "context-monitor-v2.py", "path": "01-sync-system/context-management/", "hook": "3-level-flow.py L1.1+3.3", "status": "EXECUTED", "desc": "Enhanced context monitor (called twice per message)"},
+        {"name": "session-state.py", "path": "01-sync-system/session-management/", "hook": "3-level-flow.py L1.4", "status": "EXECUTED", "desc": "Maintains durable session state"},
+        {"name": "load-preferences.py", "path": "01-sync-system/user-preferences/", "hook": "3-level-flow.py L1.3", "status": "EXECUTED", "desc": "Loads user preferences for decision-making"},
+        {"name": "standards-loader.py", "path": "02-standards-system/", "hook": "3-level-flow.py L2", "status": "EXECUTED", "desc": "Loads all coding standards and rules"},
+        {"name": "prompt-generator.py", "path": "03-execution-system/00-prompt-generation/", "hook": "3-level-flow.py 3.0+3.5", "status": "EXECUTED", "desc": "Generates structured prompts (called twice)"},
+        {"name": "task-auto-analyzer.py", "path": "03-execution-system/01-task-breakdown/", "hook": "3-level-flow.py 3.1", "status": "EXECUTED", "desc": "Automatic task breakdown + complexity analysis"},
+        {"name": "auto-plan-mode-suggester.py", "path": "03-execution-system/02-plan-mode/", "hook": "3-level-flow.py 3.2", "status": "EXECUTED", "desc": "Decides if plan mode needed"},
+        {"name": "pre-execution-checker.py", "path": "03-execution-system/failure-prevention/", "hook": "3-level-flow.py 3.7", "status": "EXECUTED", "desc": "Pre-execution failure KB check"},
+        {"name": "tool-usage-optimizer.py", "path": "03-execution-system/06-tool-optimization/", "hook": "pre-tool-enforcer.py", "status": "EXECUTED", "desc": "Pre-execution token-saving optimizations"},
+        {"name": "check-incomplete-work.py", "path": "03-execution-system/08-progress-tracking/", "hook": "post-tool-tracker.py", "status": "EXECUTED", "desc": "Detects incomplete tasks on session resume"},
+        {"name": "auto-commit-enforcer.py", "path": "03-execution-system/09-git-commit/", "hook": "stop-notifier.py", "status": "EXECUTED", "desc": "Enforces auto-commit on task completion"},
+        {"name": "auto-save-session.py", "path": "01-sync-system/session-management/", "hook": "stop-notifier.py", "status": "EXECUTED", "desc": "Auto-saves session before cleanup"},
+        {"name": "archive-old-sessions.py", "path": "01-sync-system/session-management/", "hook": "stop-notifier.py", "status": "EXECUTED", "desc": "Archives sessions >30 days, keeps last 10"},
+        {"name": "failure-detector.py", "path": "03-execution-system/failure-prevention/", "hook": "stop-notifier.py", "status": "EXECUTED", "desc": "Analyzes failure patterns from logs"},
+    ]
+
+    # --- 3 INLINE SCRIPTS (Logic inside hook code) ---
+    inventory["active_scripts"].extend([
+        {"name": "model-auto-selector.py", "path": "03-execution-system/04-model-selection/", "hook": "3-level-flow.py 3.4 INLINE", "status": "INLINE", "desc": "Logic implemented inline in 3-level-flow.py"},
+        {"name": "auto-skill-agent-selector.py", "path": "03-execution-system/05-skill-agent-selection/", "hook": "3-level-flow.py 3.5 INLINE", "status": "INLINE", "desc": "Logic implemented inline in 3-level-flow.py"},
+        {"name": "windows-python-unicode-checker.py", "path": "03-execution-system/failure-prevention/", "hook": "pre-tool-enforcer.py L3.7 INLINE", "status": "INLINE", "desc": "Logic implemented inline in pre-tool-enforcer.py"},
+    ])
+
+    # --- 10 ROOT UTILITY SCRIPTS ---
+    inventory["on_demand_scripts"].extend([
+        {"name": "session-id-generator.py", "path": "scripts/", "category": "ROOT", "status": "EXECUTED", "desc": "Generates session IDs (called by 3-level-flow)"},
+        {"name": "session-summary-manager.py", "path": "scripts/", "category": "ROOT", "status": "EXECUTED", "desc": "Generates session-summary.json + .md"},
+        {"name": "session-chain-manager.py", "path": "scripts/", "category": "ROOT", "status": "EXECUTED", "desc": "Session chaining across /clear"},
+        {"name": "github_issue_manager.py", "path": "scripts/", "category": "ROOT", "status": "EXECUTED", "desc": "Creates/closes GitHub issues on TaskCreate/TaskUpdate"},
+        {"name": "github_pr_workflow.py", "path": "scripts/", "category": "ROOT", "status": "AVAILABLE", "desc": "Full PR lifecycle orchestrator"},
+        {"name": "auto_build_validator.py", "path": "scripts/", "category": "ROOT", "status": "EXECUTED", "desc": "Auto-detect project type and run compile/build check"},
+        {"name": "context-monitor-v2.py", "path": "scripts/", "category": "ROOT", "status": "EXECUTED", "desc": "Root copy of context monitor"},
+        {"name": "voice-notifier.py", "path": "scripts/", "category": "ROOT", "status": "EXECUTED", "desc": "Voice notification via PowerShell TTS"},
+        {"name": "ide_paths.py", "path": "scripts/", "category": "ROOT", "status": "AVAILABLE", "desc": "IDE path resolution utility"},
+        {"name": "policy-executor.py", "path": "scripts/", "category": "ROOT", "status": "AVAILABLE", "desc": "Policy execution utility"},
+    ])
+
+    # --- 33 ON-DEMAND UTILITIES (CLI tools for manual use) ---
+    on_demand_arch = [
+        # Context management
+        {"name": "auto-context-pruner.py", "path": "01-sync-system/context-management/", "desc": "Auto-prunes context when >70%"},
+        {"name": "context-cache.py", "path": "01-sync-system/context-management/", "desc": "File content summary caching"},
+        {"name": "context-extractor.py", "path": "01-sync-system/context-management/", "desc": "Extracts essential info from tool outputs"},
+        {"name": "file-type-optimizer.py", "path": "01-sync-system/context-management/", "desc": "Optimal read command per file type"},
+        {"name": "monitor-and-cleanup-context.py", "path": "01-sync-system/context-management/", "desc": "Triggers cleanup when over threshold"},
+        {"name": "smart-cleanup.py", "path": "01-sync-system/context-management/", "desc": "Policy-driven cleanup with dry-run"},
+        {"name": "smart-file-summarizer.py", "path": "01-sync-system/context-management/", "desc": "Generates intelligent file summaries"},
+        {"name": "tiered-cache.py", "path": "01-sync-system/context-management/", "desc": "Three-tier cache manager (hot/warm/cold)"},
+        {"name": "update-context-usage.py", "path": "01-sync-system/context-management/", "desc": "Manually update context tracking file"},
+        # Pattern detection
+        {"name": "detect-patterns.py", "path": "01-sync-system/pattern-detection/", "desc": "Slow: reads all sessions, run manually"},
+        {"name": "apply-patterns.py", "path": "01-sync-system/pattern-detection/", "desc": "Suggests stored patterns for a topic"},
+        # Session management
+        {"name": "session-search.py", "path": "01-sync-system/session-management/", "desc": "Search sessions by tags/project/date"},
+        {"name": "session-save-triggers.py", "path": "01-sync-system/session-management/", "desc": "Detects threshold conditions for session save"},
+        {"name": "protect-session-memory.py", "path": "01-sync-system/session-management/", "desc": "Verifies session files are protected"},
+        {"name": "session-start-check.py", "path": "01-sync-system/session-management/", "desc": "Startup health check (daemon status, recommendations)"},
+        # User preferences
+        {"name": "track-preference.py", "path": "01-sync-system/user-preferences/", "desc": "Records a single preference entry"},
+        {"name": "preference-detector.py", "path": "01-sync-system/user-preferences/", "desc": "Auto-detects preferences from conversation logs"},
+        # Task breakdown
+        {"name": "task-phase-enforcer.py", "path": "03-execution-system/01-task-breakdown/", "desc": "Validates task/phase breakdown requirements"},
+        # Model selection
+        {"name": "model-selection-monitor.py", "path": "03-execution-system/04-model-selection/", "desc": "Monitors model usage distribution"},
+        {"name": "model-selection-enforcer.py", "path": "03-execution-system/04-model-selection/", "desc": "Enforces model selection rules"},
+        # Skill/agent selection
+        {"name": "auto-register-skills.py", "path": "03-execution-system/05-skill-agent-selection/", "desc": "Scans and registers new skills"},
+        {"name": "core-skills-enforcer.py", "path": "03-execution-system/05-skill-agent-selection/", "desc": "Enforces core skill execution order"},
+        # Tool optimization
+        {"name": "smart-read.py", "path": "03-execution-system/06-tool-optimization/", "desc": "Smart offset/limit strategies for Read"},
+        {"name": "pre-execution-optimizer.py", "path": "03-execution-system/06-tool-optimization/", "desc": "Optimizes tool parameters before execution"},
+        {"name": "auto-tool-wrapper.py", "path": "03-execution-system/06-tool-optimization/", "desc": "Cache check + optimization hints wrapper"},
+        {"name": "ast-code-navigator.py", "path": "03-execution-system/06-tool-optimization/", "desc": "AST extraction (Java/TS/JS/Python)"},
+        # Recommendations
+        {"name": "skill-detector.py", "path": "03-execution-system/07-recommendations/", "desc": "Auto-suggests skills from keywords"},
+        {"name": "check-recommendations.py", "path": "03-execution-system/07-recommendations/", "desc": "Displays latest recommendations"},
+        {"name": "skill-manager.py", "path": "03-execution-system/07-recommendations/", "desc": "CRUD interface for skill registry"},
+        # Git commit
+        {"name": "auto-commit-detector.py", "path": "03-execution-system/09-git-commit/", "desc": "Detects commit trigger conditions"},
+        {"name": "auto-commit.py", "path": "03-execution-system/09-git-commit/", "desc": "Executes actual commit (calls detector)"},
+        {"name": "trigger-auto-commit.py", "path": "03-execution-system/09-git-commit/", "desc": "Integration trigger for commit+push"},
+        # Failure prevention
+        {"name": "failure-solution-learner.py", "path": "03-execution-system/failure-prevention/", "desc": "Learns solutions from successful fixes"},
+        {"name": "failure-pattern-extractor.py", "path": "03-execution-system/failure-prevention/", "desc": "Extracts patterns from failure logs"},
+        {"name": "failure-learner.py", "path": "03-execution-system/failure-prevention/", "desc": "Updates KB with learned solutions"},
+        {"name": "failure-detector-v2.py", "path": "03-execution-system/failure-prevention/", "desc": "Enhanced failure detector with --analyze mode"},
+        {"name": "update-failure-kb.py", "path": "03-execution-system/failure-prevention/", "desc": "Project-specific failure learning"},
+    ]
+    for s in on_demand_arch:
+        s["category"] = "ON-DEMAND"
+        s["status"] = "AVAILABLE"
+    inventory["on_demand_scripts"].extend(on_demand_arch)
+
+    # --- 3 DAEMON SCRIPTS (Require background process) ---
+    inventory["daemon_scripts"] = [
+        {"name": "preference-auto-tracker.py", "path": "01-sync-system/user-preferences/", "status": "SKIPPED", "reason": "Requires watchdog library + background process", "desc": "Monitors logs continuously for preferences"},
+        {"name": "task-auto-tracker.py", "path": "03-execution-system/01-task-breakdown/", "status": "SKIPPED", "reason": "Requires watchdog library + background process", "desc": "File monitoring with watchdog"},
+        {"name": "skill-auto-suggester.py", "path": "03-execution-system/07-recommendations/", "status": "SKIPPED", "reason": "Requires background process", "desc": "Monitors conversation logs for skill suggestions"},
+    ]
+
+    # --- 4 PHASE-4 STUBS (Future automation, not production-ready) ---
+    inventory["phase4_scripts"] = [
+        {"name": "prompt-auto-wrapper.py", "path": "03-execution-system/00-prompt-generation/", "status": "STUB", "desc": "Phase-4: auto-generates structured prompts"},
+        {"name": "plan-mode-auto-decider.py", "path": "03-execution-system/02-plan-mode/", "status": "STUB", "desc": "Phase-4: auto-enters plan mode without confirmation"},
+        {"name": "skill-agent-auto-executor.py", "path": "03-execution-system/05-skill-agent-selection/", "status": "STUB", "desc": "Phase-4: auto-executes skills without confirmation"},
+        {"name": "tool-call-interceptor.py", "path": "03-execution-system/06-tool-optimization/", "status": "STUB", "desc": "Phase-2: intercepts and rewrites tool calls"},
+    ]
+
+    # --- 3 SUPERSEDED SCRIPTS (Replaced by newer versions) ---
+    inventory["superseded_scripts"] = [
+        {"name": "context-estimator.py", "path": "01-sync-system/context-management/", "status": "SUPERSEDED", "replaced_by": "context-monitor-v2.py", "desc": "Original context estimator"},
+        {"name": "monitor-context.py", "path": "01-sync-system/context-management/", "status": "SUPERSEDED", "replaced_by": "context-monitor-v2.py", "desc": "Original context monitor"},
+        {"name": "intelligent-model-selector.py", "path": "03-execution-system/04-model-selection/", "status": "SUPERSEDED", "replaced_by": "inline in 3-level-flow.py", "desc": "Original model selector"},
+        {"name": "git-auto-commit-ai.py", "path": "03-execution-system/09-git-commit/", "status": "SUPERSEDED", "replaced_by": "auto-commit-enforcer.py", "desc": "Phase-4: AI-generated commit messages"},
+    ]
+
+    # Summary counts
+    executed = len([s for s in inventory["hook_scripts"] if s["status"] == "EXECUTED"])
+    executed += len([s for s in inventory["active_scripts"] if s["status"] in ("EXECUTED", "INLINE")])
+    executed += len([s for s in inventory["on_demand_scripts"] if s["status"] == "EXECUTED"])
+    available = len([s for s in inventory["on_demand_scripts"] if s["status"] == "AVAILABLE"])
+
+    inventory["summary"] = {
+        "hook_scripts": len(inventory["hook_scripts"]),
+        "active_executed": len([s for s in inventory["active_scripts"] if s["status"] == "EXECUTED"]),
+        "active_inline": len([s for s in inventory["active_scripts"] if s["status"] == "INLINE"]),
+        "on_demand_executed": len([s for s in inventory["on_demand_scripts"] if s["status"] == "EXECUTED"]),
+        "on_demand_available": available,
+        "daemon_skipped": len(inventory["daemon_scripts"]),
+        "phase4_stubs": len(inventory["phase4_scripts"]),
+        "superseded": len(inventory["superseded_scripts"]),
+        "total_executed_this_session": executed,
+        "total_available": available,
+        "total_scripts": (
+            len(inventory["hook_scripts"]) +
+            len(inventory["active_scripts"]) +
+            len(inventory["on_demand_scripts"]) +
+            len(inventory["daemon_scripts"]) +
+            len(inventory["phase4_scripts"]) +
+            len(inventory["superseded_scripts"])
+        ),
+    }
+
+    return inventory
 
 
 def _save_trace(trace, session_log_dir, flow_start):

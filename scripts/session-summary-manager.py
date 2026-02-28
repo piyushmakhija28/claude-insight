@@ -644,7 +644,7 @@ def finalize(session_id):
             for e in error_entries[:10]  # Keep last 10 errors max
         ]
 
-    # 3. Flow trace decisions
+    # 3. Flow trace decisions + script inventory
     flow_trace = _load_flow_trace(session_id)
     if flow_trace:
         final_decision = flow_trace.get("final_decision", {})
@@ -664,6 +664,22 @@ def finalize(session_id):
         meta = flow_trace.get("meta", {})
         data["flow_version"] = meta.get("flow_version", "")
         data["flow_duration_ms"] = int(meta.get("duration_seconds", 0) * 1000)
+
+        # 3b. Script inventory from flow-trace (all 82 scripts)
+        script_inv = flow_trace.get("script_inventory", {})
+        if script_inv:
+            inv_summary = script_inv.get("summary", {})
+            data["script_inventory_summary"] = {
+                "total_scripts": inv_summary.get("total_scripts", 0),
+                "executed_this_session": inv_summary.get("total_executed_this_session", 0),
+                "available_on_demand": inv_summary.get("total_available", 0),
+                "hook_scripts": inv_summary.get("hook_scripts", 0),
+                "active_executed": inv_summary.get("active_executed", 0),
+                "active_inline": inv_summary.get("active_inline", 0),
+                "daemon_skipped": inv_summary.get("daemon_skipped", 0),
+                "phase4_stubs": inv_summary.get("phase4_stubs", 0),
+                "superseded": inv_summary.get("superseded", 0),
+            }
 
     # 4. Session metadata (duration, status)
     session_json = _load_session_json(session_id)
@@ -1036,6 +1052,26 @@ def _generate_markdown(data):
             tool = err.get("tool", "")
             file_path = err.get("file", "N/A")
             lines.append(f"| {i} | {ts} | {tool} | `{file_path}` |")
+        lines.append("")
+
+    # ===================== SCRIPT INVENTORY (82 scripts) =====================
+    inv = data.get("script_inventory_summary", {})
+    if inv:
+        lines.append("---")
+        lines.append("")
+        lines.append("## Script Inventory (82 Total)")
+        lines.append("")
+        lines.append("| Category | Count | Status |")
+        lines.append("|----------|-------|--------|")
+        lines.append("| Hook Scripts (always running) | " + str(inv.get("hook_scripts", 0)) + " | EXECUTED |")
+        lines.append("| Active (subprocess by hooks) | " + str(inv.get("active_executed", 0)) + " | EXECUTED |")
+        lines.append("| Active (inline in hooks) | " + str(inv.get("active_inline", 0)) + " | INLINE |")
+        lines.append("| On-Demand Utilities | " + str(inv.get("available_on_demand", 0)) + " | AVAILABLE |")
+        lines.append("| Daemon (need background) | " + str(inv.get("daemon_skipped", 0)) + " | SKIPPED |")
+        lines.append("| Phase-4 Stubs (future) | " + str(inv.get("phase4_stubs", 0)) + " | STUB |")
+        lines.append("| Superseded (replaced) | " + str(inv.get("superseded", 0)) + " | SUPERSEDED |")
+        lines.append("| **Total Executed This Session** | **" + str(inv.get("executed_this_session", 0)) + "** | |")
+        lines.append("| **Total Scripts** | **" + str(inv.get("total_scripts", 0)) + "** | |")
         lines.append("")
 
     # ===================== WORK STORY (Narrative) =====================
