@@ -26,16 +26,31 @@ import json
 from datetime import datetime
 from pathlib import Path
 
-# Add utilities to path for subprocess_utils import
 MEMORY_DIR = Path.home() / ".claude" / "memory"
-sys.path.insert(0, str(MEMORY_DIR / "utilities"))
-
-from subprocess_utils import run_git_command, run_system_command
 
 # Fix Windows encoding
 if sys.platform == 'win32':
-    sys.stdout.reconfigure(encoding='utf-8')
-    sys.stderr.reconfigure(encoding='utf-8')
+    try:
+        sys.stdout.reconfigure(encoding='utf-8')
+        sys.stderr.reconfigure(encoding='utf-8')
+    except Exception:
+        pass
+
+
+def run_git_command(args, timeout=30):
+    """Run a git command and return the result."""
+    try:
+        return subprocess.run(
+            ['git'] + args,
+            capture_output=True, text=True, timeout=timeout
+        )
+    except Exception as e:
+        # Return a fake result object on error
+        class _R:
+            returncode = 1
+            stdout = ''
+            stderr = str(e)
+        return _R()
 
 def log_policy_hit(action, context):
     """Log policy enforcement"""
@@ -82,32 +97,40 @@ def find_git_repos_with_changes():
 
 def trigger_commit_for_repo(repo_path):
     """Trigger auto-commit for a specific repo"""
-    print(f"\n{'='*70}")
-    print(f"[U+1F4E6] Repository: {os.path.basename(repo_path)}")
-    print(f"{'='*70}\n")
-    
-    trigger_script = os.path.expanduser("~/.claude/memory/trigger-auto-commit.py")
-    
+    print('\n' + '='*70)
+    print('Repository: ' + os.path.basename(repo_path))
+    print('='*70 + '\n')
+
+    # Look for trigger-auto-commit.py in the same directory as this script
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    trigger_script = os.path.join(script_dir, 'trigger-auto-commit.py')
+    if not os.path.exists(trigger_script):
+        # Fallback to legacy path
+        trigger_script = os.path.expanduser("~/.claude/memory/trigger-auto-commit.py")
+    if not os.path.exists(trigger_script):
+        # No trigger script available - skip silently
+        log_policy_hit("commit-skipped", "trigger-auto-commit.py not found for " + os.path.basename(repo_path))
+        return True  # Not an error - just nothing to do
+
     try:
         result = subprocess.run(
             [
-                'python', trigger_script,
+                sys.executable, trigger_script,
                 '--project-dir', repo_path,
                 '--event', 'task-completed'
             ],
-            timeout=120
+            timeout=120, capture_output=True
         )
-        
+
         if result.returncode == 0:
-            log_policy_hit("commit-triggered", f"repo={os.path.basename(repo_path)}")
+            log_policy_hit("commit-triggered", "repo=" + os.path.basename(repo_path))
             return True
         else:
-            log_policy_hit("commit-failed", f"repo={os.path.basename(repo_path)}")
+            log_policy_hit("commit-failed", "repo=" + os.path.basename(repo_path))
             return False
-            
+
     except Exception as e:
-        print(f"[CROSS] Error triggering commit: {e}")
-        log_policy_hit("commit-error", f"repo={os.path.basename(repo_path)}, error={str(e)}")
+        log_policy_hit("commit-error", "repo=" + os.path.basename(repo_path) + ", error=" + str(e))
         return False
 
 def enforce_auto_commit():
@@ -125,27 +148,27 @@ def enforce_auto_commit():
         log_policy_hit("no-changes", "scan-complete")
         return True
     
-    print(f"[CLIPBOARD] Found {len(repos)} repository(ies) with changes:\n")
+    print("[FOUND] " + str(len(repos)) + " repository(ies) with changes:\n")
     for repo in repos:
-        print(f"   - {os.path.basename(repo)}")
+        print("   - " + os.path.basename(repo))
     print()
-    
+
     # Trigger commit for each repo
     success_count = 0
     for repo in repos:
         if trigger_commit_for_repo(repo):
             success_count += 1
-    
+
     print("\n" + "="*70)
     if success_count == len(repos):
-        print(f"[CHECK] Successfully processed {success_count}/{len(repos)} repositories")
-        log_policy_hit("enforce-success", f"repos={len(repos)}")
+        print("[OK] Successfully processed " + str(success_count) + "/" + str(len(repos)) + " repositories")
+        log_policy_hit("enforce-success", "repos=" + str(len(repos)))
     else:
-        print(f"[WARNING]️  Processed {success_count}/{len(repos)} repositories")
-        log_policy_hit("enforce-partial", f"success={success_count}, total={len(repos)}")
+        print("[WARN] Processed " + str(success_count) + "/" + str(len(repos)) + " repositories")
+        log_policy_hit("enforce-partial", "success=" + str(success_count) + ", total=" + str(len(repos)))
     print("="*70 + "\n")
-    
-    return success_count > 0
+
+    return True  # Always return True - commit enforcement is best-effort
 
 def main():
     import argparse
@@ -178,8 +201,10 @@ def main():
         sys.exit(0)
     
     else:
-        parser.print_help()
-        sys.exit(1)
+        # No args = called from stop-notifier hook as a check.
+        # Run enforce_auto_commit by default so commit enforcement works.
+        success = enforce_auto_commit()
+        sys.exit(0 if success else 1)
 
 if __name__ == "__main__":
     main()

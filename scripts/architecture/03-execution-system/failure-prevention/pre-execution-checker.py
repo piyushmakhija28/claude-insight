@@ -245,10 +245,17 @@ def main():
     parser.add_argument('--load-kb', action='store_true', help='Load knowledge base')
     parser.add_argument('--stats', action='store_true', help='Show KB statistics')
     parser.add_argument('--test-prevention', action='store_true', help='Test failure prevention')
+    parser.add_argument('--check-all', action='store_true', help='Load KB and run all checks (used by 3-level-flow)')
 
     args = parser.parse_args()
 
     checker = PreExecutionChecker()
+
+    if args.check_all:
+        checker.reload_kb()
+        stats = checker.get_kb_stats()
+        print('Failure KB loaded: ' + str(stats.get('total_patterns', 0)) + ' patterns')
+        return 0
 
     if args.load_kb:
         checker.reload_kb()

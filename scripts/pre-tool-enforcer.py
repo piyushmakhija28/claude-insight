@@ -681,12 +681,26 @@ def check_dynamic_skill_context(tool_name, tool_input):
 def main():
     # INTEGRATION: Load tool optimization policies from scripts/architecture/
     # This runs before every tool to apply optimizations
+    # L3.6: Tool Usage Optimizer (with retry - 3 attempts, 3s timeout each)
     try:
         script_dir = Path(__file__).parent
         tool_opt_script = script_dir / 'architecture' / '03-execution-system' / '06-tool-optimization' / 'tool-usage-optimizer.py'
         if tool_opt_script.exists():
             import subprocess
-            subprocess.run([sys.executable, str(tool_opt_script)], timeout=3, capture_output=True)
+            _opt_ok = False
+            for _attempt in range(1, 4):
+                try:
+                    _r = subprocess.run([sys.executable, str(tool_opt_script)], timeout=3, capture_output=True)
+                    if _r.returncode == 0:
+                        _opt_ok = True
+                        break
+                    if _attempt < 3:
+                        sys.stdout.write('[RETRY ' + str(_attempt) + '/3] tool-usage-optimizer failed, retrying...\n')
+                except Exception:
+                    if _attempt < 3:
+                        sys.stdout.write('[RETRY ' + str(_attempt) + '/3] tool-usage-optimizer error, retrying...\n')
+            if not _opt_ok:
+                sys.stdout.write('[POLICY-WARN] tool-usage-optimizer failed after 3 retries\n')
     except:
         pass  # Policy execution is optional, don't block
 

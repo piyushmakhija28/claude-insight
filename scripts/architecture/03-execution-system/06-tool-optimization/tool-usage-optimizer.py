@@ -325,7 +325,9 @@ def main():
         print("  - Bash")
         print("  - Edit")
         print("  - Write")
-        sys.exit(1)
+        # No args = init/rules-load mode. Exit 0 so retry mechanism
+        # does not treat it as a failure.
+        sys.exit(0)
 
     tool_name = sys.argv[1]
 

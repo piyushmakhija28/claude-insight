@@ -22,7 +22,7 @@ if sys.platform == 'win32':
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
     sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
 
-VERSION = "3.4.0"
+VERSION = "3.6.0"
 SCRIPT_NAME = "3-level-flow.py"
 
 # Use ide_paths for IDE self-contained installations (with fallback for standalone mode)
@@ -319,6 +319,101 @@ def run_script(script_path, args=None, timeout=30):
         return '', 'TIMEOUT', 1, timeout * 1000
     except Exception as e:
         return '', str(e), 1, 0
+
+
+MAX_RETRIES = 3  # Retry failed policy scripts up to 3 times
+
+
+def run_script_with_retry(script_path, args=None, timeout=10, step_name='unknown'):
+    """
+    Run a policy script with retry logic.
+    - Retries up to MAX_RETRIES times on failure.
+    - On 3rd failure: writes failure to summary, hard-breaks session.
+    - Timeouts are short (10s default) for fast execution.
+    Returns (stdout, stderr, returncode, total_duration_ms)
+    """
+    last_stdout, last_stderr, last_rc, total_dur = '', '', 1, 0
+
+    for attempt in range(1, MAX_RETRIES + 1):
+        stdout, stderr, rc, dur = run_script(script_path, args, timeout)
+        total_dur += dur
+
+        if rc == 0:
+            # Success
+            if attempt > 1:
+                print(f"   [RECOVERED] {step_name} succeeded on attempt {attempt}")
+            return stdout, stderr, rc, total_dur
+
+        last_stdout, last_stderr, last_rc = stdout, stderr, rc
+
+        if attempt < MAX_RETRIES:
+            print(f"   [RETRY {attempt}/{MAX_RETRIES}] {step_name} failed, retrying...")
+        else:
+            # 3rd failure - HARD BREAK SESSION
+            error_detail = (last_stderr or last_stdout or 'Unknown error')[:300]
+            _policy_hard_break(step_name, str(script_path.name), error_detail, attempt)
+
+    # Should not reach here (hard break exits), but just in case
+    return last_stdout, last_stderr, last_rc, total_dur
+
+
+def _policy_hard_break(step_name, script_name, error_detail, attempts):
+    """
+    Hard-break the session when a policy fails after all retries.
+    Writes failure to session summary file and exits with code 1.
+    """
+    # Write failure to session summary
+    try:
+        summary_file = MEMORY_BASE / 'logs' / 'policy-failure-summary.json'
+        summary_file.parent.mkdir(parents=True, exist_ok=True)
+        failure_data = {
+            'timestamp': datetime.now().isoformat(),
+            'step': step_name,
+            'script': script_name,
+            'error': error_detail,
+            'retries': attempts,
+            'action': 'SESSION_BROKEN',
+            'reason': f'Policy {step_name} ({script_name}) failed after {attempts} retries'
+        }
+        with open(summary_file, 'w', encoding='utf-8') as f:
+            json.dump(failure_data, f, indent=2, ensure_ascii=False)
+    except Exception:
+        pass
+
+    # Also append to session log if available
+    try:
+        progress_file = MEMORY_BASE / 'logs' / 'session-progress.json'
+        if progress_file.exists():
+            with open(progress_file, 'r', encoding='utf-8') as f:
+                progress = json.load(f)
+            progress['policy_failure'] = {
+                'step': step_name,
+                'script': script_name,
+                'error': error_detail[:200],
+                'timestamp': datetime.now().isoformat()
+            }
+            progress['session_broken'] = True
+            with open(progress_file, 'w', encoding='utf-8') as f:
+                json.dump(progress, f, indent=2, ensure_ascii=False)
+    except Exception:
+        pass
+
+    # Print failure banner
+    SEP = "=" * 80
+    print()
+    print(SEP)
+    print("[SESSION BREAK] POLICY FAILED AFTER 3 RETRIES")
+    print(SEP)
+    print(f"  Step    : {step_name}")
+    print(f"  Script  : {script_name}")
+    print(f"  Retries : {attempts}")
+    print(f"  Error   : {error_detail[:200]}")
+    print(SEP)
+    print("[ACTION] Session broken. Fix the failing policy script and retry.")
+    print("[LOGGED] Failure saved to: policy-failure-summary.json")
+    print(SEP)
+
+    sys.exit(1)
 
 
 def safe_json(text):
@@ -1014,7 +1109,7 @@ def main():
         "is_blocking": True
     }
 
-    stdout, stderr, rc, dur = run_script(auto_fix_script, timeout=30)
+    stdout, stderr, rc, dur = run_script_with_retry(auto_fix_script, timeout=10, step_name='Level-1.Auto-Fix')
     status_str = 'SUCCESS' if rc == 0 else 'FAILED'
 
     # Parse checks from stdout
@@ -1098,7 +1193,7 @@ def main():
 
     step_start = datetime.now()
     ctx_script = CURRENT_DIR / 'context-monitor-v2.py'
-    ctx_stdout, _, ctx_rc, ctx_dur = run_script(ctx_script, ['--current-status'], timeout=15)
+    ctx_stdout, _, ctx_rc, ctx_dur = run_script_with_retry(ctx_script, ['--current-status'], timeout=8, step_name='Level-1.1.Context')
     ctx_data = safe_json(ctx_stdout)
 
     context_pct = ctx_data.get('percentage', 0)
@@ -1170,7 +1265,7 @@ def main():
     # =========================================================================
     step_start = datetime.now()
     sess_script = CURRENT_DIR / 'session-id-generator.py'
-    sess_stdout, _, sess_rc, sess_dur = run_script(sess_script, ['current'], timeout=15)
+    sess_stdout, _, sess_rc, sess_dur = run_script_with_retry(sess_script, ['current'], timeout=8, step_name='Level-1.2.Session')
 
     session_id = 'UNKNOWN'
     for line in sess_stdout.splitlines():
@@ -1188,8 +1283,8 @@ def main():
     # This happens on first run, or after /clear (clear-session-handler deletes .current-session.json)
     if session_id == 'UNKNOWN' or sess_rc != 0:
         create_desc = f"Session auto-created at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
-        new_out, _, new_rc, new_dur2 = run_script(
-            sess_script, ['create', '--description', create_desc], timeout=15
+        new_out, _, new_rc, new_dur2 = run_script_with_retry(
+            sess_script, ['create', '--description', create_desc], timeout=8, step_name='Level-1.2.Session-Create'
         )
         sess_dur += new_dur2
         for line in new_out.splitlines():
@@ -1306,7 +1401,129 @@ def main():
     })
 
     print(f"   [OK] Session: {session_id}")
-    print("[OK] LEVEL 1 COMPLETE")
+
+    # =========================================================================
+    # LEVEL 1.3: USER PREFERENCES
+    # Architecture script: 01-sync-system/user-preferences/load-preferences.py
+    # Loads learned user preferences for decision-making.
+    # =========================================================================
+    step_start = datetime.now()
+    prefs_script = MEMORY_BASE / '01-sync-system' / 'user-preferences' / 'load-preferences.py'
+    if not prefs_script.exists():
+        prefs_script = SCRIPT_DIR / 'architecture' / '01-sync-system' / 'user-preferences' / 'load-preferences.py'
+
+    prefs_loaded = 0
+    prefs_dur = 0
+    prefs_data = {}
+    if prefs_script.exists():
+        prefs_out, _, prefs_rc, prefs_dur = run_script_with_retry(prefs_script, timeout=5, step_name='Level-1.3.Preferences')
+        if prefs_rc == 0 and prefs_out.strip():
+            # Count preferences from output (lines with [CHECK] indicate set preferences)
+            for line in prefs_out.splitlines():
+                if '[CHECK]' in line or 'check' in line.lower():
+                    prefs_loaded += 1
+            prefs_data = {"raw_output_lines": len(prefs_out.splitlines())}
+
+    trace["pipeline"].append({
+        "step": "LEVEL_1_PREFERENCES",
+        "name": "User Preferences",
+        "level": 1,
+        "order": 2.5,
+        "is_blocking": False,
+        "timestamp": step_start.isoformat(),
+        "duration_ms": prefs_dur,
+        "input": {
+            "from_previous": "LEVEL_1_SESSION",
+            "session_id": session_id,
+            "purpose": "Load learned user preferences for decision-making"
+        },
+        "policy": {
+            "script": "load-preferences.py",
+            "rules_applied": [
+                "load_technology_preferences",
+                "load_language_preferences",
+                "load_workflow_preferences"
+            ]
+        },
+        "policy_output": {
+            "preferences_loaded": prefs_loaded,
+            "script_exists": prefs_script.exists(),
+            "data": prefs_data
+        },
+        "decision": f"Loaded {prefs_loaded} user preferences" if prefs_loaded > 0 else "No preferences file found (first run)",
+        "passed_to_next": {
+            "preferences_available": prefs_loaded > 0,
+            "preferences_count": prefs_loaded
+        }
+    })
+    if prefs_loaded > 0:
+        print(f"   [OK] Preferences: {prefs_loaded} loaded")
+    else:
+        print(f"   [OK] Preferences: None (first run)")
+
+    # =========================================================================
+    # LEVEL 1.4: SESSION STATE
+    # Architecture script: 01-sync-system/session-management/session-state.py
+    # Maintains durable session state outside Claude's context window.
+    # =========================================================================
+    step_start = datetime.now()
+    state_script = MEMORY_BASE / '01-sync-system' / 'session-management' / 'session-state.py'
+    if not state_script.exists():
+        state_script = SCRIPT_DIR / 'architecture' / '01-sync-system' / 'session-management' / 'session-state.py'
+
+    state_dur = 0
+    state_summary = {}
+    if state_script.exists():
+        st_out, _, st_rc, state_dur = run_script_with_retry(state_script, ['--summary'], timeout=5, step_name='Level-1.4.Session-State')
+        if st_rc == 0 and st_out.strip():
+            state_summary = safe_json(st_out)
+
+    completed_tasks_count = state_summary.get('progress', {}).get('completed_tasks', 0)
+    files_modified_count = state_summary.get('progress', {}).get('files_modified', 0)
+    pending_work_count = state_summary.get('progress', {}).get('pending_work', 0)
+
+    trace["pipeline"].append({
+        "step": "LEVEL_1_STATE",
+        "name": "Session State",
+        "level": 1,
+        "order": 2.7,
+        "is_blocking": False,
+        "timestamp": step_start.isoformat(),
+        "duration_ms": state_dur,
+        "input": {
+            "from_previous": "LEVEL_1_PREFERENCES",
+            "session_id": session_id,
+            "purpose": "Load durable session state for context continuity"
+        },
+        "policy": {
+            "script": "session-state.py",
+            "args": ["--summary"],
+            "rules_applied": [
+                "load_project_state",
+                "track_completed_tasks",
+                "track_files_modified",
+                "track_pending_work"
+            ]
+        },
+        "policy_output": {
+            "project": state_summary.get('project', 'unknown'),
+            "completed_tasks": completed_tasks_count,
+            "files_modified": files_modified_count,
+            "pending_work": pending_work_count,
+            "script_exists": state_script.exists()
+        },
+        "decision": f"Session state loaded: {completed_tasks_count} completed, {pending_work_count} pending",
+        "passed_to_next": {
+            "session_state_available": bool(state_summary),
+            "pending_work": pending_work_count
+        }
+    })
+    if state_summary:
+        print(f"   [OK] State: {completed_tasks_count} tasks done, {files_modified_count} files, {pending_work_count} pending")
+    else:
+        print(f"   [OK] State: Fresh session")
+
+    print("[OK] LEVEL 1 COMPLETE (4 sub-steps)")
     print()
 
     # =========================================================================
@@ -1322,7 +1539,7 @@ def main():
     std_dur = 0
 
     if standards_script.exists():
-        std_out, _, std_rc, std_dur = run_script(standards_script, ['--load-all'], timeout=20)
+        std_out, _, std_rc, std_dur = run_script_with_retry(standards_script, ['--load-all'], timeout=10, step_name='Level-2.Standards')
         for line in std_out.splitlines():
             if 'Total Standards:' in line:
                 try:
@@ -1416,7 +1633,7 @@ def main():
     enhanced_prompt_summary = ''
     rewritten_prompt = ''
     if prompt_script.exists():
-        pr_out, _, _, pr_dur = run_script(prompt_script, [user_message], timeout=15)
+        pr_out, _, _, pr_dur = run_script_with_retry(prompt_script, [user_message], timeout=8, step_name='Step-3.0.Prompt-Gen')
         for line in pr_out.splitlines():
             if 'estimated_complexity:' in line:
                 try:
@@ -1465,7 +1682,7 @@ def main():
     task_script = MEMORY_BASE / '03-execution-system' / '01-task-breakdown' / 'task-auto-analyzer.py'
     tk_dur = 0
     if task_script.exists():
-        tk_out, _, _, tk_dur = run_script(task_script, [user_message], timeout=15)
+        tk_out, _, _, tk_dur = run_script_with_retry(task_script, [user_message], timeout=8, step_name='Step-3.1.Task-Breakdown')
         for line in tk_out.splitlines():
             if 'Total Tasks:' in line:
                 try:
@@ -1560,7 +1777,7 @@ Work to complete: Execute phase {i} of the identified work breakdown.
     pl_dur = 0
     plan_score_detail = {}
     if plan_script.exists():
-        pl_out, _, _, pl_dur = run_script(plan_script, [str(complexity), user_message], timeout=15)
+        pl_out, _, _, pl_dur = run_script_with_retry(plan_script, [str(complexity), user_message], timeout=8, step_name='Step-3.2.Plan-Mode')
         pl_data = safe_json(pl_out)
         plan_required = pl_data.get('plan_mode_required', False)
         if 'score' in pl_data:
@@ -1629,7 +1846,7 @@ Work to complete: Execute phase {i} of the identified work breakdown.
     # STEP 3.3: CONTEXT CHECK (pre-execution re-verify)
     # ------------------------------------------------------------------
     step_start = datetime.now()
-    ctx_out2, _, _, ctx2_dur = run_script(ctx_script, ['--current-status'], timeout=15)
+    ctx_out2, _, _, ctx2_dur = run_script_with_retry(ctx_script, ['--current-status'], timeout=8, step_name='Step-3.3.Context-Recheck')
     ctx_data2 = safe_json(ctx_out2)
     context_pct2 = ctx_data2.get('percentage', context_pct)
 
@@ -1826,7 +2043,7 @@ Work to complete: Execute phase {i} of the identified work breakdown.
     prompt_script = MEMORY_BASE / '03-execution-system' / '00-prompt-generation' / 'prompt-generator.py'
     pr_dur_3_5 = 0
     if prompt_script.exists():
-        pr_out, _, _, pr_dur_3_5 = run_script(prompt_script, [user_message], timeout=15)
+        pr_out, _, _, pr_dur_3_5 = run_script_with_retry(prompt_script, [user_message], timeout=8, step_name='Step-3.5.Prompt-Skill-Context')
         pr_data = safe_json(pr_out)
         rewritten_prompt_3_5 = pr_data.get('rewritten_prompt', '')
         enhanced_prompt_3_5 = pr_data.get('enhanced_prompt', '')
@@ -1939,7 +2156,7 @@ Work to complete: Execute phase {i} of the identified work breakdown.
     fp_dur = 0
     fp_checks = {}
     if fp_script.exists():
-        fp_out, _, fp_rc, fp_dur = run_script(fp_script, ['--check-all'], timeout=15)
+        fp_out, _, fp_rc, fp_dur = run_script_with_retry(fp_script, ['--check-all'], timeout=8, step_name='Step-3.7.Failure-Prevention')
         fp_checks = {"exit_code": fp_rc, "output_lines": len(fp_out.splitlines())}
 
     failure_rules = [
@@ -2189,9 +2406,11 @@ Work to complete: Execute phase {i} of the identified work breakdown.
     print("LEVEL -1: Auto-Fix Enforcement")
     print("   +-- [OK] All 7 system checks passed")
     print()
-    print("LEVEL 1: Sync System")
-    print(f"   +-- [OK] Context: {context_pct}% -> {context_pct2}%")
-    print(f"   +-- [OK] Session: {session_id}")
+    print("LEVEL 1: Sync System (4 sub-steps)")
+    print(f"   +-- [1.1] Context: {context_pct}% -> {context_pct2}%")
+    print(f"   +-- [1.2] Session: {session_id}")
+    print(f"   +-- [1.3] Preferences: {prefs_loaded} loaded")
+    print(f"   +-- [1.4] State: {completed_tasks_count} tasks, {files_modified_count} files")
     print()
     print("LEVEL 2: Standards System")
     print(f"   +-- [OK] Standards: {standards_count}, Rules: {rules_count}")

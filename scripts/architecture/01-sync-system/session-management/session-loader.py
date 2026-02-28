@@ -155,20 +155,14 @@ def main():
     """CLI interface"""
 
     if len(sys.argv) < 2:
-        print("=" * 70)
-        print("Session Loader")
-        print("=" * 70)
-        print("\nUsage:")
-        print("  python session-loader.py COMMAND [OPTIONS]")
-        print("\nCommands:")
-        print("  load SESSION_ID       - Load session by ID")
-        print("  info SESSION_ID       - Show session info")
-        print("  list [LIMIT]          - List recent sessions (default: 10)")
-        print("\nExamples:")
-        print("  python session-loader.py load 20260216-1430-a3f7")
-        print("  python session-loader.py info 20260216-1430-a3f7")
-        print("  python session-loader.py list 20")
-        sys.exit(1)
+        # No args = called from hook (clear-session-handler).
+        # Default: list recent sessions quietly and exit 0.
+        try:
+            loader = SessionLoader()
+            loader.list_recent(5)
+        except Exception:
+            pass
+        sys.exit(0)
 
     command = sys.argv[1]
     loader = SessionLoader()

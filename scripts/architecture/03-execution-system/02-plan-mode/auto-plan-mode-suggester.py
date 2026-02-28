@@ -456,13 +456,9 @@ def main():
     print("=" * 80)
     print(json.dumps(decision, indent=2))
 
-    # Return exit code based on decision
-    if decision['auto_enter']:
-        sys.exit(2)  # Auto-enter plan mode
-    elif decision['should_ask_user']:
-        sys.exit(1)  # Ask user
-    else:
-        sys.exit(0)  # No plan mode needed
+    # Always exit 0 - decision is in JSON stdout, not exit code.
+    # Non-zero exits break the retry mechanism in 3-level-flow.py.
+    sys.exit(0)
 
 
 if __name__ == "__main__":

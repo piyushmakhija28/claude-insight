@@ -268,14 +268,35 @@ def is_error_response(tool_response):
 
 def main():
     # INTEGRATION: Load progress tracking policies from scripts/architecture/
+    # Retry up to 3 times. On 3rd failure, warn but don't hard-break
+    # (PostToolUse runs per-tool, not session-level).
     try:
         script_dir = Path(__file__).parent
         progress_script = script_dir / 'architecture' / '03-execution-system' / '08-progress-tracking' / 'check-incomplete-work.py'
         if progress_script.exists():
             import subprocess
-            subprocess.run([sys.executable, str(progress_script)], timeout=3, capture_output=True)
+            _prog_ok = False
+            for _attempt in range(1, 4):
+                try:
+                    _r = subprocess.run(
+                        [sys.executable, str(progress_script)],
+                        timeout=3, capture_output=True
+                    )
+                    if _r.returncode == 0:
+                        _prog_ok = True
+                        break
+                    if _attempt < 3:
+                        sys.stdout.write('[RETRY ' + str(_attempt) + '/3] check-incomplete-work failed, retrying...\n')
+                        sys.stdout.flush()
+                except Exception:
+                    if _attempt < 3:
+                        sys.stdout.write('[RETRY ' + str(_attempt) + '/3] check-incomplete-work error, retrying...\n')
+                        sys.stdout.flush()
+            if not _prog_ok:
+                sys.stdout.write('[POLICY-WARN] check-incomplete-work failed after 3 retries\n')
+                sys.stdout.flush()
     except:
-        pass  # Policy execution is optional
+        pass
 
     # Read tool result from stdin
     try:

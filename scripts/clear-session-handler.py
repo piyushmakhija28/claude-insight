@@ -492,13 +492,30 @@ def main():
     _init_window_isolation()
 
     # INTEGRATION: Load session management policies from scripts/architecture/
+    # Retry up to 3 times. Warn on failure (session-handler should not hard-break).
     try:
         script_dir = Path(__file__).parent
         session_loader = script_dir / 'architecture' / '01-sync-system' / 'session-management' / 'session-loader.py'
         if session_loader.exists():
-            subprocess.run([sys.executable, str(session_loader)], timeout=3, capture_output=True)
+            _sl_ok = False
+            for _attempt in range(1, 4):
+                try:
+                    _r = subprocess.run([sys.executable, str(session_loader)], timeout=3, capture_output=True)
+                    if _r.returncode == 0:
+                        _sl_ok = True
+                        break
+                    if _attempt < 3:
+                        sys.stdout.write('[RETRY ' + str(_attempt) + '/3] session-loader failed, retrying...\n')
+                        sys.stdout.flush()
+                except Exception:
+                    if _attempt < 3:
+                        sys.stdout.write('[RETRY ' + str(_attempt) + '/3] session-loader error, retrying...\n')
+                        sys.stdout.flush()
+            if not _sl_ok:
+                sys.stdout.write('[POLICY-WARN] session-loader failed after 3 retries\n')
+                sys.stdout.flush()
     except:
-        pass  # Policy execution is optional
+        pass
 
     hook_data = read_hook_stdin()
 

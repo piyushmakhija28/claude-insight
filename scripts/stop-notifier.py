@@ -474,17 +474,120 @@ def handle_voice_flag(flag_path, event_type, get_default_fn, extra_context=''):
 
 def main():
     # INTEGRATION: Load git commit policies from scripts/architecture/
+    # Retry up to 3 times per policy script. Warn on failure (Stop hook
+    # should not hard-break; it runs AFTER the response is sent).
     try:
         from pathlib import Path
         import subprocess
         script_dir = Path(__file__).parent
         git_commit_script = script_dir / 'architecture' / '03-execution-system' / '09-git-commit' / 'auto-commit-enforcer.py'
         if git_commit_script.exists():
-            subprocess.run([sys.executable, str(git_commit_script)], timeout=5, capture_output=True)
+            _commit_ok = False
+            for _attempt in range(1, 4):
+                try:
+                    _r = subprocess.run([sys.executable, str(git_commit_script)], timeout=5, capture_output=True)
+                    if _r.returncode == 0:
+                        _commit_ok = True
+                        break
+                    if _attempt < 3:
+                        log_s('[RETRY ' + str(_attempt) + '/3] auto-commit-enforcer failed, retrying...')
+                except Exception:
+                    if _attempt < 3:
+                        log_s('[RETRY ' + str(_attempt) + '/3] auto-commit-enforcer error, retrying...')
+            if not _commit_ok:
+                log_s('[POLICY-WARN] auto-commit-enforcer failed after 3 retries')
     except:
-        pass  # Policy execution is optional
+        pass
 
     hook_data = read_hook_stdin()
+
+    # =========================================================================
+    # SESSION END MAINTENANCE (non-blocking, before voice)
+    # Architecture scripts: auto-save-session, archive-old-sessions, failure-detector
+    # =========================================================================
+    script_dir = Path(__file__).parent
+
+    # 1. Auto-save session state before cleanup (3 retries)
+    # Architecture: 01-sync-system/session-management/auto-save-session.py
+    try:
+        save_script = script_dir / 'architecture' / '01-sync-system' / 'session-management' / 'auto-save-session.py'
+        if save_script.exists():
+            project_name = Path.cwd().name
+            _save_ok = False
+            for _attempt in range(1, 4):
+                try:
+                    _r = subprocess.run(
+                        [sys.executable, str(save_script), '--project', project_name],
+                        timeout=10, capture_output=True
+                    )
+                    if _r.returncode == 0:
+                        _save_ok = True
+                        break
+                    if _attempt < 3:
+                        log_s('[RETRY ' + str(_attempt) + '/3] auto-save-session failed, retrying...')
+                except Exception:
+                    if _attempt < 3:
+                        log_s('[RETRY ' + str(_attempt) + '/3] auto-save-session error, retrying...')
+            if _save_ok:
+                log_s('[SESSION-SAVE] Auto-saved session for: ' + project_name)
+            else:
+                log_s('[POLICY-WARN] auto-save-session failed after 3 retries')
+    except Exception as e:
+        log_s('[SESSION-SAVE] Skipped: ' + str(e))
+
+    # 2. Archive old sessions - keep last 10, archive >30 days (3 retries)
+    # Architecture: 01-sync-system/session-management/archive-old-sessions.py
+    try:
+        archive_script = script_dir / 'architecture' / '01-sync-system' / 'session-management' / 'archive-old-sessions.py'
+        if archive_script.exists():
+            _arch_ok = False
+            for _attempt in range(1, 4):
+                try:
+                    _r = subprocess.run(
+                        [sys.executable, str(archive_script)],
+                        timeout=10, capture_output=True
+                    )
+                    if _r.returncode == 0:
+                        _arch_ok = True
+                        break
+                    if _attempt < 3:
+                        log_s('[RETRY ' + str(_attempt) + '/3] archive-old-sessions failed, retrying...')
+                except Exception:
+                    if _attempt < 3:
+                        log_s('[RETRY ' + str(_attempt) + '/3] archive-old-sessions error, retrying...')
+            if _arch_ok:
+                log_s('[SESSION-ARCHIVE] Old sessions archived')
+            else:
+                log_s('[POLICY-WARN] archive-old-sessions failed after 3 retries')
+    except Exception as e:
+        log_s('[SESSION-ARCHIVE] Skipped: ' + str(e))
+
+    # 3. Failure detection analysis - learn from errors (3 retries)
+    # Architecture: 03-execution-system/failure-prevention/failure-detector.py
+    try:
+        failure_script = script_dir / 'architecture' / '03-execution-system' / 'failure-prevention' / 'failure-detector.py'
+        if failure_script.exists():
+            _fail_ok = False
+            for _attempt in range(1, 4):
+                try:
+                    _r = subprocess.run(
+                        [sys.executable, str(failure_script), '--analyze-logs'],
+                        timeout=10, capture_output=True
+                    )
+                    if _r.returncode == 0:
+                        _fail_ok = True
+                        break
+                    if _attempt < 3:
+                        log_s('[RETRY ' + str(_attempt) + '/3] failure-detector failed, retrying...')
+                except Exception:
+                    if _attempt < 3:
+                        log_s('[RETRY ' + str(_attempt) + '/3] failure-detector error, retrying...')
+            if _fail_ok:
+                log_s('[FAILURE-DETECT] Failure patterns analyzed')
+            else:
+                log_s('[POLICY-WARN] failure-detector failed after 3 retries')
+    except Exception as e:
+        log_s('[FAILURE-DETECT] Skipped: ' + str(e))
 
     spoke_something = False
 
