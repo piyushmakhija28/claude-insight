@@ -86,36 +86,56 @@ def trigger_auto_commit(project_dir, event="manual", push=True):
     # Step 1: Check if commit is needed (run detector)
     print("\n[CHART] Checking commit triggers...")
 
-    detector_script = os.path.expanduser("~/.claude/memory/auto-commit-detector.py")
+    # Resolve detector script - check same directory first, then fallbacks
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    detector_script = os.path.join(script_dir, "auto-commit-detector.py")
+    if not os.path.exists(detector_script):
+        detector_script = os.path.expanduser("~/.claude/scripts/architecture/03-execution-system/09-git-commit/auto-commit-detector.py")
+    if not os.path.exists(detector_script):
+        detector_script = os.path.expanduser("~/.claude/memory/auto-commit-detector.py")
 
-    try:
-        result = subprocess.run(
-            ["python", detector_script, "--project-dir", git_root],
-            capture_output=True,
-            text=True,
-            timeout=30
-        )
+    if not os.path.exists(detector_script):
+        print("[WARNING] auto-commit-detector.py not found in any location, proceeding with commit...")
+        log_policy_hit("detector-missing", f"event={event}")
+    else:
+        try:
+            result = subprocess.run(
+                [sys.executable, detector_script, "--project-dir", git_root],
+                capture_output=True,
+                text=True,
+                timeout=30
+            )
 
-        # Detector exits with 0 if commit is recommended, 1 if not
-        should_commit = (result.returncode == 0)
+            # Detector exits with 0 if commit is recommended, 1 if not
+            should_commit = (result.returncode == 0)
 
-        if not should_commit:
-            print("\n[PAUSE]️  No commit needed (no triggers met)")
-            log_policy_hit("skipped", f"event={event}, reason=no-triggers")
-            return False
+            if not should_commit:
+                print("\n[PAUSE]  No commit needed (no triggers met)")
+                log_policy_hit("skipped", f"event={event}, reason=no-triggers")
+                return False
 
-        print("[CHECK] Commit recommended")
+            print("[CHECK] Commit recommended")
 
-    except Exception as e:
-        print(f"[WARNING]️  Detector check failed: {e}")
-        print("   Proceeding anyway...")
+        except Exception as e:
+            print(f"[WARNING]  Detector check failed: {e}")
+            print("   Proceeding anyway...")
 
     # Step 2: Run auto-commit
     print("\n[FLOPPY] Running auto-commit...")
 
-    commit_script = os.path.expanduser("~/.claude/memory/auto-commit.py")
+    # Resolve commit script - check same directory first, then fallbacks
+    commit_script = os.path.join(script_dir, "auto-commit.py")
+    if not os.path.exists(commit_script):
+        commit_script = os.path.expanduser("~/.claude/scripts/architecture/03-execution-system/09-git-commit/auto-commit.py")
+    if not os.path.exists(commit_script):
+        commit_script = os.path.expanduser("~/.claude/memory/auto-commit.py")
 
-    cmd = ["python", commit_script, "--project-dir", git_root]
+    if not os.path.exists(commit_script):
+        print("[CROSS] auto-commit.py not found in any location")
+        log_policy_hit("commit-script-missing", f"event={event}")
+        return False
+
+    cmd = [sys.executable, commit_script, "--project-dir", git_root]
 
     if push:
         cmd.append("--push")

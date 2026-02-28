@@ -126,7 +126,8 @@ def trigger_commit_for_repo(repo_path):
             log_policy_hit("commit-triggered", "repo=" + os.path.basename(repo_path))
             return True
         else:
-            log_policy_hit("commit-failed", "repo=" + os.path.basename(repo_path))
+            stderr_msg = result.stderr.decode('utf-8', errors='replace').strip() if result.stderr else 'no stderr'
+            log_policy_hit("commit-failed", "repo=" + os.path.basename(repo_path) + ", stderr=" + stderr_msg[:200])
             return False
 
     except Exception as e:
