@@ -52,11 +52,19 @@ class ModelAutoSelector:
         self.logs_path = self.memory_path / 'logs'
         self.model_log = self.logs_path / 'model-selection.log'
 
-        # Model costs (tokens per million)
+        # Model costs per million tokens (updated 2026-02-28)
+        # Haiku 4.5 "The Executor": $1/$5, Sonnet 4.6 "The Workhorse": $3/$15, Opus 4.6 "The Strategist": $5/$25
         self.model_costs = {
-            'haiku': {'input': 0.25, 'output': 1.25},
+            'haiku': {'input': 1.0, 'output': 5.0},
             'sonnet': {'input': 3.0, 'output': 15.0},
-            'opus': {'input': 15.0, 'output': 75.0}
+            'opus': {'input': 5.0, 'output': 25.0}
+        }
+
+        # Model metadata
+        self.model_info = {
+            'haiku': {'id': 'claude-haiku-4-5-20251001', 'nickname': 'The Executor', 'context': '200K'},
+            'sonnet': {'id': 'claude-sonnet-4-6', 'nickname': 'The Workhorse', 'context': '200K (1M beta)'},
+            'opus': {'id': 'claude-opus-4-6', 'nickname': 'The Strategist', 'context': '200K (1M beta)'}
         }
 
     def calculate_complexity_score(self, task_info):
@@ -252,30 +260,30 @@ class ModelAutoSelector:
             if complexity_score <= 10:
                 alternatives.append({
                     'model': 'haiku',
-                    'reason': 'Cheaper, faster, but may need more guidance',
-                    'cost_savings': '90%'
+                    'reason': 'Cheaper (~3x), fastest, near-frontier intelligence',
+                    'cost_savings': '67%'
                 })
 
             # Suggest OPUS if high complexity
             if complexity_score >= 15:
                 alternatives.append({
                     'model': 'opus',
-                    'reason': 'More capable, better for complex reasoning',
-                    'cost_increase': '5x'
+                    'reason': 'Highest intelligence, catches subtle edge cases',
+                    'cost_increase': '~1.67x'
                 })
 
         elif selected_model == 'haiku':
             alternatives.append({
                 'model': 'sonnet',
-                'reason': 'More capable if task is harder than expected',
-                'cost_increase': '10-12x'
+                'reason': 'Stronger reasoning if task is harder than expected',
+                'cost_increase': '~3x'
             })
 
         elif selected_model == 'opus':
             alternatives.append({
                 'model': 'sonnet',
-                'reason': 'May be sufficient, significant cost savings',
-                'cost_savings': '80%'
+                'reason': 'May be sufficient for execution after planning',
+                'cost_savings': '40%'
             })
 
         return alternatives

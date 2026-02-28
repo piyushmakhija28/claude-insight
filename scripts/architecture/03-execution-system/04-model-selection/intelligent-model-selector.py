@@ -60,18 +60,42 @@ class IntelligentModelSelector:
             'Status Check': 'HAIKU'
         }
 
-        # Model costs (per million tokens)
+        # Model costs (per million tokens) - Updated 2026-02-28
+        # Opus 4.6 "The Strategist": $5 input / $25 output
+        # Sonnet 4.6 "The Workhorse": $3 input / $15 output
+        # Haiku 4.5 "The Executor": $1 input / $5 output
         self.model_costs = {
-            'HAIKU': {'input': 0.25, 'output': 1.25},
+            'HAIKU': {'input': 1.00, 'output': 5.00},
             'SONNET': {'input': 3.00, 'output': 15.00},
-            'OPUS': {'input': 15.00, 'output': 75.00}
+            'OPUS': {'input': 5.00, 'output': 25.00}
+        }
+
+        # Model IDs
+        self.model_ids = {
+            'HAIKU': 'claude-haiku-4-5-20251001',
+            'SONNET': 'claude-sonnet-4-6',
+            'OPUS': 'claude-opus-4-6'
+        }
+
+        # Model nicknames
+        self.model_nicknames = {
+            'HAIKU': 'The Executor',
+            'SONNET': 'The Workhorse',
+            'OPUS': 'The Strategist'
+        }
+
+        # Context windows
+        self.context_windows = {
+            'HAIKU': '200K tokens',
+            'SONNET': '200K tokens (1M beta)',
+            'OPUS': '200K tokens (1M beta)'
         }
 
         # Estimated tokens per task
         self.tokens_per_task = {
-            'HAIKU': 2000,
-            'SONNET': 5000,
-            'OPUS': 10000
+            'HAIKU': 2000,    # Fast, instant responses
+            'SONNET': 5000,   # Balanced reasoning
+            'OPUS': 10000     # Deep strategic analysis
         }
 
     def select_model(
@@ -215,9 +239,15 @@ class IntelligentModelSelector:
                 'Performance issues detected'
             ])
 
+        # Add model metadata
+        selection['model_id'] = self.model_ids.get(selection['selected_model'], '')
+        selection['nickname'] = self.model_nicknames.get(selection['selected_model'], '')
+        selection['context_window'] = self.context_windows.get(selection['selected_model'], '')
+
         # Print selection
+        nickname = self.model_nicknames.get(selection['selected_model'], '')
         print(f"\n{'='*80}")
-        print(f"[CHECK] SELECTED MODEL: {selection['selected_model']}")
+        print(f"[CHECK] SELECTED MODEL: {selection['selected_model']} ({nickname})")
         print(f"{'='*80}")
 
         print(f"\n[CLIPBOARD] Reasoning:")

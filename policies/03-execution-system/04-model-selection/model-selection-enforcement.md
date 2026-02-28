@@ -66,24 +66,33 @@ Before responding to user:
 
 **Scenario**: User asks to find auth logic in large codebase
 
-### Wrong Approach (Sonnet search):
+### Wrong Approach (Sonnet 4.6 search):
 ```
-Model: Sonnet
+Model: Sonnet 4.6 "The Workhorse" ($3/$15 per MTok)
 Tokens: 5,000
-Cost: $0.015
+Cost: $0.045
 Time: 12 seconds
 Result: Slow, expensive ❌
 ```
 
-### Right Approach (Haiku via Task):
+### Right Approach (Haiku 4.5 via Task):
 ```
-Model: Haiku (via Task tool)
+Model: Haiku 4.5 "The Executor" ($1/$5 per MTok)
 Tokens: 800
-Cost: $0.0006
+Cost: $0.0032
 Time: 2 seconds
 Result: Fast, cheap ✅
-Savings: 96% cost, 6x faster!
+Savings: ~93% cost, 6x faster!
 ```
+
+### Model Cost Reference (per MTok):
+| Model | Input | Output | Speed | Intelligence |
+|-------|-------|--------|-------|--------------|
+| Opus 4.6 "The Strategist" | $5 | $25 | Moderate | Highest (Frontier) |
+| Sonnet 4.6 "The Workhorse" | $3 | $15 | Fast | Balanced (Strong) |
+| Haiku 4.5 "The Executor" | $1 | $5 | Fastest | Near-Frontier |
+
+**Pro Tip:** Use Sonnet for main development, only switch to Opus when you hit a logic wall or need architectural review. Haiku is ~5x cheaper than Sonnet for search/read tasks.
 
 ---
 
@@ -156,6 +165,6 @@ If answer to #1 or #2 is NO, and user asked search/architecture questions:
 ## Status
 
 **Priority**: SYSTEM-LEVEL (applies before all implementation)
-**Version**: 1.0.0
-**Last Updated**: 2026-01-23
+**Version**: 2.0.0 (Updated Model Tiers - Opus 4.6, Sonnet 4.6, Haiku 4.5)
+**Last Updated**: 2026-02-28
 **Compliance**: MANDATORY - Cannot be skipped or bypassed

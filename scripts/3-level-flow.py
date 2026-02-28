@@ -1894,24 +1894,26 @@ Work to complete: Execute phase {i} of the identified work breakdown.
     # STEP 3.4: MODEL SELECTION
     # ------------------------------------------------------------------
     step_start = datetime.now()
+    # Model Selection: Opus 4.6 "The Strategist" | Sonnet 4.6 "The Workhorse" | Haiku 4.5 "The Executor"
+    # Pricing: Opus $5/$25, Sonnet $3/$15, Haiku $1/$5 per MTok
     if adj_complexity < 5:
         selected_model = 'HAIKU'
-        model_reason = "Simple task (<5) - Haiku sufficient"
+        model_reason = "Simple task (<5) - Haiku 4.5 'The Executor' (fastest, $1/$5 MTok)"
     elif adj_complexity < 10:
         selected_model = 'HAIKU/SONNET'
         model_reason = "Moderate task (5-9) - Haiku or Sonnet based on type"
     elif adj_complexity < 20:
         selected_model = 'SONNET'
-        model_reason = "Complex task (10-19) - Sonnet required"
+        model_reason = "Complex task (10-19) - Sonnet 4.6 'The Workhorse' ($3/$15 MTok)"
     else:
         selected_model = 'OPUS'
-        model_reason = "Very complex (>=20) - Opus mandatory"
+        model_reason = "Very complex (>=20) - Opus 4.6 'The Strategist' ($5/$25 MTok)"
 
     # Override rules
     model_overrides = []
     if plan_required:
         selected_model = 'OPUS'
-        model_reason = "Plan mode active - Opus mandatory"
+        model_reason = "Plan mode active - Opus 4.6 'The Strategist' mandatory"
         model_overrides.append("plan_mode_forces_opus")
     if task_type in ('Security', 'Authentication'):
         if selected_model == 'HAIKU':

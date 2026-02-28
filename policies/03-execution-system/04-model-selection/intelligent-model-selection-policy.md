@@ -1,7 +1,8 @@
 # 🤖 Intelligent Model Selection Policy
 
-**VERSION:** 2.0.0 (ENHANCED)
+**VERSION:** 3.0.0 (ENHANCED - Updated Model Tiers)
 **CREATED:** 2026-02-16
+**UPDATED:** 2026-02-28
 **PRIORITY:** 🔴 CRITICAL - STEP 3 (After Plan Mode Decision)
 **STATUS:** 🟢 ACTIVE
 
@@ -315,11 +316,14 @@ def estimate_cost(model: str, num_tasks: int) -> Dict:
     """
     Estimate cost based on model and task count
     """
-    # Rough estimates (per million tokens)
+    # Per million tokens (updated 2026-02-28)
+    # Opus 4.6: $5 input / $25 output
+    # Sonnet 4.6: $3 input / $15 output
+    # Haiku 4.5: $1 input / $5 output
     costs = {
-        'HAIKU': {'input': 0.25, 'output': 1.25},
+        'HAIKU': {'input': 1.00, 'output': 5.00},
         'SONNET': {'input': 3.00, 'output': 15.00},
-        'OPUS': {'input': 15.00, 'output': 75.00}
+        'OPUS': {'input': 5.00, 'output': 25.00}
     }
 
     # Estimate tokens per task
@@ -541,21 +545,30 @@ def should_upgrade_model(
 
 ## 📊 MODEL CHARACTERISTICS
 
-### **HAIKU (claude-haiku-4-5-20251001)**
+### **HAIKU 4.5 - "The Executor" (claude-haiku-4-5-20251001)**
+
+| Attribute | Value |
+|-----------|-------|
+| Intelligence | Near-Frontier |
+| Speed | Fastest (Instant) |
+| Cost (Input/Output) | $1 / $5 per MTok |
+| Context Window | 200K tokens |
 
 **Best For:**
-- Simple, straightforward tasks
+- Real-time customer support and chatbot tasks
+- Bulk data classification and labeling
+- Simple code generation and boilerplate
+- Sub-agent tasks (where a larger model plans and Haiku executes)
 - File reading and searching
-- Status checks
+- Status checks and verification
 - Simple bug fixes
 - Standard CRUD (when truly simple)
 - Configuration (standard patterns)
-- Documentation reading
 
 **Characteristics:**
-- ⚡ Fastest response time
-- 💰 Lowest cost
-- 🎯 Good for simple patterns
+- ⚡ Fastest response time (instant)
+- 💰 Lowest cost (~5x cheaper than Sonnet)
+- 🎯 Near-frontier intelligence for simple patterns
 - ⚠️ Limited complex reasoning
 
 **When NOT to use:**
@@ -567,24 +580,32 @@ def should_upgrade_model(
 
 ---
 
-### **SONNET (claude-sonnet-4-5-20250929)**
+### **SONNET 4.6 - "The Workhorse" (claude-sonnet-4-6)**
+
+| Attribute | Value |
+|-----------|-------|
+| Intelligence | Balanced (Strong) |
+| Speed | Fast |
+| Cost (Input/Output) | $3 / $15 per MTok |
+| Context Window | 200K tokens (1M beta) |
 
 **Best For:**
-- API implementation
-- Business logic
-- Service layer code
-- Controller logic
-- Integration work
-- Complex CRUD
-- Validation logic
-- Error handling
+- Standard coding (feature building, unit tests)
+- Content creation and technical documentation
+- Data analysis and processing
+- API implementation and business logic
+- Service layer code and controller logic
+- Integration work and complex CRUD
+- Validation logic and error handling
 - Testing implementation
+- Computer-use tasks
 
 **Characteristics:**
-- ⚖️ Balanced speed and capability
+- ⚖️ Best balanced choice for daily assistant use
 - 💰 Moderate cost
-- 🧠 Good reasoning ability
-- 🎯 Best for most coding tasks
+- 🧠 Strong reasoning ability
+- 🎯 Best for most coding tasks (the default for most users)
+- 📄 1M token context window (in beta)
 
 **When to use:**
 - Any implementation work
@@ -592,24 +613,34 @@ def should_upgrade_model(
 - Multi-file coordination
 - Standard to complex tasks
 
+**Pro Tip:** Use Sonnet for your main development and only switch to Opus when you hit a logic wall or need a high-level architectural review.
+
 ---
 
-### **OPUS (claude-opus-4-5-20251101)**
+### **OPUS 4.6 - "The Strategist" (claude-opus-4-6)**
+
+| Attribute | Value |
+|-----------|-------|
+| Intelligence | Highest (Frontier) |
+| Speed | Moderate |
+| Cost (Input/Output) | $5 / $25 per MTok |
+| Context Window | 200K tokens (1M beta) |
 
 **Best For:**
-- Architectural design
-- System planning
-- Migration planning
-- Complex refactoring strategy
+- Professional software engineering (multi-file refactoring)
+- High-level strategic planning
+- Complex financial analysis and legal research
+- Architectural design and system planning
+- Migration planning and complex refactoring strategy
 - Security architecture
 - Performance optimization strategy
 - **Plan mode (ALWAYS)**
 
 **Characteristics:**
-- 🧠 Deepest reasoning
-- 🔍 Best for exploration
-- 💰 Highest cost
-- ⏱️ Slower but thorough
+- 🧠 Most "human-like" and nuanced understanding
+- 🔍 Catches subtle edge cases that smaller models miss
+- 💰 Highest cost (but only ~1.67x Sonnet, not 5x like before)
+- ⏱️ Moderate speed (not as slow as previous Opus)
 
 **When to use:**
 - Plan mode (mandatory)
@@ -617,6 +648,19 @@ def should_upgrade_model(
 - Complex system design
 - High-stakes decisions
 - Novel problem solving
+
+---
+
+### **COMPARISON SUMMARY TABLE**
+
+| Feature | Opus 4.6 | Sonnet 4.6 | Haiku 4.5 |
+|---------|----------|------------|-----------|
+| Intelligence | Highest (Frontier) | Balanced (Strong) | Near-Frontier |
+| Speed | Moderate | Fast | Fastest (Instant) |
+| Cost (Input/Output) | $5 / $25 per MTok | $3 / $15 per MTok | $1 / $5 per MTok |
+| Context Window | 200K (1M beta) | 200K (1M beta) | 200K tokens |
+| Nickname | "The Strategist" | "The Workhorse" | "The Executor" |
+| Best For | Architecture, planning | Daily coding, features | Searches, sub-agents |
 
 ---
 
@@ -765,7 +809,8 @@ if __name__ == "__main__":
 
 ---
 
-**VERSION:** 2.0.0 (ENHANCED)
+**VERSION:** 3.0.0 (ENHANCED - Updated Model Tiers)
 **CREATED:** 2026-02-16
-**LOCATION:** `~/.claude/memory/intelligent-model-selection-policy.md`
-**SCRIPT:** `~/.claude/memory/intelligent-model-selector.py`
+**UPDATED:** 2026-02-28
+**LOCATION:** `policies/03-execution-system/04-model-selection/intelligent-model-selection-policy.md`
+**SCRIPT:** `scripts/architecture/03-execution-system/04-model-selection/intelligent-model-selector.py`
