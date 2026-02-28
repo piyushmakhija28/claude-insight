@@ -61,6 +61,95 @@ def check_failure_kb(action):
 
 ## Known Failure Patterns (Seed Knowledge Base)
 
+### Category 0: Python Encoding Errors (CRITICAL - Windows)
+
+#### Pattern 0.1: Unicode Characters in Python on Windows
+```yaml
+Signature: "UnicodeEncodeError: 'charmap' codec can't encode character"
+Platform: Windows (sys.platform == 'win32')
+Root Cause: Unicode characters (emojis, special symbols) in Python print() statements
+Frequency: EXTREMELY HIGH (1000+ occurrences reported)
+Confidence: 100%
+Severity: CRITICAL (breaks execution completely)
+
+Why This Happens:
+  - Windows console uses cp1252 encoding (NOT UTF-8)
+  - Python print() uses console encoding by default
+  - Unicode chars (📝, ✅, 🚨, etc.) cannot be encoded in cp1252
+  - Results in: UnicodeEncodeError and script crash
+
+Prevention Strategy:
+  Before writing ANY Python code on Windows:
+    1. Check platform: if sys.platform == 'win32'
+    2. Scan code for Unicode characters (regex: [\u0080-\uffff])
+    3. If found: REPLACE with ASCII equivalents
+    4. Forbidden chars: All emojis, →, ✓, ✗, •, ★, etc.
+    5. Allowed: ASCII only (0-127): [OK], [ERROR], [INFO], ->
+
+  Auto-Fix Strategy:
+    📝 → [LOG]
+    ✅ → [OK]
+    ❌ → [ERROR]
+    🚨 → [ALERT]
+    🔍 → [SEARCH]
+    📊 → [CHART]
+    🎯 → [TARGET]
+    → (arrow) → ->
+    ✓ (checkmark) → [CHECK]
+    • (bullet) → -
+
+Example:
+  ❌ WRONG (Windows will crash):
+    print(f"✅ Task completed successfully")
+    print(f"📝 Logging session data")
+    print(f"🚨 Critical error occurred")
+
+  ✅ RIGHT (Windows-safe):
+    print(f"[OK] Task completed successfully")
+    print(f"[LOG] Logging session data")
+    print(f"[ALERT] Critical error occurred")
+
+Detection Keywords:
+  - Error: "UnicodeEncodeError"
+  - Error: "charmap codec"
+  - Error: "can't encode character"
+  - Context: Windows system (.py files)
+
+Pre-Execution Check:
+  def check_unicode_in_python_windows():
+      if sys.platform != 'win32':
+          return True  # Unix/Linux can handle Unicode
+
+      # Read Python file
+      with open(file_path, 'r', encoding='utf-8') as f:
+          content = f.read()
+
+      # Check for Unicode characters
+      import re
+      unicode_chars = re.findall(r'[\u0080-\uffff]', content)
+
+      if unicode_chars:
+          return {
+              'status': 'FAIL',
+              'reason': 'Unicode characters found in Python file on Windows',
+              'chars': set(unicode_chars),
+              'fix': 'Replace Unicode with ASCII equivalents'
+          }
+
+      return {'status': 'PASS'}
+
+Permanent Solution:
+  1. Add to global CLAUDE.md: "NEVER use Unicode in Python on Windows"
+  2. Add to pre-execution checker
+  3. Add to failure prevention daemon
+  4. Make it BLOCKING (cannot write Unicode in .py files)
+
+Note: This is NOT a workaround (export PYTHONIOENCODING=utf-8)
+      This is FIXING the root cause (don't use Unicode at all)
+```
+
+---
+
 ### Category 1: Bash Command Errors
 
 #### Pattern 1.1: Windows Commands in Git Bash/Linux

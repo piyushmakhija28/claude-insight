@@ -20,12 +20,13 @@ This is a **BLOCKING REQUIREMENT** - violations prevent execution.
 
 ### Task Breakdown (TaskCreate + TaskUpdate)
 
-**ALWAYS REQUIRED when:**
-- Modifying any files
-- Multi-step work (3+ steps)
-- Non-trivial complexity
-- Will take >2 minutes
-- Creates/updates resources
+**ALWAYS REQUIRED — EVERY REQUEST (v2.0.0 policy):**
+- Complexity dekho mat — har coding/implementation request pe TaskCreate banana
+- Minimum 1 task per request (policy visibility ke liye)
+- 5+ tasks ho jayein = phases mein divide karo
+- Exception: Pure conversational/informational responses (koi task nahi)
+
+**OLD RULE (REMOVED):** "Non-trivial complexity", ">2 minutes", "3+ steps" — ye sab conditions hata di gayi hain
 
 **Usage:**
 ```
@@ -98,12 +99,12 @@ Phase 2: [Next milestone]
    → File modifications? (Yes/No)
    ```
 
-2. **Check Requirements**
+2. **Check Requirements (v2.0.0)**
    ```
-   IF file_modifications OR complexity >= 3:
-      → TaskCreate REQUIRED
-   
-   IF size_score >= 6:
+   ALWAYS:
+      → TaskCreate REQUIRED (har request pe — no condition)
+
+   IF size_score >= 6 OR task_count >= 5:
       → Phased execution REQUIRED
    ```
 

@@ -161,9 +161,9 @@ def auto_select_skills_and_agents(
                 selection['skills'].append(skill)
                 selection['reasoning'].append(f"Technology '{tech}' detected → {skill}")
 
-    # RULE 2: Agent selection (for complex or specialized tasks)
-    if complexity_score >= 10 or 'multi-step' in str(structured_prompt).lower():
-        # Complex task - consider agent
+    # RULE 2: Agent selection (by TASK NATURE, not complexity - v3.9.2)
+    # ALWAYS invoke matching agent when task needs autonomous multi-step workflow
+    if True:  # Always check for agents (no complexity threshold)
 
         domain_agent_map = {
             'spring boot': 'spring-boot-microservices',
@@ -196,18 +196,12 @@ def auto_select_skills_and_agents(
             selection['agents'].append('orchestrator-agent')
             selection['reasoning'].append("Multi-service task → orchestrator-agent")
 
-    # RULE 4: Skill vs Agent decision
+    # RULE 4: Skill vs Agent decision (v3.9.2 - by TASK NATURE, not complexity)
     # If both skill and agent available for same tech:
-    # - Complexity < 10: Use skill (simpler)
-    # - Complexity >= 10: Use agent (autonomous)
-
-    if complexity_score < 10 and selection['agents']:
-        # Not complex enough for agent, use skill if available
-        if 'spring-boot-microservices' in selection['agents']:
-            if 'java-spring-boot-microservices' not in selection['skills']:
-                selection['skills'].append('java-spring-boot-microservices')
-                selection['reasoning'].append("Low complexity → skill instead of agent")
-            selection['agents'].remove('spring-boot-microservices')
+    # - Knowledge/guidance/patterns → Skill
+    # - Autonomous multi-step workflow → Agent
+    # ALWAYS invoke matching skill/agent regardless of complexity score
+    # No downgrade from agent to skill based on complexity
 
     return selection
 
@@ -233,18 +227,18 @@ def extract_domain(task_type: str) -> str:
 
 ## 📊 SELECTION DECISION MATRIX
 
-| Task Type | Technologies | Complexity | Selection | Type |
-|-----------|-------------|------------|-----------|------|
-| **API Creation** | Spring Boot | < 10 | java-spring-boot-microservices | Skill |
-| **API Creation** | Spring Boot | >= 10 | spring-boot-microservices | Agent |
+| Task Type | Technologies | Task Nature | Selection | Type |
+|-----------|-------------|-------------|-----------|------|
+| **API Creation** | Spring Boot | Guidance/patterns | java-spring-boot-microservices | Skill |
+| **API Creation** | Spring Boot | Autonomous workflow | spring-boot-microservices | Agent |
 | **Authentication** | Spring Boot | Any | java-spring-boot-microservices | Skill |
-| **Database** | PostgreSQL | < 10 | rdbms-core | Skill |
-| **Deployment** | Docker, K8s | >= 10 | devops-engineer | Agent |
-| **CI/CD** | Jenkins | Any | jenkins-pipeline | Skill |
-| **UI Design** | Angular | >= 10 | angular-engineer | Agent |
-| **UI Design** | Android | >= 10 | android-ui-designer | Agent |
-| **Testing** | Any | >= 10 | qa-testing-agent | Agent |
-| **Multi-Service** | Any | >= 15 | orchestrator-agent | Agent |
+| **Database** | PostgreSQL | Any | rdbms-core | Skill |
+| **Deployment** | Docker, K8s | Autonomous workflow | devops-engineer | Agent |
+| **CI/CD** | Jenkins | Guidance/patterns | jenkins-pipeline | Skill |
+| **UI Design** | Angular | Autonomous workflow | angular-engineer | Agent |
+| **UI Design** | Android | Autonomous workflow | android-ui-designer | Agent |
+| **Testing** | Any | Any | qa-testing-agent | Agent |
+| **Multi-Service** | Any | Multi-domain | orchestrator-agent | Agent |
 
 ---
 
@@ -267,7 +261,7 @@ Selection:
 Reasoning:
   - "Spring Boot detected → java-spring-boot-microservices"
   - "PostgreSQL detected → rdbms-core"
-  - "Complexity < 10 → skill (not agent)"
+  - "Task nature = guidance/patterns -> skill (always invoke)"
 
 Execution:
   # Execute skills directly, no agent needed
@@ -524,16 +518,13 @@ class AutoSkillAgentSelector:
         for tech in technologies:
             for key, config in tech_map.items():
                 if key in tech:
-                    if complexity < config['threshold']:
-                        # Use skill
-                        if config['skill'] and config['skill'] not in matches['skills']:
-                            matches['skills'].append(config['skill'])
-                            matches['reasoning'].append(f"{key.title()} detected → {config['skill']} skill")
-                    else:
-                        # Use agent
-                        if config['agent'] and config['agent'] not in matches['agents']:
-                            matches['agents'].append(config['agent'])
-                            matches['reasoning'].append(f"{key.title()} + complexity → {config['agent']} agent")
+                    # v3.9.2: ALWAYS invoke both skill and agent if available (no threshold)
+                    if config['skill'] and config['skill'] not in matches['skills']:
+                        matches['skills'].append(config['skill'])
+                        matches['reasoning'].append(f"{key.title()} detected -> {config['skill']} skill (always invoke)")
+                    if config['agent'] and config['agent'] not in matches['agents']:
+                        matches['agents'].append(config['agent'])
+                        matches['reasoning'].append(f"{key.title()} detected -> {config['agent']} agent (always invoke)")
 
         return matches
 

@@ -40,7 +40,7 @@ Step 1: Task Breakdown Complete ✅
     │  ❌ No plan mode → Direct exec   │
     │                                  │
     │  MODERATE (5-9):                 │
-    │  ⚠️ Optional → Ask user          │
+    │  ⚠️ Recommend-then-ask           │
     │                                  │
     │  COMPLEX (10-19):                │
     │  ✅ Recommended → Strong suggest │
@@ -108,32 +108,42 @@ Step 4: Context Check
 
 **Decision:**
 ```
-⚠️ Plan Mode: OPTIONAL (Ask User)
-📝 Reason: Task is moderately complex, planning may help but not critical
+⚠️ Plan Mode: RECOMMEND-THEN-ASK
+📝 Pattern: Analyze task signals, form recommendation, present with reasoning, ask to confirm
+📝 Score 5-7: Lean toward direct proceed (standard patterns apply)
+📝 Score 8-9: Lean toward plan mode (multiple concerns detected)
 ```
 
-**User Prompt:**
+**User Prompt (RECOMMEND-THEN-ASK pattern):**
 ```
 📊 Complexity Analysis:
    Score: 7 (MODERATE)
    Tasks: 5
    Files: 4
-   Phases: None (direct execution possible)
 
-⚠️ PLAN MODE SUGGESTION:
-   This task has moderate complexity. Would you like me to:
+⚠️ MY RECOMMENDATION:
+   I recommend proceeding directly because:
+   - This follows existing patterns in the codebase
+   - Only 4 files need changes
+   - No cross-service impact detected
 
-   Option 1 (Recommended): Proceed directly
-   - I can execute this using standard patterns
-   - Estimated time: 5-10 minutes
-   - Low risk
+   Should I proceed, or would you prefer plan mode first?
+```
 
-   Option 2: Enter plan mode first
-   - Create detailed implementation plan
-   - Review architecture decisions
-   - Estimated time: +5 minutes for planning
+**Score 8-9 Example:**
+```
+📊 Complexity Analysis:
+   Score: 8 (MODERATE-HIGH)
+   Tasks: 7
+   Files: 6
 
-   Your choice? (1/2)
+⚠️ MY RECOMMENDATION:
+   I recommend plan mode because:
+   - Multiple concerns detected (multi-project, DB changes)
+   - 6+ files across different modules
+   - Planning will prevent rework
+
+   Should I enter plan mode, or proceed directly?
 ```
 
 **Examples:**
