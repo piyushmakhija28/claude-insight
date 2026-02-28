@@ -22,6 +22,7 @@ detection — all from one interface.
   - [Prerequisites](#prerequisites)
   - [Installation](#installation)
   - [Memory System Setup](#memory-system-setup)
+  - [Voice Notifications Setup (Required)](#voice-notifications-setup-required)
   - [Running the Dashboard](#running-the-dashboard)
 - [3-Level Architecture Overview](#3-level-architecture-overview)
   - [Level -1: Auto-Fix Enforcement](#level--1-auto-fix-enforcement)
@@ -192,6 +193,51 @@ After restarting Claude Code, send any message. You should see:
 [LEVEL 2] STANDARDS SYSTEM                   [OK] 15 standards, 156 rules loaded
 [LEVEL 3] EXECUTION SYSTEM (12 steps)        [OK] All steps verified
 ```
+
+### Voice Notifications Setup (Required)
+
+Claude Insight uses **voice notifications** to speak session summaries, greetings, and
+task completion updates via text-to-speech. This requires an **OpenRouter API key** to
+generate dynamic, context-aware voice messages using an LLM.
+
+**Step 1: Create an OpenRouter API key**
+
+1. Go to [https://openrouter.ai](https://openrouter.ai) and create an account
+2. Navigate to **Keys** in your dashboard
+3. Click **Create Key** and copy the generated API key
+
+**Step 2: Save the API key locally**
+
+```bash
+# Create the config directory (if it doesn't exist)
+mkdir -p ~/.claude/config
+
+# Paste your API key into this file (replace YOUR_KEY_HERE with your actual key)
+echo "YOUR_KEY_HERE" > ~/.claude/config/openrouter-api-key
+```
+
+**What voice notifications do:**
+
+| Event | When | What It Says |
+|-------|------|--------------|
+| Session Start | You open Claude Code or run `/clear` | Hinglish greeting with session context |
+| Task Complete | A task is marked completed | Summary of what was accomplished |
+| Work Done | Session ends with completed work | Comprehensive session summary in Hinglish |
+
+Voice messages are generated dynamically by an LLM using your session summary data
+(tools used, files changed, errors encountered, work narrative) so each message is
+unique and relevant to what you actually did in the session.
+
+**Verify voice is working:**
+
+```bash
+# Check API key file exists and is not empty
+cat ~/.claude/config/openrouter-api-key
+# Should print your API key (starts with sk-or-...)
+```
+
+> **Note:** Without the OpenRouter API key, voice notifications will fall back to
+> static default messages. The key is required for dynamic, context-aware voice output.
 
 ### Running the Dashboard
 
@@ -397,8 +443,10 @@ There are **4 hook types**, each enforcing different levels of the architecture:
 **`Stop` → `stop-notifier.py`**
 - Runs after every Claude response completes
 - Saves session state to `~/.claude/memory/logs/`
-- Triggers Hinglish voice notification (if `~/.claude/.session-work-done` flag exists)
-- Updates session summary metadata
+- Triggers Hinglish voice notification using comprehensive session summary data (tools used, files changed, work narrative)
+- Reads session summary from `session-summary.json` and passes it to LLM for dynamic voice message generation
+- Handles three voice events: session start greeting, task completion, and work-done summary
+- Requires OpenRouter API key at `~/.claude/config/openrouter-api-key` (see [Voice Notifications Setup](#voice-notifications-setup-required))
 
 **No background daemons.** Everything runs per-request via hooks. When you send
 a message in Claude Code, the hooks fire, run the 3-level flow, write results to

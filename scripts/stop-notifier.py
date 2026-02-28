@@ -1,36 +1,41 @@
 #!/usr/bin/env python3
 """
 Script Name: stop-notifier.py
-Version: 3.2.0 (Reliability Enhanced)
-Last Modified: 2026-02-24
+Version: 4.0.0 (Session Summary Voice + Bug Fixes)
+Last Modified: 2026-02-28
 Description: Stop hook - speaks dynamic English voice updates via LLM.
+
+v4.0.0: MAJOR FIXES + Session Summary Voice Integration
+  - FIXED: increment_retry destroying original message (spoke '{"retries": 1}')
+  - FIXED: Simplified flow - no retry complexity, just try LLM -> fallback -> speak -> done
+  - FIXED: API key empty file check
+  - NEW: work_done/task_complete use session summary data for rich voice context
+  - NEW: Loads comprehensive summary from session-summary-manager for voice output
 v3.2.0: Increased LLM timeout (5s -> 15s), retry logic, better error handling
-v3.1.0: Non-blocking speak (fire-and-forget), faster LLM (5s timeout), auto work-done detection
+v3.1.0: Non-blocking speak (fire-and-forget), faster LLM (5s timeout)
 
 VOICE TRIGGERS (3 flag files, checked in priority order):
   1. ~/.claude/.session-start-voice   -> New session started
   2. ~/.claude/.task-complete-voice    -> Task completed
   3. ~/.claude/.session-work-done      -> All work done (written by Claude)
 
-HOW IT WORKS:
+HOW IT WORKS (v4.0.0 - simplified):
   1. Fires on every Claude 'Stop' event (after each AI response)
   2. Checks for any voice flag files (in priority order)
-  3. If flag EXISTS: reads context, calls OpenRouter LLM to generate
-     a natural dynamic message, speaks it via voice-notifier.py
-  4. LLM TIMEOUT: 15 seconds (increased from 5s for reliability)
-  5. RETRY LOGIC: Up to 3 retries if LLM fails (flag not deleted)
-  6. If all retries fail: uses static English fallback, then deletes flag
+  3. If flag EXISTS: reads original message, calls OpenRouter LLM
+  4. If LLM fails: uses static fallback (NEVER speaks raw JSON/garbage)
+  5. Always deletes flag after speaking (no retry accumulation)
+  6. For work_done: loads session summary for rich context in voice
   7. If no flags: stays completely silent (most responses)
 
 PERSONALITY: Boss-assistant style
   - Addresses user as "Sir"
   - Professional but warm Indian English
   - Short, clear, natural updates
-  - Voice: en-IN-NeerjaNeural
 
-LLM: OpenRouter API (multiple models, longest timeout wins)
+LLM: OpenRouter API (REQUIRED for dynamic voice)
 API Key: ~/.claude/config/openrouter-api-key
-Timeout: 15 seconds (gives API time to respond fully)
+Setup: https://openrouter.ai -> Create API key -> paste in file
 
 Windows-Safe: ASCII only (no Unicode/emojis in print statements)
 """
@@ -121,46 +126,123 @@ def read_hook_stdin():
 # FLAG FILE HELPERS
 # =============================================================================
 
-def read_flag(flag_path):
-    """Read a flag file's content. Returns content or empty string. Does NOT delete."""
+def read_flag_message(flag_path):
+    """
+    Read a flag file's ORIGINAL MESSAGE content.
+    v4.0.0: Safely extracts the message even if flag was corrupted.
+    Returns the human-readable message or empty string.
+    """
     if not flag_path.exists():
         return ''
     try:
-        return flag_path.read_text(encoding='utf-8').strip()
+        raw = flag_path.read_text(encoding='utf-8').strip()
+        if not raw:
+            return ''
+        # v4.0.0 FIX: If the content looks like JSON (corrupted by old retry logic),
+        # ignore it and return empty - caller will use static default
+        if raw.startswith('{') and 'retries' in raw:
+            log_s(f"[flag] Ignoring corrupted retry JSON in {flag_path.name}")
+            return ''
+        return raw
     except Exception as e:
-        log_s(f"Error reading flag {flag_path.name}: {e}")
+        log_s(f"[flag] Error reading {flag_path.name}: {e}")
         return ''
 
 
 def delete_flag(flag_path):
-    """Delete a flag file after successful processing."""
+    """Delete a flag file after processing."""
     if not flag_path.exists():
         return
     try:
         flag_path.unlink()
-        log_s(f"Flag deleted (success): {flag_path.name}")
+        log_s(f"[flag] Deleted: {flag_path.name}")
     except Exception as e:
-        log_s(f"Could not delete flag {flag_path.name}: {e}")
+        log_s(f"[flag] Could not delete {flag_path.name}: {e}")
 
 
-def increment_retry(flag_path):
-    """Increment retry counter for a flag. Returns True if still has retries."""
+# =============================================================================
+# SESSION SUMMARY FOR VOICE (v4.0.0 - NEW)
+# =============================================================================
+
+def get_current_session_id():
+    """Get current session ID from .current-session.json"""
+    current_session_file = MEMORY_BASE / '.current-session.json'
+    if not current_session_file.exists():
+        return None
     try:
-        data = json.loads(flag_path.read_text(encoding='utf-8')) if flag_path.suffix == '.json' else {'retries': 0}
-        if not isinstance(data, dict):
-            data = {'content': str(data), 'retries': 0}
-        retries = data.get('retries', 0)
-        if retries < 3:  # Max 3 retries
-            data['retries'] = retries + 1
-            flag_path.write_text(json.dumps(data), encoding='utf-8')
-            log_s(f"Flag retry incremented: {flag_path.name} (attempt {retries + 1}/3)")
-            return True
-        else:
-            log_s(f"Flag max retries exceeded: {flag_path.name} (3/3), giving up")
-            return False
-    except Exception as e:
-        log_s(f"Error incrementing retry for {flag_path.name}: {e}")
-        return False
+        with open(current_session_file, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        return data.get('current_session_id')
+    except Exception:
+        return None
+
+
+def get_session_summary_for_voice():
+    """
+    Load the comprehensive session summary text for voice output.
+    v4.0.0: Uses session-summary-manager's one-liner or builds from session data.
+    Returns a short context string suitable for LLM voice generation.
+    """
+    session_id = get_current_session_id()
+    if not session_id:
+        return ''
+
+    # Try reading the summary JSON
+    summary_file = MEMORY_BASE / 'logs' / 'sessions' / session_id / 'session-summary.json'
+    if summary_file.exists():
+        try:
+            with open(summary_file, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+
+            # Build a rich context for LLM from summary data
+            parts = []
+            req_count = data.get('request_count', 0)
+            if req_count > 0:
+                parts.append(f"{req_count} requests handled")
+
+            types = data.get('task_types', [])
+            if types:
+                parts.append(f"task types: {', '.join(types[:3])}")
+
+            skills = data.get('skills_used', [])
+            if skills:
+                parts.append(f"skills used: {', '.join(skills[:3])}")
+
+            projects = data.get('projects_touched', [])
+            if projects:
+                parts.append(f"projects: {', '.join(projects[:2])}")
+
+            max_c = data.get('max_complexity', 0)
+            if max_c > 0:
+                parts.append(f"max complexity: {max_c}/25")
+
+            # Get the last prompt for context
+            requests = data.get('requests', [])
+            if requests:
+                last_prompt = requests[-1].get('prompt', '')[:100]
+                if last_prompt:
+                    parts.append(f"last task: {last_prompt}")
+
+            if parts:
+                return '. '.join(parts)
+        except Exception as e:
+            log_s(f"[summary] Error loading summary for voice: {e}")
+
+    # Fallback: try session progress
+    progress_file = MEMORY_BASE / 'logs' / 'session-progress.json'
+    if progress_file.exists():
+        try:
+            with open(progress_file, 'r', encoding='utf-8') as f:
+                prog = json.load(f)
+            tool_counts = prog.get('tool_counts', {})
+            total_tools = sum(tool_counts.values())
+            tasks_done = prog.get('tasks_completed', 0)
+            if total_tools > 0 or tasks_done > 0:
+                return f"{total_tools} tool calls, {tasks_done} tasks completed"
+        except Exception:
+            pass
+
+    return ''
 
 
 # =============================================================================
@@ -168,11 +250,15 @@ def increment_retry(flag_path):
 # =============================================================================
 
 def load_api_key():
-    """Load OpenRouter API key from config file."""
+    """Load OpenRouter API key from config file. Returns None if missing or empty."""
     if not API_KEY_FILE.exists():
         return None
     try:
-        return API_KEY_FILE.read_text(encoding='utf-8').strip()
+        key = API_KEY_FILE.read_text(encoding='utf-8').strip()
+        # v4.0.0: Check for empty file too
+        if not key or len(key) < 10:
+            return None
+        return key
     except Exception:
         return None
 
@@ -180,15 +266,14 @@ def load_api_key():
 def generate_dynamic_message(event_type, context=''):
     """
     Call OpenRouter LLM to generate a natural, dynamic voice message.
-    Falls back to None if API fails (caller uses static fallback).
-    v3.2.0: Better error logging, longer timeout (15s), multiple model fallback
+    Returns message string or None (caller uses static fallback).
     """
     api_key = load_api_key()
     if not api_key:
-        log_s(f"[llm] No API key found for {event_type} - using static message")
+        log_s(f"[llm] No API key found for {event_type} - using static fallback")
         return None
 
-    log_s(f"[llm] Starting LLM call for {event_type} (timeout: 15s, retries: 3 models)")
+    log_s(f"[llm] Starting LLM call for {event_type}")
 
     hour = datetime.now().hour
     if hour < 12:
@@ -202,21 +287,23 @@ def generate_dynamic_message(event_type, context=''):
     if event_type == 'session_start':
         user_prompt = (
             f"It is {time_context}. A new coding session just started. "
-            f"Generate a greeting for the user. "
-            f"Context: {context}" if context else
-            f"It is {time_context}. A new coding session just started. "
-            f"Generate a brief greeting for the user."
+            f"Generate a greeting for the user."
         )
+        if context:
+            user_prompt += f" Context: {context}"
+
     elif event_type == 'task_complete':
-        user_prompt = (
-            f"A coding task was just completed. Context: {context}. "
-            f"Generate a brief completion notification."
-        )
+        user_prompt = f"A coding task was just completed."
+        if context:
+            user_prompt += f" Here is what was done: {context}."
+        user_prompt += " Generate a brief completion notification."
+
     elif event_type == 'work_done':
-        user_prompt = (
-            f"All coding tasks for this session are done. Summary: {context}. "
-            f"Generate a brief wrap-up notification."
-        )
+        user_prompt = f"All coding tasks for this session are done."
+        if context:
+            user_prompt += f" Session summary: {context}."
+        user_prompt += " Generate a brief wrap-up notification."
+
     else:
         user_prompt = f"Generate a brief notification. Context: {context}"
 
@@ -247,9 +334,6 @@ def generate_dynamic_message(event_type, context=''):
                 method='POST'
             )
 
-            # v3.2.0: Increased timeout from 5s to 15s for API reliability
-            # Allows OpenRouter sufficient time to generate response
-            log_s(f"[llm] Connecting to OpenRouter (timeout: 15s)...")
             with urllib_request.urlopen(req, timeout=15) as resp:
                 result = json.loads(resp.read().decode('utf-8'))
                 message = result.get('choices', [{}])[0].get('message', {}).get('content', '').strip()
@@ -258,24 +342,21 @@ def generate_dynamic_message(event_type, context=''):
                     # Clean up any markdown or special chars
                     message = message.replace('*', '').replace('#', '').replace('`', '')
                     message = message.replace('\n', ' ').strip()
-                    # Remove quotes if the LLM wrapped it
                     if message.startswith('"') and message.endswith('"'):
                         message = message[1:-1]
                     log_s(f"[llm] SUCCESS ({model}): {message[:80]}")
                     return message
                 else:
-                    log_s(f"[llm] {model} returned empty message, trying next...")
+                    log_s(f"[llm] {model} returned empty, trying next...")
 
         except urllib_request.URLError as e:
-            log_s(f"[llm] {model} URL error (network/timeout): {str(e)[:80]}")
+            log_s(f"[llm] {model} URL error: {str(e)[:80]}")
             continue
         except Exception as e:
-            error_type = type(e).__name__
-            error_msg = str(e)[:80]
-            log_s(f"[llm] {model} failed ({error_type}): {error_msg}")
+            log_s(f"[llm] {model} failed ({type(e).__name__}): {str(e)[:80]}")
             continue
 
-    log_s(f"[llm] All {len(LLM_MODELS)} models failed - will use static fallback message")
+    log_s(f"[llm] All models failed - using static fallback")
     return None
 
 
@@ -286,9 +367,7 @@ def generate_dynamic_message(event_type, context=''):
 def speak(text):
     """
     Launch voice-notifier.py as DETACHED process (fire-and-forget).
-    v3.1.0: Changed from subprocess.run (BLOCKING) to subprocess.Popen (NON-BLOCKING).
-    Root cause fix: subprocess.run waited for audio to finish, causing hook timeout kills.
-    Now the voice process runs independently - stop-notifier exits immediately.
+    Non-blocking: stop-notifier exits immediately, voice plays in background.
     """
     if not text or not text.strip():
         return
@@ -341,6 +420,55 @@ def get_work_done_default():
 
 
 # =============================================================================
+# VOICE HANDLER - Simplified flow (v4.0.0)
+# =============================================================================
+
+def handle_voice_flag(flag_path, event_type, get_default_fn, extra_context=''):
+    """
+    Unified voice handler for any flag type.
+    v4.0.0: Simple, reliable flow:
+      1. Read original message from flag
+      2. Build context (original message + extra_context like session summary)
+      3. Try LLM with context
+      4. If LLM fails -> use static default (NEVER speak raw flag content)
+      5. Speak the message
+      6. Always delete flag (no retry accumulation)
+
+    Returns True if spoke something.
+    """
+    if not flag_path.exists():
+        return False
+
+    # Step 1: Read original message from flag
+    original_message = read_flag_message(flag_path)
+    log_s(f"[{event_type}] Flag found, original message: {original_message[:80]}")
+
+    # Step 2: Build LLM context from original message + session summary
+    llm_context = ''
+    if original_message:
+        llm_context = original_message
+    if extra_context:
+        llm_context = f"{llm_context}. {extra_context}" if llm_context else extra_context
+
+    # Step 3: Try LLM for dynamic message
+    message = generate_dynamic_message(event_type, llm_context)
+
+    # Step 4: If LLM fails, use static default (NEVER the raw flag content)
+    if not message:
+        message = get_default_fn()
+        log_s(f"[{event_type}] Using static fallback: {message[:80]}")
+
+    # Step 5: Speak
+    print(f"[VOICE] {event_type} notification...")
+    speak(message)
+
+    # Step 6: Always delete flag - no retry accumulation
+    delete_flag(flag_path)
+
+    return True
+
+
+# =============================================================================
 # MAIN
 # =============================================================================
 
@@ -358,89 +486,35 @@ def main():
 
     hook_data = read_hook_stdin()
 
-    # Track which flags we found
     spoke_something = False
 
     # PRIORITY 1: Session start voice
     if SESSION_START_FLAG.exists():
-        context = read_flag(SESSION_START_FLAG)
-        # Try LLM first for dynamic message
-        message = generate_dynamic_message('session_start', context)
-        if message:
-            # LLM succeeded - delete flag and speak
-            log_s(f"[session-start] LLM success, speaking: {message[:80]}")
-            print(f"[VOICE] Session start notification...")
-            speak(message)
-            delete_flag(SESSION_START_FLAG)
-            spoke_something = True
-        else:
-            # LLM failed - use fallback
-            if increment_retry(SESSION_START_FLAG):
-                # Still has retries - will retry next time
-                message = context if context else get_session_start_default()
-                log_s(f"[session-start] LLM failed, speaking fallback: {message[:80]}")
-                print(f"[VOICE] Session start notification (fallback)...")
-                speak(message)
-                spoke_something = True
-            else:
-                # Max retries exceeded - use fallback and delete flag
-                message = context if context else get_session_start_default()
-                log_s(f"[session-start] Max retries, speaking fallback: {message[:80]}")
-                print(f"[VOICE] Session start notification (final)...")
-                speak(message)
-                delete_flag(SESSION_START_FLAG)
-                spoke_something = True
+        spoke_something = handle_voice_flag(
+            SESSION_START_FLAG,
+            'session_start',
+            get_session_start_default,
+        )
 
-    # PRIORITY 2: Task complete voice
+    # PRIORITY 2: Task complete voice (with session summary context)
     if TASK_COMPLETE_FLAG.exists():
-        context = read_flag(TASK_COMPLETE_FLAG)
-        message = generate_dynamic_message('task_complete', context)
-        if message:
-            log_s(f"[task-complete] LLM success, speaking: {message[:80]}")
-            print(f"[VOICE] Task completion notification...")
-            speak(message)
-            delete_flag(TASK_COMPLETE_FLAG)
-            spoke_something = True
-        else:
-            if increment_retry(TASK_COMPLETE_FLAG):
-                message = context if context else get_task_complete_default()
-                log_s(f"[task-complete] LLM failed, speaking fallback: {message[:80]}")
-                print(f"[VOICE] Task completion notification (fallback)...")
-                speak(message)
-                spoke_something = True
-            else:
-                message = context if context else get_task_complete_default()
-                log_s(f"[task-complete] Max retries, speaking fallback: {message[:80]}")
-                print(f"[VOICE] Task completion notification (final)...")
-                speak(message)
-                delete_flag(TASK_COMPLETE_FLAG)
-                spoke_something = True
+        summary_context = get_session_summary_for_voice()
+        spoke_something = handle_voice_flag(
+            TASK_COMPLETE_FLAG,
+            'task_complete',
+            get_task_complete_default,
+            extra_context=summary_context,
+        )
 
-    # PRIORITY 3: All work done voice (MOST IMPORTANT - always ensure it plays)
+    # PRIORITY 3: All work done voice (with session summary context)
     if WORK_DONE_FLAG.exists():
-        context = read_flag(WORK_DONE_FLAG)
-        message = generate_dynamic_message('work_done', context)
-        if message:
-            log_s(f"[work-done] LLM success, speaking: {message[:80]}")
-            print(f"[VOICE] All work completed notification...")
-            speak(message)
-            delete_flag(WORK_DONE_FLAG)
-            spoke_something = True
-        else:
-            if increment_retry(WORK_DONE_FLAG):
-                message = context if context else get_work_done_default()
-                log_s(f"[work-done] LLM failed, speaking fallback: {message[:80]}")
-                print(f"[VOICE] All work completed notification (fallback)...")
-                speak(message)
-                spoke_something = True
-            else:
-                # CRITICAL: This must always speak - most important notification
-                message = context if context else get_work_done_default()
-                log_s(f"[work-done] FINAL ATTEMPT - speaking: {message[:80]}")
-                print(f"[VOICE] SESSION COMPLETE NOTIFICATION...")
-                speak(message)
-                delete_flag(WORK_DONE_FLAG)
-                spoke_something = True
+        summary_context = get_session_summary_for_voice()
+        spoke_something = handle_voice_flag(
+            WORK_DONE_FLAG,
+            'work_done',
+            get_work_done_default,
+            extra_context=summary_context,
+        )
 
     if not spoke_something:
         log_s("[OK] Stop hook fired | No voice flags found (normal, most stops are silent)")
