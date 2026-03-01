@@ -1,9 +1,12 @@
 #!/usr/bin/env python
 # Script Name: pre-tool-enforcer.py
-# Version: 3.0.0 (Dynamic Per-File Skill Selection)
-# Last Modified: 2026-02-28
+# Version: 3.1.0 (Context Chaining from flow-trace)
+# Last Modified: 2026-03-01
 # Description: PreToolUse hook - L3.1/3.5 blocking + L3.6 hints + L3.7 prevention
 #              + L3.5+ dynamic per-file skill context switching
+#              + flow-trace.json context chaining for task-aware enforcement
+# v3.1.0: Reads flow-trace.json for task type, complexity, skill/agent context.
+#          Provides task-aware optimization hints. Full context chain from 3-level-flow.
 # v3.0.0: Dynamic per-file skill/agent selection - switches skill context per tool call
 #          based on target file extension/name. Mixed-stack projects get correct skill per file.
 # v2.3.0: Added window-isolation helpers for PID-specific flag isolation
@@ -63,6 +66,49 @@ ALWAYS_ALLOWED = {'Read', 'Grep', 'Glob', 'WebFetch', 'WebSearch', 'Task', 'Bash
 
 # Max age for enforcement flags - auto-expire after 60 minutes (stale flag safety)
 CHECKPOINT_MAX_AGE_MINUTES = 60
+
+# Cached flow-trace context (loaded once per hook invocation)
+_flow_trace_cache = None
+
+
+def _load_flow_trace_context():
+    """
+    Load flow-trace.json from the current session to chain context from 3-level-flow.
+    Returns dict with task_type, complexity, model, skill, plan_mode, user_input.
+    Cached per invocation (module-level).
+
+    This enables pre-tool-enforcer to:
+    - Know what task type the session is working on
+    - Provide task-aware optimization hints
+    - Validate tool usage against the stated task context
+    """
+    global _flow_trace_cache
+    if _flow_trace_cache is not None:
+        return _flow_trace_cache
+
+    _flow_trace_cache = {}
+    try:
+        session_id = get_current_session_id()
+        if not session_id:
+            return _flow_trace_cache
+
+        memory_base = Path.home() / '.claude' / 'memory'
+        trace_file = memory_base / 'logs' / 'sessions' / session_id / 'flow-trace.json'
+        if trace_file.exists():
+            with open(trace_file, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+            final_decision = data.get('final_decision', {})
+            _flow_trace_cache = {
+                'task_type': final_decision.get('task_type', ''),
+                'complexity': final_decision.get('complexity', 0),
+                'model': final_decision.get('model_selected', ''),
+                'skill': final_decision.get('skill_or_agent', ''),
+                'plan_mode': final_decision.get('plan_mode', False),
+                'user_input': data.get('user_input', {}).get('prompt', '')[:200],
+            }
+    except Exception:
+        pass
+    return _flow_trace_cache
 
 
 def get_current_session_id():
@@ -375,30 +421,47 @@ def check_write_edit(tool_name, tool_input):
 
 
 def check_grep(tool_input):
-    """Level 3.6: Grep optimization - warn about missing head_limit."""
+    """Level 3.6: Grep optimization - warn about missing head_limit. Task-aware."""
     hints = []
     head_limit = tool_input.get('head_limit', 0)
 
     if not head_limit:
-        hints.append(
-            '[OPTIMIZATION] Grep: Add head_limit=100 to prevent excessive output. '
-            'Default CLAUDE.md rule: ALWAYS set head_limit on Grep calls.'
-        )
+        ctx = _load_flow_trace_context()
+        complexity = ctx.get('complexity', 0)
+        # Higher complexity = more likely to have large search results
+        if complexity and complexity >= 10:
+            hints.append(
+                '[OPTIMIZATION] Grep: Add head_limit=50 (high complexity task - save context). '
+                'Default CLAUDE.md rule: ALWAYS set head_limit on Grep calls.'
+            )
+        else:
+            hints.append(
+                '[OPTIMIZATION] Grep: Add head_limit=100 to prevent excessive output. '
+                'Default CLAUDE.md rule: ALWAYS set head_limit on Grep calls.'
+            )
 
     return hints, []
 
 
 def check_read(tool_input):
-    """Level 3.6: Read optimization - hint about offset+limit for large files."""
+    """Level 3.6: Read optimization - hint about offset+limit for large files. Task-aware."""
     hints = []
     limit = tool_input.get('limit')
     offset = tool_input.get('offset')
 
     if not limit and not offset:
-        hints.append(
-            '[OPTIMIZATION] Read: No limit/offset set. '
-            'For files >500 lines, use offset+limit to save context tokens.'
-        )
+        ctx = _load_flow_trace_context()
+        complexity = ctx.get('complexity', 0)
+        if complexity and complexity >= 10:
+            hints.append(
+                '[OPTIMIZATION] Read: No limit/offset set. '
+                'High complexity task - use offset+limit to conserve context window.'
+            )
+        else:
+            hints.append(
+                '[OPTIMIZATION] Read: No limit/offset set. '
+                'For files >500 lines, use offset+limit to save context tokens.'
+            )
 
     return hints, []
 
@@ -679,9 +742,13 @@ def check_dynamic_skill_context(tool_name, tool_input):
 
 
 def main():
+    # CONTEXT CHAIN: Load flow-trace context from 3-level-flow (cached per invocation)
+    # This gives pre-tool-enforcer awareness of task type, complexity, skill, model
+    flow_ctx = _load_flow_trace_context()
+
     # INTEGRATION: Load tool optimization policies from scripts/architecture/
     # This runs before every tool to apply optimizations
-    # L3.6: Tool Usage Optimizer (with retry - 3 attempts, 3s timeout each)
+    # L3.6: Tool Usage Optimizer (with retry - 3 attempts, 10s timeout each)
     try:
         script_dir = Path(__file__).parent
         tool_opt_script = script_dir / 'architecture' / '03-execution-system' / '06-tool-optimization' / 'tool-usage-optimizer.py'
@@ -690,7 +757,7 @@ def main():
             _opt_ok = False
             for _attempt in range(1, 4):
                 try:
-                    _r = subprocess.run([sys.executable, str(tool_opt_script)], timeout=3, capture_output=True)
+                    _r = subprocess.run([sys.executable, str(tool_opt_script)], timeout=10, capture_output=True)
                     if _r.returncode == 0:
                         _opt_ok = True
                         break
