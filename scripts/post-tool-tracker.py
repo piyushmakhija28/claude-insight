@@ -1,9 +1,11 @@
 #!/usr/bin/env python
 # Script Name: post-tool-tracker.py
-# Version: 2.3.0 (Multi-Window Isolation)
-# Last Modified: 2026-02-24
+# Version: 3.0.0 (Context Chaining from flow-trace)
+# Last Modified: 2026-03-01
 # Description: PostToolUse hook - L3.9 tracking + L3.11 commit + L6 subagent + voice on task complete
-#              Now with PID-based window isolation to prevent multi-window conflicts
+#              Now with flow-trace context chaining for task-aware tracking
+# v3.0.0: Reads flow-trace.json for task type, complexity, skill context.
+#          Enriches tool-tracker.jsonl entries with task context. Better progress estimation.
 # v2.3.0: Added PID-based flag isolation for multi-window support
 # v2.2.0: Auto work-done voice flag when all tasks completed (fixes unreliable voice)
 # v2.1.0: Added file change tracking for git commit reminders (10+ modified files warning)
@@ -48,6 +50,49 @@ def _get_github_issue_manager():
         except ImportError:
             _github_issue_manager = False
     return _github_issue_manager if _github_issue_manager is not False else None
+
+
+# Cached flow-trace context (loaded once per hook invocation)
+_flow_trace_cache = None
+
+
+def _load_flow_trace_context():
+    """
+    Load flow-trace.json from the current session to chain context from 3-level-flow.
+    Returns dict with task_type, complexity, model, skill.
+    Cached per invocation (module-level).
+
+    Context chain: 3-level-flow.py -> flow-trace.json -> post-tool-tracker.py
+    This enables:
+    - Enriching tool-tracker.jsonl entries with task context
+    - Better progress estimation weighted by complexity
+    - Task-aware git commit messages
+    """
+    global _flow_trace_cache
+    if _flow_trace_cache is not None:
+        return _flow_trace_cache
+
+    _flow_trace_cache = {}
+    try:
+        session_id = _get_session_id_from_progress()
+        if not session_id:
+            return _flow_trace_cache
+
+        memory_base = Path.home() / '.claude' / 'memory'
+        trace_file = memory_base / 'logs' / 'sessions' / session_id / 'flow-trace.json'
+        if trace_file.exists():
+            with open(trace_file, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+            final_decision = data.get('final_decision', {})
+            _flow_trace_cache = {
+                'task_type': final_decision.get('task_type', ''),
+                'complexity': final_decision.get('complexity', 0),
+                'model': final_decision.get('model_selected', ''),
+                'skill': final_decision.get('skill_or_agent', ''),
+            }
+    except Exception:
+        pass
+    return _flow_trace_cache
 
 
 # Loophole #19 fix: file locking for Windows (parallel tool call safety)
@@ -280,7 +325,7 @@ def main():
                 try:
                     _r = subprocess.run(
                         [sys.executable, str(progress_script)],
-                        timeout=3, capture_output=True
+                        timeout=10, capture_output=True
                     )
                     if _r.returncode == 0:
                         _prog_ok = True
@@ -319,13 +364,23 @@ def main():
         # Calculate progress delta
         delta = 0 if is_error else PROGRESS_DELTA.get(tool_name, 0)
 
-        # Build log entry
+        # CONTEXT CHAIN: Load flow-trace context from 3-level-flow
+        flow_ctx = _load_flow_trace_context()
+
+        # Build log entry (enriched with task context from flow-trace)
         entry = {
             'ts': datetime.now().strftime('%Y-%m-%dT%H:%M:%S'),
             'tool': tool_name,
             'status': status,
             'progress_delta': delta,
         }
+        # Add task context to every entry for full traceability
+        if flow_ctx.get('task_type'):
+            entry['task_type'] = flow_ctx['task_type']
+        if flow_ctx.get('complexity'):
+            entry['complexity'] = flow_ctx['complexity']
+        if flow_ctx.get('skill'):
+            entry['skill'] = flow_ctx['skill']
 
         # v2.1.0: Rich activity data per tool type (for narrative session summaries)
         inp = tool_input or {}
@@ -438,7 +493,19 @@ def main():
                     # Track total tasks created for auto work-done detection
                     state['tasks_created'] = state.get('tasks_created', 0) + 1
                     save_session_progress(state)
-                # else: dummy TaskCreate ignored - flag stays
+                else:
+                    # FEEDBACK: Tell Claude why task-breakdown flag didn't clear
+                    reasons = []
+                    if len(tc_subject) < 10:
+                        reasons.append('subject too short (' + str(len(tc_subject)) + ' chars, need 10+)')
+                    if len(tc_desc) < 10:
+                        reasons.append('description too short (' + str(len(tc_desc)) + ' chars, need 10+)')
+                    sys.stdout.write(
+                        '[POST-TOOL WARN] TaskCreate validation FAILED - task-breakdown flag NOT cleared!\n'
+                        '  Reason: ' + ', '.join(reasons) + '\n'
+                        '  Fix: Call TaskCreate again with a meaningful subject (10+ chars) and description (10+ chars).\n'
+                    )
+                    sys.stdout.flush()
             except Exception:
                 pass
 
