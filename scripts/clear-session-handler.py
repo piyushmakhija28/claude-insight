@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
 Script Name: clear-session-handler.py
-Version: 3.0.0 (Multi-Window Isolation)
-Last Modified: 2026-02-24
+Version: 3.1.0 (Context Handoff to 3-level-flow)
+Last Modified: 2026-03-01
 Description: Detects /clear command usage via UserPromptSubmit hook.
              Compares current transcript message count vs last known count.
              If count decreased or transcript changed = /clear was used.
@@ -306,7 +306,9 @@ def write_voice_flag(message):
 def get_previous_session_context(session_id):
     """
     Read the previous session's flow-trace.json to build a context summary.
-    Printed to stdout so Claude sees it on the first message after /clear.
+    1. Printed to stdout so Claude sees it on the first message after /clear.
+    2. Written to .previous-session-context.json so 3-level-flow.py can read it
+       (state file handoff instead of stdout-only).
     Returns formatted string or None if no data available.
     """
     if not session_id:
@@ -353,6 +355,25 @@ def get_previous_session_context(session_id):
             '[CONTINUITY] The user did /clear but you can reference this context.',
             '',
         ]
+
+        # CONTEXT HANDOFF: Write state file for 3-level-flow to read
+        # This fixes the context loss between clear-session-handler and 3-level-flow
+        try:
+            handoff_file = FLAG_DIR / '.previous-session-context.json'
+            handoff_data = {
+                'previous_session_id': session_id,
+                'task_type': task_type,
+                'complexity': complexity,
+                'skill': skill,
+                'model': model,
+                'last_prompt': prompt,
+                'started_at': started_at,
+                'written_at': datetime.now().isoformat(),
+            }
+            handoff_file.write_text(json.dumps(handoff_data, indent=2), encoding='utf-8')
+            log_event(f"Context handoff file written: {handoff_file}")
+        except Exception as e:
+            log_event(f"Warning: Could not write context handoff file: {e}")
 
         log_event(f"Previous session context loaded for {session_id}")
         return '\n'.join(lines)
@@ -500,7 +521,7 @@ def main():
             _sl_ok = False
             for _attempt in range(1, 4):
                 try:
-                    _r = subprocess.run([sys.executable, str(session_loader)], timeout=3, capture_output=True)
+                    _r = subprocess.run([sys.executable, str(session_loader)], timeout=10, capture_output=True)
                     if _r.returncode == 0:
                         _sl_ok = True
                         break
