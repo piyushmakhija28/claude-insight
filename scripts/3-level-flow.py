@@ -22,7 +22,7 @@ if sys.platform == 'win32':
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
     sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
 
-VERSION = "3.6.0"
+VERSION = "3.7.0"
 SCRIPT_NAME = "3-level-flow.py"
 
 # Use ide_paths for IDE self-contained installations (with fallback for standalone mode)
@@ -52,30 +52,30 @@ def load_policy_rules() -> dict:
         if not POLICIES_DIR.exists():
             return policies
 
-        # Load Level 1 policies (Sync System)
+        # Load Level 1 policies (Sync System) — recursive into subdirs
         level_1_dir = POLICIES_DIR / '01-sync-system'
         if level_1_dir.exists():
-            for policy_file in level_1_dir.glob('*.md'):
+            for policy_file in level_1_dir.glob('**/*.md'):
                 try:
                     content = policy_file.read_text(encoding='utf-8')
                     policies['level-1'][policy_file.stem] = content[:500]
                 except Exception:
                     pass
 
-        # Load Level 2 policies (Standards System)
+        # Load Level 2 policies (Standards System) — recursive into subdirs
         level_2_dir = POLICIES_DIR / '02-standards-system'
         if level_2_dir.exists():
-            for policy_file in level_2_dir.glob('*.md'):
+            for policy_file in level_2_dir.glob('**/*.md'):
                 try:
                     content = policy_file.read_text(encoding='utf-8')
                     policies['level-2'][policy_file.stem] = content[:500]
                 except Exception:
                     pass
 
-        # Load Level 3 policies (Execution System)
+        # Load Level 3 policies (Execution System) — recursive into subdirs
         level_3_dir = POLICIES_DIR / '03-execution-system'
         if level_3_dir.exists():
-            for policy_file in level_3_dir.glob('*.md'):
+            for policy_file in level_3_dir.glob('**/*.md'):
                 try:
                     content = policy_file.read_text(encoding='utf-8')
                     policies['level-3'][policy_file.stem] = content[:500]
@@ -2246,10 +2246,15 @@ Work to complete: Execute phase {i} of the identified work breakdown.
     # ------------------------------------------------------------------
     # STEPS 3.9 - 3.12: EXECUTE, SAVE, COMMIT, LOG
     # ------------------------------------------------------------------
+
+    # Load policy rules from policies/ directory (recursive)
+    loaded_policies = load_policy_rules()
+    policy_count = sum(len(v) for v in loaded_policies.values())
+
     for step_info in [
         ("3.9",  13, "Execute Tasks",   "All policies enforced - execute with full standards active"),
         ("3.10", 14, "Session Save",    "Auto-save session state at each milestone"),
-        ("3.11", 15, "Git Auto-Commit", "Auto-commit on phase completion using gh/git"),
+        ("3.11", 15, "Git Auto-Commit", f"Auto-commit + version bump + release ({policy_count} policies loaded)"),
         ("3.12", 16, "Logging",         "Log all policy applications, tool calls, decisions"),
     ]:
         step_num, order, step_name, step_decision = step_info
@@ -2263,11 +2268,22 @@ Work to complete: Execute phase {i} of the identified work breakdown.
             "duration_ms": 0,
             "input": {"from_previous": f"LEVEL_3_STEP_3_{int(float(step_num))-1 if float(step_num) > 9 else '8'}"},
             "policy": {"rules_applied": [step_name.lower().replace(' ', '_')]},
-            "policy_output": {"status": "ACTIVE"},
+            "policy_output": {"status": "ACTIVE", "policies_loaded": policy_count},
             "decision": step_decision,
             "passed_to_next": {"status": "ACTIVE"}
         })
         print(f"   [{step_num}] {step_name}: Active")
+
+    # Inject version-release enforcement into output (Claude sees this)
+    if 'version-release-policy' in loaded_policies.get('level-3', {}):
+        print()
+        print("[ENFORCE] VERSION-RELEASE POLICY (from policies/03-execution-system/09-git-commit/):")
+        print("   After pushing code changes to any repo:")
+        print("   1. Bump VERSION file + source version constant")
+        print("   2. Build artifact (mvn package for IDE)")
+        print("   3. Commit version bump + push")
+        print("   4. Create GitHub Release (gh release create) for IDE")
+        print("   5. Ensure version consistency across README/CLAUDE.md/badges")
 
     print("[OK] LEVEL 3 COMPLETE (All 12 steps executed)")
     print()
