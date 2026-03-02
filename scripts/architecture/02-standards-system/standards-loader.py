@@ -1083,6 +1083,326 @@ class StandardsLoader:
             ],
         }
 
+    # ===========================================================================
+    # COMMON STANDARDS (Level 2.1) - Universal, language-agnostic
+    # ===========================================================================
+
+    def load_common_standards(self):
+        """Load all common/universal standards (Level 2.1) - always active regardless of tech stack"""
+        self.standards['common'] = {}
+        common_methods = [
+            ('naming_conventions', self.load_naming_conventions, 'Naming Conventions'),
+            ('error_handling_common', self.load_error_handling_common, 'Error Handling (Common)'),
+            ('logging_standards', self.load_logging_standards, 'Logging Standards'),
+            ('security_basics', self.load_security_basics, 'Security Basics'),
+            ('code_organization', self.load_code_organization, 'Code Organization'),
+            ('api_design_common', self.load_api_design_common, 'API Design (Common)'),
+            ('database_common', self.load_database_common, 'Database (Common)'),
+            ('constants_common', self.load_constants_common, 'Constants (Common)'),
+            ('testing_approach', self.load_testing_approach, 'Testing Approach'),
+            ('documentation_common', self.load_documentation_common, 'Documentation (Common)'),
+            ('git_standards', self.load_git_standards, 'Git Standards'),
+            ('file_organization', self.load_file_organization, 'File Organization'),
+        ]
+
+        print(f"\n{'='*70}")
+        print(f"[2.1] COMMON STANDARDS LOADER (Universal)")
+        print(f"{'='*70}\n")
+
+        for idx, (key, method, label) in enumerate(common_methods, 1):
+            print(f"  [{idx}/{len(common_methods)}] {label}...")
+            self.standards[f'common_{key}'] = method()
+            print(f"         [CHECK] Loaded")
+
+        common_count = len(common_methods)
+        common_rules = sum(
+            len(self.standards[f'common_{key}'].get('rules', []))
+            for key, _, _ in common_methods
+        )
+
+        print(f"\n{'='*70}")
+        print(f"[CHECK] COMMON STANDARDS LOADED")
+        print(f"{'='*70}\n")
+        print(f"   Common Standards: {common_count}")
+        print(f"   Common Rules Loaded: {common_rules}")
+
+        return common_count, common_rules
+
+    def load_naming_conventions(self):
+        """Universal naming conventions across all languages"""
+        return {
+            'patterns': {
+                'variables': 'camelCase (e.g., userName, orderTotal)',
+                'functions': 'camelCase (e.g., getUserById, calculateTotal)',
+                'classes': 'PascalCase (e.g., UserService, OrderController)',
+                'constants': 'UPPER_SNAKE_CASE (e.g., MAX_RETRY_COUNT, API_BASE_URL)',
+                'files': 'kebab-case or snake_case depending on language convention',
+                'database_tables': 'snake_case plural (e.g., user_profiles, order_items)',
+                'database_columns': 'snake_case (e.g., created_at, first_name)',
+                'api_endpoints': 'kebab-case plural (e.g., /user-profiles, /order-items)',
+            },
+            'rules': [
+                'Variables and functions use camelCase',
+                'Classes and types use PascalCase',
+                'Constants use UPPER_SNAKE_CASE',
+                'Database tables/columns use snake_case',
+                'API endpoints use kebab-case plural nouns',
+                'Boolean variables start with is/has/can/should (e.g., isActive, hasPermission)',
+                'NEVER use abbreviations unless universally known (id, url, api)',
+            ]
+        }
+
+    def load_error_handling_common(self):
+        """Universal error handling principles"""
+        return {
+            'principles': {
+                'specificity': 'Catch specific exception types, not generic Exception',
+                'propagation': 'Let errors bubble up to appropriate handler',
+                'context': 'Include context in error messages (what failed, why, what to do)',
+                'logging': 'Log errors at the point of handling, not at every catch',
+            },
+            'rules': [
+                'NEVER swallow exceptions silently (empty catch blocks)',
+                'Catch specific exception types, not generic Exception/Error',
+                'Include context in error messages (what operation failed)',
+                'Log errors at the handling point with stack trace',
+                'Use appropriate error codes/status for each error type',
+                'NEVER expose internal details (stack traces, SQL) to end users',
+            ]
+        }
+
+    def load_logging_standards(self):
+        """Universal logging standards"""
+        return {
+            'levels': {
+                'ERROR': 'System failures requiring immediate attention',
+                'WARN': 'Unexpected conditions that are handled gracefully',
+                'INFO': 'Key business events and state changes',
+                'DEBUG': 'Detailed diagnostic information for troubleshooting',
+            },
+            'rules': [
+                'Use structured logging (key-value pairs, not free text)',
+                'Include correlation/request ID in all log entries',
+                'Use appropriate log levels (ERROR for failures, INFO for events)',
+                'NEVER log sensitive data (passwords, tokens, PII)',
+                'NEVER log at DEBUG level in production by default',
+            ]
+        }
+
+    def load_security_basics(self):
+        """Universal security fundamentals"""
+        return {
+            'principles': {
+                'least_privilege': 'Grant minimum permissions needed',
+                'defense_in_depth': 'Multiple layers of security',
+                'fail_secure': 'Default to deny on security failures',
+            },
+            'rules': [
+                'NEVER hardcode secrets, passwords, or API keys in source code',
+                'Validate ALL external input (user input, API parameters, file uploads)',
+                'Use parameterized queries for ALL database operations',
+                'Apply principle of least privilege for all access control',
+                'NEVER commit secrets to version control (.env, credentials)',
+                'Sanitize output to prevent injection (XSS, SQL injection)',
+            ]
+        }
+
+    def load_code_organization(self):
+        """Universal code organization principles"""
+        return {
+            'principles': {
+                'SRP': 'Single Responsibility - each module/class does one thing',
+                'DRY': 'Dont Repeat Yourself - extract shared logic',
+                'separation_of_concerns': 'Separate business logic, data access, presentation',
+                'layered_architecture': 'Clear boundaries between layers',
+            },
+            'rules': [
+                'Each class/module has a single, clear responsibility',
+                'Extract shared logic into reusable functions/utilities',
+                'Separate business logic from data access and presentation',
+                'Keep functions small and focused (one task per function)',
+                'Avoid circular dependencies between modules',
+            ]
+        }
+
+    def load_api_design_common(self):
+        """Universal REST API design standards"""
+        return {
+            'conventions': {
+                'base_path': '/api/v{version}/{resource}',
+                'methods': 'GET=read, POST=create, PUT=update, DELETE=remove',
+                'pagination': 'Use page/size or limit/offset query params',
+                'versioning': 'URL path versioning (/api/v1/, /api/v2/)',
+            },
+            'status_codes': {
+                '200': 'OK (successful read/update/delete)',
+                '201': 'Created (successful creation)',
+                '400': 'Bad Request (validation error)',
+                '401': 'Unauthorized (not authenticated)',
+                '403': 'Forbidden (not authorized)',
+                '404': 'Not Found',
+                '409': 'Conflict (duplicate)',
+                '500': 'Internal Server Error',
+            },
+            'rules': [
+                'Use plural nouns for resource names (/users not /user)',
+                'Use standard HTTP methods (GET, POST, PUT, DELETE)',
+                'Return appropriate HTTP status codes',
+                'Support pagination for list endpoints',
+                'Version APIs in the URL path (/api/v1/)',
+                'Use consistent response envelope/wrapper',
+            ]
+        }
+
+    def load_database_common(self):
+        """Universal database standards"""
+        return {
+            'naming': {
+                'tables': 'snake_case plural (users, order_items)',
+                'columns': 'snake_case (created_at, first_name)',
+                'indexes': 'idx_{table}_{column}',
+                'foreign_keys': 'fk_{table}_{referenced_table}',
+            },
+            'rules': [
+                'Use snake_case for all table and column names',
+                'Use database migrations for ALL schema changes (never manual)',
+                'Add indexes on frequently queried columns',
+                'Use parameterized queries (NEVER concatenate SQL strings)',
+                'Include audit columns (created_at, updated_at) on all tables',
+            ]
+        }
+
+    def load_constants_common(self):
+        """Universal constants and magic value rules"""
+        return {
+            'principles': {
+                'no_magic_numbers': 'Every number should be a named constant if not self-evident',
+                'no_magic_strings': 'Every string literal should be a named constant if reused',
+                'centralize': 'Group related constants together',
+            },
+            'rules': [
+                'NO magic numbers in code (use named constants)',
+                'NO magic strings in code (use named constants)',
+                'Centralize related constants in dedicated files/classes',
+                'Centralize all user-facing messages (for i18n readiness)',
+                'NEVER duplicate constant definitions',
+            ]
+        }
+
+    def load_testing_approach(self):
+        """Universal testing standards"""
+        return {
+            'types': {
+                'unit': 'Test individual functions/methods in isolation',
+                'integration': 'Test component interactions and APIs',
+                'e2e': 'Test complete user workflows',
+            },
+            'rules': [
+                'Write unit tests for business logic',
+                'Write integration tests for API endpoints and data access',
+                'NEVER use production data in tests',
+                'Use descriptive test names that explain the scenario',
+                'Each test should be independent (no shared state between tests)',
+            ]
+        }
+
+    def load_documentation_common(self):
+        """Universal documentation standards"""
+        return {
+            'principles': {
+                'comments': 'Explain WHY, not WHAT (code explains what)',
+                'api_docs': 'Document all public APIs with examples',
+                'readme': 'Every project must have a README with setup instructions',
+            },
+            'rules': [
+                'Comments explain WHY, not WHAT the code does',
+                'Document all public APIs with request/response examples',
+                'Every project has a README with setup and run instructions',
+                'Keep documentation close to the code it describes',
+                'Update documentation when changing functionality',
+            ]
+        }
+
+    def load_git_standards(self):
+        """Universal Git workflow standards"""
+        return {
+            'commit_messages': {
+                'format': 'type: short description (e.g., feat: add user authentication)',
+                'types': ['feat', 'fix', 'refactor', 'docs', 'test', 'chore', 'style'],
+            },
+            'rules': [
+                'Write meaningful commit messages describing the change',
+                'Use conventional commit format (feat/fix/refactor: description)',
+                'Create feature branches for new work (never commit directly to main)',
+                'Write PR descriptions explaining what and why',
+                'NEVER commit generated files, build artifacts, or secrets',
+            ]
+        }
+
+    def load_file_organization(self):
+        """Universal file and folder organization"""
+        return {
+            'principles': {
+                'feature_grouping': 'Group files by feature/domain, not by type',
+                'config_separation': 'Separate configuration from application code',
+                'entry_point': 'Clear entry point for the application',
+            },
+            'rules': [
+                'Group related files by feature/domain',
+                'Separate configuration files from application code',
+                'Keep a clear, documented project entry point',
+                'Use consistent file naming conventions across the project',
+                'Separate test files from source files',
+            ]
+        }
+
+    # ===========================================================================
+    # MICROSERVICES STANDARDS (Level 2.2) - Spring Boot / Java specific
+    # ===========================================================================
+
+    def load_microservices_standards(self):
+        """Load all microservices standards (Level 2.2) - only when Spring Boot detected"""
+        micro_methods = [
+            ('java_structure', self.load_java_structure, 'Java Project Structure'),
+            ('config_server', self.load_config_server_rules, 'Config Server Rules'),
+            ('secret_management', self.load_secret_management, 'Secret Management'),
+            ('response_format', self.load_response_format, 'Response Format'),
+            ('api_design', self.load_api_design, 'API Design Standards'),
+            ('database', self.load_database_standards, 'Database Standards'),
+            ('error_handling', self.load_error_handling, 'Error Handling'),
+            ('service_pattern', self.load_service_pattern, 'Service Layer Pattern'),
+            ('entity_pattern', self.load_entity_pattern, 'Entity Pattern'),
+            ('controller_pattern', self.load_controller_pattern, 'Controller Pattern'),
+            ('constants', self.load_constants_organization, 'Constants Organization'),
+            ('utilities', self.load_common_utilities, 'Common Utilities'),
+            ('documentation', self.load_documentation_standards, 'Documentation Standards'),
+            ('network_policies', self.load_network_policies, 'Kubernetes Network Policies'),
+            ('infra_rules', self.load_infra_rules, 'K8s/Docker/Jenkins Infrastructure'),
+        ]
+
+        print(f"\n{'='*70}")
+        print(f"[2.2] MICROSERVICES STANDARDS LOADER (Spring Boot)")
+        print(f"{'='*70}\n")
+
+        for idx, (key, method, label) in enumerate(micro_methods, 1):
+            print(f"  [{idx}/{len(micro_methods)}] {label}...")
+            self.standards[key] = method()
+            print(f"         [CHECK] Loaded")
+
+        micro_count = len(micro_methods)
+        micro_rules = sum(
+            len(self.standards[key].get('rules', []))
+            for key, _, _ in micro_methods
+        )
+
+        print(f"\n{'='*70}")
+        print(f"[CHECK] MICROSERVICES STANDARDS LOADED")
+        print(f"{'='*70}\n")
+        print(f"   Microservices Standards: {micro_count}")
+        print(f"   Microservices Rules Loaded: {micro_rules}")
+
+        return micro_count, micro_rules
+
     def count_total_rules(self):
         """Count total number of rules loaded"""
         total = 0
@@ -1126,7 +1446,17 @@ def main():
     parser.add_argument(
         '--load-all',
         action='store_true',
-        help='Load all coding standards'
+        help='Load all coding standards (backward compat: loads common + microservices)'
+    )
+    parser.add_argument(
+        '--load-common',
+        action='store_true',
+        help='Load common/universal standards only (Level 2.1)'
+    )
+    parser.add_argument(
+        '--load-microservices',
+        action='store_true',
+        help='Load microservices/Spring Boot standards only (Level 2.2)'
     )
     parser.add_argument(
         '--summary',
@@ -1143,21 +1473,19 @@ def main():
 
     loader = StandardsLoader()
 
-    if args.load_all or not any(vars(args).values()):
-        standards = loader.load_all_standards()
-
-        if args.summary:
-            loader.display_summary()
-
-        if args.cache:
-            loader.save_to_cache()
-
+    if args.load_common:
+        loader.load_common_standards()
+    elif args.load_microservices:
+        loader.load_microservices_standards()
+    elif args.load_all or not any(vars(args).values()):
+        loader.load_all_standards()
     elif args.summary:
         loader.load_all_standards()
+
+    if args.summary:
         loader.display_summary()
 
-    elif args.cache:
-        loader.load_all_standards()
+    if args.cache:
         loader.save_to_cache()
 
 
