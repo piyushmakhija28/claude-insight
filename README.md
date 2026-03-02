@@ -1,4 +1,4 @@
-# Claude Insight v3.11.0
+# Claude Insight v4.1.0
 
 **Real-time Monitoring Dashboard for the Claude Memory System (3-Level Architecture)**
 
@@ -6,7 +6,7 @@
 [![Python](https://img.shields.io/badge/Python-3.8+-blue?logo=python)](https://www.python.org/)
 [![Flask](https://img.shields.io/badge/Flask-3.0-green?logo=flask)](https://flask.palletsprojects.com/)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/Version-3.11.0-brightgreen)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/Version-4.1.0-brightgreen)](VERSION)
 
 Claude Insight is a Python Flask dashboard that monitors how Claude Code follows the
 **3-Level Architecture enforcement policies** in real-time. Track policy execution,
@@ -912,9 +912,14 @@ Ensure all hooks in `~/.claude/settings.json` have `"async": false` (or omit asy
 
 ## Changelog
 
-See [CHANGELOG.md](CHANGELOG.md) for full version history.
+**Latest - v4.1.0 (2026-03-02):**
+- **[FIX]** Safe session-scoped fallback for issue close task ID mismatch (`3cd819c`)
+- **[FIX]** PID-suffix mismatch on enforcement flag filenames in 3-level-flow.py (`52538c7`)
+- **[FEAT]** VERSION file added for IDE update checker compatibility
+- **[FEAT]** 3-level-flow.py v3.6.0 with full checkpoint transparency
+- **[FEAT]** Hook-downloader auto-cleanup for corrupted cache files
 
-**Latest - v3.11.0 (2026-02-28):**
+**v3.11.0 (2026-02-28):**
 - **[FIX]** All script paths corrected to canonical `~/.claude/scripts/` location
 - **[FIX]** Removed all `memory/current` references (deprecated path)
 - **[FIX]** Removed hardcoded `/c/Users/techd/` path from architecture_module_monitor
@@ -939,5 +944,5 @@ MIT License - see [LICENSE](LICENSE) for details.
 ---
 
 **Source:** https://github.com/piyushmakhija28/claude-insight
-**Version:** 3.11.0 | **Python:** 3.8+ | **Flask:** 3.0
-**Last Updated:** 2026-02-28
+**Version:** 4.1.0 | **Python:** 3.8+ | **Flask:** 3.0
+**Last Updated:** 2026-03-02

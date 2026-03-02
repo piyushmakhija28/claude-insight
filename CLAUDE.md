@@ -2,7 +2,7 @@
 
 **Project:** Claude Insight
 **Type:** Python Flask Monitoring Dashboard
-**Version:** 3.9.0
+**Version:** 4.1.0
 **Status:** Active Development
 
 ---
