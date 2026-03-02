@@ -1,26 +1,33 @@
-# 🔧 Coding Standards Enforcement Policy
+# Microservices Coding Standards Enforcement Policy (Level 2.2)
 
-**VERSION:** 1.0.0
+**VERSION:** 1.1.0
 **CREATED:** 2026-02-16
-**PRIORITY:** 🔴 CRITICAL - MIDDLE LAYER (Between Sync and Execution)
-**STATUS:** 🟢 ACTIVE
+**UPDATED:** 2026-03-02
+**PRIORITY:** CRITICAL - MIDDLE LAYER (Between Sync and Execution)
+**STATUS:** ACTIVE
 
 ---
 
-## 📋 POLICY OVERVIEW
+## POLICY OVERVIEW
 
-**PURPOSE:** Enforce coding standards and architectural rules BEFORE execution.
+**PURPOSE:** Enforce Spring Boot microservices coding standards and architectural rules BEFORE execution.
+
+**NOTE:** Level 2.1 (Common Standards) loads first with universal rules.
+This policy (Level 2.2) adds Spring Boot / Java / microservices specific standards.
+Level 2.2 is CONDITIONAL - only active when Spring Boot is detected in the project.
 
 **POSITION IN FLOW:**
 ```
 Sync System (Context + Session)
-        ↓
-🔴 RULES/STANDARDS SYSTEM (THIS POLICY)  ← Load rules BEFORE execution
-        ↓
+        |
+Level 2.1: COMMON STANDARDS (always active)
+        |
+Level 2.2: MICROSERVICES STANDARDS (THIS POLICY) <- Only if Spring Boot detected
+        |
 Execution System (Policies + Implementation)
 ```
 
-**MANDATORY:** This policy MUST run after Sync System and BEFORE Execution System.
+**CONDITIONAL:** This policy runs ONLY when Spring Boot/Java microservices are detected.
 
 ---
 
