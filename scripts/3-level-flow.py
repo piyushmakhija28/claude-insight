@@ -2470,8 +2470,7 @@ Work to complete: Execute phase {i} of the identified work breakdown.
         print("   4. Create task dependencies if needed (blockedBy/blocks)")
 
     # Model selection policy (not auto-enforced — Claude must route correctly)
-    if 'model-selection-enforcement' in loaded_policies.get('level-3', {}) or \
-       'intelligent-model-selection-policy' in loaded_policies.get('level-3', {}):
+    if 'intelligent-model-selection-policy' in loaded_policies.get('level-3', {}):
         print()
         print("[ENFORCE] MODEL SELECTION POLICY:")
         print("   1. Search/explore tasks -> Use Agent(Explore, model=haiku)")
