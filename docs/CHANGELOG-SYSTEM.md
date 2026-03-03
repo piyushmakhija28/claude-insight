@@ -3,15 +3,15 @@ All notable changes to the Claude Memory System.
 
 ---
 
-- v4.4.1 (2026-03-02): Version Bump Guard for Direct-to-Main Pushes:
-  - NEW: PRIORITY 5 in stop-notifier.py - "Version Bump Guard"
-    - Detects un-bumped commits pushed directly to main (bypassing PR workflow)
-    - Auto-bumps VERSION + CHANGELOG, commits "bump: vX.Y.Z -> vX.Y.Z+1", pushes to main
-    - Skips if latest commit is already "bump:" or "Merge pull request" (already handled)
-  - FIX: Previously version bump ONLY happened inside `run_pr_workflow()` (PR path only)
-    - Direct `git push origin main` skipped version bump entirely
-    - Now: PRIORITY 5 catches the gap and auto-bumps on next Stop hook
-  - FIX: Stale .pr-workflow-retry flag cleanup (from previous session)
+- v4.4.2 (2026-03-03): Fix version bump placement - bump on main AFTER merge, not on feature branch:
+  - FIX: Moved version bump from Step 0.5 (feature branch, before commit) to Step 7 (main, after merge)
+  - NEW: `_bump_and_push_on_main()` - bumps VERSION + CHANGELOG on main, commits "bump: vX.Y.Z", pushes
+  - REMOVED: PRIORITY 5 "Version Bump Guard" from stop-notifier.py (no longer needed)
+  - Correct flow: feature branch -> PR -> merge -> switch to main -> version bump -> push
+  - Version bump is now always a clean separate commit on main after all work is merged
+
+- v4.4.1 (2026-03-02): Version Bump Guard for Direct-to-Main Pushes (superseded by v4.4.2):
+  - Attempted PRIORITY 5 guard approach (replaced with proper Step 7 in v4.4.2)
 
 - v4.4.0 (2026-03-02): Automatic GitHub Issue Close + Version Bump Automation:
   - NEW: 3-source issue number resolution in PR workflow (mapping > branch name > open issues query)
