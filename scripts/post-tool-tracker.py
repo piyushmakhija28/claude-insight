@@ -1,9 +1,12 @@
 #!/usr/bin/env python
 # Script Name: post-tool-tracker.py
-# Version: 3.0.0 (Context Chaining from flow-trace)
-# Last Modified: 2026-03-01
+# Version: 3.1.0 (Policy-linked + task/phase enforcement)
+# Last Modified: 2026-03-03
 # Description: PostToolUse hook - L3.9 tracking + L3.11 commit + L6 subagent + voice on task complete
-#              Now with flow-trace context chaining for task-aware tracking
+#              + task progress update frequency enforcement (from task-progress-tracking-policy.md)
+#              + complexity-aware progress weighting (from task-phase-enforcement-policy.md)
+# v3.1.0: Policy enforcement: warn if >5 tool calls without TaskUpdate.
+#          Complexity-aware progress deltas from flow-trace. Linked to policy .md files.
 # v3.0.0: Reads flow-trace.json for task type, complexity, skill context.
 #          Enriches tool-tracker.jsonl entries with task context. Better progress estimation.
 # v2.3.0: Added PID-based flag isolation for multi-window support
@@ -23,6 +26,12 @@
 #     - Bash  -> progress +15%  (ran a command)
 #     - Task  -> progress +20%  (delegated work)
 #     - Grep/Glob -> progress +5% (searching)
+#   Policy: task-progress-tracking-policy.md
+#     - Warn if >5 tool calls without TaskUpdate (update frequency enforcement)
+#     - Recommend update every 2-3 tool calls
+#   Policy: task-phase-enforcement-policy.md
+#     - Complexity >= 6 -> remind about phased execution
+#     - Progress deltas weighted by complexity from flow-trace
 #
 # Logs to: ~/.claude/memory/logs/tool-tracker.jsonl
 # Windows-safe: ASCII only, no Unicode chars
@@ -361,11 +370,19 @@ def main():
         is_error = is_error_response(tool_response)
         status = 'error' if is_error else 'success'
 
-        # Calculate progress delta
-        delta = 0 if is_error else PROGRESS_DELTA.get(tool_name, 0)
-
         # CONTEXT CHAIN: Load flow-trace context from 3-level-flow
         flow_ctx = _load_flow_trace_context()
+
+        # Calculate progress delta (v3.1.0: complexity-aware weighting)
+        # Policy: task-phase-enforcement-policy.md - higher complexity = more work = smaller increments
+        base_delta = 0 if is_error else PROGRESS_DELTA.get(tool_name, 0)
+        complexity = flow_ctx.get('complexity', 0)
+        if complexity >= 15 and base_delta > 0:
+            delta = max(1, base_delta // 4)  # HIGH complexity: 25% of base
+        elif complexity >= 8 and base_delta > 0:
+            delta = max(1, base_delta // 2)  # MEDIUM complexity: 50% of base
+        else:
+            delta = base_delta  # LOW complexity: full base delta
 
         # Build log entry (enriched with task context from flow-trace)
         entry = {
@@ -477,6 +494,48 @@ def main():
         state['context_estimate_pct'] = ctx_est
 
         save_session_progress(state)
+
+        # -----------------------------------------------------------------------
+        # POLICY ENFORCEMENT: Task Progress Update Frequency (v3.1.0)
+        # Policy: policies/03-execution-system/08-progress-tracking/task-progress-tracking-policy.md
+        # Rule: Warn if >5 tool calls without TaskUpdate. Recommend every 2-3 calls.
+        # -----------------------------------------------------------------------
+        if tool_name in ('TaskUpdate', 'TaskCreate'):
+            state['tools_since_last_update'] = 0
+            save_session_progress(state)
+        else:
+            tools_since = state.get('tools_since_last_update', 0) + 1
+            state['tools_since_last_update'] = tools_since
+            save_session_progress(state)
+
+            # Only warn for file-modifying tools (not reads/searches)
+            if tools_since > 5 and tool_name in ('Write', 'Edit', 'Bash', 'NotebookEdit'):
+                complexity = flow_ctx.get('complexity', 0)
+                if complexity >= 3:
+                    sys.stdout.write(
+                        '[POLICY] task-progress-tracking: ' + str(tools_since)
+                        + ' tool calls since last TaskUpdate!\n'
+                        '  Policy says: Update every 2-3 tool calls (max 5).\n'
+                        '  ACTION: Call TaskUpdate with metadata to track progress.\n'
+                        '  Example: TaskUpdate(id, metadata={"progress": "step X/Y complete"})\n'
+                    )
+                    sys.stdout.flush()
+
+        # -----------------------------------------------------------------------
+        # POLICY ENFORCEMENT: Complexity-Aware Phase Reminder (v3.1.0)
+        # Policy: policies/03-execution-system/08-progress-tracking/task-phase-enforcement-policy.md
+        # Rule: Complexity >= 6 -> phased execution mandatory
+        # -----------------------------------------------------------------------
+        complexity = flow_ctx.get('complexity', 0)
+        tasks_created = state.get('tasks_created', 0)
+        if complexity >= 6 and tasks_created == 0 and tool_name in ('Write', 'Edit', 'NotebookEdit'):
+            sys.stdout.write(
+                '[POLICY] task-phase-enforcement: Complexity=' + str(complexity)
+                + ' but 0 tasks created!\n'
+                '  Policy says: Complexity >= 6 REQUIRES phased execution.\n'
+                '  ACTION: Call TaskCreate to define tasks BEFORE writing code.\n'
+            )
+            sys.stdout.flush()
 
         # -----------------------------------------------------------------------
         # STEP 3.1 ENFORCEMENT: Clear task-breakdown flag when TaskCreate is called
