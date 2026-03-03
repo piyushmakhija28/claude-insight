@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
 Script Name: session-summary-manager.py
-Version: 2.0.0
-Last Modified: 2026-02-28
+Version: 2.1.0
+Last Modified: 2026-03-03
 Description: Session Summary Manager - accumulates per-request data and generates
              COMPREHENSIVE human-readable summaries for each session.
 
@@ -129,10 +129,11 @@ def accumulate(session_id, prompt='', task_type='', skill='', complexity=0,
     else:
         data = _new_summary(session_id)
 
-    # Add this request as an entry (v2.0.0: enhanced fields)
+    # Add this request as an entry (v2.1.0: enhanced fields + decision rationale)
     entry = {
         "timestamp": datetime.now().isoformat(),
         "prompt": prompt[:500],
+        "prompt_char_count": len(prompt),
         "task_type": task_type,
         "skill": skill,
         "complexity": complexity,
@@ -141,6 +142,7 @@ def accumulate(session_id, prompt='', task_type='', skill='', complexity=0,
         "plan_mode": str(plan_mode).lower() == 'true',
         "context_pct": context_pct,
         "supplementary_skills": [s.strip() for s in supplementary_skills.split(',') if s.strip()] if supplementary_skills else [],
+        "decision_rationale": f"Complexity {complexity} -> Model {model}, Skill {skill}",
     }
 
     data["requests"].append(entry)
@@ -182,6 +184,9 @@ def accumulate(session_id, prompt='', task_type='', skill='', complexity=0,
     except (ValueError, TypeError):
         pass
 
+    # Track total prompt chars (v2.1.0)
+    data["total_prompt_chars"] = data.get("total_prompt_chars", 0) + len(prompt)
+
     # Extract project from cwd
     if cwd:
         project = _extract_project(cwd)
@@ -209,9 +214,9 @@ def accumulate(session_id, prompt='', task_type='', skill='', complexity=0,
 
 
 def _new_summary(session_id):
-    """Create a fresh summary structure (v2.0.0: enhanced fields)"""
+    """Create a fresh summary structure (v2.1.0: enhanced fields + quality metrics)"""
     return {
-        "version": "2.0.0",
+        "version": "2.1.0",
         "session_id": session_id,
         "created_at": datetime.now().isoformat(),
         "last_updated": datetime.now().isoformat(),
@@ -231,6 +236,11 @@ def _new_summary(session_id):
         "standards_count": 0,
         "rules_count": 0,
         "summary_text": None,
+        # v2.1.0: Quality metrics
+        "total_prompt_chars": 0,
+        "error_rate_pct": 0.0,
+        "success_rate_pct": 100.0,
+        "total_tool_calls": 0,
     }
 
 
@@ -700,6 +710,17 @@ def finalize(session_id):
     total_complexity = data.get("total_complexity", 0)
     data["avg_complexity"] = round(total_complexity / req_count, 1) if req_count > 0 else 0
 
+    # 6b. Calculate quality metrics (v2.1.0)
+    total_tool_calls_calc = len(tool_entries)
+    error_count_calc = len(error_entries)
+    data["total_tool_calls"] = total_tool_calls_calc
+    if total_tool_calls_calc > 0:
+        data["error_rate_pct"] = round((error_count_calc / total_tool_calls_calc) * 100, 1)
+        data["success_rate_pct"] = round(((total_tool_calls_calc - error_count_calc) / total_tool_calls_calc) * 100, 1)
+    else:
+        data["error_rate_pct"] = 0.0
+        data["success_rate_pct"] = 100.0
+
     # 7. Build work stories (narrative per request)
     work_stories = _build_work_stories(data.get("requests", []), tool_entries)
     data["work_stories"] = work_stories
@@ -976,6 +997,14 @@ def _generate_markdown(data):
     tasks_completed = tool_stats.get("tasks_completed", 0)
     if tasks_completed > 0:
         lines.append(f"| Tasks Completed | {tasks_completed} |")
+    # v2.1.0: Quality metrics
+    error_rate = data.get("error_rate_pct", 0.0)
+    success_rate = data.get("success_rate_pct", 100.0)
+    lines.append(f"| Success Rate | **{success_rate}%** |")
+    lines.append(f"| Error Rate | {error_rate}% |")
+    total_prompt_chars = data.get("total_prompt_chars", 0)
+    if total_prompt_chars > 0:
+        lines.append(f"| Total Prompt Chars | {total_prompt_chars} |")
     lines.append("")
 
     # ===================== SKILLS & MODELS =====================
@@ -1409,7 +1438,7 @@ def read_summary(session_id, fmt='md'):
 # =============================================================================
 
 def main():
-    parser = argparse.ArgumentParser(description='Session Summary Manager v2.0.0')
+    parser = argparse.ArgumentParser(description='Session Summary Manager v2.1.0')
     subparsers = parser.add_subparsers(dest='command', help='Command to run')
 
     # accumulate (v2.0.0: added new args)
