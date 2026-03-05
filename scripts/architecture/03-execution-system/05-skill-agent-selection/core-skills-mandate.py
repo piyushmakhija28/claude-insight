@@ -3,12 +3,12 @@
 """
 Core Skills Mandate Policy Enforcement (v2.0 - FULLY CONSOLIDATED)
 
-CONSOLIDATED SCRIPT - Maps to: policies/03-execution-system/05-skill-agent-selection/core-skills-mandate-policy.md
+CONSOLIDATED SCRIPT - Maps to: policies/03-execution-system/05-skill-agent-selection/core-skills-mandate.md
 
 Consolidates 1 script (328 lines):
 - core-skills-enforcer.py (328 lines) - Enforce mandatory skills execution order
 
-THIS CONSOLIDATION includes ALL functionality from old script.
+THIS CONSOLIDATION includes ALL functionality from old scripts.
 NO logic was lost in consolidation - everything is merged.
 
 Usage:
