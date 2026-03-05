@@ -1175,7 +1175,7 @@ if __name__ == "__main__":
             print(f"Skipped: {results['skipped']}")
             sys.exit(0)
         elif sys.argv[1] == "--select" and len(sys.argv) >= 3:
-            with open(sys.argv[2], 'r') as f:
+            with open(sys.argv[2], 'r', encoding='utf-8') as f:
                 task_data = json.load(f)
             selector = AutoSkillAgentSelector()
             selection = selector.select(
@@ -1186,7 +1186,7 @@ if __name__ == "__main__":
             print(json.dumps(selection, indent=2))
             sys.exit(0)
         elif sys.argv[1] == "--execute" and len(sys.argv) >= 3:
-            with open(sys.argv[2], 'r') as f:
+            with open(sys.argv[2], 'r', encoding='utf-8') as f:
                 task_data = json.load(f)
             executor = SkillAgentAutoExecutor()
             result = executor.auto_execute(task_data, dry_run=False)

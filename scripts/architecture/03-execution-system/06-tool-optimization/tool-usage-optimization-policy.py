@@ -595,7 +595,7 @@ class ToolCallInterceptor:
         path = Path(file_path)
         if path.exists():
             try:
-                line_count = sum(1 for _ in open(path, 'rb'))
+                line_count = sum(1 for _ in open(path, 'r', encoding='utf-8', errors='replace'))
 
                 if line_count > MEDIUM_FILE_THRESHOLD and offset is None and limit is None:
                     optimized_params['offset'] = 0

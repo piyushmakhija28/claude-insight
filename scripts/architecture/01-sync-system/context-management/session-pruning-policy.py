@@ -190,7 +190,7 @@ def log_policy_hit(action, context=""):
 
     try:
         LOG_FILE.parent.mkdir(parents=True, exist_ok=True)
-        with open(LOG_FILE, 'a') as f:
+        with open(LOG_FILE, 'a', encoding='utf-8') as f:
             f.write(log_entry)
     except Exception as e:
         print(f"Warning: Could not write to log: {e}", file=sys.stderr)

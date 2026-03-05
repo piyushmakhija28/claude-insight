@@ -73,7 +73,7 @@ def log_policy_hit(action, context=""):
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     try:
         LOG_FILE.parent.mkdir(parents=True, exist_ok=True)
-        with open(LOG_FILE, 'a') as f:
+        with open(LOG_FILE, 'a', encoding='utf-8') as f:
             f.write(f"[{timestamp}] session-chaining-policy | {action} | {context}\n")
     except: pass
 
