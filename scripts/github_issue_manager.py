@@ -665,19 +665,21 @@ def create_github_issue(task_id, subject, description):
 
 
 def _build_close_comment(task_id, issue_data):
-    """
-    Build a comprehensive closing comment for a GitHub issue.
+    """Build a comprehensive Markdown closing comment for a GitHub issue.
 
-    Includes:
-      - Resolution summary (what was done)
-      - Files changed (read/written/edited)
-      - Commands executed
-      - Duration (created_at -> now)
-      - RCA analysis (if bugfix type)
-      - Tool usage breakdown
-      - Session metrics
+    The comment includes a resolution story (narrative derived from issue type),
+    files changed and investigated, commands executed, RCA section for bugfix
+    issues, tool usage breakdown, duration from creation to now, and session
+    context metrics.
 
-    Returns comment string.
+    Args:
+        task_id: Task ID string or int used to retrieve tool activity via
+            _get_tool_activity_for_task.
+        issue_data (dict): Persisted issue metadata dict with keys title,
+            issue_type, and created_at (ISO datetime string).
+
+    Returns:
+        str: Formatted Markdown comment body ready to post to GitHub.
     """
     lines = []
 

@@ -72,6 +72,7 @@ class AutoSkillAgentSelector:
     """
 
     def __init__(self):
+        """Initialize AutoSkillAgentSelector with the registry file path and built-in lists."""
         self.registry_file = Path.home() / ".claude" / "memory" / "adaptive-skill-registry.md"
 
         # Available skills (from registry)

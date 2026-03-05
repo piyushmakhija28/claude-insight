@@ -81,6 +81,7 @@ class CoreSkillsEnforcer:
     """
 
     def __init__(self):
+        """Initialize CoreSkillsEnforcer, creating the execution log directory if needed."""
         self.memory_dir = Path.home() / '.claude' / 'memory'
         self.execution_log = self.memory_dir / 'logs' / 'core-skills-execution.log'
 
