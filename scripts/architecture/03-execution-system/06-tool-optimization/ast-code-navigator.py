@@ -155,6 +155,11 @@ def navigate_code(filepath, show_methods=False):
         return {'error': f'Unsupported file type: {ext}'}
 
 def main():
+    """Entry point for the CLI.
+
+    Parses command-line arguments and executes the corresponding action.
+    Prints results to stdout in JSON or text format as appropriate.
+    """
     import argparse
     parser = argparse.ArgumentParser(description='AST Code Navigator')
     parser.add_argument('--file', required=True, help='Code file path')

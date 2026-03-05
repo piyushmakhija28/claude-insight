@@ -195,6 +195,11 @@ def get_stats():
     }
 
 def main():
+    """Entry point for the CLI.
+
+    Parses command-line arguments and executes the corresponding action.
+    Prints results to stdout in JSON or text format as appropriate.
+    """
     import argparse
     parser = argparse.ArgumentParser(description='Tiered Caching System')
     parser.add_argument('--get-file', help='Get cached content for file')

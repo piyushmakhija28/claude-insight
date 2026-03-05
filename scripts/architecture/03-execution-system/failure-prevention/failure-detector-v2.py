@@ -29,6 +29,17 @@ from datetime import datetime
 from collections import defaultdict
 
 class FailureDetectorV2:
+    """Detects failure patterns in Claude execution using machine learning.
+
+    Analyzes execution history and identifies recurring failure patterns using
+    statistical analysis and pattern matching. Provides early warnings for
+    likely failures before they occur.
+
+    Attributes:
+        memory_dir (Path): Base memory directory for session storage.
+        failure_log (Path): Log file containing failure records.
+        patterns (dict): Dictionary of known failure patterns.
+    """
     def __init__(self):
         self.memory_dir = Path.home() / '.claude' / 'memory'
         self.logs_dir = self.memory_dir / 'logs'
@@ -270,6 +281,11 @@ class FailureDetectorV2:
         return kb
 
 def main():
+    """Entry point for the CLI.
+
+    Parses command-line arguments and executes the corresponding action.
+    Prints results to stdout in JSON or text format as appropriate.
+    """
     parser = argparse.ArgumentParser(description='Failure detector v2')
     parser.add_argument('--analyze', action='store_true', help='Analyze all logs')
     parser.add_argument('--update-kb', action='store_true', help='Update knowledge base')

@@ -28,7 +28,26 @@ from pathlib import Path
 from datetime import datetime, timedelta
 
 class ContextCache:
+    """Intelligent caching system to reduce redundant context usage.
+
+    Caches file summaries and query results to avoid re-processing frequently
+    accessed information. Uses content-based hashing to generate cache keys
+    and supports configurable time-to-live (TTL) for cache expiration.
+
+    Attributes:
+        cache_dir (Path): Root directory for all cache storage.
+        summaries_dir (Path): Directory storing file summaries cache.
+        queries_dir (Path): Directory storing query results cache.
+        cache_ttl (int): Time-to-live for query cache in seconds (default 1 hour).
+        file_cache_ttl (int): Time-to-live for file summaries (default 24 hours).
+    """
+
     def __init__(self):
+        """Initialize the ContextCache.
+
+        Sets up cache directories with appropriate permissions and initializes
+        cache time-to-live (TTL) settings for different cache types.
+        """
         self.cache_dir = Path.home() / '.claude' / 'memory' / '.cache'
         self.cache_dir.mkdir(parents=True, exist_ok=True)
 
@@ -244,6 +263,11 @@ class ContextCache:
         return cleared
 
 def main():
+    """Entry point for the CLI.
+
+    Parses command-line arguments and executes the corresponding action.
+    Prints results to stdout in JSON or text format as appropriate.
+    """
     parser = argparse.ArgumentParser(description='Context cache manager')
     parser.add_argument('--get-file', help='Get cached file summary')
     parser.add_argument('--set-file', help='Cache file summary')

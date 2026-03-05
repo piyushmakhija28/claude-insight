@@ -232,6 +232,11 @@ def load_previous_estimate():
         return None
 
 def main():
+    """Entry point for the CLI.
+
+    Parses command-line arguments and executes the corresponding action.
+    Prints results to stdout in JSON or text format as appropriate.
+    """
     print("\n" + "=" * 70)
     print("[CHART] CONTEXT USAGE ESTIMATOR")
     print("=" * 70)

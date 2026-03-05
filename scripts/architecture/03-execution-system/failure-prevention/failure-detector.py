@@ -101,7 +101,15 @@ FAILURE_PATTERNS = {
 }
 
 def log_detection(action, context):
-    """Log failure detection activity"""
+    """Log failure detection activity to the policy hits log.
+
+    Records timestamped detection events for monitoring and analysis of
+    failure detection operations.
+
+    Args:
+        action (str): Action type being logged (e.g., 'detected', 'analyzed').
+        context (str): Descriptive context about the detection event.
+    """
     try:
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         log_entry = f"[{timestamp}] failure-detector | {action} | {context}\n"
@@ -114,7 +122,18 @@ def log_detection(action, context):
         print(f"Warning: Could not write to log: {e}", file=sys.stderr)
 
 def detect_failure_signature(text):
-    """Detect failure pattern from text"""
+    """Detect failure pattern signature from text.
+
+    Matches text against known failure patterns and returns the signature
+    and pattern details if a match is found.
+
+    Args:
+        text (str): Text content to analyze for failure patterns.
+
+    Returns:
+        tuple or None: Tuple of (signature, pattern_dict) if a match found,
+            None otherwise.
+    """
     text_lower = text.lower()
 
     for signature, pattern in FAILURE_PATTERNS.items():
@@ -330,6 +349,11 @@ def save_detection_output(report):
         print(f"Error saving detection output: {e}", file=sys.stderr)
 
 def main():
+    """Entry point for the CLI.
+
+    Parses command-line arguments and executes the corresponding action.
+    Prints results to stdout in JSON or text format as appropriate.
+    """
     import argparse
 
     parser = argparse.ArgumentParser(

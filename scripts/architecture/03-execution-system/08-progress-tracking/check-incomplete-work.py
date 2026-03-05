@@ -246,6 +246,11 @@ def show_resume_prompt(project):
 
 
 def main():
+    """Entry point for the CLI.
+
+    Parses command-line arguments and executes the corresponding action.
+    Prints results to stdout in JSON or text format as appropriate.
+    """
     if len(sys.argv) < 2:
         project = get_current_project()
     else:

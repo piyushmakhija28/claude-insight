@@ -216,6 +216,11 @@ class SessionState:
         return self._save_state()
 
 def main():
+    """Entry point for the CLI.
+
+    Parses command-line arguments and executes the corresponding action.
+    Prints results to stdout in JSON or text format as appropriate.
+    """
     parser = argparse.ArgumentParser(description='Session state manager')
     parser.add_argument('--project', help='Project name')
     parser.add_argument('--set-task', help='Set current task')

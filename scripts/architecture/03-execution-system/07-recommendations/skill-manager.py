@@ -40,7 +40,25 @@ SKILL_MANAGER_LOG = MEMORY_DIR / 'logs' / 'skill-manager.log'
 
 
 class SkillManager:
+    """Manages CRUD operations for the skill registry.
+
+    Provides methods to add, update, remove, and retrieve skills from the
+    central skills registry. Maintains skill metadata, categories, and
+    statistics for skill discovery and recommendation systems.
+
+    Attributes:
+        registry (dict): Central skills registry containing all skill data.
+        skills (dict): Dictionary of registered skills with metadata.
+        categories (dict): Skill categories and organization.
+        statistics (dict): Usage and recommendation statistics for skills.
+    """
+
     def __init__(self):
+        """Initialize the SkillManager.
+
+        Loads the existing skills registry from disk and prepares the manager
+        for CRUD operations on skills, categories, and statistics.
+        """
         self.registry = self._load_registry()
         self.skills = self.registry.get('skills', {})
         self.categories = self.registry.get('categories', {})

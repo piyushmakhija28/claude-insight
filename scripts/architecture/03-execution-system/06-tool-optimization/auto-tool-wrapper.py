@@ -261,6 +261,11 @@ def optimize_grep_params(params):
     }
 
 def main():
+    """Entry point for the CLI.
+
+    Parses command-line arguments and executes the corresponding action.
+    Prints results to stdout in JSON or text format as appropriate.
+    """
     import argparse
     parser = argparse.ArgumentParser(description='Auto Tool Wrapper')
     parser.add_argument('--tool', required=True, choices=['Read', 'Grep', 'Glob'])

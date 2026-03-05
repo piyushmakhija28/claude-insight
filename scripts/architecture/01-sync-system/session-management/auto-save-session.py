@@ -252,6 +252,11 @@ def save_session_summary(project_name, summary):
     return True
 
 def main():
+    """Entry point for the CLI.
+
+    Parses command-line arguments and executes the corresponding action.
+    Prints results to stdout in JSON or text format as appropriate.
+    """
     parser = argparse.ArgumentParser(
         description="Auto-save session summary before context cleanup"
     )

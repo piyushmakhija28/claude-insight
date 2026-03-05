@@ -27,7 +27,26 @@ from pathlib import Path
 from datetime import datetime
 
 class ContextMonitorV2:
+    """Enhanced context monitoring with actionable recommendations.
+
+    Tracks Claude's context usage percentage and provides alerts at different
+    severity levels (green/yellow/orange/red) with specific recommendations for
+    optimizing context usage. Includes auto-compact triggers for critical levels.
+
+    Attributes:
+        memory_dir (Path): Base memory directory for session storage.
+        context_file (Path): File storing current context usage percentage.
+        estimate_file (Path): File storing estimated context usage.
+        thresholds (dict): Usage percentage thresholds for alert levels.
+    """
+
     def __init__(self):
+        """Initialize the ContextMonitorV2.
+
+        Sets up paths to context usage files and initializes thresholds for
+        different alert levels: green (<60%), yellow (60-70%), orange (70-80%),
+        and red (80%+).
+        """
         self.memory_dir = Path.home() / '.claude' / 'memory'
         self.context_file = self.memory_dir / '.context-usage'
         self.estimate_file = self.memory_dir / '.context-estimate'
@@ -201,6 +220,11 @@ class ContextMonitorV2:
         return True
 
 def main():
+    """Entry point for the CLI.
+
+    Parses command-line arguments and executes the corresponding action.
+    Prints results to stdout in JSON or text format as appropriate.
+    """
     parser = argparse.ArgumentParser(description='Context monitor v2')
     parser.add_argument('--current-status', action='store_true', help='Get current status')
     parser.add_argument('--update', type=float, help='Update percentage')

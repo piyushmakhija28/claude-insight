@@ -148,6 +148,11 @@ def check_protected_paths():
     print("=" * 60)
 
 def main():
+    """Entry point for the CLI.
+
+    Parses command-line arguments and executes the corresponding action.
+    Prints results to stdout in JSON or text format as appropriate.
+    """
     parser = argparse.ArgumentParser(
         description="Monitor context window usage and provide cleanup recommendations"
     )

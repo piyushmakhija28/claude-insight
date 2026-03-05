@@ -217,6 +217,11 @@ class ModelSelectionMonitor:
         return recommendations
 
 def main():
+    """Entry point for the CLI.
+
+    Parses command-line arguments and executes the corresponding action.
+    Prints results to stdout in JSON or text format as appropriate.
+    """
     parser = argparse.ArgumentParser(description='Model selection monitor')
     parser.add_argument('--report', action='store_true', help='Generate usage report')
     parser.add_argument('--distribution', action='store_true', help='Show distribution only')

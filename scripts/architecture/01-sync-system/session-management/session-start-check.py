@@ -140,6 +140,11 @@ def check_recommendations():
         return None
 
 def main():
+    """Entry point for the CLI.
+
+    Parses command-line arguments and executes the corresponding action.
+    Prints results to stdout in JSON or text format as appropriate.
+    """
     verbose = '--verbose' in sys.argv or '-v' in sys.argv
 
     print(f"\n{BOLD}{'='*60}{RESET}")

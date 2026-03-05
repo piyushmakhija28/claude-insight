@@ -39,7 +39,15 @@ PROTECTED_PATHS = [
 ]
 
 def log_policy_hit(action, context):
-    """Log policy execution"""
+    """Log policy execution to the policy hits log.
+
+    Records timestamped cleanup actions and context for monitoring and
+    analysis of cleanup operations.
+
+    Args:
+        action (str): Action being logged (e.g., 'cleanup-start', 'cleanup-done').
+        context (str): Descriptive context about the cleanup action.
+    """
     log_file = os.path.expanduser("~/.claude/memory/logs/policy-hits.log")
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     log_entry = f"[{timestamp}] context-cleanup | {action} | {context}\n"
@@ -51,13 +59,23 @@ def log_policy_hit(action, context):
         print(f"Warning: Could not write to log: {e}", file=sys.stderr)
 
 def get_cleanup_strategy(level):
-    """
-    Get cleanup strategy based on level
+    """Get cleanup strategy based on context usage level.
 
-    Returns dict with:
-    - what_to_keep: List of items to preserve
-    - what_to_remove: List of items to cleanup
-    - save_before_cleanup: Items to save to session memory first
+    Returns detailed cleanup guidance for three different context reduction
+    levels (light, moderate, aggressive) with policies on what to keep,
+    remove, and save before cleanup.
+
+    Args:
+        level (str): Cleanup intensity level: 'light' (70-84% context),
+            'moderate' (85-89% context), or 'aggressive' (90%+ context).
+
+    Returns:
+        dict: Strategy dictionary with keys:
+            - description (str): Human-readable strategy description.
+            - what_to_keep (list): Items to preserve during cleanup.
+            - what_to_remove (list): Items eligible for removal.
+            - save_before_cleanup (list): Items to save to session first.
+            - compaction (str): Expected context reduction percentage.
     """
 
     strategies = {
@@ -295,6 +313,11 @@ def execute_cleanup(level, project=None, dry_run=True):
         print("To execute cleanup, add --execute flag (future implementation)")
 
 def main():
+    """Entry point for the CLI.
+
+    Parses command-line arguments and executes the corresponding action.
+    Prints results to stdout in JSON or text format as appropriate.
+    """
     parser = argparse.ArgumentParser(
         description="Smart context cleanup with session memory protection"
     )

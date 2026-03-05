@@ -27,11 +27,38 @@ import re
 from pathlib import Path
 
 class ContextExtractor:
+    """Extracts essential information from tool outputs to reduce context.
+
+    Intelligently summarizes large outputs from Read, Grep, and Glob tools,
+    preserving critical structure and definitions while discarding redundant
+    content. Helps manage context window when dealing with large files.
+
+    Attributes:
+        summary_max_lines (int): Maximum lines to preserve in summary output
+            (default: 50).
+    """
     def __init__(self):
+        """Initialize the ContextExtractor.
+
+        Sets default parameters for context reduction.
+        """
         self.summary_max_lines = 50  # Max lines in summary
 
     def extract_read_output(self, content, file_path):
-        """Extract essentials from Read tool output"""
+        """Extract essential information from Read tool output.
+
+        Summarizes large file contents by extracting structure (classes,
+        functions), key definitions (constants, variables), and import
+        statements. Returns content as-is if it's short.
+
+        Args:
+            content (str): The full file content from Read tool.
+            file_path (str): Path to the file being extracted.
+
+        Returns:
+            str: Either the original content if short, or a JSON summary
+                containing file structure, definitions, and imports.
+        """
         lines = content.split('\n')
 
         # If content is short, return as-is
@@ -51,7 +78,17 @@ class ContextExtractor:
         return json.dumps(summary, indent=2)
 
     def _extract_structure(self, lines):
-        """Extract file structure (classes, functions, etc.)"""
+        """Extract file structure (classes, functions, etc.).
+
+        Scans the first 200 lines of the file and identifies class, interface,
+        function, and method definitions with their line numbers.
+
+        Args:
+            lines (list): List of file content lines.
+
+        Returns:
+            list: List of up to 20 structure definition strings with line numbers.
+        """
         structure = []
 
         for i, line in enumerate(lines[:200], 1):  # Only scan first 200 lines
@@ -66,7 +103,17 @@ class ContextExtractor:
         return structure[:20]  # Return first 20 items
 
     def _extract_definitions(self, lines):
-        """Extract key definitions"""
+        """Extract key definitions (constants and variables).
+
+        Identifies constant definitions (uppercase identifiers) and variable
+        declarations (const, let, var patterns) throughout the file.
+
+        Args:
+            lines (list): List of file content lines.
+
+        Returns:
+            list: List of up to 10 key definition strings with line numbers.
+        """
         definitions = []
 
         for i, line in enumerate(lines, 1):
@@ -81,7 +128,17 @@ class ContextExtractor:
         return definitions[:10]  # Return first 10
 
     def _extract_imports(self, lines):
-        """Extract import statements"""
+        """Extract import statements from file.
+
+        Scans the first 50 lines for import, require, and include statements
+        in various languages.
+
+        Args:
+            lines (list): List of file content lines.
+
+        Returns:
+            list: List of import statement strings (deduplicated).
+        """
         imports = []
 
         for line in lines[:50]:  # Only check first 50 lines
@@ -207,6 +264,11 @@ class ContextExtractor:
         cache_file.write_text(json.dumps(cache_data, indent=2))
 
 def main():
+    """Entry point for the CLI.
+
+    Parses command-line arguments and executes the corresponding action.
+    Prints results to stdout in JSON or text format as appropriate.
+    """
     parser = argparse.ArgumentParser(description='Context extractor')
     parser.add_argument('--tool', help='Tool name')
     parser.add_argument('--output', help='Tool output (or file path)')

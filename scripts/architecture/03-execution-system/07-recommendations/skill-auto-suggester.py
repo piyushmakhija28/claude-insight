@@ -254,6 +254,11 @@ def monitor_loop(interval_minutes):
     log_daemon("STOP", "Daemon stopped")
 
 def main():
+    """Entry point for the CLI.
+
+    Parses command-line arguments and executes the corresponding action.
+    Prints results to stdout in JSON or text format as appropriate.
+    """
     import argparse
 
     parser = argparse.ArgumentParser(

@@ -356,6 +356,11 @@ def suggest_patterns(topic):
 
 
 def main():
+    """Entry point for the CLI.
+
+    Parses command-line arguments and executes the corresponding action.
+    Prints results to stdout in JSON or text format as appropriate.
+    """
     if '--show' in sys.argv:
         show_patterns()
     elif '--suggest' in sys.argv:

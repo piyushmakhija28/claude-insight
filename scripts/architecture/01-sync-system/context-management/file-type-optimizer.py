@@ -19,7 +19,18 @@ if sys.platform == 'win32':
     sys.stderr.reconfigure(encoding='utf-8')
 
 def get_file_type(filepath):
-    """Detect file type"""
+    """Detect file type from file extension.
+
+    Maps common file extensions to file type categories (json, yaml, log,
+    markdown, code, config, binary, text).
+
+    Args:
+        filepath (str): Path to the file.
+
+    Returns:
+        str: File type category ('json', 'yaml', 'log', 'markdown', 'code',
+            'config', 'binary', or 'text').
+    """
     ext = os.path.splitext(filepath)[1].lower()
 
     type_map = {
@@ -42,7 +53,25 @@ def get_file_type(filepath):
     return type_map.get(ext, 'text')
 
 def optimize_read(filepath, purpose='general'):
-    """Get optimized read strategy"""
+    """Get optimized read strategy for a file.
+
+    Returns recommended strategies and commands for reading files efficiently
+    based on file type and intended purpose (e.g., to extract structure,
+    recent entries, errors, etc.).
+
+    Args:
+        filepath (str): Path to the file to read.
+        purpose (str): Purpose for reading the file (e.g., 'structure',
+            'recent', 'errors', 'imports'). Default: 'general'.
+
+    Returns:
+        dict: Dictionary with keys:
+            - filepath (str): The input filepath.
+            - file_type (str): Detected file type.
+            - purpose (str): The requested purpose.
+            - recommended_strategy (str): Human-readable strategy description.
+            - command_hint (str): Suggested command for efficient reading.
+    """
     file_type = get_file_type(filepath)
 
     strategies = {
@@ -91,7 +120,26 @@ def optimize_read(filepath, purpose='general'):
     }
 
 def generate_command(file_type, filepath, purpose):
-    """Generate optimized command"""
+    """Generate an optimized CLI command for reading a file.
+
+    Produces efficient command-line instructions for extracting specific
+    information from files of various types without loading entire contents
+    into memory.
+
+    Args:
+        file_type (str): Type of file (e.g., 'json', 'yaml', 'log', 'code').
+        filepath (str): Path to the file.
+        purpose (str): Purpose for reading (e.g., 'structure', 'errors').
+
+    Returns:
+        str: Command string suitable for shell execution (e.g., jq, grep,
+            tail).
+
+    Examples:
+        >>> cmd = generate_command('json', 'config.json', 'structure')
+        >>> cmd
+        'jq "keys" "config.json"'
+    """
     commands = {
         'json': {
             'structure': f'jq "keys" "{filepath}"',
@@ -120,6 +168,11 @@ def generate_command(file_type, filepath, purpose):
     return commands.get(file_type, {}).get(purpose, f'cat "{filepath}"')
 
 def main():
+    """Entry point for the CLI.
+
+    Parses command-line arguments and executes the corresponding action.
+    Prints results to stdout in JSON or text format as appropriate.
+    """
     import argparse
     parser = argparse.ArgumentParser(description='File Type Optimizer')
     parser.add_argument('--file', required=True, help='File path')

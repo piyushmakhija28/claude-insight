@@ -27,7 +27,24 @@ import argparse
 from pathlib import Path
 
 class PreExecutionChecker:
+    """Checks failure knowledge base before tool execution.
+
+    Prevents known failures by analyzing tool parameters against a knowledge
+    base of previous failures and their solutions. Can optionally apply
+    automatic fixes for high-confidence solutions.
+
+    Attributes:
+        memory_dir (Path): Path to .claude/memory directory.
+        kb_file (Path): Path to failure-kb.json file.
+        kb (dict): Loaded failure knowledge base.
+        auto_fix_threshold (float): Minimum confidence (0.0-1.0) for auto-fixes.
+    """
     def __init__(self):
+        """Initialize the PreExecutionChecker.
+
+        Loads the failure knowledge base from disk and sets up default
+        parameters for failure detection.
+        """
         self.memory_dir = Path.home() / '.claude' / 'memory'
         self.kb_file = self.memory_dir / 'failure-kb.json'
 
@@ -38,7 +55,11 @@ class PreExecutionChecker:
         self.auto_fix_threshold = 0.75
 
     def _load_kb(self):
-        """Load failure knowledge base"""
+        """Load the failure knowledge base from disk.
+
+        Returns:
+            dict: Loaded knowledge base, or empty dict if file doesn't exist.
+        """
         if not self.kb_file.exists():
             return {}
 
@@ -48,11 +69,30 @@ class PreExecutionChecker:
             return {}
 
     def reload_kb(self):
-        """Reload KB from file"""
+        """Reload the failure knowledge base from disk.
+
+        Refreshes in-memory KB with latest data from the knowledge base file.
+        """
         self.kb = self._load_kb()
 
     def check_bash_command(self, command):
-        """Check Bash command for known failures"""
+        """Check a Bash command for known failure patterns.
+
+        Compares the command against the knowledge base to detect potential
+        failures and suggest fixes. Can automatically apply fixes if
+        confidence is above the threshold.
+
+        Args:
+            command (str): The Bash command to check.
+
+        Returns:
+            dict: Check results with keys:
+                - tool (str): 'Bash'.
+                - original_command (str): The input command.
+                - issues (list): List of detected issues.
+                - fixed_command (str): Command with fixes applied.
+                - auto_fix_applied (bool): Whether auto-fix was used.
+        """
         results = {
             'tool': 'Bash',
             'original_command': command,
@@ -94,7 +134,21 @@ class PreExecutionChecker:
         return results
 
     def check_edit_params(self, old_string):
-        """Check Edit tool old_string for known issues"""
+        """Check Edit tool parameters for known failure patterns.
+
+        Validates that the old_string parameter is suitable for edit
+        operations and detects common edit failures.
+
+        Args:
+            old_string (str): The 'old_string' parameter for the Edit tool.
+
+        Returns:
+            dict: Check results with keys:
+                - tool (str): 'Edit'.
+                - original_old_string (str): The input string.
+                - issues (list): List of detected issues.
+                - suggestions (list): Suggested fixes.
+        """
         results = {
             'tool': 'Edit',
             'original_old_string': old_string,
@@ -239,6 +293,11 @@ class PreExecutionChecker:
         return stats
 
 def main():
+    """Entry point for the CLI.
+
+    Parses command-line arguments and executes the corresponding action.
+    Prints results to stdout in JSON or text format as appropriate.
+    """
     parser = argparse.ArgumentParser(description='Pre-execution checker')
     parser.add_argument('--tool', help='Tool name')
     parser.add_argument('--params', help='Tool parameters as JSON')

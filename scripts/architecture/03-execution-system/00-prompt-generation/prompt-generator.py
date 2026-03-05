@@ -32,6 +32,19 @@ from datetime import datetime
 
 
 class PromptGenerator:
+    """Generates structured prompts from natural language user requests.
+
+    Transforms user messages into comprehensive, well-structured prompts by:
+    1. Analyzing user intent and understanding requirements
+    2. Gathering relevant information from the codebase
+    3. Verifying information completeness
+    4. Enriching with context, examples, and success criteria
+    5. Building rewritten prompts with all context
+
+    Attributes:
+        workspace (Path): Path to the workspace directory.
+        docs (Path): Path to the documentation and standards directory.
+    """
     def __init__(self):
         self.workspace = Path.home() / "Documents" / "workspace-spring-tool-suite-4-4.27.0-new"
         self.docs = Path.home() / ".claude" / "memory" / "docs"

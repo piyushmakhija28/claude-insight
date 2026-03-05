@@ -28,6 +28,17 @@ from pathlib import Path
 from collections import defaultdict, Counter
 
 class FailurePatternExtractor:
+    """Extracts and categorizes failure patterns from failure logs.
+
+    Analyzes failure logs to identify common patterns, root causes, and
+    triggering conditions. Builds a knowledge base of failures for learning
+    and prevention.
+
+    Attributes:
+        memory_dir (Path): Base memory directory for session storage.
+        failure_log (Path): Log file containing failure records.
+        patterns (dict): Dictionary of extracted failure patterns.
+    """
     def __init__(self):
         self.memory_dir = Path.home() / '.claude' / 'memory'
         self.failures_log = self.memory_dir / 'logs' / 'failures.log'
@@ -206,6 +217,11 @@ class FailurePatternExtractor:
         return suggestions
 
 def main():
+    """Entry point for the CLI.
+
+    Parses command-line arguments and executes the corresponding action.
+    Prints results to stdout in JSON or text format as appropriate.
+    """
     parser = argparse.ArgumentParser(description='Failure pattern extractor')
     parser.add_argument('--extract', action='store_true', help='Extract patterns')
     parser.add_argument('--with-solutions', action='store_true', help='Include solution suggestions')

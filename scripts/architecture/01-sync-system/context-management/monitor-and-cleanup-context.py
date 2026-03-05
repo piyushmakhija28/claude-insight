@@ -200,6 +200,11 @@ def monitor_context(auto_trigger=False, dry_run=False):
         return 0  # OK
 
 def main():
+    """Entry point for the CLI.
+
+    Parses command-line arguments and executes the corresponding action.
+    Prints results to stdout in JSON or text format as appropriate.
+    """
     import argparse
 
     parser = argparse.ArgumentParser(

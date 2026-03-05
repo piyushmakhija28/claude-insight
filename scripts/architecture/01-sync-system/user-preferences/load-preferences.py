@@ -121,6 +121,11 @@ def show_all_preferences():
 
 
 def main():
+    """Entry point for the CLI.
+
+    Parses command-line arguments and executes the corresponding action.
+    Prints results to stdout in JSON or text format as appropriate.
+    """
     if len(sys.argv) == 1:
         # No arguments - show all preferences
         show_all_preferences()

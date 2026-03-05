@@ -225,6 +225,11 @@ class ModelSelectionEnforcer:
         return result
 
 def main():
+    """Entry point for the CLI.
+
+    Parses command-line arguments and executes the corresponding action.
+    Prints results to stdout in JSON or text format as appropriate.
+    """
     parser = argparse.ArgumentParser(description='Model selection enforcer')
     parser.add_argument('--analyze', help='Analyze request message')
     parser.add_argument('--enforce', nargs=2, metavar=('MESSAGE', 'CURRENT_MODEL'),

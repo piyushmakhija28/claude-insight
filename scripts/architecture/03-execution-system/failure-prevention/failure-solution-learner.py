@@ -225,6 +225,11 @@ class FailureSolutionLearner:
         return stats
 
 def main():
+    """Entry point for the CLI.
+
+    Parses command-line arguments and executes the corresponding action.
+    Prints results to stdout in JSON or text format as appropriate.
+    """
     parser = argparse.ArgumentParser(description='Failure solution learner')
     parser.add_argument('--learn', nargs=4, metavar=('TOOL', 'TYPE', 'SOLUTION', 'CONFIDENCE'),
                        help='Learn a solution')

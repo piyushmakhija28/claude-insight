@@ -27,6 +27,17 @@ from datetime import datetime
 
 
 class SessionLoader:
+    """Loads and retrieves saved session data from disk.
+
+    Provides methods to load complete session history, including context,
+    decisions, and progress information. Enables continuation of work
+    across multiple Claude Code sessions.
+
+    Attributes:
+        memory_dir (Path): Base memory directory for session storage.
+        sessions_dir (Path): Directory containing saved session files.
+    """
+
     def __init__(self):
         self.memory_dir = Path.home() / ".claude" / "memory"
         self.sessions_dir = self.memory_dir / "sessions"

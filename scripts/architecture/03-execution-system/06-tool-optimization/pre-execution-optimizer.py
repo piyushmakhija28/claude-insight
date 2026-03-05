@@ -26,7 +26,25 @@ import argparse
 from pathlib import Path
 
 class PreExecutionOptimizer:
+    """Optimizes tool parameters before execution to reduce context usage.
+
+    Analyzes tool calls and applies intelligent parameter optimizations such as
+    adding offset/limit to large file reads, limiting grep results, and
+    suggesting caching strategies. Aims to reduce context impact while
+    maintaining effectiveness.
+
+    Attributes:
+        max_file_lines (int): Maximum lines to read from file without limit.
+        max_grep_results (int): Maximum grep results to include.
+        cache_threshold (int): Number of accesses before suggesting cache.
+    """
+
     def __init__(self):
+        """Initialize the PreExecutionOptimizer.
+
+        Sets up default thresholds for file reading, grep results, and caching
+        strategies to optimize tool execution for context efficiency.
+        """
         self.max_file_lines = 500  # Max lines to read without offset/limit
         self.max_grep_results = 100  # Max grep results
         self.cache_threshold = 3  # Cache after 3 accesses
@@ -169,6 +187,11 @@ class PreExecutionOptimizer:
         return None
 
 def main():
+    """Entry point for the CLI.
+
+    Parses command-line arguments and executes the corresponding action.
+    Prints results to stdout in JSON or text format as appropriate.
+    """
     parser = argparse.ArgumentParser(description='Pre-execution optimizer')
     parser.add_argument('--tool', help='Tool name (Read/Grep/Glob/Bash)')
     parser.add_argument('--params', help='Tool parameters as JSON')

@@ -370,6 +370,11 @@ def auto_commit(project_dir, push=False, dry_run=False):
     return True
 
 def main():
+    """Entry point for the CLI.
+
+    Parses command-line arguments and executes the corresponding action.
+    Prints results to stdout in JSON or text format as appropriate.
+    """
     import argparse
 
     parser = argparse.ArgumentParser(

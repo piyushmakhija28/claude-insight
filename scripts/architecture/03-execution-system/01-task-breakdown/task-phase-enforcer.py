@@ -103,6 +103,11 @@ def analyze_task(task_desc):
     print("="*70 + "\n")
 
 def main():
+    """Entry point for the CLI.
+
+    Parses command-line arguments and executes the corresponding action.
+    Prints results to stdout in JSON or text format as appropriate.
+    """
     import argparse
     parser = argparse.ArgumentParser(description="Task/Phase enforcement")
     parser.add_argument('--analyze', type=str, help='Analyze task description')

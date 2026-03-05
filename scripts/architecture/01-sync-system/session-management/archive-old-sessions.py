@@ -328,6 +328,11 @@ def archive_all_projects(dry_run=False):
 
 
 def main():
+    """Entry point for the CLI.
+
+    Parses command-line arguments and executes the corresponding action.
+    Prints results to stdout in JSON or text format as appropriate.
+    """
     if '--stats' in sys.argv:
         show_statistics()
         return
