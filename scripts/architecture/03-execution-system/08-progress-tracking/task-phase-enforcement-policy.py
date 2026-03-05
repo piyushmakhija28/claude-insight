@@ -53,7 +53,17 @@ LOG_FILE = MEMORY_DIR / "logs" / "policy-hits.log"
 # ============================================================================
 
 def calculate_complexity_score(task_desc):
-    """Calculate task complexity based on keywords and requirements"""
+    """Calculate a complexity score from keyword density in the task description.
+
+    Counts requirement connectors, multi-domain keywords, file modification
+    verbs, scope indicators, and comprehensive-scope markers.
+
+    Args:
+        task_desc (str): Task description text to analyze.
+
+    Returns:
+        int: Complexity score from 0 to 10.
+    """
     score = 0
 
     # Check for multiple requirements
@@ -85,7 +95,14 @@ def calculate_complexity_score(task_desc):
 
 
 def calculate_size_score(task_desc):
-    """Calculate task size based on description length and indicators"""
+    """Calculate a size score from word count and breadth indicators.
+
+    Args:
+        task_desc (str): Task description text to analyze.
+
+    Returns:
+        int: Size score from 0 to 10.
+    """
     score = 0
 
     # Score based on word count
@@ -106,7 +123,17 @@ def calculate_size_score(task_desc):
 
 
 def analyze_task(task_desc):
-    """Analyze task and determine phase enforcement requirements"""
+    """Analyze a task description and print phase enforcement requirements.
+
+    Computes complexity and size scores, determines whether TaskCreate and
+    phase-based execution are required, and prints a formatted report.
+
+    Args:
+        task_desc (str): Task description to analyze.
+
+    Returns:
+        int: Always 0 (exit code for success).
+    """
     print("\n" + "="*70)
     print("TASK/PHASE ENFORCEMENT CHECK")
     print("="*70 + "\n")
@@ -147,7 +174,12 @@ def analyze_task(task_desc):
 # ============================================================================
 
 def log_policy_hit(action, context=""):
-    """Log policy execution"""
+    """Append a timestamped entry to the policy-hits log.
+
+    Args:
+        action (str): The action identifier (e.g., 'ENFORCE_START', 'VALIDATE').
+        context (str): Optional human-readable context or detail string.
+    """
     timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     log_entry = f"[{timestamp}] task-phase-enforcement-policy | {action} | {context}\n"
 
@@ -164,7 +196,11 @@ def log_policy_hit(action, context=""):
 # ============================================================================
 
 def validate():
-    """Validate policy compliance"""
+    """Check that the task phase enforcement policy preconditions are met.
+
+    Returns:
+        bool: True if validation succeeds, False on any exception.
+    """
     try:
         log_policy_hit("VALIDATE", "task-phase-ready")
         return True
@@ -174,7 +210,13 @@ def validate():
 
 
 def report():
-    """Generate compliance report"""
+    """Generate a compliance report for the task phase enforcement policy.
+
+    Returns:
+        dict: Contains 'status', 'policy', 'enforcements',
+              'complexity_threshold', and 'timestamp'.
+              Returns {'status': 'error', ...} on failure.
+    """
     try:
         report_data = {
             "status": "success",
@@ -191,15 +233,16 @@ def report():
 
 
 def enforce():
-    """
-    Main policy enforcement function.
+    """Activate the task phase enforcement policy.
 
     Consolidates task/phase enforcement from task-phase-enforcer.py:
     - Complexity scoring
     - Size estimation
     - Phase requirement calculation
 
-    Returns: dict with status and results
+    Returns:
+        dict: Contains 'status' ('success' or 'error').
+              On error, contains 'message'.
     """
     try:
         log_policy_hit("ENFORCE_START", "task-phase-enforcement")

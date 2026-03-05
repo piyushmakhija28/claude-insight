@@ -55,13 +55,27 @@ LOG_FILE = MEMORY_DIR / "logs" / "policy-hits.log"
 # ============================================================================
 
 def get_current_project():
-    """Get current project name from working directory."""
+    """Get the current project name from the working directory name.
+
+    Returns:
+        str: Name of the current working directory.
+    """
     cwd = Path.cwd()
     return cwd.name
 
 
 def find_incomplete_markers(content):
-    """Find markers of incomplete work in content."""
+    """Search text content for markers indicating incomplete work.
+
+    Looks for TODO, PENDING, WIP, unchecked checkboxes, Next steps,
+    Remaining, and Pending lines using regex patterns.
+
+    Args:
+        content (str): File or session text to scan.
+
+    Returns:
+        list[str]: List of matching lines indicating incomplete work.
+    """
     incomplete_patterns = [
         r'(?:TODO|PENDING|IN PROGRESS|WIP|INCOMPLETE):\s*(.+)',
         r'Phase \d+/\d+.*(?:in progress|pending|not started)',
@@ -86,7 +100,15 @@ def find_incomplete_markers(content):
 
 
 def check_project_summary(project):
-    """Check project summary for incomplete work."""
+    """Scan the project summary file for incomplete work sections.
+
+    Args:
+        project (str): Project name (subdirectory name in SESSIONS_DIR).
+
+    Returns:
+        dict: Contains 'file', 'sections' (list), and 'items' (list)
+              if incomplete work is found, or None otherwise.
+    """
     summary_file = SESSIONS_DIR / project / "project-summary.md"
 
     if not summary_file.exists():
@@ -135,7 +157,15 @@ def check_project_summary(project):
 
 
 def check_recent_session(project):
-    """Check most recent session file for incomplete work."""
+    """Scan the most recent session file (within 3 days) for incomplete markers.
+
+    Args:
+        project (str): Project name (subdirectory name in SESSIONS_DIR).
+
+    Returns:
+        dict: Contains 'file', 'age_days', and 'items' (list) if recent
+              incomplete work is found, or None if none found or session is old.
+    """
     project_dir = SESSIONS_DIR / project
 
     if not project_dir.exists():
@@ -175,7 +205,17 @@ def check_recent_session(project):
 
 
 def show_resume_prompt(project):
-    """Show resume prompt if incomplete work detected."""
+    """Print a formatted resume prompt if incomplete work is detected.
+
+    Checks both the project summary and the most recent session file. If
+    either has incomplete markers, prints a formatted welcome-back prompt.
+
+    Args:
+        project (str): Project name to check.
+
+    Returns:
+        bool: True if incomplete work was found, False otherwise.
+    """
     print("[SEARCH] Checking for incomplete work...")
     print()
 
@@ -247,7 +287,12 @@ def show_resume_prompt(project):
 # ============================================================================
 
 def log_policy_hit(action, context=""):
-    """Log policy execution"""
+    """Append a timestamped entry to the policy-hits log.
+
+    Args:
+        action (str): The action identifier (e.g., 'ENFORCE_START', 'VALIDATE').
+        context (str): Optional human-readable context or detail string.
+    """
     timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     log_entry = f"[{timestamp}] task-progress-tracking-policy | {action} | {context}\n"
 
@@ -261,7 +306,11 @@ def log_policy_hit(action, context=""):
 # ============================================================================
 
 def validate():
-    """Validate policy compliance"""
+    """Check that the task progress tracking policy preconditions are met.
+
+    Returns:
+        bool: True if validation succeeds, False on any exception.
+    """
     try:
         SESSIONS_DIR.mkdir(parents=True, exist_ok=True)
         log_policy_hit("VALIDATE", "progress-tracking-ready")
@@ -272,7 +321,12 @@ def validate():
 
 
 def report():
-    """Generate compliance report"""
+    """Generate a compliance report for the task progress tracking policy.
+
+    Returns:
+        dict: Contains 'status', 'policy', 'projects_tracked', and 'timestamp'.
+              Returns {'status': 'error', ...} on failure.
+    """
     try:
         project_count = len([d for d in SESSIONS_DIR.iterdir() if d.is_dir()]) if SESSIONS_DIR.exists() else 0
 
@@ -290,15 +344,16 @@ def report():
 
 
 def enforce():
-    """
-    Main policy enforcement function.
+    """Activate the task progress tracking policy.
 
     Consolidates progress tracking from check-incomplete-work.py:
     - Project summary analysis
     - Recent session checking
     - Incomplete work detection
 
-    Returns: dict with status and results
+    Returns:
+        dict: Contains 'status' ('success' or 'error') and 'projects' count.
+              On error, contains 'message'.
     """
     try:
         log_policy_hit("ENFORCE_START", "task-progress-tracking-enforcement")

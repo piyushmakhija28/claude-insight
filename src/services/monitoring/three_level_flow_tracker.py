@@ -35,9 +35,21 @@ from utils.path_resolver import get_data_dir
 
 
 class ThreeLevelFlowTracker:
-    """Track and parse 3-level architecture flow executions from session logs"""
+    """Track and parse 3-level architecture flow executions from session logs.
+
+    Reads per-session log files (00-session-start.log, 01-level-minus-1.log,
+    02-level-1-sync.log, 03-level-2-standards.log, 04-level-3-execution.log)
+    and flow-trace.json files to reconstruct structured session data. Provides
+    aggregated statistics across many sessions and fast access to the latest run.
+
+    Attributes:
+        memory_dir (Path): Root data directory resolved by PathResolver.
+        sessions_dir (Path): Per-session log directory (logs/sessions/).
+        policy_hits_log (Path): Path to the policy-hits.log file.
+    """
 
     def __init__(self):
+        """Initialize ThreeLevelFlowTracker with directories from PathResolver."""
         self.memory_dir = get_data_dir()
         self.sessions_dir = self.memory_dir / 'logs' / 'sessions'
         self.policy_hits_log = self.memory_dir / 'logs' / 'policy-hits.log'
@@ -47,7 +59,15 @@ class ThreeLevelFlowTracker:
     # -------------------------------------------------------------------------
 
     def get_session_dirs(self, limit=50):
-        """List session directories sorted by most recent"""
+        """List session directories sorted by modification time (most recent first).
+
+        Args:
+            limit (int): Maximum number of directories to return. Defaults to 50.
+
+        Returns:
+            list[Path]: Up to ``limit`` session directory paths. Returns an empty
+                list if the sessions directory does not exist.
+        """
         if not self.sessions_dir.exists():
             return []
 
@@ -60,7 +80,23 @@ class ThreeLevelFlowTracker:
     # -------------------------------------------------------------------------
 
     def parse_session(self, session_dir):
-        """Parse a single session directory and return structured data"""
+        """Parse a single session directory and return structured session data.
+
+        Reads all level log files and flow-trace.json from session_dir. Combines
+        data from each level into a unified dict. If flow-trace.json is present,
+        enriches the result with richer v3.0.0+ fields.
+
+        Args:
+            session_dir (Path): Path to the session directory (e.g. sessions/SESSION-xxx/).
+
+        Returns:
+            dict: Structured session data with keys:
+                session_id, started, user_prompt, mode, level_minus_1 (dict),
+                level_1 (dict), level_2 (dict), level_3 (dict), overall_status,
+                duration, tech_stack, agent_type, supplementary_skills,
+                execution_mode, model_reason, flow_version, has_trace_json.
+                On parse error, also includes parse_error (str).
+        """
         session_id = session_dir.name
         session_data = {
             'session_id': session_id,
@@ -126,7 +162,12 @@ class ThreeLevelFlowTracker:
         return session_data
 
     def _parse_session_start(self, session_dir, data):
-        """Parse 00-session-start.log"""
+        """Parse 00-session-start.log and populate session_id, started, mode, user_prompt.
+
+        Args:
+            session_dir (Path): Session directory containing the log files.
+            data (dict): Session data dict to populate in-place.
+        """
         log_file = session_dir / '00-session-start.log'
         if not log_file.exists():
             return
@@ -156,7 +197,14 @@ class ThreeLevelFlowTracker:
             data['user_prompt'] = m.group(1).strip()
 
     def _parse_level_minus_1(self, session_dir, data):
-        """Parse 01-level-minus-1.log"""
+        """Parse 01-level-minus-1.log and populate data['level_minus_1'].
+
+        Extracts per-check results and determines overall PASS/FAIL status.
+
+        Args:
+            session_dir (Path): Session directory containing the log file.
+            data (dict): Session data dict to populate in-place.
+        """
         log_file = session_dir / '01-level-minus-1.log'
         if not log_file.exists():
             return
@@ -183,7 +231,14 @@ class ThreeLevelFlowTracker:
         }
 
     def _parse_level_1(self, session_dir, data):
-        """Parse 02-level-1-sync.log"""
+        """Parse 02-level-1-sync.log and populate data['level_1'].
+
+        Extracts context percentage, context status colour, and session ID.
+
+        Args:
+            session_dir (Path): Session directory containing the log file.
+            data (dict): Session data dict to populate in-place.
+        """
         log_file = session_dir / '02-level-1-sync.log'
         if not log_file.exists():
             return
@@ -213,7 +268,16 @@ class ThreeLevelFlowTracker:
         }
 
     def _parse_level_2(self, session_dir, data):
-        """Parse 03-level-2-standards.log - supports both old single-block and new 2.1/2.2 format"""
+        """Parse 03-level-2-standards.log and populate data['level_2'].
+
+        Supports two formats:
+            - Old single-block format: 'Total Standards: N', 'Rules Loaded: N'.
+            - New Level 2.1/2.2 format: separate common and microservices counts.
+
+        Args:
+            session_dir (Path): Session directory containing the log file.
+            data (dict): Session data dict to populate in-place.
+        """
         log_file = session_dir / '03-level-2-standards.log'
         if not log_file.exists():
             return
@@ -275,7 +339,16 @@ class ThreeLevelFlowTracker:
         }
 
     def _parse_level_3(self, session_dir, data):
-        """Parse 04-level-3-execution.log"""
+        """Parse 04-level-3-execution.log and populate data['level_3'].
+
+        Extracts all 13 execution steps (3.0-3.12), complexity, task type,
+        task count, plan mode flag, context percentage, model selection,
+        skill/agent, duration, and overall OK/FAIL status.
+
+        Args:
+            session_dir (Path): Session directory containing the log file.
+            data (dict): Session data dict to populate in-place.
+        """
         log_file = session_dir / '04-level-3-execution.log'
         if not log_file.exists():
             return
@@ -466,7 +539,14 @@ class ThreeLevelFlowTracker:
     # -------------------------------------------------------------------------
 
     def get_recent_sessions(self, limit=10):
-        """Return list of recent parsed sessions"""
+        """Return a list of recently parsed session data dicts.
+
+        Args:
+            limit (int): Maximum number of sessions to return. Defaults to 10.
+
+        Returns:
+            list[dict]: Parsed session data dicts sorted by most recent first.
+        """
         session_dirs = self.get_session_dirs(limit=limit)
         sessions = []
         for session_dir in session_dirs:
@@ -475,7 +555,25 @@ class ThreeLevelFlowTracker:
         return sessions
 
     def get_flow_stats(self, limit=100):
-        """Return aggregated statistics across recent sessions"""
+        """Return aggregated statistics across recent sessions.
+
+        Processes up to ``limit`` recent sessions to compute success/failure
+        counts, model distribution, task type distribution, average complexity,
+        plan mode rate, average context usage, standards info, average duration,
+        and v3.0.0+ tech stack and execution mode distributions.
+
+        Args:
+            limit (int): Maximum number of sessions to analyze. Defaults to 100.
+
+        Returns:
+            dict: Aggregated stats with keys:
+                total_sessions, successful, failed, partial, success_rate,
+                model_distribution, type_distribution, avg_complexity,
+                plan_mode_rate, avg_context_usage, standards_info,
+                avg_duration_seconds, tech_stack_distribution,
+                execution_mode_distribution, agent_type_distribution,
+                sessions_with_trace_json.
+        """
         sessions = self.get_recent_sessions(limit=limit)
 
         total = len(sessions)
@@ -591,7 +689,18 @@ class ThreeLevelFlowTracker:
         return sessions[0] if sessions else None
 
     def _build_session_from_trace(self, trace):
-        """Build a session data dict directly from a flow-trace.json dict (no log files)"""
+        """Build a session data dict directly from a flow-trace.json dict (no log files).
+
+        Used when the session directory is not available but a flow-trace.json exists.
+        Extracts all fields from meta and final_decision, then enriches level data
+        from the pipeline steps.
+
+        Args:
+            trace (dict): Parsed flow-trace.json data.
+
+        Returns:
+            dict: Session data dict equivalent to parse_session() output.
+        """
         meta = trace.get('meta', {})
         fd = trace.get('final_decision', {})
         user_input = trace.get('user_input', {})
@@ -658,7 +767,18 @@ class ThreeLevelFlowTracker:
         return data
 
     def get_policy_hits_today(self, hours=24):
-        """Count policy enforcement hits in the last N hours from policy-hits.log"""
+        """Count policy enforcement hits in the last N hours from policy-hits.log.
+
+        Parses timestamp entries in policy-hits.log and counts total, successful,
+        and failed hits since ``now - hours``.
+
+        Args:
+            hours (int): Lookback window in hours. Defaults to 24.
+
+        Returns:
+            dict: Policy hit counts with keys:
+                total (int), success (int), failed (int).
+        """
         if not self.policy_hits_log.exists():
             return {'total': 0, 'success': 0, 'failed': 0}
 

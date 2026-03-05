@@ -65,7 +65,12 @@ class SessionState:
         self.state = self._load_state()
 
     def _load_state(self):
-        """Load state from file"""
+        """Load state from disk, returning a default structure if missing or corrupt.
+
+        Returns:
+            dict: Persisted state dict if readable, otherwise a freshly
+                initialised default state dict.
+        """
         if self.state_file.exists():
             try:
                 return json.loads(self.state_file.read_text())
@@ -87,7 +92,13 @@ class SessionState:
         }
 
     def _save_state(self):
-        """Save state to file"""
+        """Write the current in-memory state to disk.
+
+        Updates 'last_updated' before writing.
+
+        Returns:
+            bool: True if saved successfully, False on IO error.
+        """
         self.state['last_updated'] = datetime.now().isoformat()
 
         try:

@@ -132,7 +132,18 @@ class SecurityConfig:
 
     @staticmethod
     def _read_env_file_key(key):
-        """Read a key from .env file in project root"""
+        """Read a single key value from the .env file in the project root.
+
+        Parses key=value lines, skipping blanks and comments. Returns the
+        first matching value found.
+
+        Args:
+            key (str): Environment variable name to look up.
+
+        Returns:
+            str or None: The value string if found, or None if the file does
+                not exist, the key is not present, or a read error occurs.
+        """
         try:
             env_path = Path(__file__).parent.parent.parent / '.env'
             if env_path.exists():
@@ -173,7 +184,14 @@ class SecurityConfig:
 
 
 class PasswordValidator:
-    """Password strength validation"""
+    """Enforce password complexity requirements.
+
+    Validates that passwords meet minimum length, character class diversity,
+    and are not in the common-password blacklist.
+
+    Class Attributes:
+        MINIMUM_LENGTH (int): Minimum required password length (default 12).
+    """
 
     MINIMUM_LENGTH = 12
 
@@ -214,14 +232,24 @@ class PasswordValidator:
 
 
 class PathValidator:
-    """Path validation to prevent traversal attacks"""
+    """Prevent directory traversal attacks by constraining file access to a base directory.
+
+    All paths submitted to validate() are resolved to absolute form and checked
+    against the allowed_base_dir. Raises SecurityError for any path that escapes
+    the declared directory.
+
+    Attributes:
+        allowed_base_dir (Path): Resolved absolute base directory. All validated
+            paths must be descendants of this directory.
+    """
 
     def __init__(self, allowed_base_dir: Path):
-        """
-        Initialize path validator
+        """Initialize PathValidator with the permitted base directory.
 
         Args:
-            allowed_base_dir: Base directory that all paths must be within
+            allowed_base_dir (Path): Directory that all validated paths must
+                reside within. The path is resolved to its canonical absolute
+                form on initialization.
         """
         self.allowed_base_dir = allowed_base_dir.resolve()
 

@@ -337,7 +337,12 @@ class PlanModeAutoDecider:
 # ============================================================================
 
 def log_policy_hit(action: str, context: str = ""):
-    """Log policy execution"""
+    """Append a timestamped entry to the policy-hits log.
+
+    Args:
+        action (str): The action identifier (e.g., 'ENFORCE_START', 'VALIDATE').
+        context (str): Optional human-readable context or detail string.
+    """
     timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     log_entry = f"[{timestamp}] auto-plan-mode-suggestion-policy | {action} | {context}\n"
 
@@ -350,7 +355,11 @@ def log_policy_hit(action: str, context: str = ""):
 
 
 def validate():
-    """Validate policy compliance"""
+    """Check that the auto plan mode suggestion policy preconditions are met.
+
+    Returns:
+        bool: True if validation succeeds, False on any exception.
+    """
     try:
         MEMORY_DIR.mkdir(parents=True, exist_ok=True)
         log_policy_hit("VALIDATE", "auto-plan-mode-suggestion-ready")
@@ -361,7 +370,12 @@ def validate():
 
 
 def report():
-    """Generate compliance report"""
+    """Generate a compliance report for the auto plan mode suggestion policy.
+
+    Returns:
+        dict: Contains 'status', 'policy', 'components', 'features',
+              and 'timestamp'. Returns {'status': 'error', ...} on failure.
+    """
     try:
         report_data = {
             "status": "success",
@@ -388,7 +402,18 @@ def report():
 
 
 def enforce():
-    """Main policy enforcement - consolidates 2 scripts into unified system"""
+    """Activate the auto plan mode suggestion policy.
+
+    Consolidates 2 old scripts into a unified system:
+    - auto-plan-mode-suggester.py: Complexity analysis and suggestion engine
+    - plan-mode-auto-decider.py: Risk-based decision logic
+
+    Initializes AutoPlanModeSuggester and PlanModeAutoDecider.
+
+    Returns:
+        dict: Contains 'status' ('success' or 'error') and 'components' list.
+              On error, contains 'message'.
+    """
     try:
         log_policy_hit("ENFORCE_START", "auto-plan-mode-suggestion-enforcement")
 

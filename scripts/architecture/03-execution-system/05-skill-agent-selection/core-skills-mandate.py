@@ -56,7 +56,29 @@ LOG_FILE = MEMORY_DIR / 'logs' / 'policy-hits.log'
 # ============================================================================
 
 class CoreSkillsEnforcer:
-    """Enforce mandatory skills execution order"""
+    """Enforce the mandatory skills execution order within each Claude session.
+
+    Tracks which core skills have been executed in the current session and
+    determines which skills still need to run. Writes execution events to a
+    dedicated log file so that compliance can be measured across sessions.
+
+    Attributes:
+        memory_dir (Path): Root directory for all Claude memory files.
+        execution_log (Path): Append-only log recording SESSION_START,
+            SKILL_EXECUTED, and SKILL_SKIPPED events.
+        mandatory_skills (list[dict]): Ordered list of skill descriptors.
+            Each dict has keys: 'name', 'description', 'priority', 'required'.
+
+    Key Methods:
+        get_execution_state(): Read the latest session state from the log.
+        start_session(): Append a SESSION_START marker to the log.
+        log_skill_execution(skill_name): Record that a skill was executed.
+        get_next_skill(): Return the next required skill that has not run yet.
+        verify_execution(): Check whether all required skills have run.
+        get_execution_order(): Return the full ordered list of skills.
+        skip_skill(skill_name, reason): Record that a skill was intentionally skipped.
+        get_statistics(): Compute compliance statistics across all sessions.
+    """
 
     def __init__(self):
         self.memory_dir = Path.home() / '.claude' / 'memory'
@@ -94,7 +116,19 @@ class CoreSkillsEnforcer:
         ]
 
     def get_execution_state(self):
-        """Get current execution state from log"""
+        """Read the current session's execution state from the log file.
+
+        Scans the execution log in reverse order to find the most recent
+        SESSION_START marker, then collects all SKILL_EXECUTED entries
+        that followed it.
+
+        Returns:
+            dict: A dict with keys:
+                - 'executed_skills' (list[str]): Names of skills executed in
+                  the current session, in execution order.
+                - 'current_session' (str or None): The raw SESSION_START log
+                  line, or None if no session has been started.
+        """
         if not self.execution_log.exists():
             return {
                 'executed_skills': [],
@@ -131,7 +165,12 @@ class CoreSkillsEnforcer:
             }
 
     def start_session(self):
-        """Start a new session"""
+        """Append a SESSION_START marker to the execution log.
+
+        Creates the log file and its parent directories if they do not yet
+        exist. This method must be called at the beginning of each new
+        Claude session so that skill execution events are correctly grouped.
+        """
         timestamp = datetime.now().isoformat()
         log_entry = f"[{timestamp}] SESSION_START\n"
 
@@ -139,7 +178,12 @@ class CoreSkillsEnforcer:
             f.write(log_entry)
 
     def log_skill_execution(self, skill_name):
-        """Log skill execution"""
+        """Append a SKILL_EXECUTED entry to the execution log.
+
+        Args:
+            skill_name (str): The canonical name of the skill that was
+                executed (e.g., 'context-management-core').
+        """
         timestamp = datetime.now().isoformat()
         log_entry = f"[{timestamp}] SKILL_EXECUTED | {skill_name}\n"
 
@@ -147,7 +191,22 @@ class CoreSkillsEnforcer:
             f.write(log_entry)
 
     def get_next_skill(self):
-        """Get next skill that should be executed"""
+        """Return the next required skill that has not yet been executed.
+
+        Iterates through mandatory_skills in priority order and returns the
+        first required skill whose name is not in the current session's
+        executed list. If all required skills have run, returns a completion
+        result.
+
+        Returns:
+            dict: A dict with keys:
+                - 'skill' (dict or None): The skill descriptor dict, or None
+                  if all required skills have been executed.
+                - 'status' (str): 'required' if a skill still needs to run,
+                  'complete' if all mandatory skills are done.
+                - 'message' (str): Human-readable description of what to do
+                  next.
+        """
         state = self.get_execution_state()
         executed = state['executed_skills']
 
@@ -168,7 +227,18 @@ class CoreSkillsEnforcer:
         }
 
     def verify_execution(self):
-        """Verify all mandatory skills were executed"""
+        """Check whether all required mandatory skills have been executed.
+
+        Compares the current session's executed skill list against the
+        required skills defined in mandatory_skills.
+
+        Returns:
+            dict: A dict with keys:
+                - 'complete' (bool): True if every required skill has run.
+                - 'executed' (list[str]): Skills executed in this session.
+                - 'missing' (list[str]): Names of required skills that have
+                  not yet been executed.
+        """
         state = self.get_execution_state()
         executed = state['executed_skills']
 
@@ -184,7 +254,13 @@ class CoreSkillsEnforcer:
         }
 
     def get_execution_order(self):
-        """Get recommended execution order"""
+        """Return the full recommended execution order for all skills.
+
+        Returns:
+            list[dict]: One dict per skill in mandatory_skills, each
+                containing keys: 'order' (int), 'name' (str),
+                'description' (str), 'required' (bool).
+        """
         return [
             {
                 'order': skill['priority'],
@@ -196,7 +272,16 @@ class CoreSkillsEnforcer:
         ]
 
     def skip_skill(self, skill_name, reason):
-        """Skip a skill with reason"""
+        """Record that a skill was intentionally skipped.
+
+        Appends a SKILL_SKIPPED entry to the execution log so that
+        compliance reports can distinguish between missing executions and
+        deliberate skips.
+
+        Args:
+            skill_name (str): The canonical name of the skill being skipped.
+            reason (str): Human-readable justification for skipping the skill.
+        """
         timestamp = datetime.now().isoformat()
         log_entry = f"[{timestamp}] SKILL_SKIPPED | {skill_name} | {reason}\n"
 
@@ -204,7 +289,21 @@ class CoreSkillsEnforcer:
             f.write(log_entry)
 
     def get_statistics(self):
-        """Get enforcement statistics"""
+        """Compute enforcement compliance statistics across all recorded sessions.
+
+        Reads the entire execution log to tally sessions and determine which
+        ones were compliant (all required skills executed). Returns zero
+        values when the log does not exist.
+
+        Returns:
+            dict: A dict with keys:
+                - 'total_sessions' (int): Number of SESSION_START events found.
+                - 'total_skills_executed' (int): Total SKILL_EXECUTED events.
+                - 'compliant_sessions' (int): Sessions where all required
+                  skills were executed.
+                - 'compliance_rate' (float): Percentage of compliant sessions,
+                  rounded to one decimal place.
+        """
         if not self.execution_log.exists():
             return {
                 'total_sessions': 0,
@@ -263,7 +362,12 @@ class CoreSkillsEnforcer:
 # ============================================================================
 
 def log_policy_hit(action, context=""):
-    """Log policy execution"""
+    """Append a timestamped entry to the policy-hits log.
+
+    Args:
+        action (str): The action identifier (e.g., 'ENFORCE_START', 'VALIDATE').
+        context (str): Optional human-readable context or detail string.
+    """
     timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     log_entry = f"[{timestamp}] core-skills-mandate-policy | {action} | {context}\n"
 
@@ -280,7 +384,14 @@ def log_policy_hit(action, context=""):
 # ============================================================================
 
 def validate():
-    """Validate policy compliance"""
+    """Check that the core skills mandate policy preconditions are met.
+
+    Creates the memory directory and instantiates CoreSkillsEnforcer to
+    verify the log directory is writable.
+
+    Returns:
+        bool: True if validation succeeds, False on any exception.
+    """
     try:
         MEMORY_DIR.mkdir(parents=True, exist_ok=True)
         enforcer = CoreSkillsEnforcer()
@@ -292,7 +403,16 @@ def validate():
 
 
 def report():
-    """Generate compliance report"""
+    """Generate a compliance report for the core skills mandate policy.
+
+    Instantiates CoreSkillsEnforcer, calls get_statistics(), and bundles the
+    results with policy metadata.
+
+    Returns:
+        dict: Contains keys 'status', 'policy', 'mandatory_skills' (list),
+              'statistics' (dict from get_statistics()), and 'timestamp'.
+              Returns {'status': 'error', ...} on failure.
+    """
     try:
         enforcer = CoreSkillsEnforcer()
         stats = enforcer.get_statistics()
@@ -314,8 +434,7 @@ def report():
 
 
 def enforce():
-    """
-    Main policy enforcement function.
+    """Activate the core skills mandate policy.
 
     Consolidates core skills enforcement from core-skills-enforcer.py:
     - Mandatory skills execution order
@@ -323,7 +442,9 @@ def enforce():
     - Compliance verification
     - Statistics collection
 
-    Returns: dict with status and results
+    Returns:
+        dict: Contains 'status' ('success' or 'error').
+              On error, contains 'message' with the exception string.
     """
     try:
         log_policy_hit("ENFORCE_START", "core-skills-mandate-enforcement")

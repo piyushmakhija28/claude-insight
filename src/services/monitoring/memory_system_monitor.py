@@ -73,9 +73,20 @@ class MemorySystemMonitor:
         ]
 
     def get_daemon_status(self):
-        """
-        Get status of memory system hooks (daemons removed in v3.3.0).
-        Now reports on the 3 Claude Code hook scripts instead of daemon PIDs.
+        """Return the status of the three core Claude Code hook scripts.
+
+        Daemons were removed in v3.3.0 and replaced with Claude Code hooks.
+        Checks whether each hook script file exists in get_scripts_dir() and
+        reports 'running' (file present) or 'stopped' (file absent).
+
+        Returns:
+            list[dict]: One record per hook script, each with keys:
+                name (str): Friendly script identifier.
+                status (str): 'running' if the file exists, 'stopped' otherwise.
+                pid (None): Always None (hooks have no persistent PIDs).
+                last_activity (str or None): Last modification timestamp 'YYYY-MM-DD HH:MM:SS'.
+                description (str): Human-readable description of the hook's role.
+                type (str): Always 'hook'.
         """
         scripts_dir = get_scripts_dir()
 

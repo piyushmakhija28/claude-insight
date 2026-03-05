@@ -81,10 +81,14 @@ class PerformanceProfiler:
         self._load_recent_operations()
 
     def _load_recent_operations(self):
-        """
-        Load recent operations.
-        Primary: today's operations_YYYY-MM-DD.json (from track_operation calls)
-        Fallback: parse flow-trace.json files from session logs (always available)
+        """Load recent operations into in-memory buffers on startup.
+
+        Primary source: today's operations_YYYY-MM-DD.json written by track_operation.
+        Fallback: flow-trace.json session pipeline steps (always available when no
+        operation files exist yet).
+
+        Loads up to 1000 operations into recent_operations and classifies slow
+        ones (>= SLOW_THRESHOLD) into slow_operations.
         """
         today_file = self.storage_dir / f"operations_{datetime.now().strftime('%Y-%m-%d')}.json"
 
@@ -108,9 +112,12 @@ class PerformanceProfiler:
             self._load_from_flow_traces()
 
     def _load_from_flow_traces(self):
-        """
-        Parse flow-trace.json files from ~/.claude/memory/logs/sessions/
-        Each pipeline step becomes a tracked operation with real timing data.
+        """Parse flow-trace.json files from session logs as a fallback data source.
+
+        Reads up to 50 most-recent flow-trace.json files from
+        ~/.claude/memory/logs/sessions/. Each pipeline step with a positive
+        duration_ms value is converted to an operation record and added to
+        recent_operations and (if slow) slow_operations.
         """
         try:
             import os
@@ -166,16 +173,21 @@ class PerformanceProfiler:
                        metadata: Optional[Dict[str, Any]] = None,
                        success: bool = True,
                        optimization_applied: bool = False):
-        """
-        Track a tool operation
+        """Track a single tool operation and persist it to the daily JSON file.
+
+        Records timing, metadata, and file size (for file operations). Adds the
+        operation to recent_operations, slow_operations (if >= SLOW_THRESHOLD),
+        and the per-tool bottleneck cache. Persists to today's
+        operations_YYYY-MM-DD.json file.
 
         Args:
-            tool: Tool name (Read, Write, Edit, Grep, Glob, Bash, etc.)
-            target: Target file path or command
-            duration_ms: Operation duration in milliseconds
-            metadata: Additional tool-specific data
-            success: Whether operation succeeded
-            optimization_applied: Whether optimizations (offset/limit/head_limit) were used
+            tool (str): Tool name (Read, Write, Edit, Grep, Glob, Bash, etc.).
+            target (str): Target file path or shell command.
+            duration_ms (float): Operation duration in milliseconds.
+            metadata (dict or None): Additional tool-specific context data.
+            success (bool): Whether the operation succeeded. Defaults to True.
+            optimization_applied (bool): Whether optimizations such as offset/limit
+                or head_limit were applied. Defaults to False.
         """
         operation = {
             'tool': tool,
@@ -266,15 +278,18 @@ class PerformanceProfiler:
             print(f"Error saving operation: {e}")
 
     def get_slow_operations(self, threshold_ms: int = None, limit: int = 50) -> List[Dict]:
-        """
-        Get recent slow operations
+        """Return recent operations that exceeded the slow threshold.
+
+        Filters recent_operations to those with duration_ms >= threshold_ms,
+        sorts them newest-first, and returns up to ``limit`` entries.
 
         Args:
-            threshold_ms: Duration threshold (default: SLOW_THRESHOLD)
-            limit: Maximum number to return
+            threshold_ms (int or None): Duration threshold in ms. Defaults to
+                SLOW_THRESHOLD (2000 ms) when None.
+            limit (int): Maximum number of operations to return. Defaults to 50.
 
         Returns:
-            List of slow operations, newest first
+            list[dict]: Slow operation records sorted newest first.
         """
         if threshold_ms is None:
             threshold_ms = self.SLOW_THRESHOLD
@@ -291,20 +306,29 @@ class PerformanceProfiler:
         return slow_ops[:limit]
 
     def get_bottlenecks(self) -> Dict[str, List[Dict]]:
-        """
-        Get top bottlenecks by tool type
+        """Return the top 10 slowest operations per tool type.
 
         Returns:
-            Dictionary mapping tool names to their top 10 slowest operations
+            dict: Shallow copy of bottleneck_cache mapping tool name to a list
+                of up to 10 operation records with target, duration_ms, timestamp.
         """
         return self.bottleneck_cache.copy()
 
     def get_stats_summary(self) -> Dict[str, Any]:
-        """
-        Get performance statistics summary
+        """Return a summary of performance statistics across all tracked operations.
+
+        Computes mean, median, p95, p99 durations, slow and critical counts,
+        per-tool operation counts, success rate, and optimization rate from
+        recent_operations.
 
         Returns:
-            Dictionary with performance statistics
+            dict: Performance summary with keys:
+                total_operations (int), avg_duration_ms (float),
+                median_duration_ms (float), p95_duration_ms (float),
+                p99_duration_ms (float), slow_operations_count (int),
+                critical_operations_count (int), tools_breakdown (dict),
+                success_rate (float), optimization_rate (float).
+                Returns zero-filled dict when no operations exist.
         """
         if not self.recent_operations:
             return {
@@ -365,11 +389,22 @@ class PerformanceProfiler:
         return sorted_data[min(index, len(sorted_data) - 1)]
 
     def get_recommendations(self) -> List[Dict[str, str]]:
-        """
-        Generate optimization recommendations based on recent operations
+        """Generate optimization recommendations based on recent slow operations.
+
+        Analyzes slow_operations for tool-specific patterns:
+          - Read: large files read without offset/limit
+          - Grep: searches without head_limit
+          - Bash: commands exceeding CRITICAL_THRESHOLD
+        Also detects files read 3+ times (caching candidates).
 
         Returns:
-            List of recommendation dictionaries
+            list[dict]: Recommendation records, each with keys:
+                type (str): 'optimization' or 'warning'.
+                severity (str): 'high' or 'medium'.
+                title (str): Short summary of the issue.
+                description (str): Detailed description.
+                suggestion (str): Recommended fix.
+                example (str): Example usage demonstrating the fix.
         """
         recommendations = []
 
@@ -456,10 +491,21 @@ class PerformanceProfiler:
         return recommendations
 
     def analyze_trends(self, days: int = 7) -> Dict[str, Any]:
-        """
-        Analyze performance trends over time.
-        Primary: reads operations_YYYY-MM-DD.json files.
-        Fallback: groups flow-trace.json data by date when no operation files exist.
+        """Analyze performance trends over the last N days.
+
+        Primary source: reads operations_YYYY-MM-DD.json files from storage_dir.
+        Fallback: groups flow-trace.json pipeline step durations by date when
+        no operation files exist.
+
+        Args:
+            days (int): Number of days to include in the trend. Defaults to 7.
+
+        Returns:
+            dict: Trend data with parallel arrays:
+                labels (list[str]): Date strings 'YYYY-MM-DD', oldest first.
+                avg_durations (list[float]): Average duration per day in ms.
+                operation_counts (list[int]): Number of operations per day.
+                slow_op_counts (list[int]): Number of slow operations per day.
         """
         trend_data = {
             'labels': [],
@@ -500,9 +546,19 @@ class PerformanceProfiler:
         return self._analyze_trends_from_flow_traces(days)
 
     def _analyze_trends_from_flow_traces(self, days: int = 7) -> Dict[str, Any]:
-        """
-        Build daily trend data by grouping flow-trace.json pipeline steps by date.
-        Each session trace contributes its step durations to the day it occurred.
+        """Build daily trend data from flow-trace.json session files.
+
+        Groups pipeline step durations from flow-trace.json files by calendar date
+        and computes per-day averages, counts, and slow counts. Used as a fallback
+        when daily operation files do not exist.
+
+        Args:
+            days (int): Lookback window in days. Defaults to 7.
+
+        Returns:
+            dict: Trend data with parallel arrays:
+                labels (list[str]), avg_durations (list[float]),
+                operation_counts (list[int]), slow_op_counts (list[int]).
         """
         from collections import defaultdict
         import os
@@ -571,11 +627,15 @@ class PerformanceProfiler:
         return trend_data
 
     def get_resource_usage(self) -> Dict[str, Any]:
-        """
-        Get current resource usage statistics
+        """Return current process resource usage via psutil.
 
         Returns:
-            Dictionary with resource usage data
+            dict: Resource usage with keys:
+                memory_mb (float): Resident memory in megabytes.
+                cpu_percent (float): CPU usage percent (sampled over 0.1s).
+                num_threads (int): Number of threads.
+                timestamp (str): ISO-format current timestamp.
+                On error: error (str) and timestamp.
         """
         import psutil
 
