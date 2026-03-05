@@ -1279,7 +1279,18 @@ AGENTS_REGISTRY = {
     'jenkins':      'devops-engineer',
     'seo':          'dynamic-seo-agent',
     'qa':           'qa-testing-agent',
-    # No agent for: fastapi, python, nodejs -> skill fallback or adaptive
+    # NEW: CSS and styling agents
+    'css':          'ui-ux-designer',
+    'scss':         'ui-ux-designer',
+    # NEW: HTML and markup
+    'html':         'ui-ux-designer',
+    # NEW: TypeScript
+    'typescript':   'angular-engineer',
+    # NEW: Python backend frameworks
+    'python':       'python-backend-engineer',
+    'flask':        'python-backend-engineer',
+    'django':       'python-backend-engineer',
+    'fastapi':      'python-backend-engineer',
 }
 
 # SUPPLEMENTARY: Skills (~/.claude/skills/) - added on top of agent when useful
@@ -1293,9 +1304,15 @@ SKILLS_REGISTRY = {
     'docker':       'docker',
     'kubernetes':   'kubernetes',
     'jenkins':      'jenkins-pipeline',
+    # NEW: CSS and styling skills
+    'css':          'css-core',
+    'scss':         'css-core',
+    # NEW: Python backend framework skills
+    'python':       'python-system-scripting',
+    'flask':        'python-system-scripting',
+    'django':       'python-system-scripting',
+    'fastapi':      'python-system-scripting',
     # Standalone skills when no agent exists:
-    'fastapi':      None,   # -> adaptive
-    'python':       None,   # -> adaptive
     'nodejs':       None,   # -> adaptive
     'unknown':      None,
 }
@@ -1368,26 +1385,57 @@ def get_agent_and_skills(tech_stack, task_type='General', user_message=''):
             return kw_agent, kw_type, supplementary_skills, reason
 
     # =========================================================================
-    # LAYER 3: Tech stack registry (file-based detection)
+    # LAYER 3: Tech stack registry (file-based detection) with multi-domain support
     # =========================================================================
-    primary_agent = None
-    primary_tech = None
+    all_agents = []
+    all_skills = []
     skill_fallback = None
 
     for tech in tech_stack:
         agent = AGENTS_REGISTRY.get(tech)
-        if agent and primary_agent is None:
-            primary_agent = agent
-            primary_tech = tech
+        if agent and agent not in all_agents:
+            all_agents.append(agent)
 
         skill = SKILLS_REGISTRY.get(tech)
-        if skill and skill not in supplementary_skills:
-            supplementary_skills.append(skill)
+        if skill and skill not in all_skills:
+            all_skills.append(skill)
+            if skill not in supplementary_skills:
+                supplementary_skills.append(skill)
 
         if not agent and skill and skill_fallback is None:
             skill_fallback = skill
 
-    if primary_agent:
+    # Multi-domain orchestrator escalation rule (from auto-skill-agent-selection)
+    if all_agents:
+        FRONTEND_AGENTS = {'ui-ux-designer', 'angular-engineer', 'swiftui-designer'}
+        BACKEND_AGENTS = {'spring-boot-microservices', 'android-backend-engineer', 'swift-backend-engineer', 'python-backend-engineer'}
+        DEVOPS_AGENTS = {'devops-engineer'}
+
+        agent_domains = set()
+        for agent in all_agents:
+            if agent in FRONTEND_AGENTS:
+                agent_domains.add('frontend')
+            elif agent in BACKEND_AGENTS:
+                agent_domains.add('backend')
+            elif agent in DEVOPS_AGENTS:
+                agent_domains.add('devops')
+
+        # If 2+ domains detected, use orchestrator-agent as primary
+        if len(agent_domains) >= 2:
+            # All detected agents become supplementary skills
+            for agent in all_agents:
+                if agent not in supplementary_skills:
+                    supplementary_skills.append(agent)
+            reason = (
+                f"[L3-TechStack-Multi] Multi-domain detected ({', '.join(sorted(agent_domains))}) "
+                f"-> orchestrator-agent (coordinates {len(all_agents)} agents)"
+                + (f" + supp: {supplementary_skills}" if supplementary_skills else "")
+            )
+            return 'orchestrator-agent', 'agent', supplementary_skills, reason
+
+    if all_agents:
+        primary_agent = all_agents[0]
+        primary_tech = tech_stack[0]
         reason = (
             f"[L3-TechStack] '{primary_tech}' -> agent: {primary_agent}"
             + (f" + supp: {supplementary_skills}" if supplementary_skills else "")

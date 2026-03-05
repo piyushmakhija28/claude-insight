@@ -94,6 +94,77 @@ class TaskAutoAnalyzer:
         self.logs_path = self.memory_path / "logs"
         self.task_log = self.logs_path / "task-breakdown.log"
 
+    def detect_tech_from_message(self, message: str) -> List[str]:
+        """Detect technology stack from user message via keyword scanning.
+
+        Analyzes the raw user message for technology keywords and returns a list
+        of detected technologies (e.g., ['java', 'docker', 'postgresql']).
+
+        The keyword map is built from actual keywords used in:
+        - AGENT_KEYWORD_SCORES in detect_task_type()
+        - detect_tech_stack() in architecture
+        - Existing YAML heuristics throughout the system
+
+        Args:
+            message (str): Raw task description from the user.
+
+        Returns:
+            list[str]: List of detected technology names (lowercase).
+                      Returns ['unknown'] if no technologies detected.
+        """
+        # Tech keyword map - built from existing detection patterns
+        tech_keywords = {
+            'spring-boot': ['spring boot', 'spring-boot', 'springboot', 'spring', '@springboot',
+                           'maven', 'gradle', 'eureka', 'feign', 'config server', 'rest api java',
+                           'pom.xml', 'application.yml'],
+            'java': ['java', 'jpa', 'hibernate', 'bean', 'autowired', 'dto',
+                    'request mapping', 'controller', 'entity', 'repository'],
+            'python': ['python', 'setup.py', 'pyproject.toml', 'app.py'],
+            'flask': ['flask', 'flask app', 'flask route', 'flask api'],
+            'django': ['django', 'django rest', 'django model', 'django view'],
+            'fastapi': ['fastapi', 'fast api'],
+            'angular': ['angular', 'ngmodule', 'ngcomponent', 'ngrouter', 'rxjs',
+                       'observable', 'ngform', 'reactive form', 'angular service'],
+            'typescript': ['typescript', 'ts', '.ts file', 'type script'],
+            'react': ['react', 'jsx', 'tsx', 'react component', 'useState', 'useEffect', 'hooks react'],
+            'vue': ['vue', 'vuejs', 'vue component', 'vuex'],
+            'css': ['css', 'style', 'styling', 'flex', 'flexbox', 'grid css', 'bootstrap',
+                   'tailwind', 'theme', 'color', 'font', 'responsive', 'dark mode', 'light mode'],
+            'scss': ['scss', 'sass'],
+            'html': ['html', 'template', 'layout', 'interface', 'frontend', 'page', 'screen',
+                    'widget', 'card', 'modal', 'form', 'button', 'nav', 'navbar', 'sidebar',
+                    'header', 'footer'],
+            'docker': ['docker', 'dockerfile', 'docker-compose', 'container', 'image docker',
+                      'docker image', 'docker build', 'docker run'],
+            'kubernetes': ['kubernetes', 'k8s', 'kubectl', 'helm', 'pod', 'cluster', 'ingress',
+                          'namespace', 'manifest', 'deploy', 'daemonset', 'stateful', 'configmap', 'hpa'],
+            'jenkins': ['jenkins', 'jenkinsfile', 'pipeline', 'ci/cd', 'cicd', 'build pipeline',
+                       'jenkins pipeline'],
+            'postgresql': ['postgresql', 'postgres', 'pg', 'psql'],
+            'mysql': ['mysql', 'mariadb'],
+            'mongodb': ['mongodb', 'mongo', 'nosql'],
+            'redis': ['redis', 'cache redis'],
+            'kotlin': ['kotlin', 'android', 'apk', 'coroutine', 'retrofit', 'room database',
+                      'viewmodel', 'livedata', 'jetpack', 'recycler', 'gradle android'],
+            'swift': ['swift', 'ios', 'swiftui', 'iphone', 'ipad', 'xcode', 'uikit',
+                     'storyboard', 'vapor'],
+            'seo': ['seo', 'sitemap', 'robots.txt', 'meta tag', 'search engine'],
+            'testing': ['test', 'testing', 'unit test', 'pytest', 'junit', 'integration test',
+                       'mock', 'e2e', 'selenium'],
+        }
+
+        detected = []
+        message_lower = message.lower()
+
+        for tech, keywords in tech_keywords.items():
+            for keyword in keywords:
+                if keyword in message_lower:
+                    if tech not in detected:
+                        detected.append(tech)
+                    break  # Move to next tech
+
+        return detected if detected else ['unknown']
+
     def extract_entities(self, message: str) -> List[str]:
         """Extract service and feature entity names from a task description.
 
@@ -170,12 +241,16 @@ class TaskAutoAnalyzer:
 
         return file_count
 
-    def detect_phases(self, complexity_score: int, file_count: int) -> tuple:
+    def detect_phases(self, complexity_score: int, file_count: int, tech_stack: List[str] = None) -> tuple:
         """Decide whether the task requires phase-based execution.
+
+        Generates phase names based on the detected technology stack for better clarity.
 
         Args:
             complexity_score (int): Complexity score from estimate_complexity().
             file_count (int): Estimated number of files to touch.
+            tech_stack (list[str]): Detected technologies from detect_tech_from_message().
+                                    Used to customize phase names. Defaults to None.
 
         Returns:
             tuple: (needs_phases (bool), phase_list (list[dict])).
@@ -183,15 +258,52 @@ class TaskAutoAnalyzer:
         """
         needs_phases = False
         phase_list = []
+        tech_stack = tech_stack or []
+
+        # Detect dominant technology domain for phase customization
+        frontend_techs = {'angular', 'react', 'vue', 'css', 'scss', 'html', 'typescript'}
+        backend_techs = {'python', 'flask', 'django', 'fastapi', 'java', 'spring-boot', 'kotlin', 'swift'}
+        devops_techs = {'docker', 'kubernetes', 'jenkins'}
+
+        has_frontend = any(t in frontend_techs for t in tech_stack)
+        has_backend = any(t in backend_techs for t in tech_stack)
+        has_devops = any(t in devops_techs for t in tech_stack)
 
         if complexity_score >= 15 or file_count >= 8:
             needs_phases = True
-            phase_list = [
-                {'name': 'Foundation', 'description': 'Entities and repositories'},
-                {'name': 'Business Logic', 'description': 'Service layer implementation'},
-                {'name': 'API Layer', 'description': 'Controllers and DTOs'},
-                {'name': 'Configuration', 'description': 'Config files and properties'}
-            ]
+            # Choose phase names based on dominant tech
+            if has_devops and not has_backend and not has_frontend:
+                # DevOps-focused
+                phase_list = [
+                    {'name': 'Containerization', 'description': 'Docker/container setup'},
+                    {'name': 'Orchestration', 'description': 'Kubernetes deployment'},
+                    {'name': 'Pipeline', 'description': 'CI/CD pipeline configuration'},
+                    {'name': 'Monitoring', 'description': 'Observability and monitoring'}
+                ]
+            elif has_frontend and not has_backend:
+                # Frontend-focused
+                phase_list = [
+                    {'name': 'Structure', 'description': 'HTML layout and components'},
+                    {'name': 'Styling', 'description': 'CSS and responsive design'},
+                    {'name': 'Components', 'description': 'Interactive components'},
+                    {'name': 'Integration', 'description': 'API integration and routing'}
+                ]
+            elif has_backend and not has_frontend and any(t in {'python', 'flask', 'django', 'fastapi'} for t in tech_stack):
+                # Python backend-focused
+                phase_list = [
+                    {'name': 'Setup', 'description': 'Project structure and dependencies'},
+                    {'name': 'Data Layer', 'description': 'Database models and ORM'},
+                    {'name': 'Logic', 'description': 'Business logic and services'},
+                    {'name': 'Endpoints', 'description': 'API endpoints and routing'}
+                ]
+            else:
+                # Default / Java backend
+                phase_list = [
+                    {'name': 'Foundation', 'description': 'Entities and repositories'},
+                    {'name': 'Business Logic', 'description': 'Service layer implementation'},
+                    {'name': 'API Layer', 'description': 'Controllers and DTOs'},
+                    {'name': 'Configuration', 'description': 'Config files and properties'}
+                ]
         elif complexity_score >= 10 or file_count >= 5:
             needs_phases = True
             phase_list = [
@@ -201,29 +313,33 @@ class TaskAutoAnalyzer:
 
         return needs_phases, phase_list
 
-    def generate_tasks(self, message: str, entities: List[str], phases: List[Dict]) -> List[Dict]:
+    def generate_tasks(self, message: str, entities: List[str], phases: List[Dict], tech_stack: List[str] = None) -> List[Dict]:
         """Generate a typed task list from entities and phases.
 
         Args:
             message (str): Original task description.
             entities (list[str]): Extracted entity names.
             phases (list[dict]): Phase dicts from detect_phases().
+            tech_stack (list[str]): Detected technologies. Added to every task for context.
+                                   Defaults to None (empty list in task dict).
 
         Returns:
-            list[dict]: Task dicts each with 'id', 'title', 'phase', and 'type'.
+            list[dict]: Task dicts each with 'id', 'title', 'phase', 'type', and 'tech_stack'.
         """
         tasks = []
         task_id = 1
+        tech_stack = tech_stack or []
 
         if phases:
             for phase in phases:
-                if phase['name'] == 'Foundation':
+                if phase['name'] in ('Foundation', 'Structure', 'Setup', 'Containerization'):
                     for entity in entities:
                         tasks.append({
                             'id': task_id,
                             'title': f"Create {entity.capitalize()} entity",
                             'phase': phase['name'],
-                            'type': 'entity'
+                            'type': 'entity',
+                            'tech_stack': tech_stack
                         })
                         task_id += 1
 
@@ -231,27 +347,30 @@ class TaskAutoAnalyzer:
                             'id': task_id,
                             'title': f"Create {entity.capitalize()} repository",
                             'phase': phase['name'],
-                            'type': 'repository'
+                            'type': 'repository',
+                            'tech_stack': tech_stack
                         })
                         task_id += 1
 
-                elif phase['name'] == 'Business Logic':
+                elif phase['name'] in ('Business Logic', 'Styling', 'Data Layer', 'Orchestration'):
                     for entity in entities:
                         tasks.append({
                             'id': task_id,
                             'title': f"Implement {entity.capitalize()} service",
                             'phase': phase['name'],
-                            'type': 'service'
+                            'type': 'service',
+                            'tech_stack': tech_stack
                         })
                         task_id += 1
 
-                elif phase['name'] == 'API Layer':
+                elif phase['name'] in ('API Layer', 'Components', 'Logic', 'Pipeline'):
                     for entity in entities:
                         tasks.append({
                             'id': task_id,
                             'title': f"Create {entity.capitalize()} controller",
                             'phase': phase['name'],
-                            'type': 'controller'
+                            'type': 'controller',
+                            'tech_stack': tech_stack
                         })
                         task_id += 1
 
@@ -329,22 +448,41 @@ class TaskAutoAnalyzer:
     def auto_analyze(self, user_message: str) -> Dict:
         """Run the full task analysis pipeline on a user message.
 
+        Pipeline:
+        1. Detect technology stack from message keywords
+        2. Extract service/feature entities
+        3. Estimate file count and complexity
+        4. Detect if phases are needed (tech-aware)
+        5. Generate task list with tech context
+        6. Create task dependencies
+
         Args:
             user_message (str): Raw task description from the user.
 
         Returns:
-            dict: Contains 'message', 'entities', 'file_count', 'complexity',
+            dict: Contains 'message', 'tech_stack', 'entities', 'file_count', 'complexity',
                   'needs_phases', 'phases', 'tasks', 'task_count', 'timestamp'.
         """
+        # Step 1: Detect tech stack from message
+        tech_stack = self.detect_tech_from_message(user_message)
+
+        # Steps 2-3: Extract entities and estimate metrics
         entities = self.extract_entities(user_message)
         file_count = self.estimate_file_count(user_message, entities)
         complexity = self.estimate_complexity(user_message, entities)
-        needs_phases, phases = self.detect_phases(complexity, file_count)
-        tasks = self.generate_tasks(user_message, entities, phases)
+
+        # Step 4: Detect phases (tech-aware)
+        needs_phases, phases = self.detect_phases(complexity, file_count, tech_stack=tech_stack)
+
+        # Step 5: Generate tasks with tech stack context
+        tasks = self.generate_tasks(user_message, entities, phases, tech_stack=tech_stack)
+
+        # Step 6: Create dependencies
         tasks = self.create_dependencies(tasks)
 
         return {
             'message': user_message,
+            'tech_stack': tech_stack,
             'entities': entities,
             'file_count': file_count,
             'complexity': complexity,

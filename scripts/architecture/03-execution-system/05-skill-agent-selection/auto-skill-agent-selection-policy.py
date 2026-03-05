@@ -296,6 +296,64 @@ class AutoSkillAgentSelector:
                 'skill': None,
                 'agent': 'android-backend-engineer',
                 'agent_threshold': 10
+            },
+            # NEW: CSS and styling
+            'css': {
+                'skill': 'css-core',
+                'agent': 'ui-ux-designer',
+                'agent_threshold': 8
+            },
+            'scss': {
+                'skill': 'css-core',
+                'agent': 'ui-ux-designer',
+                'agent_threshold': 8
+            },
+            # NEW: HTML
+            'html': {
+                'skill': None,
+                'agent': 'ui-ux-designer',
+                'agent_threshold': 7
+            },
+            # NEW: TypeScript
+            'typescript': {
+                'skill': None,
+                'agent': 'angular-engineer',
+                'agent_threshold': 8
+            },
+            # NEW: React
+            'react': {
+                'skill': None,
+                'agent': 'ui-ux-designer',
+                'agent_threshold': 8
+            },
+            # NEW: Python backend frameworks
+            'python': {
+                'skill': 'python-system-scripting',
+                'agent': 'python-backend-engineer',
+                'agent_threshold': 10
+            },
+            'fastapi': {
+                'skill': 'python-system-scripting',
+                'agent': 'python-backend-engineer',
+                'agent_threshold': 9
+            },
+            # NEW: Kotlin
+            'kotlin': {
+                'skill': None,
+                'agent': 'android-backend-engineer',
+                'agent_threshold': 10
+            },
+            # NEW: Swift
+            'swift': {
+                'skill': None,
+                'agent': 'swift-backend-engineer',
+                'agent_threshold': 10
+            },
+            # NEW: Vue
+            'vue': {
+                'skill': None,
+                'agent': 'ui-ux-designer',
+                'agent_threshold': 8
             }
         }
 
@@ -316,6 +374,32 @@ class AutoSkillAgentSelector:
                             matches['reasoning'].append(
                                 f"{key.title()} detected -> {config['skill']} skill (always invoke)"
                             )
+
+        # NEW: Multi-domain orchestrator escalation rule
+        # If agents from 2+ distinct domains detected, escalate to orchestrator-agent
+        if matches['agents']:
+            FRONTEND_AGENTS = {'ui-ux-designer', 'angular-engineer', 'swiftui-designer'}
+            BACKEND_AGENTS = {'spring-boot-microservices', 'android-backend-engineer', 'swift-backend-engineer', 'python-backend-engineer'}
+            DEVOPS_AGENTS = {'devops-engineer'}
+
+            agent_domains = set()
+            for agent in matches['agents']:
+                if agent in FRONTEND_AGENTS:
+                    agent_domains.add('frontend')
+                elif agent in BACKEND_AGENTS:
+                    agent_domains.add('backend')
+                elif agent in DEVOPS_AGENTS:
+                    agent_domains.add('devops')
+
+            # If 2+ domains detected, move all agents to supplementary and use orchestrator
+            if len(agent_domains) >= 2:
+                # All current agents become supplementary, orchestrator becomes primary
+                if 'orchestrator-agent' not in matches['agents']:
+                    matches['agents'].insert(0, 'orchestrator-agent')
+                    matches['reasoning'].insert(0,
+                        f"Multi-domain task detected ({', '.join(sorted(agent_domains))}) -> "
+                        f"orchestrator-agent (coordinates {len(matches['agents'])-1} agents)"
+                    )
 
         return matches
 

@@ -142,13 +142,15 @@ _optimization_events_log = None
 def _load_flow_trace_context():
     """
     Load flow-trace.json from the current session to chain context from 3-level-flow.
-    Returns dict with task_type, complexity, model, skill, plan_mode, user_input.
+    Returns dict with task_type, complexity, model, skill, plan_mode, user_input,
+    tech_stack, and supplementary_skills.
     Cached per invocation (module-level).
 
     This enables pre-tool-enforcer to:
     - Know what task type the session is working on
     - Provide task-aware optimization hints
     - Validate tool usage against the stated task context
+    - Show other technologies and skills relevant to the task (new in v3.3.0)
     """
     global _flow_trace_cache
     if _flow_trace_cache is not None:
@@ -173,6 +175,8 @@ def _load_flow_trace_context():
                 'skill': final_decision.get('skill_or_agent', ''),
                 'plan_mode': final_decision.get('plan_mode', False),
                 'user_input': data.get('user_input', {}).get('prompt', '')[:200],
+                'tech_stack': final_decision.get('tech_stack', []),
+                'supplementary_skills': final_decision.get('supplementary_skills', []),
             }
     except Exception:
         pass
@@ -839,11 +843,72 @@ DIR_PATTERN_SKILL_MAP = [
     ('/services/',              'angular-engineer', 'agent', 'Frontend service directory'),
 ]
 
+# NEW: Map technology names to file extensions and their corresponding skills/agents
+# Used by _infer_skills_from_tech_stack() to show OTHER FILES IN THIS TASK
+_TECH_TO_FILE_SKILL = {
+    'spring-boot': ('.java',       'java-spring-boot-microservices'),
+    'java':        ('.java',       'java-spring-boot-microservices'),
+    'angular':     ('.ts',         'angular-engineer'),
+    'typescript':  ('.ts',         'angular-engineer'),
+    'react':       ('.tsx',        'ui-ux-designer'),
+    'vue':         ('.vue',        'ui-ux-designer'),
+    'css':         ('.css',        'css-core'),
+    'scss':        ('.scss',       'css-core'),
+    'html':        ('.html',       'ui-ux-designer'),
+    'python':      ('.py',         'python-backend-engineer'),
+    'flask':       ('.py',         'python-backend-engineer'),
+    'django':      ('.py',         'python-backend-engineer'),
+    'fastapi':     ('.py',         'python-backend-engineer'),
+    'docker':      ('Dockerfile',  'docker'),
+    'kubernetes':  ('.yaml',       'kubernetes'),
+    'jenkins':     ('Jenkinsfile', 'jenkins-pipeline'),
+    'postgresql':  ('.sql',        'rdbms-core'),
+    'mysql':       ('.sql',        'rdbms-core'),
+    'mongodb':     ('.json',       'nosql-core'),
+    'kotlin':      ('.kt',         'android-backend-engineer'),
+    'swift':       ('.swift',      'swift-backend-engineer'),
+}
+
+
+def _infer_skills_from_tech_stack(tech_stack, exclude_skill=None):
+    """Build hint string showing other file types in the task's tech stack.
+
+    Takes a list of detected technologies and returns a formatted string showing
+    the file extensions and corresponding skills/agents that would be used for
+    other files in this task.
+
+    Used to show users: "OTHER FILES IN THIS TASK: .ts -> angular-engineer | Dockerfile -> docker"
+
+    Args:
+        tech_stack (list[str]): Technologies detected in the task (e.g., ['spring-boot', 'angular'])
+        exclude_skill (str): Skill/agent name to skip (to avoid repeating what's already shown)
+
+    Returns:
+        str: Formatted string like ".ts -> angular-engineer | Dockerfile -> docker"
+             Empty string if nothing to show or all entries are unknown/excluded.
+    """
+    if not tech_stack or tech_stack == ['unknown']:
+        return ''
+
+    parts = []
+    for tech in tech_stack:
+        if tech == 'unknown' or tech not in _TECH_TO_FILE_SKILL:
+            continue
+
+        file_ext, skill = _TECH_TO_FILE_SKILL[tech]
+        if skill == exclude_skill:
+            continue  # Skip if already shown as primary skill
+
+        parts.append(f"{file_ext} -> {skill}")
+
+    return ' | '.join(parts)
+
+
 # Track last printed skill to avoid spamming same hint repeatedly
 _last_skill_hint = ''
 
 
-def check_dynamic_skill_context(tool_name, tool_input):
+def check_dynamic_skill_context(tool_name, tool_input, trace_context=None):
     """Level 3.5+ Dynamic: inject skill/agent context based on target file type.
 
     Extracts the target file path from any Read, Write, Edit, NotebookEdit,
@@ -859,9 +924,16 @@ def check_dynamic_skill_context(tool_name, tool_input):
     skill already selected by 3-level-flow.py.  Deduplicates consecutive
     identical hints via the _last_skill_hint module-level cache.
 
+    If trace_context is provided (new in v3.3.0), adds task-aware information:
+    - Shows all technologies in the current task (TASK TECH STACK)
+    - Shows the session-level primary skill/agent (SESSION PRIMARY)
+    - Shows other file types in this task (OTHER FILES IN THIS TASK)
+
     Args:
         tool_name: Name of the tool being called ('Read', 'Write', etc.).
         tool_input: Dict of tool parameters containing the file path key.
+        trace_context (dict): Optional flow-trace context with task/skill info.
+                             If None, output is identical to previous behavior.
 
     Returns:
         list: Hint strings to print to stdout.  Empty when no skill matched
@@ -984,12 +1056,32 @@ def check_dynamic_skill_context(tool_name, tool_input):
                 parts = normalized.split('/')
                 short_file = '/'.join(parts[-3:]) if len(parts) > 3 else normalized
 
-            hint = (
-                '[SKILL-CONTEXT] ' + short_file + ' -> '
-                + matched_skill + ' (' + type_label + ')\n'
-                '  CONTEXT: ' + (matched_context or '') + '\n'
-                '  ACTION: Apply ' + matched_skill + ' patterns and best practices for this file.'
-            )
+            # Build hint using line-list approach for extensibility
+            hint_lines = [
+                '[SKILL-CONTEXT] ' + short_file + ' -> ' + matched_skill + ' (' + type_label + ')',
+                '  CONTEXT: ' + (matched_context or ''),
+            ]
+
+            # NEW: Add task-aware context if trace_context provided (v3.3.0+)
+            if trace_context:
+                task_tech = trace_context.get('tech_stack', [])
+                session_primary = trace_context.get('skill', '')
+
+                # Show task tech stack if present and not 'unknown'
+                if task_tech and task_tech != ['unknown']:
+                    hint_lines.append('  TASK TECH STACK: ' + ', '.join(task_tech))
+
+                # Show session-level primary skill/agent
+                if session_primary:
+                    hint_lines.append('  SESSION PRIMARY: ' + session_primary)
+
+                # Show other file types in this task
+                other_str = _infer_skills_from_tech_stack(task_tech, exclude_skill=matched_skill)
+                if other_str:
+                    hint_lines.append('  OTHER FILES IN THIS TASK: ' + other_str)
+
+            hint_lines.append('  ACTION: Apply ' + matched_skill + ' patterns and best practices for this file.')
+            hint = '\n'.join(hint_lines)
             hints.append(hint)
 
     return hints
@@ -1201,10 +1293,11 @@ def main():
             pass
         sys.exit(2)
 
-    # DYNAMIC SKILL CONTEXT (Level 3.5+ - v3.0.0)
+    # DYNAMIC SKILL CONTEXT (Level 3.5+ - v3.0.0, enhanced v3.3.0)
     # Inject per-file skill hints for any tool that targets a file
+    # NEW (v3.3.0): Include task-aware context (tech stack, other files in task)
     if tool_name in ('Read', 'Write', 'Edit', 'NotebookEdit', 'Grep', 'Glob'):
-        skill_hints = check_dynamic_skill_context(tool_name, tool_input)
+        skill_hints = check_dynamic_skill_context(tool_name, tool_input, trace_context=flow_ctx)
         all_hints.extend(skill_hints)
 
     # NEW (v3.3.0): POLICY OPTIMIZATION MIDDLEWARE (3.6 + 3.7)
