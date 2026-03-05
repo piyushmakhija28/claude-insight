@@ -1,17 +1,20 @@
-# Claude Insight v4.3.0
+# Claude Insight v5.0.1
 
-**Real-time Monitoring Dashboard for the Claude Memory System (3-Level Architecture)**
+**Real-time Monitoring Dashboard for the Claude Memory System (3-Level Architecture + Multi-Tech Support)**
 
 [![GitHub](https://img.shields.io/badge/GitHub-claude--insight-blue?logo=github)](https://github.com/piyushmakhija28/claude-insight)
 [![Python](https://img.shields.io/badge/Python-3.8+-blue?logo=python)](https://www.python.org/)
 [![Flask](https://img.shields.io/badge/Flask-3.0-green?logo=flask)](https://flask.palletsprojects.com/)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/Version-4.3.0-brightgreen)](VERSION)
+[![Version](https://img.shields.io/badge/Version-5.0.1-brightgreen)](VERSION)
 
 Claude Insight is a Python Flask dashboard that monitors how Claude Code follows the
 **3-Level Architecture enforcement policies** in real-time. Track policy execution,
 session analytics, skill/agent usage, context optimization, and AI-powered anomaly
 detection — all from one interface.
+
+**NEW in v5.0.1:** Multi-tech support with automatic orchestrator-agent selection,
+task-aware file-level hints, and 100% policy documentation (40/40 policies covered).
 
 ---
 
@@ -128,6 +131,27 @@ Real-time charts, analytics, alerts
 | **Multi-language** | EN, HI, ES, FR, DE support |
 | **Custom Dashboard Builder** | Build personalized metric views |
 | **Dark/Light Themes** | Multiple UI themes |
+
+#### Multi-Tech Support (v5.0.1+)
+
+| Feature | Description |
+|---------|-------------|
+| **23+ Technology Detection** | Automatic detection of tech stack (Java, Python, Angular, Docker, Kubernetes, etc.) |
+| **Multi-Domain Orchestration** | When 2+ domains detected (Backend + Frontend + DevOps), automatically selects orchestrator-agent |
+| **Task-Aware Hints** | File-level hints show TASK TECH STACK, SESSION PRIMARY agent, and OTHER FILES in project |
+| **Tech-Specific Phase Names** | Adaptive phase naming (Python: Setup/Data/Logic vs Java: Foundation/Logic/API) |
+| **Supplementary Skills** | Suggests multiple complementary skills for multi-tech projects |
+| **Context Preservation** | Maintains tech context across multi-session chains |
+
+**Supported Technologies (23+):**
+```
+Backend:    Java, Spring Boot, Python, Flask, Django, FastAPI, Node.js
+Frontend:   Angular, TypeScript, React, Vue, CSS, SCSS, HTML
+DevOps:     Docker, Kubernetes, Jenkins
+Database:   PostgreSQL, MySQL, MongoDB, Redis
+Mobile:     Kotlin, Swift
+Other:      SEO, Testing
+```
 
 ---
 
@@ -764,6 +788,71 @@ claude-insight/
 |-- config/                      Runtime config JSONs
 |-- docs/                        Architecture documentation
 +-- tests/                       Test suite (16+ test files)
+```
+
+---
+
+## Documentation References
+
+### Complete Documentation Suite (v5.0.1+)
+
+This project includes comprehensive documentation covering architecture, policies, and implementation:
+
+#### Architecture & Flow Documentation
+- **FLOW_ARCHITECTURE_DETAILED.md** (700+ lines)
+  - Complete 8-phase session flow explanation
+  - 3-level architecture details (Level -1, 1, 2, 3)
+  - Policy chaining mechanism
+  - Multi-session continuity
+
+- **FLOW_VISUAL_DIAGRAM.md** (700+ lines with 7 ASCII diagrams)
+  - Session flow visualization
+  - 3-level orchestrator architecture
+  - Pre-tool-enforcer flow
+  - Multi-tech escalation decision tree
+  - Error handling paths
+
+#### Policy Documentation
+- **SYSTEM_REQUIREMENTS_SPECIFICATION.md** (SRS v2.0)
+  - Complete 1:1 policy-script mapping table
+  - Detailed description of all 40 policies
+  - Technology stack support (23+ techs)
+  - Implementation status
+
+- **POLICY_SCRIPT_MAPPING.md**
+  - Audit of all policies against scripts
+  - Helper script enumeration
+  - Status verification
+  - Coverage analysis
+
+#### Implementation Guides
+- **SKILL_AGENT_ENHANCEMENT_SUMMARY.md** (730 lines)
+  - Multi-tech enhancement implementation
+  - Before/after examples
+  - Architecture improvements
+  - Testing checklist
+
+- **MULTI_TECH_GUIDE.md** (410 lines)
+  - 5-phase multi-tech detection process
+  - 23+ technology recognition patterns
+  - Multi-domain escalation rules
+  - Real-world examples
+  - Troubleshooting guide
+
+#### Setup & Operations
+- **CLAUDE.md** - Project-specific instructions
+- **CHANGELOG.md** - Version history (v5.0.0 → v5.0.1)
+- **ARCHITECTURE_FOLDER_STRUCTURE.md** - Complete folder tree
+
+#### Quick Reference for Developers
+```
+For new developers starting on this project:
+  1. Read: README.md (this file) - Overview & features
+  2. Read: FLOW_ARCHITECTURE_DETAILED.md - Complete execution flow
+  3. Read: SYSTEM_REQUIREMENTS_SPECIFICATION.md - All 40 policies documented
+  4. Reference: POLICY_SCRIPT_MAPPING.md - Which script implements which policy?
+  5. Code: scripts/architecture/ - Read the implementation
+  6. Extend: Create new policy in policies/ and corresponding script in scripts/architecture/
 ```
 
 ---
