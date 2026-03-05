@@ -725,6 +725,79 @@ def _load_flow_trace(session_id):
         return {}
 
 
+def _load_policy_execution_data(session_id):
+    """Load policy execution tracking data from flow-trace.json for a session.
+
+    Reads the all_policies_executed array from flow-trace.json and computes
+    aggregate statistics: total count, total duration, slowest/fastest
+    policies, and the decisions_timeline list.
+
+    Uses _lock_file/_unlock_file (Windows file locking, Loophole #19) to
+    prevent reading a partially written file.
+
+    Args:
+        session_id (str): Session identifier used to locate the trace file at
+                          session_log_dir(session_id)/flow-trace.json.
+
+    Returns:
+        dict or None: Dict with keys 'total_policies', 'total_duration_ms',
+                      'policies', 'slowest_policies', 'fastest_policies', and
+                      'decisions_timeline'.  Returns None when the file is
+                      missing, unreadable, or contains no policy records.
+    """
+    flow_trace_path = session_log_dir(session_id) / 'flow-trace.json'
+    if not flow_trace_path.exists():
+        return None
+
+    try:
+        with open(flow_trace_path, 'r', encoding='utf-8') as f:
+            _lock_file(f)
+            trace = json.load(f)
+            _unlock_file(f)
+    except Exception as e:
+        log_event(f"[WARN] Could not load flow-trace for policy data: {e}")
+        return None
+
+    try:
+        policies = trace.get("all_policies_executed", [])
+        if not policies:
+            return None
+
+        total_duration_ms = 0
+        policy_records = []
+        for p in policies:
+            try:
+                duration_ms = int(p.get("duration_ms", 0))
+            except (TypeError, ValueError):
+                duration_ms = 0
+            total_duration_ms += duration_ms
+            policy_records.append({
+                "name": str(p.get("name", p.get("script", "unknown"))),
+                "duration_ms": duration_ms,
+                "decision": str(p.get("decision", p.get("result", ""))),
+                "timestamp": str(p.get("timestamp", "")),
+                "type": str(p.get("type", "Hook")),
+            })
+
+        sorted_by_duration = sorted(policy_records, key=lambda x: x["duration_ms"], reverse=True)
+        slowest = sorted_by_duration[:3]
+        fastest = sorted(policy_records, key=lambda x: x["duration_ms"])[:3]
+
+        decisions_timeline = trace.get("decisions_timeline", [])
+
+        return {
+            "total_policies": len(policy_records),
+            "total_duration_ms": total_duration_ms,
+            "policies": policy_records,
+            "slowest_policies": slowest,
+            "fastest_policies": fastest,
+            "decisions_timeline": decisions_timeline,
+        }
+    except Exception as e:
+        log_event(f"[WARN] Error processing policy execution data: {e}")
+        return None
+
+
 def _load_session_json(session_id):
     """Load the session metadata JSON from the sessions directory.
 
@@ -888,6 +961,22 @@ def finalize(session_id):
                 "phase4_stubs": inv_summary.get("phase4_stubs", 0),
                 "superseded": inv_summary.get("superseded", 0),
             }
+
+    # 3c. Policy execution tracking from flow-trace.json
+    try:
+        policy_exec_data = _load_policy_execution_data(session_id)
+        if policy_exec_data:
+            data["policy_execution_summary"] = {
+                "total_policies": policy_exec_data.get("total_policies", 0),
+                "total_duration_ms": policy_exec_data.get("total_duration_ms", 0),
+                "slowest_policies": policy_exec_data.get("slowest_policies", [])[:3],
+                "fastest_policies": policy_exec_data.get("fastest_policies", [])[:3],
+                "decisions_count": len(policy_exec_data.get("decisions_timeline", [])),
+            }
+            data["all_policies_executed"] = policy_exec_data.get("policies", [])
+            data["decisions_timeline"] = policy_exec_data.get("decisions_timeline", [])
+    except Exception as e:
+        log_event(f"[WARN] Policy execution data loading failed (non-blocking): {e}")
 
     # 4. Session metadata (duration, status)
     session_json = _load_session_json(session_id)
@@ -1495,6 +1584,77 @@ def _generate_markdown(data):
         for insight in insights:
             lines.append(f"- {insight}")
         lines.append("")
+
+    # ===================== POLICY EXECUTION TIMELINE =====================
+    try:
+        policy_exec_summary = data.get("policy_execution_summary", {})
+        all_policies_executed = data.get("all_policies_executed", [])
+        decisions_timeline = data.get("decisions_timeline", [])
+
+        total_pol = policy_exec_summary.get("total_policies", 0)
+        if total_pol > 0:
+            total_dur_ms = policy_exec_summary.get("total_duration_ms", 0)
+            slowest_policies = policy_exec_summary.get("slowest_policies", [])
+            fastest_policies = policy_exec_summary.get("fastest_policies", [])
+            decisions_count = policy_exec_summary.get("decisions_count", 0)
+
+            lines.append("---")
+            lines.append("")
+            lines.append(f"## Policy Execution Timeline ({total_pol} Policies)")
+            lines.append("")
+
+            # Main policy table sorted by execution order (timestamp)
+            sorted_policies = sorted(
+                all_policies_executed,
+                key=lambda x: x.get("timestamp", "")
+            )
+            lines.append("| Policy | Duration | Decision | Type |")
+            lines.append("|--------|----------|----------|------|")
+            for pol in sorted_policies:
+                pol_name = pol.get("name", "unknown")
+                pol_dur = pol.get("duration_ms", 0)
+                pol_decision = pol.get("decision", "")[:60]
+                pol_type = pol.get("type", "Hook")
+                lines.append(f"| {pol_name} | {pol_dur}ms | {pol_decision} | {pol_type} |")
+            lines.append("")
+
+            # Execution statistics subsection
+            lines.append("### Execution Statistics")
+            lines.append("")
+            lines.append(f"- **Total Policies**: {total_pol}")
+            lines.append(f"- **Total Duration**: {total_dur_ms}ms")
+
+            if slowest_policies:
+                slowest_top = slowest_policies[0]
+                lines.append(
+                    f"- **Slowest**: {slowest_top.get('name', 'N/A')} "
+                    f"({slowest_top.get('duration_ms', 0)}ms)"
+                )
+            if fastest_policies:
+                fastest_top = fastest_policies[0]
+                lines.append(
+                    f"- **Fastest**: {fastest_top.get('name', 'N/A')} "
+                    f"({fastest_top.get('duration_ms', 0)}ms)"
+                )
+            if decisions_count > 0:
+                lines.append(f"- **Decisions Recorded**: {decisions_count}")
+            lines.append("")
+
+            # Policy decisions timeline subsection
+            if decisions_timeline:
+                lines.append("### Policy Decisions Timeline")
+                lines.append("")
+                for idx, decision in enumerate(decisions_timeline, 1):
+                    if isinstance(decision, dict):
+                        dec_policy = decision.get("policy", decision.get("name", "unknown"))
+                        dec_text = decision.get("decision", decision.get("result", str(decision)))[:80]
+                    else:
+                        dec_policy = "policy"
+                        dec_text = str(decision)[:80]
+                    lines.append(f"{idx}. {dec_policy}: {dec_text}")
+                lines.append("")
+    except Exception:
+        pass
 
     # ===================== TL;DR =====================
     one_liner = _generate_one_liner(data)
