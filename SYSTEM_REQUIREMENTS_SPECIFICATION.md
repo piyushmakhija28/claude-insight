@@ -335,6 +335,29 @@ Claude Insight provides **real-time policy enforcement and monitoring** for Clau
 
 ---
 
+### FR-11: Parallel Execution with Token Limit Awareness
+
+**Requirement:** System shall support parallel execution of independent operations with intelligent degradation based on user plan type and token limits
+
+**Specification:**
+- Batch independent tool calls in single response for maximum efficiency
+- Detect user plan type: Subscription (~200k tokens/day) vs Enterprise (unlimited billing-based)
+- Monitor token usage and degrade gracefully as limits approached
+- Subscription plan thresholds:
+  * 0-50% usage: Full parallel execution enabled
+  * 50-75% usage: Parallel with warning messages
+  * 75-90% usage: Switch to sequential execution (degrade)
+  * 90%+ usage: Block new parallel tasks
+- Enterprise plan: Always unlimited parallel execution (billing-based, no degradation)
+- Never report false "success" when operations incomplete due to token limits
+- Support CLI query of token status via --check-tokens flag
+
+**Related Scripts:**
+- parallel-execution-policy.py (token limit detection and degradation)
+- 3-level-flow.py (orchestrates parallel execution)
+
+---
+
 ## Non-Functional Requirements
 
 ### NFR-1: Windows Compatibility
@@ -428,6 +451,16 @@ Claude Insight provides **real-time policy enforcement and monitoring** for Clau
 
 ### Complete 1:1 Mapping Table (27 Policies → 27 Scripts)
 
+**📋 REFERENCE DOCUMENTATION:**
+For a comprehensive visual guide to the complete folder structure and detailed 1:1 mapping, see **ARCHITECTURE_FOLDER_STRUCTURE.md**.
+That document provides:
+- Complete folder tree with all 162+ Python files
+- Visual organization by Level (01-sync-system, 02-standards-system, 03-execution-system)
+- Detailed explanation of each folder's purpose and responsibility
+- Full policy-to-script mapping with status and line counts
+
+This table provides the **authoritative policy-script correspondence** for all enforcement points.
+
 #### Level 1: Sync System (5 Policies)
 
 | # | Policy Document | Policy Script | Status | Lines | Key Functions |
@@ -480,7 +513,7 @@ Claude Insight provides **real-time policy enforcement and monitoring** for Clau
 | # | Policy Document | Policy Script | Status | Lines | Purpose |
 |---|-----------------|---------------|--------|-------|---------|
 | 3.15 | `policies/03-execution-system/file-management-policy.md` | `scripts/architecture/03-execution-system/file-management-policy.py` | 📋 Stub | 78 | Future: File operation optimization |
-| 3.16 | `policies/03-execution-system/parallel-execution-policy.md` | `scripts/architecture/03-execution-system/parallel-execution-policy.py` | 📋 Stub | 92 | Future: Parallel task execution |
+| 3.16 | `policies/03-execution-system/parallel-execution-policy.md` | `scripts/architecture/03-execution-system/parallel-execution-policy.py` | ✅ Active | 384 | Parallel execution + token limit awareness for subscription/enterprise users |
 | 3.17 | `policies/03-execution-system/proactive-consultation-policy.md` | `scripts/architecture/03-execution-system/proactive-consultation-policy.py` | 📋 Stub | 85 | Future: Proactive user consultation |
 | 3.18 | `policies/03-execution-system/09-git-commit/version-release-policy.md` | `scripts/architecture/03-execution-system/09-git-commit/version-release-policy.py` | 📋 Stub | 104 | Future: Version release automation |
 | 3.19 | `policies/03-execution-system/github-issues-integration-policy.md` | `scripts/architecture/03-execution-system/github-issues-integration-policy.py` | 📋 Stub | 98 | Future: GitHub issues automation |
