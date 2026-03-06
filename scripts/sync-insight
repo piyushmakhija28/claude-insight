@@ -1,0 +1,31 @@
+#!/bin/bash
+# Selective Sync Script for Claude Insight Repository
+# Downloads and syncs only claude-insight components
+#
+# PURPOSE: Quick sync for claude-insight updates
+# This is a convenience wrapper around hook-downloader.py sync-claude-insight
+#
+# USAGE:
+#   bash sync-insight
+#   ./sync-insight
+#
+# What it syncs:
+#   - All scripts from claude-insight
+#   - All policies from claude-insight
+#   - Dashboard app (src, templates, static)
+#
+# Version: 1.0.0
+
+set -e
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+HOOK_DOWNLOADER="$SCRIPT_DIR/hook-downloader.py"
+
+if [ ! -f "$HOOK_DOWNLOADER" ]; then
+    echo "[ERROR] hook-downloader.py not found"
+    exit 1
+fi
+
+# Call hook-downloader with selective sync parameter
+python "$HOOK_DOWNLOADER" sync-claude-insight
+exit $?
