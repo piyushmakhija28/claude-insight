@@ -478,11 +478,49 @@ class PromptAutoGenerator:
     """
 
     def __init__(self):
-        """Initialize PromptAutoGenerator with log paths and a PromptGenerator instance."""
+        """Initialize PromptAutoGenerator with log paths and a PromptGenerator instance.
+
+        Loads enrichment data from current session if available (context from context-reader.py).
+        """
         self.memory_path = MEMORY_DIR
         self.logs_path = self.memory_path / "logs"
         self.prompt_log = self.logs_path / "prompt-generation.log"
         self.generator = PromptGenerator()
+        self.enrichment_data = self._load_enrichment_data()
+
+    def _load_enrichment_data(self):
+        """Load enrichment data (project context) from current session if available.
+
+        Reads enrichment-data.json from the active session directory.
+        This file is created by context-reader.py in STEP 3.0.0.
+
+        Returns:
+            dict: Enrichment data with project_name, version, tech_stack, etc.
+                  Empty dict if file not found or cannot be parsed.
+        """
+        try:
+            # Try to find current session
+            current_session_file = MEMORY_DIR / '.current-session.json'
+            if not current_session_file.exists():
+                return {}
+
+            with open(current_session_file, encoding='utf-8') as f:
+                session_info = json.load(f)
+                session_id = session_info.get('current_session_id')
+
+            if not session_id:
+                return {}
+
+            # Load enrichment data from session directory
+            enrichment_file = MEMORY_DIR / 'logs' / 'sessions' / session_id / 'enrichment-data.json'
+            if enrichment_file.exists():
+                with open(enrichment_file, encoding='utf-8') as f:
+                    data = json.load(f)
+                    return data.get('enrichment_data', {})
+        except Exception:
+            pass
+
+        return {}
 
     def should_generate_prompt(self, user_message):
         """Decide whether a message warrants full prompt generation.
@@ -540,13 +578,16 @@ class PromptAutoGenerator:
     def generate_prompt(self, user_message, auto_mode=True) -> Dict:
         """Generate a structured prompt or skip if message is too simple.
 
+        Enriches the prompt with project context (name, version, tech stack) if available
+        from context-reader.py output.
+
         Args:
             user_message (str): Raw user message to process.
             auto_mode (bool): Reserved for future use. Defaults to True.
 
         Returns:
             dict: On generation: contains 'skip' (False), 'intent',
-                  'original_message', 'structured_prompt', 'success'.
+                  'original_message', 'structured_prompt', 'enrichment_data', 'success'.
                   On skip: contains 'skip' (True) and 'reason'.
         """
         # Check if we should generate prompt
@@ -564,11 +605,31 @@ class PromptAutoGenerator:
             # Generate structured prompt
             structured_prompt = self.generator.generate_structured_prompt(user_message)
 
+            # Add enrichment data (project context) to the result
+            if self.enrichment_data:
+                enrichment_context = f"\n\nPROJECT CONTEXT:\n"
+                if self.enrichment_data.get('project_name'):
+                    enrichment_context += f"Project: {self.enrichment_data['project_name']}\n"
+                if self.enrichment_data.get('current_version'):
+                    enrichment_context += f"Version: {self.enrichment_data['current_version']}\n"
+                if self.enrichment_data.get('tech_stack'):
+                    tech = ', '.join(self.enrichment_data['tech_stack'])
+                    enrichment_context += f"Tech Stack: {tech}\n"
+                if self.enrichment_data.get('project_overview'):
+                    overview = self.enrichment_data['project_overview'][:200]
+                    enrichment_context += f"Overview: {overview}...\n"
+
+                # Append context to structured prompt
+                if 'original_prompt' in structured_prompt:
+                    structured_prompt['enriched_with_context'] = enrichment_context
+                    structured_prompt['context_applied'] = True
+
             return {
                 'skip': False,
                 'intent': intent,
                 'original_message': user_message,
                 'structured_prompt': structured_prompt,
+                'enrichment_data': self.enrichment_data if self.enrichment_data else None,
                 'success': True
             }
         except Exception as e:

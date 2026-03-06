@@ -2616,6 +2616,17 @@ def main():
             print(f"[WARN] Could not parse context-reader output: {e}")
             enrichment_data = {}
 
+        # Save enrichment data to session for prompt-generator to use
+        try:
+            enrichment_file = session_log_dir / 'enrichment-data.json'
+            enrichment_file.write_text(json.dumps({
+                'session_id': session_id,
+                'created_at': datetime.now().isoformat(),
+                'enrichment_data': enrichment_data
+            }, indent=2), encoding='utf-8')
+        except Exception as e:
+            print(f"[WARN] Could not save enrichment data: {e}")
+
         # Show context reading result
         if enrichment_data.get('project_name'):
             print(f"   [3.0.0] Project: {enrichment_data.get('project_name', 'Unknown')}")
