@@ -82,9 +82,10 @@ from utils.history_tracker import HistoryTracker
 from services.monitoring.cache_manager import get_cache
 from flasgger import Swagger, swag_from
 
-# Import session search routes
+# Import route blueprints
 from routes.session_search import session_search_bp
 from routes.claude_credentials import claude_creds_bp
+from routes.dashboard_routes import dashboard_bp
 from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment
 from reportlab.lib import colors
@@ -248,6 +249,7 @@ def inject_version():
 # Register blueprints
 app.register_blueprint(session_search_bp)
 app.register_blueprint(claude_creds_bp)
+app.register_blueprint(dashboard_bp)
 
 # Initialize SocketIO for real-time updates
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
