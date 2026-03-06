@@ -2,6 +2,38 @@
 
 {% block title %}Policies - Claude Insight{% endblock %}
 
+{% from "macros.html" import loading_state, empty_state %}
+
+{% block extra_css %}
+<style>
+.policy-card {
+    transition: transform 0.2s, box-shadow 0.2s;
+    cursor: pointer;
+}
+
+.policy-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+}
+
+.phase-number {
+    transition: all 0.3s ease;
+}
+
+.phase-item:hover .phase-number {
+    transform: scale(1.1);
+}
+
+.btn-group .btn {
+    transition: all 0.2s ease;
+}
+
+.modal-body code {
+    word-break: break-all;
+}
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="row mb-4">
     <div class="col-12">
@@ -593,32 +625,4 @@ function showError(message) {
     console.error(message);
 }
 </script>
-
-<style>
-.policy-card {
-    transition: transform 0.2s, box-shadow 0.2s;
-    cursor: pointer;
-}
-
-.policy-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
-}
-
-.phase-number {
-    transition: all 0.3s ease;
-}
-
-.phase-item:hover .phase-number {
-    transform: scale(1.1);
-}
-
-.btn-group .btn {
-    transition: all 0.2s ease;
-}
-
-.modal-body code {
-    word-break: break-all;
-}
-</style>
 {% endblock %}
