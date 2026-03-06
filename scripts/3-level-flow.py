@@ -909,7 +909,8 @@ def read_hook_stdin():
     Claude Code UserPromptSubmit hook pipes a JSON object with at least:
       {"prompt": "...", "session_id": "...", "cwd": "...", ...}
 
-    Uses select() to avoid blocking indefinitely when stdin has no data.
+    On Unix/Mac: Uses select() to avoid blocking indefinitely when stdin has no data.
+    On Windows: select() doesn't work with stdin, so tries reading directly.
     Returns ('', '') if stdin is empty or unavailable.
 
     Returns:
@@ -917,23 +918,28 @@ def read_hook_stdin():
                read or parse error.
     """
     try:
-        import select
-
         if sys.stdin.isatty():
             return '', ''
 
-        # Use select to check if data is ready (with 0.1s timeout)
+        # Try to read from stdin - platform-specific handling
         try:
-            readable, _, _ = select.select([sys.stdin], [], [], 0.1)
-            if readable:
-                raw = sys.stdin.read()
-                if raw and raw.strip():
-                    data = json.loads(raw.strip())
-                    prompt = data.get('prompt', '') or data.get('message', '')
-                    cwd = data.get('cwd', '')
-                    return prompt, cwd
-        except (OSError, IOError):
-            # select() not available on this platform
+            # On Unix/Mac, use select() to avoid blocking
+            if sys.platform != 'win32':
+                import select
+                readable, _, _ = select.select([sys.stdin], [], [], 0.1)
+                if not readable:
+                    return '', ''
+
+            # On Windows OR if select said data is ready, try to read
+            raw = sys.stdin.read()
+            if raw and raw.strip():
+                data = json.loads(raw.strip())
+                prompt = data.get('prompt', '') or data.get('message', '')
+                cwd = data.get('cwd', '')
+                return prompt, cwd
+        except (OSError, IOError, ImportError):
+            # select() not available, or stdin read failed
+            # On Windows this is expected, just try direct read (already done above)
             pass
 
     except Exception:
