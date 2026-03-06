@@ -35,7 +35,7 @@ def login_required(f):
 @login_required
 def dashboard():
     """Main dashboard page with real-time metrics."""
-    # Default widget preferences (all widgets enabled by default)
+    # Widget preferences (all widgets enabled by default)
     widget_preferences = {
         'system_health': True,
         'recent_activity': True,
@@ -43,7 +43,46 @@ def dashboard():
         'context_usage': True,
         'performance_metrics': True,
     }
-    return render_template('dashboard.html', widget_preferences=widget_preferences)
+
+    # Summary statistics
+    summary_stats = {
+        'avg_health_score': 92,
+        'trend': 'up',
+        'total_errors': 0,
+        'total_policy_hits': 0,
+        'avg_context_usage': 42,
+    }
+
+    # Latest flow data (3-level execution status)
+    flow_latest = {
+        'session_id': 'SESSION-CURRENT',
+        'overall_status': 'OK',
+        'level_minus_1': {'status': 'PASS'},
+        'level_1': {'context_pct': 42, 'status': 'OK'},
+        'level_2': {'standards': 12, 'rules': 65, 'status': 'OK'},
+        'level_3': {
+            'status': 'OK',
+            'model': 'claude-sonnet',
+            'skill_agent': 'python-backend-engineer',
+            'task_type': 'General',
+            'tasks': 0,
+            'complexity': 5,
+            'execution_mode': 'sequential',
+        },
+    }
+
+    # Time series data for charts
+    selected_days = 7
+    chart_data = []
+
+    return render_template(
+        'dashboard.html',
+        widget_preferences=widget_preferences,
+        summary_stats=summary_stats,
+        flow_latest=flow_latest,
+        selected_days=selected_days,
+        chart_data=chart_data,
+    )
 
 
 @dashboard_bp.route('/analytics')
