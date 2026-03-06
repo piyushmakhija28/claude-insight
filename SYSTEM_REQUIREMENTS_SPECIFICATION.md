@@ -595,10 +595,12 @@ scripts/architecture/02-standards-system/
 
 ---
 
-### Component 4: Level 3 - Execution System (20 Scripts)
+### Component 4: Level 3 - Execution System (21 Scripts)
 
 ```
 scripts/architecture/03-execution-system/
+├── 00-context-reading/
+│   └── context-reader.py
 ├── 00-prompt-generation/
 │   └── prompt-generation-policy.py
 ├── 01-task-breakdown/
@@ -688,9 +690,10 @@ UserPromptSubmit Hook (async=false)
         │   │   ├─ common-standards-policy.py
         │   │   └─ coding-standards-enforcement-policy.py
         │   │
-        │   └─► Level 3 (12 steps):
-        │       ├─ prompt-generation-policy.py
-        │       ├─ automatic-task-breakdown-policy.py
+        │   └─► Level 3 (13 steps - PRE-FLIGHT + 12):
+        │       ├─ context-reader.py (STEP 3.0.0 - PRE-FLIGHT)
+        │       ├─ prompt-generation-policy.py (STEP 3.0)
+        │       ├─ automatic-task-breakdown-policy.py (STEP 3.1)
         │       ├─ auto-plan-mode-suggestion-policy.py
         │       ├─ intelligent-model-selection-policy.py
         │       ├─ auto-skill-agent-selection-policy.py

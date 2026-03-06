@@ -1,4 +1,4 @@
-# Claude Insight v4.4.4
+# Claude Insight v4.5.0
 
 **Real-time Monitoring Dashboard for the Claude Memory System (3-Level Architecture + Policy Enforcement)**
 
@@ -6,13 +6,14 @@
 [![Python](https://img.shields.io/badge/Python-3.8+-blue?logo=python)](https://www.python.org/)
 [![Flask](https://img.shields.io/badge/Flask-3.0-green?logo=flask)](https://flask.palletsprojects.com/)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/Version-4.4.4-brightgreen)](VERSION)
+[![Version](https://img.shields.io/badge/Version-4.5.0-brightgreen)](VERSION)
 
 Claude Insight is a Python Flask dashboard that monitors how Claude Code follows the **3-Level Architecture enforcement policies** in real-time. It tracks policy execution, session analytics, skill/agent usage, context optimization, and provides complete audit trails of all decisions.
 
-**Latest Version (v4.4.4):**
+**Latest Version (v4.5.0):**
+- ✅ **NEW:** Context Reading Pre-Flight (STEP 3.0.0) - Mandatory project context detection before execution
 - ✅ Enhanced version-release-policy.py with automatic CHANGELOG + SRS updates
-- ✅ Complete 3-level architecture system (27 policy enforcement scripts)
+- ✅ Complete 3-level architecture system (28 policy enforcement scripts, +1 context-reading)
 - ✅ Comprehensive SYSTEM_REQUIREMENTS_SPECIFICATION.md (947 lines)
 - ✅ Full Python docstrings (PEP 257 compliance, all 162 Python files)
 - ✅ Cleaned up documentation (4 core MD files only)

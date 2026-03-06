@@ -1,4 +1,26 @@
-## [4.4.4] - 2026-03-06
+## [4.5.0] - 2026-03-06
+### Added
+- **NEW:** Context Reading Pre-Flight Policy (STEP 3.0.0)
+  - Reads README, CHANGELOG, VERSION, SRS, CLAUDE.md before execution
+  - Extracts project metadata (name, version, tech stack)
+  - Caches context in session for downstream steps
+  - Windows-safe encoding (UTF-8 with cp1252 fallback)
+  - Graceful handling for new projects (no context files)
+- context-reading-policy.md (277 lines) - Complete policy specification
+- context-reader.py (365 lines) - Python implementation
+- Enhanced prompt-generation-policy.py to use enrichment data
+- Session caching in enrichment-data.json
+
+### Changed
+- 3-level-flow.py: Added STEP 3.0.0 Context Reading before STEP 3.0 Prompt Generation
+- prompt-generation-policy.py: Load and use enrichment data from session
+- Total policy count: 22 (was 21)
+- Total script count: 28 (was 27)
+
+### Fixed
+- Windows stdin reading in read_hook_stdin() - handle select() unavailability
+
+## [4.4.4] - 2026-03-05
 ### Changed
 - Version bump to 4.4.4
 - Updated SYSTEM_REQUIREMENTS_SPECIFICATION.md
