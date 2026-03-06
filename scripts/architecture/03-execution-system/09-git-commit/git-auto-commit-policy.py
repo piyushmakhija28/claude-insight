@@ -4,7 +4,7 @@
 Git Auto-Commit Policy - Unified Git Automation System
 =======================================================
 
-Consolidates all git auto-commit functionality into a single
+Consolidates all git auto-commit functionality into a single comprehensive
 enterprise-grade policy module covering:
 
   1. GitAutoCommitAI         - AI-powered semantic commit message generation
@@ -12,12 +12,14 @@ enterprise-grade policy module covering:
   3. AutoCommitEnforcer      - Enforce commit policy requirements
   4. GitAutoCommitEngine     - Core auto-commit orchestration engine
   5. GitAutoCommitPolicy     - Unified policy interface (enforce/validate/report)
+  6. TriggerAutoCommit       - Trigger commit automation on lifecycle events
 
 USAGE (CLI):
   python git-auto-commit-policy.py --detect
   python git-auto-commit-policy.py --commit [--push] [--dry-run]
   python git-auto-commit-policy.py --ai-message [--context "task context"]
   python git-auto-commit-policy.py --enforce [--enforce-now]
+  python git-auto-commit-policy.py --trigger [--event EVENT]
   python git-auto-commit-policy.py --stats
   python git-auto-commit-policy.py --validate
   python git-auto-commit-policy.py --report
@@ -29,14 +31,15 @@ PROGRAMMATIC:
   policy.validate()
   policy.report()
 
-SOURCES CONSOLIDATED:
+CONSOLIDATED SOURCES:
   - git-auto-commit-ai.py     (AI-powered message generation)
   - auto-commit.py            (Core auto-commit engine)
   - auto-commit-detector.py   (Detect files needing commits)
   - auto-commit-enforcer.py   (Enforce commit requirements)
   - trigger-auto-commit.py    (Trigger commit automation)
 
-VERSION: 2.0.0
+VERSION: 2.5.0 (Consolidated)
+LAST_UPDATED: 2026-03-06
 """
 
 import os
@@ -44,11 +47,12 @@ import sys
 import json
 import logging
 import subprocess
+import argparse
 from datetime import datetime, timedelta
 from pathlib import Path
 
 # ===================================================================
-# NEW: POLICY TRACKING INTEGRATION
+# POLICY TRACKING INTEGRATION
 # ===================================================================
 try:
     sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -190,6 +194,44 @@ def _run_git(args, cwd=None, timeout=30):
         return _Error()
 
 
+def _run_command(cmd, timeout=30, shell=False):
+    """Run a system command and return the result.
+
+    Args:
+        cmd:     Command to execute (str if shell=True, list if shell=False).
+        timeout: Maximum execution time in seconds.
+        shell:   If True, execute command through shell.
+
+    Returns:
+        subprocess.CompletedProcess, or error stub object on failure.
+    """
+    try:
+        return subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+            shell=shell,
+        )
+    except subprocess.TimeoutExpired:
+        _logger.warning("Command timed out after %ds", timeout)
+
+        class _Timeout:
+            returncode = 1
+            stdout = ""
+            stderr = "Timed out after {}s".format(timeout)
+
+        return _Timeout()
+    except Exception as exc:
+
+        class _Error:
+            returncode = 1
+            stdout = ""
+            stderr = str(exc)
+
+        return _Error()
+
+
 def _is_git_repo(path):
     """Return True if *path* is inside a git working tree.
 
@@ -224,14 +266,86 @@ def _find_git_root(start_dir, max_levels=5):
     return None
 
 
+def _load_task_context():
+    """Load actual task context from session data.
+
+    Loads from flow-trace.json, session-progress.json, and tool-tracker.jsonl
+    to get task information for intelligent commit messages.
+
+    Returns:
+        dict: Context dict with keys:
+            - task_subject: Task title/name
+            - task_description: Task description
+            - task_type: Type of task (feat, fix, refactor, etc)
+            - edits_summary: List of recently edited file paths
+    """
+    ctx = {
+        "task_subject": "",
+        "task_description": "",
+        "task_type": "",
+        "edits_summary": []
+    }
+
+    try:
+        # 1. Get session ID from session-progress
+        progress_file = LOGS_DIR / "session-progress.json"
+        session_id = ""
+        if progress_file.exists():
+            with open(progress_file, "r", encoding="utf-8") as f:
+                prog = json.load(f)
+            session_id = prog.get("session_id", "")
+
+        # 2. Get task type + complexity from flow-trace
+        if session_id:
+            trace_file = SESSIONS_DIR / session_id / "flow-trace.json"
+            if trace_file.exists():
+                with open(trace_file, "r", encoding="utf-8") as f:
+                    trace = json.load(f)
+                fd = trace.get("final_decision", {})
+                ctx["task_type"] = fd.get("task_type", "")
+
+        # 3. Get last task subject + edits from tool-tracker.jsonl
+        tracker_file = LOGS_DIR / "tool-tracker.jsonl"
+        if tracker_file.exists():
+            with open(tracker_file, "r", encoding="utf-8") as f:
+                lines = f.readlines()
+
+            # Scan from end: find latest TaskCreate, collect recent edits
+            for line in reversed(lines):
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    entry = json.loads(line)
+                except Exception:
+                    continue
+
+                tool = entry.get("tool", "")
+                if tool == "TaskCreate" and not ctx["task_subject"]:
+                    ctx["task_subject"] = entry.get("task_subject", "")
+                if tool == "Edit" and len(ctx["edits_summary"]) < 5:
+                    f_path = entry.get("file", "")
+                    if f_path:
+                        ctx["edits_summary"].append(f_path)
+                if tool == "Write" and len(ctx["edits_summary"]) < 5:
+                    f_path = entry.get("file", "")
+                    if f_path:
+                        ctx["edits_summary"].append(f_path)
+
+    except Exception as exc:
+        _logger.debug("Could not load task context: %s", exc)
+
+    return ctx
+
+
 # ===========================================================================
-# Class 1: GitAutoCommitAI
+# Class 1: GitAutoCommitAI - AI-powered semantic commit message generator
 # ===========================================================================
 
 class GitAutoCommitAI:
     """AI-powered semantic commit message generator.
 
-    Analyses the git diff and status of a repository to produce a structured,
+    Analyzes the git diff and status of a repository to produce a structured,
     semantic commit message that follows conventional-commit conventions.
 
     Commit type precedence:
@@ -239,7 +353,10 @@ class GitAutoCommitAI:
       2. File-type heuristics (test files, doc files, source files)
       3. Change category (added > deleted > modified)
 
-    Source: git-auto-commit-ai.py (consolidated)
+    Attributes:
+        SOURCE_EXTENSIONS (tuple): File extensions considered source code.
+        TEST_MARKERS (tuple): Markers for test files.
+        DOC_EXTENSIONS (tuple): File extensions for documentation.
     """
 
     # Extensions considered "source code" for 'feat' detection
@@ -297,542 +414,424 @@ class GitAutoCommitAI:
         return result.stdout.strip() if result.returncode == 0 else None
 
     def get_recent_commit_style(self, path="."):
-        """Analyse recent commits to detect the project's commit style.
+        """Analyze recent commits to match style.
 
-        Inspects the last 10 commit subjects and returns a style dict with:
-          - type_prefix (bool): whether <type>: prefixes are used
-          - emoji (bool): whether emoji characters appear in subjects
-          - length (str): 'short' | 'medium' | 'long'
+        Examines the last 10 commits to detect:
+          - Type prefix style (feat:, fix:, etc.)
+          - Emoji usage
+          - Average line length
 
         Args:
             path: Git repository root path.
 
         Returns:
-            dict: Style dict, or empty dict on failure.
+            dict with keys:
+                - type_prefix (bool): True if commits use type: prefix
+                - emoji (bool): True if commits contain emoji
+                - length (str): 'short', 'medium', or 'long'
+            Or None if analysis fails.
         """
         result = _run_git(["log", "-10", "--pretty=format:%s"], cwd=path, timeout=5)
-        if result.returncode != 0 or not result.stdout.strip():
-            return {}
-        messages = result.stdout.strip().split("\n")
-        has_type_prefix = any(":" in msg[:20] for msg in messages)
-        has_emoji = any(any(ord(c) > 127 for c in msg[:10]) for msg in messages)
-        avg_len = sum(len(m) for m in messages) / max(len(messages), 1)
-        length_label = "short" if avg_len < 50 else "medium" if avg_len < 80 else "long"
-        return {
-            "type_prefix": has_type_prefix,
-            "emoji": has_emoji,
-            "length": length_label,
-        }
+
+        if result.returncode == 0 and result.stdout.strip():
+            messages = result.stdout.strip().split("\n")
+
+            # Detect style patterns
+            has_type_prefix = any(":" in msg[:20] for msg in messages)
+            has_emoji = any(any(ord(c) > 127 for c in msg[:10]) for msg in messages)
+            avg_length = sum(len(msg) for msg in messages) / len(messages)
+
+            return {
+                "type_prefix": has_type_prefix,
+                "emoji": has_emoji,
+                "length": (
+                    "short"
+                    if avg_length < 50
+                    else "medium"
+                    if avg_length < 80
+                    else "long"
+                ),
+            }
+
+        return None
 
     # ------------------------------------------------------------------
-    # Change analysis
+    # Analysis and generation
     # ------------------------------------------------------------------
 
-    def parse_status(self, status_output):
-        """Parse porcelain git status into categorised file lists.
+    def analyze_changes(self, status, diff=None):
+        """Analyze git status to categorize changes.
 
         Args:
-            status_output: Raw output of ``git status --porcelain``.
+            status: Output from `git status --porcelain`.
+            diff:   Optional output from `git diff --stat`.
 
         Returns:
-            dict: Keys: added, modified, deleted, renamed (lists of file paths).
-        """
-        changes = {"added": [], "modified": [], "deleted": [], "renamed": []}
-        if not status_output:
-            return changes
-        for line in status_output.splitlines():
-            if not line:
-                continue
-            code = line[0:2].strip()
-            filename = line[3:].strip()
-            if code in ("A", "??"):
-                changes["added"].append(filename)
-            elif code in ("M", "AM", "MM"):
-                changes["modified"].append(filename)
-            elif code == "D":
-                changes["deleted"].append(filename)
-            elif code == "R":
-                changes["renamed"].append(filename)
-        return changes
-
-    # Backwards-compatible alias used by auto-commit.py workflow
-    def analyze_changes(self, status, diff):
-        """Analyse git status and diff output.
-
-        Args:
-            status: Raw porcelain git status string.
-            diff:   Git diff --stat output (used for context, not parsed).
-
-        Returns:
-            dict: Categorised changes, or None if status is empty.
+            dict with keys:
+                - added: List of added file paths
+                - modified: List of modified file paths
+                - deleted: List of deleted file paths
+                - renamed: List of renamed file paths
         """
         if not status:
             return None
-        return self.parse_status(status)
 
-    def _has_source_files(self, filenames):
-        """Return True if any filename ends with a recognised source-code extension.
+        changes = {
+            "added": [],
+            "modified": [],
+            "deleted": [],
+            "renamed": [],
+        }
 
-        Args:
-            filenames (list[str]): List of changed file names.
+        # Parse porcelain status
+        for line in status.split("\n"):
+            if not line:
+                continue
 
-        Returns:
-            bool: True if at least one file is a source file.
-        """
-        return any(f.endswith(self.SOURCE_EXTENSIONS) for f in filenames)
+            status_code = line[0:2].strip()
+            filename = line[3:].strip()
 
-    def _has_test_files(self, filenames):
-        """Return True if any filename contains a test or spec marker.
+            if status_code in ["A", "??"]:
+                changes["added"].append(filename)
+            elif status_code == "M":
+                changes["modified"].append(filename)
+            elif status_code == "D":
+                changes["deleted"].append(filename)
+            elif status_code == "R":
+                changes["renamed"].append(filename)
 
-        Args:
-            filenames (list[str]): List of changed file names.
-
-        Returns:
-            bool: True if at least one file is a test/spec file.
-        """
-        return any(
-            any(marker in f.lower() for marker in self.TEST_MARKERS)
-            for f in filenames
-        )
-
-    def _has_doc_files(self, filenames):
-        """Return True if any filename ends with a documentation extension.
-
-        Args:
-            filenames (list[str]): List of changed file names.
-
-        Returns:
-            bool: True if at least one file is a documentation file.
-        """
-        return any(f.endswith(self.DOC_EXTENSIONS) for f in filenames)
-
-    # ------------------------------------------------------------------
-    # Task context loading (from session chain data)
-    # ------------------------------------------------------------------
-
-    def _load_task_context(self):
-        """Load real task context from Claude session data.
-
-        Reads session-progress.json, flow-trace.json, and tool-tracker.jsonl
-        to extract the most recent task subject, task type, and edited files.
-
-        Returns:
-            dict: Keys: task_subject (str), task_type (str), edits_summary (list).
-        """
-        ctx = {"task_subject": "", "task_type": "", "edits_summary": []}
-        try:
-            # 1. Resolve the active session ID
-            progress_file = LOGS_DIR / "session-progress.json"
-            session_id = ""
-            if progress_file.exists():
-                with open(progress_file, "r", encoding="utf-8") as fh:
-                    prog = json.load(fh)
-                session_id = prog.get("session_id", "")
-
-            # 2. Pull task_type from flow-trace
-            if session_id:
-                trace_file = SESSIONS_DIR / session_id / "flow-trace.json"
-                if trace_file.exists():
-                    with open(trace_file, "r", encoding="utf-8") as fh:
-                        trace = json.load(fh)
-                    ctx["task_type"] = trace.get("final_decision", {}).get("task_type", "")
-
-            # 3. Extract task subject and edited file paths from tool-tracker.jsonl
-            tracker_file = LOGS_DIR / "tool-tracker.jsonl"
-            if tracker_file.exists():
-                with open(tracker_file, "r", encoding="utf-8") as fh:
-                    lines = fh.readlines()
-                for raw in reversed(lines):
-                    raw = raw.strip()
-                    if not raw:
-                        continue
-                    try:
-                        entry = json.loads(raw)
-                    except json.JSONDecodeError:
-                        continue
-                    tool = entry.get("tool", "")
-                    if tool == "TaskCreate" and not ctx["task_subject"]:
-                        ctx["task_subject"] = entry.get("task_subject", "")
-                    if tool in ("Edit", "Write") and len(ctx["edits_summary"]) < 5:
-                        fpath = entry.get("file", "")
-                        if fpath:
-                            ctx["edits_summary"].append(fpath)
-        except Exception:
-            pass
-        return ctx
-
-    # ------------------------------------------------------------------
-    # Commit type determination
-    # ------------------------------------------------------------------
+        return changes
 
     def determine_commit_type(self, changes, context=None):
-        """Determine the semantic commit type from changes and optional context.
+        """Determine semantic commit type from changes and context.
 
-        Priority order:
-          1. Explicit keywords in context string
-          2. Context string partial matching against common verbs
-          3. File-type heuristics (test files, doc files, source files)
-          4. Change category heuristics (added > deleted > modified)
+        Heuristic precedence:
+          1. Task context (flow-trace / session data)
+          2. File type heuristics
+          3. Change type heuristics
 
         Args:
-            changes: Categorised changes dict from parse_status().
-            context: Optional free-text context string (e.g. task subject).
+            changes: Dict from analyze_changes().
+            context: Optional task context string.
 
         Returns:
-            str: One of the COMMIT_TYPES values.
+            str: One of 'feat', 'fix', 'refactor', 'docs', 'test', 'chore', 'style', 'perf'.
         """
-        if context:
-            ctx_lower = context.lower()
-            if any(w in ctx_lower for w in ("fix", "bug", "error", "broken", "crash", "resolve")):
-                return "fix"
-            if any(w in ctx_lower for w in ("refactor", "cleanup", "reorganize", "simplify", "clean")):
-                return "refactor"
-            if any(w in ctx_lower for w in ("doc", "readme", "documentation", "comment")):
-                return "docs"
-            if any(w in ctx_lower for w in ("test", "spec", "coverage")):
-                return "test"
-            if any(w in ctx_lower for w in ("style", "format", "lint")):
-                return "style"
-            if any(w in ctx_lower for w in ("perf", "performance", "optimiz", "speed")):
-                return "perf"
+        if not changes:
+            return "chore"
 
-        all_files = (
-            changes.get("added", [])
-            + changes.get("modified", [])
-            + changes.get("deleted", [])
-            + changes.get("renamed", [])
-        )
+        # Check for new features (new files with source extension)
+        if changes.get("added"):
+            source_files = [
+                f for f in changes["added"]
+                if f.endswith(self.SOURCE_EXTENSIONS)
+            ]
+            if source_files:
+                return "feat"
 
-        if self._has_test_files(all_files):
-            return "test"
-        if self._has_doc_files(all_files):
-            return "docs"
-        if changes.get("added") and self._has_source_files(changes["added"]):
-            return "feat"
+        # Check for deletions/cleanup
         if changes.get("deleted"):
             return "refactor"
-        if changes.get("added"):
-            return "feat"
+
+        # Check for modifications
+        if changes.get("modified"):
+            # Check context for clues
+            if context:
+                context_lower = context.lower()
+                if any(w in context_lower for w in ["fix", "bug", "error", "broken"]):
+                    return "fix"
+                elif "test" in context_lower:
+                    return "test"
+                elif any(w in context_lower for w in ["doc", "readme", "documentation"]):
+                    return "docs"
+                elif "refactor" in context_lower:
+                    return "refactor"
+
+            # Check file types
+            test_files = [f for f in changes["modified"] if any(m in f.lower() for m in self.TEST_MARKERS)]
+            if test_files:
+                return "test"
+
+            doc_files = [f for f in changes["modified"] if f.endswith(self.DOC_EXTENSIONS)]
+            if doc_files:
+                return "docs"
 
         return "chore"
 
-    # ------------------------------------------------------------------
-    # Summary and body generation
-    # ------------------------------------------------------------------
-
-    def generate_summary(self, changes, commit_type, task_subject=""):
-        """Generate the subject line of the commit message.
-
-        Uses task_subject when available for precise, context-aware summaries.
+    def generate_summary(self, changes, commit_type):
+        """Generate first line of commit message.
 
         Args:
-            changes:      Categorised changes dict.
-            commit_type:  Determined semantic commit type.
-            task_subject: Optional task subject from session data.
+            changes:      Dict from analyze_changes().
+            commit_type:  Type from determine_commit_type().
 
         Returns:
-            str: Short summary string (no trailing period, max 72 chars).
+            str: Summary text (first line of commit message).
         """
-        if task_subject:
-            trimmed = task_subject.strip().rstrip(".")
-            return trimmed[:72] if len(trimmed) > 72 else trimmed
-
-        all_added = changes.get("added", [])
-        all_modified = changes.get("modified", [])
-        all_deleted = changes.get("deleted", [])
+        if not changes:
+            return "update files"
 
         if commit_type == "feat":
-            if len(all_added) == 1:
-                return "add {}".format(Path(all_added[0]).stem)
-            return "add {} new files".format(len(all_added))
+            if len(changes.get("added", [])) == 1:
+                filename = Path(changes["added"][0]).stem
+                return f"add {filename}"
+            else:
+                return f"add {len(changes.get('added', []))} new files"
 
-        if commit_type == "fix":
-            if len(all_modified) == 1:
-                return "fix issue in {}".format(Path(all_modified[0]).stem)
-            return "fix issues in {} files".format(len(all_modified))
+        elif commit_type == "fix":
+            if len(changes.get("modified", [])) == 1:
+                filename = Path(changes["modified"][0]).stem
+                return f"fix issue in {filename}"
+            else:
+                return f"fix issues in {len(changes.get('modified', []))} files"
 
-        if commit_type == "refactor":
-            if all_deleted:
-                return "remove {} obsolete files".format(len(all_deleted))
-            return "refactor {} files".format(len(all_modified))
+        elif commit_type == "refactor":
+            if changes.get("deleted"):
+                return f"remove {len(changes['deleted'])} files"
+            else:
+                return f"refactor {len(changes.get('modified', []))} files"
 
-        if commit_type == "test":
-            return "add/update tests"
+        elif commit_type == "test":
+            return "update tests"
 
-        if commit_type == "docs":
+        elif commit_type == "docs":
             return "update documentation"
 
-        if commit_type == "style":
-            return "apply formatting and style fixes"
-
-        if commit_type == "perf":
-            return "improve performance"
-
-        total = len(all_added) + len(all_modified) + len(all_deleted)
-        return "update {} files".format(total)
+        else:
+            total = (
+                len(changes.get("added", []))
+                + len(changes.get("modified", []))
+                + len(changes.get("deleted", []))
+            )
+            return f"update {total} files"
 
     def generate_details(self, changes):
-        """Generate body lines of the commit message listing affected files.
-
-        Lists up to 5 affected files per category with 'and N more' truncation.
+        """Generate detailed description for commit body.
 
         Args:
-            changes: Categorised changes dict from parse_status().
+            changes: Dict from analyze_changes().
 
         Returns:
-            list: Body lines (may be empty).
+            list: Detail lines to include in commit body.
         """
-        body = []
-        _MAX = 5
+        details = []
 
-        def _section(label, files):
-            """Append a labelled file list (up to _MAX entries) to body.
+        if changes.get("added"):
+            details.append(f"Added files ({len(changes['added'])}):")
+            for f in changes["added"][:5]:
+                details.append(f"  - {f}")
+            if len(changes["added"]) > 5:
+                details.append(f"  - ... and {len(changes['added']) - 5} more")
 
-            Args:
-                label (str): Section label string (e.g., 'Added files').
-                files (list[str]): Files to list under this label.
-            """
-            if not files:
-                return
-            body.append("{} ({}):".format(label, len(files)))
-            for f in files[:_MAX]:
-                body.append("  - {}".format(f))
-            if len(files) > _MAX:
-                body.append("  - ... and {} more".format(len(files) - _MAX))
+        if changes.get("modified"):
+            if details:
+                details.append("")
+            details.append(f"Modified files ({len(changes['modified'])}):")
+            for f in changes["modified"][:5]:
+                details.append(f"  - {f}")
+            if len(changes["modified"]) > 5:
+                details.append(f"  - ... and {len(changes['modified']) - 5} more")
 
-        _section("Added files", changes.get("added", []))
-        if changes.get("modified") and changes.get("added"):
-            body.append("")
-        _section("Modified files", changes.get("modified", []))
         if changes.get("deleted"):
-            body.append("")
-        _section("Deleted files", changes.get("deleted", []))
-        if changes.get("renamed"):
-            body.append("")
-        _section("Renamed files", changes.get("renamed", []))
+            if details:
+                details.append("")
+            details.append(f"Deleted files ({len(changes['deleted'])}):")
+            for f in changes["deleted"][:5]:
+                details.append(f"  - {f}")
+            if len(changes["deleted"]) > 5:
+                details.append(f"  - ... and {len(changes['deleted']) - 5} more")
 
-        return body
+        return details
 
-    # ------------------------------------------------------------------
-    # Public API: build and generate commit messages
-    # ------------------------------------------------------------------
+    def generate_commit_message(self, changes, context=None, style=None):
+        """Generate complete semantic commit message.
 
-    def generate_commit_message(self, changes, context=None):
-        """Generate a complete conventional commit message.
-
-        This is the primary method used by the legacy auto-commit.py workflow.
-        Loads task context from session data automatically.
+        Combines type, summary, and details into a structured message.
 
         Args:
-            changes: Categorised changes dict from parse_status().
-            context: Optional override context string.
+            changes:  Dict from analyze_changes().
+            context:  Optional task context for better type detection.
+            style:    Optional style dict from get_recent_commit_style().
 
         Returns:
-            str: Full commit message ready for ``git commit -m``.
+            str: Complete commit message with type, summary, details, and co-author tag.
         """
-        if not changes or all(not v for v in changes.values()):
-            return "chore: update files\n\nCo-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
+        if not changes:
+            return "chore: update files\n\nCo-Authored-By: Claude <noreply@anthropic.com>"
 
-        task_ctx = self._load_task_context()
-        task_subject = context or task_ctx.get("task_subject", "")
+        # Determine commit type
+        commit_type = self.determine_commit_type(changes, context)
 
-        commit_type = self.determine_commit_type(changes, task_subject)
-        summary = self.generate_summary(changes, commit_type, task_subject)
-        body_lines = self.generate_details(changes)
+        # Generate summary
+        summary = self.generate_summary(changes, commit_type)
 
-        subject = "{}: {}".format(commit_type, summary)
-        parts = [subject]
-        if body_lines:
-            parts.append("")
-            parts.extend(body_lines)
-        parts.append("")
-        parts.append("Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>")
+        # Generate detailed description
+        details = self.generate_details(changes)
 
-        return "\n".join(parts)
+        # Build message
+        message_parts = []
 
-    def build_commit_message(self, changes, context=None, task_subject="", style=None):
-        """Build a complete conventional commit message with style awareness.
-
-        Combines type, subject, optional body, and co-author trailer.
-        Respects the project's existing commit style when provided.
-
-        Args:
-            changes:      Categorised changes dict.
-            context:      Optional context string used for type detection.
-            task_subject: Optional task subject for the summary line.
-            style:        Optional style dict from get_recent_commit_style().
-
-        Returns:
-            str: Full commit message string ready for ``git commit -m``.
-        """
-        if not changes or all(not v for v in changes.values()):
-            return "chore: update files\n\nCo-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
-
-        effective_context = context or task_subject
-        commit_type = self.determine_commit_type(changes, effective_context)
-        summary = self.generate_summary(changes, commit_type, task_subject)
-        body_lines = self.generate_details(changes)
-
-        # Respect project style: omit prefix if repo never uses it
-        if style and not style.get("type_prefix", True):
-            subject = summary.capitalize() if summary else "Update implementation"
+        # First line with type prefix (if style suggests it)
+        if style and style.get("type_prefix"):
+            message_parts.append(f"{commit_type}: {summary}")
         else:
-            subject = "{}: {}".format(commit_type, summary)
+            message_parts.append(summary.capitalize() if summary else "Update implementation")
 
-        # For larger changesets, add file count to subject if no task subject
-        staged_count = (
-            len(changes.get("added", []))
-            + len(changes.get("modified", []))
-            + len(changes.get("deleted", []))
-        )
-        if not task_subject and staged_count > 5:
-            if not body_lines:
-                body_lines = ["{} files modified".format(staged_count)]
+        # Add body if there are details
+        if details:
+            message_parts.append("")  # Blank line
+            message_parts.extend(details)
 
-        parts = [subject]
-        if body_lines:
-            parts.append("")
-            parts.extend(body_lines)
-        parts.append("")
-        parts.append("Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>")
+        # Add co-author
+        message_parts.append("")
+        message_parts.append("Co-Authored-By: Claude <noreply@anthropic.com>")
 
-        return "\n".join(parts)
-
-    def generate_message_for_path(self, path=".", context=None):
-        """Convenience: generate a commit message for a repository path.
-
-        Reads the current git status and combines AI type detection with
-        any available session task context.
-
-        Args:
-            path:    Git repository path.
-            context: Optional override context string.
-
-        Returns:
-            str: Commit message string, or None if no changes detected.
-        """
-        status_raw = self.get_git_status(path)
-        if not status_raw:
-            return None
-        changes = self.parse_status(status_raw)
-        task_ctx = self._load_task_context()
-        task_subject = context or task_ctx.get("task_subject", "")
-        style = self.get_recent_commit_style(path)
-        return self.build_commit_message(changes, context=context, task_subject=task_subject, style=style)
+        return "\n".join(message_parts)
 
     def find_git_repos(self, base_path):
-        """Find all git repositories in base path up to two levels deep.
+        """Find all git repositories in base path.
 
-        Useful when running from a non-git directory such as ~/.claude.
+        Useful when running from non-git directory like .claude.
 
         Args:
-            base_path: Base directory to search.
+            base_path: Directory to search from.
 
         Returns:
-            list: Absolute repository path strings.
+            list: Paths to discovered git repositories (1-2 levels deep).
         """
         git_repos = []
+
         try:
             base = Path(base_path)
             if not base.exists():
                 return []
+
+            # Check immediate subdirectories (1 level deep)
             for item in base.iterdir():
                 if item.is_dir():
+                    # Check if it has .git
                     if (item / ".git").exists():
                         git_repos.append(str(item))
+
+                    # Check one level deeper (for nested structure)
                     try:
                         for subitem in item.iterdir():
                             if subitem.is_dir() and (subitem / ".git").exists():
                                 git_repos.append(str(subitem))
-                    except PermissionError:
+                    except Exception:
                         pass
-        except PermissionError:
-            pass
+
+        except Exception as exc:
+            _logger.debug("Error finding git repos: %s", exc)
+
         return git_repos
 
     def log_commit(self, result):
-        """Persist a compact commit result entry to the commit log.
+        """Log commit operation to git-auto-commit.log.
 
         Args:
-            result: Result dict returned by the commit operation.
+            result: Dict with commit operation result data.
         """
-        self.logs_path.mkdir(parents=True, exist_ok=True)
-        entry = {
-            "timestamp": result.get("timestamp", datetime.now().isoformat()),
-            "path": result.get("path", ""),
-            "success": result.get("success", False),
-            "dry_run": result.get("dry_run", False),
-            "file_count": sum(len(v) for v in result.get("changes", {}).values()),
-        }
-        with open(self.commit_log, "a", encoding="utf-8") as fh:
-            fh.write(json.dumps(entry) + "\n")
+        try:
+            self.logs_path.mkdir(parents=True, exist_ok=True)
 
-    # Keep backwards-compat alias
-    def log_commit_result(self, result):
-        """Alias for log_commit for backward compatibility."""
-        self.log_commit(result)
+            log_entry = {
+                "timestamp": result.get("timestamp", datetime.now().isoformat()),
+                "path": result.get("path", ""),
+                "success": result.get("success", False),
+                "dry_run": result.get("dry_run", False),
+                "file_count": sum(
+                    len(v) for v in result.get("changes", {}).values()
+                ),
+            }
+
+            with open(self.commit_log, "a", encoding="utf-8") as f:
+                f.write(json.dumps(log_entry) + "\n")
+
+        except Exception as exc:
+            _logger.warning("Could not log commit: %s", exc)
 
     def auto_commit(self, path=".", context=None, push=False, dry_run=False, auto_find=True):
-        """Main entry point compatible with git-auto-commit-ai.py CLI.
+        """Main entry point - auto commit with AI message.
 
         Args:
             path:      Git repo path (or base path to search).
             context:   Task context for better messages.
             push:      Auto-push after commit.
-            dry_run:   Do not actually commit.
+            dry_run:   Don't actually commit if True.
             auto_find: Auto-find git repos if current dir is not a repo.
 
         Returns:
-            dict: Result dict with success, changes, commit_message, etc.
+            dict: Result with keys:
+                - success (bool)
+                - multi_repo (bool): True if multiple repos were committed
+                - repos (list): List of individual repo results (if multi_repo)
+                - error (str): Error message if unsuccessful
+                - skipped (bool): True if no changes to commit
+                - committed (bool): True if commit was created
+                - pushed (bool): True if changes were pushed
         """
+        # Check if current path is a git repo
         if not self.check_git_repo(path):
+            # If auto_find enabled and we're in .claude or similar
             if auto_find and (".claude" in str(Path(path).resolve()) or path == "."):
+                # Try to find git repos in workspace
                 workspace_path = DEFAULT_WORKSPACE
+
                 if workspace_path.exists():
                     git_repos = self.find_git_repos(workspace_path)
+
                     if git_repos:
+                        # Commit to all found repos
                         results = []
                         for repo_path in git_repos:
-                            r = self._commit_single_repo(repo_path, context, push, dry_run)
-                            results.append(r)
+                            result = self._commit_single_repo(repo_path, context, push, dry_run)
+                            results.append(result)
+
                         return {
                             "success": True,
                             "multi_repo": True,
                             "repos": results,
                             "total_repos": len(git_repos),
                         }
+                    else:
+                        return {
+                            "success": False,
+                            "error": f"No git repositories found in {workspace_path}",
+                            "path": path,
+                            "suggestion": "Run this script from a project directory with .git",
+                        }
+                else:
                     return {
                         "success": False,
-                        "error": "No git repositories found in {}".format(workspace_path),
+                        "error": f"Workspace not found: {workspace_path}",
                         "path": path,
                         "suggestion": "Run this script from a project directory with .git",
                     }
-                return {
-                    "success": False,
-                    "error": "Workspace not found: {}".format(workspace_path),
-                    "path": path,
-                    "suggestion": "Run this script from a project directory with .git",
-                }
+
             return {
                 "success": False,
                 "error": "Not a git repository",
                 "path": path,
-                "suggestion": "Run this script from a project directory with .git",
+                "suggestion": "Run from git repo or use --auto-find",
             }
+
+        # Single repo commit
         return self._commit_single_repo(path, context, push, dry_run)
 
     def _commit_single_repo(self, path, context, push, dry_run):
-        """Commit to a single repository (internal helper for auto_commit).
+        """Commit to a single repository.
 
         Args:
-            path:    Absolute path to the git repository.
-            context: Optional context string for commit message.
-            push:    Whether to push after committing.
-            dry_run: Whether to skip the actual commit.
+            path:    Repository root path.
+            context: Optional task context.
+            push:    Whether to push after commit.
+            dry_run: If True, don't actually commit.
 
         Returns:
-            dict: Result dict with success, changes, commit_message, etc.
+            dict: Result with success, changes, commit_message, etc.
         """
+        # Get status
         status = self.get_git_status(path)
         if not status:
             return {
@@ -840,13 +839,19 @@ class GitAutoCommitAI:
                 "skipped": True,
                 "reason": "No changes to commit",
                 "path": path,
-                "timestamp": datetime.now().isoformat(),
-                "dry_run": dry_run,
             }
 
+        # Get diff
         diff = self.get_git_diff(path, staged=False)
+
+        # Analyze changes
         changes = self.analyze_changes(status, diff)
-        commit_message = self.generate_commit_message(changes, context)
+
+        # Get commit message style
+        style = self.get_recent_commit_style(path)
+
+        # Generate commit message
+        commit_message = self.generate_commit_message(changes, context, style)
 
         result = {
             "path": path,
@@ -856,2242 +861,1253 @@ class GitAutoCommitAI:
             "timestamp": datetime.now().isoformat(),
         }
 
+        # Commit (if not dry run)
         if not dry_run:
+            # Stage all changes
             try:
-                subprocess.run(
-                    ["git", "add", "."],
-                    cwd=path,
-                    check=True,
-                    timeout=10,
-                )
+                _run_git(["add", "."], cwd=path, timeout=10)
             except Exception as exc:
                 result["success"] = False
-                result["error"] = "Failed to stage changes: {}".format(exc)
+                result["error"] = f"Failed to stage changes: {exc}"
                 return result
 
+            # Commit
             try:
-                subprocess.run(
-                    ["git", "commit", "-m", commit_message],
-                    cwd=path,
-                    check=True,
-                    timeout=10,
-                )
+                res = _run_git(["commit", "-m", commit_message], cwd=path, timeout=10)
+                if res.returncode != 0:
+                    result["success"] = False
+                    result["error"] = f"Commit failed: {res.stderr}"
+                    return result
+
                 result["success"] = True
                 result["committed"] = True
+
             except Exception as exc:
                 result["success"] = False
-                result["error"] = "Failed to commit: {}".format(exc)
+                result["error"] = f"Failed to commit: {exc}"
                 return result
 
+            # Push (if requested)
             if push:
                 try:
-                    subprocess.run(
-                        ["git", "push"],
-                        cwd=path,
-                        check=True,
-                        timeout=30,
-                    )
-                    result["pushed"] = True
+                    res = _run_git(["push"], cwd=path, timeout=60)
+                    if res.returncode == 0:
+                        result["pushed"] = True
+                    else:
+                        result["push_error"] = res.stderr
+
                 except Exception as exc:
                     result["push_error"] = str(exc)
+
         else:
             result["success"] = True
 
+        # Log commit
         self.log_commit(result)
+
         return result
-
-    def print_result(self, result):
-        """Print a formatted commit result to stdout.
-
-        Args:
-            result: Result dict from auto_commit() or _commit_single_repo().
-        """
-        print("\n" + "=" * 70)
-        print("Git Auto-Commit with AI")
-        print("=" * 70 + "\n")
-
-        if result.get("multi_repo"):
-            print("Found {} git repositories\n".format(result["total_repos"]))
-            for i, repo_result in enumerate(result["repos"], 1):
-                repo_path = Path(repo_result["path"]).name
-                print("[{}/{}] Repository: {}".format(i, result["total_repos"], repo_path))
-                if repo_result.get("skipped"):
-                    print("   SKIPPED: {}".format(repo_result.get("reason", "No changes")))
-                elif repo_result.get("success"):
-                    changes = repo_result.get("changes", {})
-                    total_changes = sum(len(v) for v in changes.values())
-                    print("   OK: Committed {} changes".format(total_changes))
-                    if repo_result.get("pushed"):
-                        print("   OK: Pushed to remote")
-                else:
-                    print("   ERROR: {}".format(repo_result.get("error", "Unknown error")))
-                print()
-            print("=" * 70 + "\n")
-            return
-
-        if result.get("skipped"):
-            print("SKIPPED: {}".format(result.get("reason")))
-            print("Path: {}".format(result.get("path")))
-            print("\n" + "=" * 70 + "\n")
-            return
-
-        if not result.get("success", False) and result.get("error"):
-            print("ERROR: {}".format(result["error"]))
-            if result.get("suggestion"):
-                print("\nSuggestion: {}".format(result["suggestion"]))
-            print("\n" + "=" * 70 + "\n")
-            return
-
-        changes = result.get("changes", {})
-        print("Changes Summary:")
-        print("   Added:    {}".format(len(changes.get("added", []))))
-        print("   Modified: {}".format(len(changes.get("modified", []))))
-        print("   Deleted:  {}".format(len(changes.get("deleted", []))))
-
-        print("\nGenerated Commit Message:")
-        print("-" * 70)
-        print(result.get("commit_message", "(none)"))
-        print("-" * 70)
-
-        if result.get("dry_run"):
-            print("\n[DRY RUN] No actual commit was created")
-        else:
-            if result.get("committed"):
-                print("\n[OK] Changes committed successfully!")
-            if result.get("pushed"):
-                print("[OK] Changes pushed to remote!")
-            elif result.get("push_error"):
-                print("[WARN] Push failed: {}".format(result["push_error"]))
-
-        print("\n" + "=" * 70 + "\n")
 
 
 # ===========================================================================
-# Class 2: AutoCommitDetector
+# Class 2: AutoCommitDetector - Detect when to automatically commit changes
 # ===========================================================================
 
 class AutoCommitDetector:
-    """Detect which files and repositories need commits, and when.
+    """Detects when to automatically commit changes.
 
-    Evaluates six independent trigger categories:
-      1. Modified (unstaged) files above threshold
-      2. Staged files above threshold
-      3. Time elapsed since last commit above threshold
-      4. Phase-completion signal in recent policy logs
-      5. Todo-completion signal in recent policy logs
-      6. Milestone keyword signals in recent policy logs
+    Monitors multiple triggers:
+      1. File modifications (staged/unstaged)
+      2. Time since last commit
+      3. Phase completion
+      4. Todo completion
+      5. Milestone signals
 
-    Also provides repository discovery utilities for workspace-wide scans.
-
-    Source: auto-commit-detector.py (consolidated)
+    Attributes:
+        THRESHOLDS (dict): Trigger configuration thresholds.
+        MILESTONE_KEYWORDS (list): Keywords that signal completion.
     """
 
-    def __init__(self, thresholds=None, milestone_keywords=None):
-        """Initialise the detector.
+    def __init__(self):
+        """Initialize AutoCommitDetector."""
+        pass
+
+    def check_git_repo(self, project_dir):
+        """Check if directory is a git repo.
 
         Args:
-            thresholds:         Override global THRESHOLDS dict.
-            milestone_keywords: Override global MILESTONE_KEYWORDS list.
+            project_dir: Path to check.
+
+        Returns:
+            bool: True if valid git repository.
         """
-        self.thresholds = thresholds or THRESHOLDS.copy()
-        self.milestone_keywords = milestone_keywords or list(MILESTONE_KEYWORDS)
+        return _is_git_repo(project_dir)
 
-    # ------------------------------------------------------------------
-    # Git status queries
-    # ------------------------------------------------------------------
-
-    def get_full_git_status(self, project_dir):
-        """Retrieve staged, modified, and untracked file lists.
+    def get_git_status(self, project_dir):
+        """Get git status - staged files, modified files, etc.
 
         Args:
             project_dir: Git repository root path.
 
         Returns:
-            dict: Keys: staged, modified, untracked, staged_count,
-                  modified_count, untracked_count. Returns None on error.
+            dict with keys:
+                - staged: List of staged file paths
+                - modified: List of modified (unstaged) file paths
+                - untracked: List of untracked file paths
+                - staged_count: Number of staged files
+                - modified_count: Number of modified files
+                - untracked_count: Number of untracked files
+            Or None on failure.
         """
         try:
-            def _list(args):
-                """Run a git command and return its output as a list of non-empty lines.
+            # Get staged files
+            result = _run_git(["diff", "--cached", "--name-only"], cwd=project_dir)
+            staged_files = (
+                [f for f in result.stdout.strip().split("\n") if f]
+                if result.returncode == 0
+                else []
+            )
 
-                Args:
-                    args (list[str]): Git sub-command arguments.
+            # Get modified but not staged
+            result = _run_git(["diff", "--name-only"], cwd=project_dir)
+            modified_files = (
+                [f for f in result.stdout.strip().split("\n") if f]
+                if result.returncode == 0
+                else []
+            )
 
-                Returns:
-                    list[str]: Output lines, or an empty list on failure.
-                """
-                r = _run_git(args, cwd=project_dir, timeout=5)
-                if r.returncode == 0:
-                    return [f for f in r.stdout.strip().split("\n") if f]
-                return []
-
-            staged = _list(["diff", "--cached", "--name-only"])
-            modified = _list(["diff", "--name-only"])
-            untracked = _list(["ls-files", "--others", "--exclude-standard"])
+            # Get untracked files
+            result = _run_git(
+                ["ls-files", "--others", "--exclude-standard"], cwd=project_dir
+            )
+            untracked_files = (
+                [f for f in result.stdout.strip().split("\n") if f]
+                if result.returncode == 0
+                else []
+            )
 
             return {
-                "staged": staged,
-                "modified": modified,
-                "untracked": untracked,
-                "staged_count": len(staged),
-                "modified_count": len(modified),
-                "untracked_count": len(untracked),
+                "staged": staged_files,
+                "modified": modified_files,
+                "untracked": untracked_files,
+                "staged_count": len(staged_files),
+                "modified_count": len(modified_files),
+                "untracked_count": len(untracked_files),
             }
+
         except Exception as exc:
-            _logger.warning("Could not get git status for %s: %s", project_dir, exc)
+            _logger.warning("Could not get git status: %s", exc)
             return None
 
     def get_last_commit_time(self, project_dir):
-        """Return the datetime of the most recent commit in the repository.
+        """Get time of last commit.
 
         Args:
             project_dir: Git repository root path.
 
         Returns:
-            datetime: Datetime of last commit, or None if unavailable.
+            datetime: Timestamp of last commit, or None if not available.
         """
-        result = _run_git(["log", "-1", "--format=%ct"], cwd=project_dir, timeout=5)
-        if result.returncode == 0 and result.stdout.strip():
-            try:
-                return datetime.fromtimestamp(int(result.stdout.strip()))
-            except ValueError:
-                pass
-        return None
-
-    # ------------------------------------------------------------------
-    # Signal detectors (read from policy-hits.log)
-    # ------------------------------------------------------------------
-
-    def _read_recent_log_lines(self, minutes=15, tail=100):
-        """Return recent policy log lines within the past *minutes* window.
-
-        Args:
-            minutes: Look-back window in minutes.
-            tail:    Maximum number of lines to scan from the end of the file.
-
-        Returns:
-            list: Recent log lines (strings).
-        """
-        if not POLICY_HIT_LOG.exists():
-            return []
-        cutoff = datetime.now() - timedelta(minutes=minutes)
-        recent = []
         try:
-            with open(POLICY_HIT_LOG, "r", encoding="utf-8", errors="ignore") as fh:
-                lines = fh.readlines()
-            for line in lines[-tail:]:
-                line = line.strip()
-                if not line.startswith("["):
-                    continue
-                try:
-                    ts_str = line[1:20]
-                    ts = datetime.strptime(ts_str, "%Y-%m-%d %H:%M:%S")
-                    if ts > cutoff:
-                        recent.append(line)
-                except ValueError:
-                    continue
-        except OSError:
-            pass
-        return recent
+            result = _run_git(["log", "-1", "--format=%ct"], cwd=project_dir)
+
+            if result.returncode == 0 and result.stdout.strip():
+                timestamp = int(result.stdout.strip())
+                return datetime.fromtimestamp(timestamp)
+            else:
+                return None
+
+        except Exception as exc:
+            _logger.debug("Could not get last commit time: %s", exc)
+            return None
 
     def detect_milestone_signals(self):
-        """Return a deduplicated list of milestone keywords found in recent logs.
+        """Detect milestone completion signals from logs.
+
+        Scans recent policy-hits.log entries for milestone keywords.
 
         Returns:
-            list: Matched milestone keyword strings.
+            list: Unique milestone keywords found in recent logs.
         """
-        found = set()
-        for line in self._read_recent_log_lines(minutes=15, tail=100):
-            line_lower = line.lower()
-            for kw in self.milestone_keywords:
-                if kw in line_lower:
-                    found.add(kw)
-        return list(found)
+        log_file = POLICY_HIT_LOG
+
+        if not log_file.exists():
+            return []
+
+        signals = []
+        cutoff_time = datetime.now() - timedelta(minutes=15)
+
+        try:
+            with open(log_file, "r", encoding="utf-8", errors="ignore") as f:
+                lines = f.readlines()
+
+                for line in lines[-100:]:
+                    try:
+                        if line.startswith("["):
+                            timestamp_str = line[1:20]
+                            timestamp = datetime.strptime(
+                                timestamp_str, "%Y-%m-%d %H:%M:%S"
+                            )
+
+                            if timestamp > cutoff_time:
+                                line_lower = line.lower()
+                                for keyword in MILESTONE_KEYWORDS:
+                                    if keyword in line_lower:
+                                        signals.append(keyword)
+                                        break
+
+                    except Exception:
+                        continue
+
+        except Exception as exc:
+            _logger.debug("Could not detect signals: %s", exc)
+
+        return list(set(signals))
 
     def detect_phase_completion(self):
-        """Return True if a phase-completion signal appears in recent logs.
+        """Detect phase completion from logs.
 
         Returns:
-            bool: True if phase completion detected.
+            bool: True if phase completion detected in recent logs.
         """
-        for line in self._read_recent_log_lines(minutes=15, tail=50):
-            if "phase-complete" in line.lower() or "phase completed" in line.lower():
-                return True
+        log_file = POLICY_HIT_LOG
+
+        if not log_file.exists():
+            return False
+
+        cutoff_time = datetime.now() - timedelta(minutes=15)
+
+        try:
+            with open(log_file, "r", encoding="utf-8", errors="ignore") as f:
+                lines = f.readlines()
+
+                for line in lines[-50:]:
+                    try:
+                        if line.startswith("["):
+                            timestamp_str = line[1:20]
+                            timestamp = datetime.strptime(
+                                timestamp_str, "%Y-%m-%d %H:%M:%S"
+                            )
+
+                            if timestamp > cutoff_time:
+                                if "phase-complete" in line.lower() or "phase completed" in line.lower():
+                                    return True
+
+                    except Exception:
+                        continue
+
+        except Exception:
+            pass
+
         return False
 
     def detect_todo_completion(self):
-        """Return True if a todo-completion signal appears in recent logs.
+        """Detect todo completion from logs.
 
         Returns:
-            bool: True if todo completion detected.
+            bool: True if todo completion detected in recent logs.
         """
-        for line in self._read_recent_log_lines(minutes=15, tail=50):
-            if "todo-complete" in line.lower() or "task completed" in line.lower():
-                return True
+        log_file = POLICY_HIT_LOG
+
+        if not log_file.exists():
+            return False
+
+        cutoff_time = datetime.now() - timedelta(minutes=15)
+
+        try:
+            with open(log_file, "r", encoding="utf-8", errors="ignore") as f:
+                lines = f.readlines()
+
+                for line in lines[-50:]:
+                    try:
+                        if line.startswith("["):
+                            timestamp_str = line[1:20]
+                            timestamp = datetime.strptime(
+                                timestamp_str, "%Y-%m-%d %H:%M:%S"
+                            )
+
+                            if timestamp > cutoff_time:
+                                if "todo-complete" in line.lower() or "task completed" in line.lower():
+                                    return True
+
+                    except Exception:
+                        continue
+
+        except Exception:
+            pass
+
         return False
 
-    # ------------------------------------------------------------------
-    # Trigger evaluation
-    # ------------------------------------------------------------------
-
     def check_commit_triggers(self, project_dir):
-        """Evaluate all commit triggers for *project_dir*.
+        """Check all commit triggers.
 
         Args:
-            project_dir: Absolute path to the git repository.
+            project_dir: Git repository root path.
 
         Returns:
-            dict: Keys:
-              should_commit  (bool)
-              triggers_met   (list of str)
-              trigger_count  (int)
-              details        (dict)
-              git_status     (dict, optional)
-              project_dir    (str)
-              timestamp      (str ISO-8601)
+            dict with keys:
+                - should_commit (bool): True if any trigger met
+                - triggers_met (list): Names of triggers that fired
+                - trigger_count (int): Number of triggers met
+                - details (dict): Details for each trigger
+                - git_status (dict): Git status info
+                - reason (str): Reason if should_commit is False
         """
-        base = {
-            "should_commit": False,
-            "triggers_met": [],
-            "trigger_count": 0,
-            "details": {},
+        triggers_met = []
+        trigger_details = {}
+
+        # Check if git repo
+        if not self.check_git_repo(project_dir):
+            return {
+                "should_commit": False,
+                "reason": "Not a git repository",
+                "triggers_met": [],
+                "trigger_count": 0,
+                "details": {},
+            }
+
+        # Get git status
+        git_status = self.get_git_status(project_dir)
+
+        if not git_status:
+            return {
+                "should_commit": False,
+                "reason": "Could not get git status",
+                "triggers_met": [],
+                "trigger_count": 0,
+                "details": {},
+            }
+
+        # No changes to commit
+        if git_status["staged_count"] == 0 and git_status["modified_count"] == 0:
+            return {
+                "should_commit": False,
+                "reason": "No changes to commit",
+                "triggers_met": [],
+                "trigger_count": 0,
+                "details": {},
+                "git_status": git_status,
+            }
+
+        # 1a. Modified files threshold (unstaged changes)
+        if git_status["modified_count"] >= THRESHOLDS["modified_files"]:
+            triggers_met.append("modified_files")
+            trigger_details["modified_files"] = {
+                "count": git_status["modified_count"],
+                "threshold": THRESHOLDS["modified_files"],
+                "reason": f"{git_status['modified_count']} modified files",
+            }
+
+        # 1b. Staged files threshold
+        if git_status["staged_count"] >= THRESHOLDS["staged_files"]:
+            triggers_met.append("staged_files")
+            trigger_details["staged_files"] = {
+                "count": git_status["staged_count"],
+                "threshold": THRESHOLDS["staged_files"],
+                "reason": f"{git_status['staged_count']} files staged",
+            }
+
+        # 2. Time since last commit
+        last_commit = self.get_last_commit_time(project_dir)
+        if last_commit:
+            time_diff = (datetime.now() - last_commit).total_seconds() / 60
+
+            if time_diff >= THRESHOLDS["time_since_last_commit_min"]:
+                triggers_met.append("time_since_commit")
+                trigger_details["time_since_commit"] = {
+                    "minutes": round(time_diff, 1),
+                    "threshold": THRESHOLDS["time_since_last_commit_min"],
+                    "reason": f"{time_diff:.1f} minutes since last commit",
+                }
+
+        # 3. Phase completion
+        if THRESHOLDS["phase_completion"] and self.detect_phase_completion():
+            triggers_met.append("phase_completion")
+            trigger_details["phase_completion"] = {
+                "reason": "Phase completion detected"
+            }
+
+        # 4. Todo completion
+        if THRESHOLDS["todo_completion"] and self.detect_todo_completion():
+            triggers_met.append("todo_completion")
+            trigger_details["todo_completion"] = {
+                "reason": "Todo completion detected"
+            }
+
+        # 5. Milestone signals
+        milestone_signals = self.detect_milestone_signals()
+        if milestone_signals:
+            triggers_met.append("milestone_signals")
+            trigger_details["milestone_signals"] = {
+                "signals": milestone_signals,
+                "reason": f"Milestone signals: {', '.join(milestone_signals)}",
+            }
+
+        return {
+            "should_commit": len(triggers_met) > 0,
+            "triggers_met": triggers_met,
+            "trigger_count": len(triggers_met),
+            "details": trigger_details,
+            "git_status": git_status,
             "project_dir": project_dir,
             "timestamp": datetime.now().isoformat(),
         }
 
-        if not _is_git_repo(project_dir):
-            base["reason"] = "Not a git repository"
-            return base
-
-        git_status = self.get_full_git_status(project_dir)
-        if not git_status:
-            base["reason"] = "Could not retrieve git status"
-            return base
-
-        base["git_status"] = git_status
-
-        if git_status["staged_count"] == 0 and git_status["modified_count"] == 0:
-            base["reason"] = "No changes to commit"
-            return base
-
-        triggers_met = []
-        details = {}
-
-        # Trigger 1a: modified (unstaged) files
-        if git_status["modified_count"] >= self.thresholds["modified_files"]:
-            triggers_met.append("modified_files")
-            details["modified_files"] = {
-                "count": git_status["modified_count"],
-                "threshold": self.thresholds["modified_files"],
-                "reason": "{} modified files (threshold: {})".format(
-                    git_status["modified_count"], self.thresholds["modified_files"]
-                ),
-            }
-
-        # Trigger 1b: staged files
-        if git_status["staged_count"] >= self.thresholds["staged_files"]:
-            triggers_met.append("staged_files")
-            details["staged_files"] = {
-                "count": git_status["staged_count"],
-                "threshold": self.thresholds["staged_files"],
-                "reason": "{} files staged (threshold: {})".format(
-                    git_status["staged_count"], self.thresholds["staged_files"]
-                ),
-            }
-
-        # Trigger 2: time since last commit
-        last_commit_dt = self.get_last_commit_time(project_dir)
-        if last_commit_dt:
-            elapsed = (datetime.now() - last_commit_dt).total_seconds() / 60
-            if elapsed >= self.thresholds["time_since_last_commit_min"]:
-                triggers_met.append("time_since_commit")
-                details["time_since_commit"] = {
-                    "minutes": round(elapsed, 1),
-                    "threshold": self.thresholds["time_since_last_commit_min"],
-                    "reason": "{:.1f} minutes since last commit".format(elapsed),
-                }
-
-        # Trigger 3: phase completion
-        if self.thresholds.get("phase_completion") and self.detect_phase_completion():
-            triggers_met.append("phase_completion")
-            details["phase_completion"] = {
-                "reason": "Phase completion detected in recent policy logs"
-            }
-
-        # Trigger 4: todo completion
-        if self.thresholds.get("todo_completion") and self.detect_todo_completion():
-            triggers_met.append("todo_completion")
-            details["todo_completion"] = {
-                "reason": "Todo completion detected in recent policy logs"
-            }
-
-        # Trigger 5: milestone signals
-        milestone_sigs = self.detect_milestone_signals()
-        if milestone_sigs:
-            triggers_met.append("milestone_signals")
-            details["milestone_signals"] = {
-                "signals": milestone_sigs,
-                "reason": "Milestone signals: {}".format(", ".join(milestone_sigs)),
-            }
-
-        base["should_commit"] = len(triggers_met) > 0
-        base["triggers_met"] = triggers_met
-        base["trigger_count"] = len(triggers_met)
-        base["details"] = details
-
-        _write_policy_log(
-            "auto-commit-detector",
-            "trigger-check",
-            "should_commit={}, triggers={}".format(base["should_commit"], len(triggers_met)),
-        )
-
-        return base
-
-    # ------------------------------------------------------------------
-    # Repository discovery
-    # ------------------------------------------------------------------
-
-    def find_git_repos_in_workspace(self, workspace_path=None):
-        """Discover all git repositories up to two levels deep under *workspace_path*.
-
-        Args:
-            workspace_path: Base directory to search. Defaults to DEFAULT_WORKSPACE.
-
-        Returns:
-            list: Absolute repository path strings.
-        """
-        base = Path(workspace_path or DEFAULT_WORKSPACE)
-        repos = []
-        if not base.exists():
-            _logger.warning("Workspace not found: %s", base)
-            return repos
-        try:
-            for item in base.iterdir():
-                if not item.is_dir():
-                    continue
-                if (item / ".git").exists():
-                    repos.append(str(item))
-                else:
-                    try:
-                        for sub in item.iterdir():
-                            if sub.is_dir() and (sub / ".git").exists():
-                                repos.append(str(sub))
-                    except PermissionError:
-                        pass
-        except PermissionError:
-            pass
-        return repos
-
-    def find_repos_with_changes(self, workspace_path=None):
-        """Return paths of workspace git repos that have uncommitted changes.
-
-        Args:
-            workspace_path: Base directory to search. Defaults to environment
-                            variable CLAUDE_WORKSPACE_DIR or current directory.
-
-        Returns:
-            list: Absolute repository path strings with uncommitted changes.
-        """
-        ws = workspace_path or os.environ.get("CLAUDE_WORKSPACE_DIR", os.getcwd())
-        repos_with_changes = []
-        for root, dirs, _files in os.walk(ws):
-            if ".git" in root.split(os.sep):
-                continue
-            if ".git" in dirs:
-                status = _run_git(["-C", root, "status", "--porcelain"], timeout=5)
-                if status.returncode == 0 and status.stdout.strip():
-                    repos_with_changes.append(root)
-        return repos_with_changes
-
-    # ------------------------------------------------------------------
-    # Formatted output
-    # ------------------------------------------------------------------
-
-    def print_detection_report(self, result):
-        """Print a human-readable trigger detection report to stdout.
-
-        Args:
-            result: Result dict from check_commit_triggers().
-        """
-        print("\n" + "=" * 70)
-        print("AUTO-COMMIT TRIGGER DETECTION")
-        print("=" * 70)
-        print("\nProject:   {}".format(result.get("project_dir", "N/A")))
-        print("Timestamp: {}".format(result.get("timestamp", "N/A")))
-
-        if result["should_commit"]:
-            print(
-                "\n[RECOMMENDED] AUTO-COMMIT RECOMMENDED ({} triggers met)".format(
-                    result["trigger_count"]
-                )
-            )
-            gs = result.get("git_status", {})
-            if gs:
-                print("\nGit Status:")
-                print("   Staged:    {} files".format(gs.get("staged_count", 0)))
-                print("   Modified:  {} files".format(gs.get("modified_count", 0)))
-                print("   Untracked: {} files".format(gs.get("untracked_count", 0)))
-            print("\nTriggers Met:")
-            for trigger in result["triggers_met"]:
-                detail = result["details"].get(trigger, {})
-                print(
-                    "   [OK] {}: {}".format(
-                        trigger.replace("_", " ").title(),
-                        detail.get("reason", "N/A"),
-                    )
-                )
-            print("\nAction: Auto-commit changes")
-        else:
-            print("\n[SKIPPED] NO COMMIT NEEDED")
-            print("   Reason: {}".format(result.get("reason", "No triggers met")))
-
-        print("\n" + "=" * 70)
-
 
 # ===========================================================================
-# Class 3: AutoCommitEnforcer
+# Class 3: AutoCommitEnforcer - Enforce commit policy requirements
 # ===========================================================================
 
 class AutoCommitEnforcer:
-    """Enforce commit policy requirements across all repositories.
+    """Enforces auto-commit policy requirements.
 
-    The enforcer is responsible for:
-      - Validating branch naming conventions (semantic label format)
-      - Validating commit message format (conventional commits)
-      - Scanning the workspace for repos with uncommitted changes
-      - Delegating commit execution to the engine
-      - Logging all enforcement decisions to policy-hits.log
+    Finds git repositories with uncommitted changes and triggers
+    the commit automation for each.
 
-    Branch naming rules (from github-branch-pr-policy.md):
-      Semantic label format: <label>/<issueId>
-      Valid labels: feature, bugfix, refactor, docs, test, chore, hotfix, release
-
-    Source: auto-commit-enforcer.py (consolidated)
+    Attributes:
+        None
     """
 
-    VALID_BRANCH_LABELS = (
-        "feature",
-        "bugfix",
-        "refactor",
-        "docs",
-        "test",
-        "chore",
-        "hotfix",
-        "release",
-    )
+    def __init__(self):
+        """Initialize AutoCommitEnforcer."""
+        pass
 
-    def __init__(self, engine=None):
-        """Initialise the enforcer.
-
-        Args:
-            engine: Optional GitAutoCommitEngine instance to reuse.
-        """
-        self._engine = engine
-
-    @property
-    def engine(self):
-        """Lazy-initialise the engine on first access."""
-        if self._engine is None:
-            self._engine = GitAutoCommitEngine()
-        return self._engine
-
-    # ------------------------------------------------------------------
-    # Branch validation
-    # ------------------------------------------------------------------
-
-    def validate_branch_name(self, branch):
-        """Check whether *branch* follows the semantic label/issueId convention.
-
-        Args:
-            branch: Git branch name string.
-
-        Returns:
-            dict: Keys: valid (bool), branch (str), message (str).
-        """
-        if not branch or branch in ("main", "master", "develop", "HEAD"):
-            return {
-                "valid": True,
-                "branch": branch,
-                "message": "Protected branch - no format required",
-            }
-
-        parts = branch.split("/")
-        if len(parts) < 2:
-            return {
-                "valid": False,
-                "branch": branch,
-                "message": (
-                    "Branch '{}' lacks semantic label prefix. "
-                    "Expected format: <label>/<issueId> "
-                    "(e.g. feature/42, bugfix/123). "
-                    "Valid labels: {}".format(branch, ", ".join(self.VALID_BRANCH_LABELS))
-                ),
-            }
-
-        label = parts[0].lower()
-        if label not in self.VALID_BRANCH_LABELS:
-            return {
-                "valid": False,
-                "branch": branch,
-                "message": (
-                    "Branch label '{}' is not a recognised semantic label. "
-                    "Valid labels: {}".format(label, ", ".join(self.VALID_BRANCH_LABELS))
-                ),
-            }
-
-        return {
-            "valid": True,
-            "branch": branch,
-            "message": "Branch '{}' follows semantic label convention.".format(branch),
-        }
-
-    def get_current_branch(self, repo_path):
-        """Return the currently checked-out branch name for *repo_path*.
-
-        Args:
-            repo_path: Git repository root path.
-
-        Returns:
-            str: Branch name string, or 'unknown' on failure.
-        """
-        result = _run_git(["rev-parse", "--abbrev-ref", "HEAD"], cwd=repo_path, timeout=5)
-        if result.returncode == 0:
-            return result.stdout.strip()
-        return "unknown"
-
-    # ------------------------------------------------------------------
-    # Commit message validation
-    # ------------------------------------------------------------------
-
-    def validate_commit_message(self, message):
-        """Validate a commit message against conventional commit format.
-
-        Rules checked:
-          - Non-empty subject line
-          - Subject line <= 72 characters
-          - Conventional prefix present: <type>: <summary>
-          - Recognised commit type
-
-        Args:
-            message: Full commit message string.
-
-        Returns:
-            dict: Keys: valid (bool), violations (list of str), message (str).
-        """
-        violations = []
-        lines = message.splitlines()
-        subject = lines[0].strip() if lines else ""
-
-        if not subject:
-            violations.append("Commit message subject is empty")
-        else:
-            if len(subject) > 72:
-                violations.append(
-                    "Subject line is {} chars; limit is 72".format(len(subject))
-                )
-            if ":" in subject:
-                prefix = subject.split(":")[0].strip()
-                if prefix not in COMMIT_TYPES:
-                    violations.append(
-                        "Unrecognised commit type '{}'. Valid types: {}".format(
-                            prefix, ", ".join(COMMIT_TYPES)
-                        )
-                    )
-            else:
-                violations.append(
-                    "Subject lacks conventional commit prefix (<type>: <summary>)"
-                )
-
-        valid = len(violations) == 0
-        return {
-            "valid": valid,
-            "violations": violations,
-            "message": "Commit message is valid" if valid else "; ".join(violations),
-        }
-
-    # ------------------------------------------------------------------
-    # Workspace scan helpers (from auto-commit-enforcer.py)
-    # ------------------------------------------------------------------
-
-    def find_git_repos_with_changes(self, workspace_path=None):
+    def find_git_repos_with_changes(self, workspace_dir=None):
         """Find all git repos in workspace with uncommitted changes.
 
         Args:
-            workspace_path: Base directory to scan. Defaults to
-                            CLAUDE_WORKSPACE_DIR env var or cwd.
+            workspace_dir: Base directory to search. Defaults to DEFAULT_WORKSPACE.
 
         Returns:
-            list: Absolute repository path strings with changes.
+            list: Paths to git repositories with changes.
         """
-        workspace = workspace_path or os.environ.get("CLAUDE_WORKSPACE_DIR", os.getcwd())
         repos_with_changes = []
+
+        # Detect workspace from environment or default
+        workspace = workspace_dir or os.environ.get(
+            "CLAUDE_WORKSPACE_DIR", str(DEFAULT_WORKSPACE)
+        )
 
         if not os.path.exists(workspace):
             return repos_with_changes
 
-        for root, dirs, _files in os.walk(workspace):
+        # Walk through workspace
+        for root, dirs, files in os.walk(workspace):
+            # Skip .git internals
             if ".git" in root.split(os.sep):
                 continue
+
+            # Check if this is a git repo
             if ".git" in dirs:
                 try:
-                    result = _run_git(["-C", root, "status", "--porcelain"])
+                    # Check git status
+                    result = _run_git(["status", "--porcelain"], cwd=root)
+
                     if result.returncode == 0 and result.stdout.strip():
                         repos_with_changes.append(root)
+
                 except Exception:
                     pass
 
         return repos_with_changes
 
-    def trigger_commit_for_repo(self, repo_path, push=False, dry_run=False):
-        """Trigger auto-commit for a specific repo via the engine.
+    def trigger_commit_for_repo(self, repo_path, engine):
+        """Trigger auto-commit for a specific repo.
 
         Args:
-            repo_path: Absolute path to the git repository.
-            push:      Whether to push after committing.
-            dry_run:   Whether to skip the actual commit.
+            repo_path: Path to git repository.
+            engine:    GitAutoCommitEngine instance for committing.
 
         Returns:
-            bool: True if commit was triggered successfully, False otherwise.
+            bool: True if successful or skipped, False on error.
         """
-        result = self.engine.commit_single_repo(
-            path=repo_path,
-            push=push,
-            dry_run=dry_run,
-            require_triggers=False,
-        )
-        if result.get("success") and not result.get("skipped"):
+        _logger.info(f"Processing repository: {os.path.basename(repo_path)}")
+
+        try:
+            # Run auto-commit
+            result = engine.auto_commit(repo_path, push=True)
+
+            if result.get("success"):
+                _write_policy_log(
+                    "auto-commit-enforcer",
+                    "commit-triggered",
+                    f"repo={os.path.basename(repo_path)}",
+                )
+                return True
+            else:
+                error = result.get("error", "Unknown error")
+                _write_policy_log(
+                    "auto-commit-enforcer",
+                    "commit-failed",
+                    f"repo={os.path.basename(repo_path)}, error={error}",
+                )
+                return False
+
+        except Exception as exc:
             _write_policy_log(
                 "auto-commit-enforcer",
-                "commit-triggered",
-                "repo={}".format(os.path.basename(repo_path)),
-            )
-            return True
-        elif result.get("skipped"):
-            _write_policy_log(
-                "auto-commit-enforcer",
-                "commit-skipped",
-                "repo={}, reason={}".format(
-                    os.path.basename(repo_path), result.get("reason", "")
-                ),
-            )
-            return True  # Skipped is not an error
-        else:
-            _write_policy_log(
-                "auto-commit-enforcer",
-                "commit-failed",
-                "repo={}, error={}".format(
-                    os.path.basename(repo_path), result.get("error", "")
-                ),
+                "commit-error",
+                f"repo={os.path.basename(repo_path)}, error={str(exc)}",
             )
             return False
 
-    # ------------------------------------------------------------------
-    # Enforcement execution
-    # ------------------------------------------------------------------
-
-    def enforce_auto_commit(self, workspace_path=None, dry_run=False):
-        """Scan all workspace repositories and trigger commits where needed.
+    def enforce_auto_commit(self, workspace_dir=None, engine=None):
+        """Enforce auto-commit on all repos with changes.
 
         Args:
-            workspace_path: Override workspace root for repository discovery.
-            dry_run:        If True, stage and generate messages but do not commit.
+            workspace_dir: Base directory to search for repos.
+            engine:        GitAutoCommitEngine instance. Creates if None.
 
         Returns:
-            dict: Keys: success (bool), processed (int), total (int), repos (list).
+            bool: True if enforcement successful or no changes found.
         """
-        print("\n" + "=" * 70)
-        print("AUTO-COMMIT ENFORCER")
-        print("=" * 70 + "\n")
+        if engine is None:
+            engine = GitAutoCommitEngine()
 
-        _write_policy_log(
-            "auto-commit-enforcer",
-            "enforce-start",
-            "workspace={}".format(workspace_path or "default"),
-        )
+        _logger.info("Starting auto-commit enforcement scan")
 
-        repos = self.find_git_repos_with_changes(workspace_path)
+        # Find repos with changes
+        repos = self.find_git_repos_with_changes(workspace_dir)
 
         if not repos:
-            print("[OK] No uncommitted changes found - nothing to commit\n")
+            _logger.info("No repositories with changes found")
             _write_policy_log("auto-commit-enforcer", "no-changes", "scan-complete")
-            return {"success": True, "processed": 0, "total": 0, "repos": []}
+            return True
 
-        print("[FOUND] {} repository(ies) with changes:\n".format(len(repos)))
-        for r in repos:
-            print("   - {}".format(os.path.basename(r)))
-        print()
+        _logger.info(f"Found {len(repos)} repository(ies) with changes")
 
-        results = []
+        # Trigger commit for each repo
         success_count = 0
-
-        for repo_path in repos:
-            print("\n" + "=" * 70)
-            print("Repository: {}".format(os.path.basename(repo_path)))
-            print("=" * 70 + "\n")
-
-            # Branch compliance check
-            branch = self.get_current_branch(repo_path)
-            branch_check = self.validate_branch_name(branch)
-            if not branch_check["valid"]:
-                print("[WARN] Branch validation: {}".format(branch_check["message"]))
-
-            if self.trigger_commit_for_repo(repo_path, dry_run=dry_run):
+        for repo in repos:
+            if self.trigger_commit_for_repo(repo, engine):
                 success_count += 1
-                results.append({"path": repo_path, "success": True})
-            else:
-                results.append({"path": repo_path, "success": False})
 
-        print("\n" + "=" * 70)
-        label = "OK" if success_count == len(repos) else "PARTIAL"
-        print(
-            "[{}] Processed {}/{} repositories".format(label, success_count, len(repos))
-        )
-        print("=" * 70 + "\n")
+        _logger.info(f"Processed {success_count}/{len(repos)} repositories")
 
-        _write_policy_log(
-            "auto-commit-enforcer",
-            "enforce-complete",
-            "success={}, total={}".format(success_count, len(repos)),
-        )
-
-        return {
-            "success": True,  # Enforcement is best-effort
-            "processed": success_count,
-            "total": len(repos),
-            "repos": results,
-        }
-
-    def check_task_requires_commit(self, task_id):
-        """Check whether a completed task should trigger an auto-commit.
-
-        Args:
-            task_id: Task identifier string.
-
-        Returns:
-            dict: Keys: required (bool), task_id (str), message (str).
-        """
-        _write_policy_log("auto-commit-enforcer", "task-check", "task_id={}".format(task_id))
-        return {
-            "required": True,
-            "task_id": task_id,
-            "message": "Task {} completed - auto-commit recommended for any file changes".format(
-                task_id
-            ),
-        }
+        return True  # Always return True - enforcement is best-effort
 
 
 # ===========================================================================
-# Class 4: GitAutoCommitEngine
+# Class 4: GitAutoCommitEngine - Core auto-commit orchestration
 # ===========================================================================
 
 class GitAutoCommitEngine:
     """Core auto-commit orchestration engine.
 
-    Coordinates the full commit workflow:
-      1. Validate repository
-      2. Evaluate commit triggers (via AutoCommitDetector)
-      3. Stage files
-      4. Generate semantic commit message (via GitAutoCommitAI)
-      5. Create commit
-      6. Optionally push to remote
-      7. Log result
+    Orchestrates detection, message generation, staging, and commit creation.
 
-    Supports single-repo and multi-repo (workspace) modes.
-
-    Sources: auto-commit.py + trigger-auto-commit.py (consolidated)
+    Attributes:
+        detector: AutoCommitDetector instance.
+        ai:       GitAutoCommitAI instance.
     """
 
     def __init__(self):
-        """Initialize GitAutoCommitEngine with AI and detector sub-components."""
-        self._ai = GitAutoCommitAI()
-        self._detector = AutoCommitDetector()
+        """Initialize GitAutoCommitEngine with detector and AI components."""
+        self.detector = AutoCommitDetector()
+        self.ai = GitAutoCommitAI()
 
-    # ------------------------------------------------------------------
-    # Git operations
-    # ------------------------------------------------------------------
-
-    def _stage_files(self, path, mode="all"):
-        """Stage files for commit.
+    def auto_commit(self, project_dir, push=False, dry_run=False):
+        """Execute auto-commit process.
 
         Args:
-            path: Git repository root path.
-            mode: 'all' stages everything ('git add .'); 'tracked' stages
-                  only tracked files ('git add -u').
+            project_dir: Git repository root path.
+            push:        If True, push after commit.
+            dry_run:     If True, don't actually commit.
 
         Returns:
-            bool: True on success, False on failure.
+            dict with keys:
+                - success (bool)
+                - reason (str): Description of result
+                - committed (bool): True if commit was created
+                - pushed (bool): True if changes were pushed
         """
-        if mode == "tracked":
-            result = _run_git(["add", "-u"], cwd=path, timeout=10)
-        else:
-            result = _run_git(["add", "."], cwd=path, timeout=10)
-        if result.returncode != 0:
-            _logger.error("Failed to stage files in %s: %s", path, result.stderr)
-            return False
-        return True
+        _logger.info(f"Starting auto-commit for {project_dir}")
 
-    def _create_commit(self, path, message, dry_run=False):
-        """Create a git commit with the given message.
+        # Check if git repo
+        if not self.detector.check_git_repo(project_dir):
+            _logger.error("Not a git repository")
+            return {"success": False, "reason": "Not a git repository"}
 
-        Args:
-            path:    Git repository root path.
-            message: Full commit message string.
-            dry_run: If True, print message but do not commit.
+        # Check triggers
+        detection = self.detector.check_commit_triggers(project_dir)
 
-        Returns:
-            bool: True on success or dry_run, False on git failure.
-        """
-        if dry_run:
-            print("\n[DRY RUN] Would create commit:")
-            print("=" * 70)
-            print(message)
-            print("=" * 70)
-            return True
-        result = _run_git(["commit", "-m", message], cwd=path, timeout=30)
-        if result.returncode == 0:
-            print("\n[OK] Commit created successfully!")
-            if result.stdout:
-                print(result.stdout)
-            return True
-        _logger.error("Commit failed in %s: %s", path, result.stderr)
-        print("\n[ERROR] Commit failed: {}".format(result.stderr), file=sys.stderr)
-        return False
+        if not detection.get("should_commit"):
+            _logger.info("No commit triggers met")
+            return {"success": True, "reason": "No triggers met"}
 
-    def _push_to_remote(self, path, dry_run=False):
-        """Push committed changes to the configured remote.
+        _logger.info(f"{detection['trigger_count']} triggers met")
 
-        Args:
-            path:    Git repository root path.
-            dry_run: If True, print what would be pushed but skip execution.
+        # Get task context for better commit message
+        context_task = _load_task_context()
+        task_context = context_task.get("task_subject", "")
 
-        Returns:
-            bool: True on success or dry_run, False on failure.
-        """
-        if dry_run:
-            print("\n[DRY RUN] Would push to remote")
-            return True
-        result = _run_git(["push"], cwd=path, timeout=60)
-        if result.returncode == 0:
-            print("\n[OK] Pushed to remote!")
-            return True
-        _logger.warning("Push failed for %s: %s", path, result.stderr)
-        print("\n[WARN] Push failed: {}".format(result.stderr), file=sys.stderr)
-        return False
-
-    # ------------------------------------------------------------------
-    # Single-repo commit
-    # ------------------------------------------------------------------
-
-    def commit_single_repo(
-        self,
-        path,
-        context=None,
-        push=False,
-        dry_run=False,
-        require_triggers=False,
-    ):
-        """Execute the full commit workflow for a single repository.
-
-        Args:
-            path:             Absolute path to the git repository.
-            context:          Optional context string for commit message generation.
-            push:             Push to remote after committing.
-            dry_run:          Stage and generate message without creating a commit.
-            require_triggers: If True, skip commit when no trigger conditions are met.
-
-        Returns:
-            dict: Result with keys: path, success, committed, pushed (optional),
-                  skipped (optional), reason (optional), error (optional),
-                  changes (dict), commit_message (str), timestamp (str).
-        """
-        now = datetime.now().isoformat()
-
-        if not _is_git_repo(path):
-            return {
-                "path": path,
-                "success": False,
-                "error": "Not a git repository",
-                "suggestion": "Run from a directory containing a .git folder",
-                "timestamp": now,
-            }
-
-        # Gate on trigger conditions if requested
-        if require_triggers:
-            trigger_result = self._detector.check_commit_triggers(path)
-            if not trigger_result["should_commit"]:
-                return {
-                    "path": path,
-                    "success": True,
-                    "skipped": True,
-                    "reason": trigger_result.get("reason", "No trigger conditions met"),
-                    "timestamp": now,
-                }
-
-        # Get current status
-        status_raw = self._ai.get_git_status(path)
-        if not status_raw:
-            return {
-                "path": path,
-                "success": True,
-                "skipped": True,
-                "reason": "No changes to commit",
-                "timestamp": now,
-            }
-
-        changes = self._ai.parse_status(status_raw)
-        style = self._ai.get_recent_commit_style(path)
-        task_ctx = self._ai._load_task_context()
-        commit_msg = self._ai.build_commit_message(
-            changes,
-            context=context,
-            task_subject=task_ctx.get("task_subject", ""),
-            style=style,
+        # Generate and commit
+        result = self.ai.auto_commit(
+            project_dir, context=task_context, push=push, dry_run=dry_run
         )
 
-        result = {
-            "path": path,
-            "changes": changes,
-            "commit_message": commit_msg,
-            "dry_run": dry_run,
-            "timestamp": now,
-        }
-
-        if not dry_run:
-            if not self._stage_files(path, mode="all"):
-                result["success"] = False
-                result["error"] = "Failed to stage files"
-                return result
-
-            if not self._create_commit(path, commit_msg, dry_run=False):
-                result["success"] = False
-                result["error"] = "Failed to create commit"
-                return result
-
-            result["success"] = True
-            result["committed"] = True
-
+        if not dry_run and result.get("success"):
             _write_policy_log(
                 "auto-commit-engine",
                 "commit-created",
-                "path={}, files={}".format(path, sum(len(v) for v in changes.values())),
+                f"triggers={detection['trigger_count']}, files={detection['git_status'].get('staged_count', 0)}",
             )
 
-            if push:
-                pushed = self._push_to_remote(path, dry_run=False)
-                result["pushed"] = pushed
-                if not pushed:
-                    result["push_error"] = "Push failed (see stderr)"
-        else:
-            result["success"] = True
-
-        self._ai.log_commit(result)
         return result
 
-    # ------------------------------------------------------------------
-    # Multi-repo (workspace) commit
-    # ------------------------------------------------------------------
 
-    def commit_workspace(
-        self,
-        workspace_path=None,
-        context=None,
-        push=False,
-        dry_run=False,
-        require_triggers=True,
-    ):
-        """Discover and commit to all repositories in the workspace.
+# ===========================================================================
+# Class 5: TriggerAutoCommit - Trigger commit automation on lifecycle events
+# ===========================================================================
 
-        Args:
-            workspace_path:   Override workspace root path.
-            context:          Optional context for commit messages.
-            push:             Push each repo after committing.
-            dry_run:          Stage/generate messages without committing.
-            require_triggers: Gate each commit on trigger conditions.
+class TriggerAutoCommit:
+    """Trigger auto-commit automation on lifecycle events.
 
-        Returns:
-            dict: Keys: success (bool), multi_repo (bool), total_repos (int),
-                  repos (list of result dicts).
-        """
-        ws = workspace_path or str(DEFAULT_WORKSPACE)
-        repos = self._detector.find_git_repos_in_workspace(ws)
+    Responds to events like task completion, phase completion, etc.
 
-        if not repos:
-            return {
-                "success": False,
-                "error": "No git repositories found in {}".format(ws),
-                "multi_repo": True,
-                "total_repos": 0,
-                "repos": [],
-            }
+    Attributes:
+        engine: GitAutoCommitEngine instance.
+    """
 
-        results = []
-        for repo_path in repos:
-            r = self.commit_single_repo(
-                path=repo_path,
-                context=context,
-                push=push,
-                dry_run=dry_run,
-                require_triggers=require_triggers,
-            )
-            results.append(r)
+    def __init__(self):
+        """Initialize TriggerAutoCommit with an engine."""
+        self.engine = GitAutoCommitEngine()
 
-        return {
-            "success": True,
-            "multi_repo": True,
-            "total_repos": len(repos),
-            "repos": results,
-        }
-
-    # ------------------------------------------------------------------
-    # Trigger-based auto-commit (from trigger-auto-commit.py)
-    # ------------------------------------------------------------------
-
-    def trigger_commit(
-        self,
-        project_dir,
-        event="manual",
-        push=True,
-        dry_run=False,
-    ):
-        """Trigger an auto-commit in response to an event signal.
-
-        Checks detector triggers before proceeding and logs the event.
+    def find_git_root(self, start_dir, max_levels=5):
+        """Find git root directory by walking up.
 
         Args:
-            project_dir: Starting directory; git root is discovered automatically.
-            event:       Event label (e.g. 'task-completed', 'phase-complete').
-            push:        Push after committing.
-            dry_run:     Do not actually commit.
+            start_dir:  Starting directory.
+            max_levels: Maximum parent levels to traverse.
 
         Returns:
-            dict: Result with success (bool) and event details.
+            str: Path to git root, or None if not found.
         """
-        print("\n" + "=" * 70)
-        print("AUTO-COMMIT TRIGGER")
-        print("=" * 70)
-        print("\nEvent:     {}".format(event))
-        print("Directory: {}".format(project_dir))
-        print("Push:      {}".format("Yes" if push else "No"))
-        print()
+        return _find_git_root(start_dir, max_levels)
 
-        git_root = _find_git_root(project_dir)
+    def trigger_auto_commit(self, project_dir, event="manual", push=True):
+        """Trigger auto-commit process.
+
+        Args:
+            project_dir: Project directory (will search for git root).
+            event:       Event name that triggered this (e.g., 'task-completed').
+            push:        If True, push after commit.
+
+        Returns:
+            bool: True if successful, False otherwise.
+        """
+        # Find git root
+        git_root = self.find_git_root(project_dir)
+
         if not git_root:
-            msg = "No git repository found starting from {}".format(project_dir)
-            print("[ERROR] {}".format(msg))
+            _logger.error(f"No git repository found from {project_dir}")
             _write_policy_log(
                 "auto-commit-trigger",
                 "no-git-repo",
-                "event={}, dir={}".format(event, project_dir),
+                f"event={event}, dir={project_dir}",
             )
-            return {"success": False, "error": msg, "event": event}
+            return False
 
-        print("[OK] Git repository: {}".format(git_root))
+        _logger.info(f"Found git repository: {git_root}")
         _write_policy_log(
             "auto-commit-trigger",
             "triggered",
-            "event={}, repo={}".format(event, os.path.basename(git_root)),
+            f"event={event}, repo={os.path.basename(git_root)}",
         )
 
-        # Check detector
-        trigger_result = self._detector.check_commit_triggers(git_root)
-        if not trigger_result["should_commit"]:
-            reason = trigger_result.get("reason", "No triggers met")
-            print("\n[SKIPPED] No commit needed: {}".format(reason))
+        # Run auto-commit
+        try:
+            result = self.engine.auto_commit(git_root, push=push, dry_run=False)
+
+            if result.get("success"):
+                _logger.info("Auto-commit successful")
+                _write_policy_log(
+                    "auto-commit-trigger",
+                    "success",
+                    f"event={event}, repo={os.path.basename(git_root)}, push={push}",
+                )
+                return True
+            else:
+                _logger.warning(f"Auto-commit failed: {result.get('reason')}")
+                _write_policy_log(
+                    "auto-commit-trigger",
+                    "failed",
+                    f"event={event}, repo={os.path.basename(git_root)}",
+                )
+                return False
+
+        except Exception as exc:
+            _logger.error(f"Error during auto-commit: {exc}")
             _write_policy_log(
                 "auto-commit-trigger",
-                "skipped",
-                "event={}, reason={}".format(event, reason),
+                "error",
+                f"event={event}, error={str(exc)}",
             )
-            return {"success": False, "skipped": True, "reason": reason, "event": event}
-
-        print("[OK] Commit recommended\n")
-
-        result = self.commit_single_repo(
-            path=git_root,
-            push=push,
-            dry_run=dry_run,
-            require_triggers=False,
-        )
-        result["event"] = event
-
-        if result.get("success") and result.get("committed"):
-            print("\n[OK] AUTO-COMMIT SUCCESSFUL!")
-            _write_policy_log(
-                "auto-commit-trigger",
-                "success",
-                "event={}, repo={}, push={}".format(
-                    event, os.path.basename(git_root), push
-                ),
-            )
-        elif result.get("skipped"):
-            _write_policy_log("auto-commit-trigger", "skipped", "event={}".format(event))
-        else:
-            _write_policy_log(
-                "auto-commit-trigger",
-                "failed",
-                "event={}, error={}".format(event, result.get("error")),
-            )
-
-        return result
-
-    # ------------------------------------------------------------------
-    # Formatted output
-    # ------------------------------------------------------------------
-
-    def print_commit_result(self, result):
-        """Print a formatted commit result summary to stdout.
-
-        Args:
-            result: Result dict from commit_single_repo() or commit_workspace().
-        """
-        print("\n" + "=" * 70)
-        print("Git Auto-Commit Engine - Result")
-        print("=" * 70 + "\n")
-
-        if result.get("multi_repo"):
-            total = result["total_repos"]
-            print("Found {} git repositories\n".format(total))
-            for i, r in enumerate(result.get("repos", []), 1):
-                rname = Path(r.get("path", "?")).name
-                print("[{}/{}] {}".format(i, total, rname))
-                if r.get("skipped"):
-                    print("   SKIPPED: {}".format(r.get("reason", "No changes")))
-                elif r.get("success"):
-                    ch = r.get("changes", {})
-                    total_ch = sum(len(v) for v in ch.values())
-                    print("   OK: Committed {} changes".format(total_ch))
-                    if r.get("pushed"):
-                        print("   OK: Pushed to remote")
-                else:
-                    print("   ERROR: {}".format(r.get("error", "Unknown error")))
-                print()
-            print("=" * 70 + "\n")
-            return
-
-        if result.get("skipped"):
-            print("SKIPPED: {}".format(result.get("reason")))
-            print("Path: {}".format(result.get("path")))
-            print("\n" + "=" * 70 + "\n")
-            return
-
-        if not result.get("success") and result.get("error"):
-            print("ERROR: {}".format(result["error"]))
-            if result.get("suggestion"):
-                print("\nSuggestion: {}".format(result["suggestion"]))
-            print("\n" + "=" * 70 + "\n")
-            return
-
-        ch = result.get("changes", {})
-        print("Changes Summary:")
-        print("   Added:    {}".format(len(ch.get("added", []))))
-        print("   Modified: {}".format(len(ch.get("modified", []))))
-        print("   Deleted:  {}".format(len(ch.get("deleted", []))))
-        print("   Renamed:  {}".format(len(ch.get("renamed", []))))
-
-        print("\nGenerated Commit Message:")
-        print("-" * 70)
-        print(result.get("commit_message", "(none)"))
-        print("-" * 70)
-
-        if result.get("dry_run"):
-            print("\n[DRY RUN] No actual commit was created")
-        else:
-            if result.get("committed"):
-                print("\n[OK] Changes committed successfully!")
-            if result.get("pushed"):
-                print("[OK] Changes pushed to remote!")
-            elif result.get("push_error"):
-                print("[WARN] Push failed: {}".format(result["push_error"]))
-
-        print("\n" + "=" * 70 + "\n")
-
-    # ------------------------------------------------------------------
-    # generate_commit_message compat shim (from auto-commit.py)
-    # ------------------------------------------------------------------
-
-    def generate_commit_message(self, git_status, triggers, style=None):
-        """Generate a smart commit message using git status and trigger context.
-
-        Backwards-compatible wrapper used by the legacy auto-commit.py workflow.
-
-        Args:
-            git_status: Git status dict (staged, modified, untracked lists).
-            triggers:   Trigger details dict.
-            style:      Optional style dict from get_recent_commit_style().
-
-        Returns:
-            str: Commit message string.
-        """
-        staged_files = git_status.get("staged", [])
-        task_ctx = self._ai._load_task_context()
-        task_subject = task_ctx.get("task_subject", "")
-
-        # Build a synthetic changes dict from staged files
-        changes = {
-            "added": [f for f in staged_files if not f.endswith((".md", ".txt"))],
-            "modified": git_status.get("modified", []),
-            "deleted": [],
-            "renamed": [],
-        }
-
-        return self._ai.build_commit_message(
-            changes,
-            task_subject=task_subject,
-            style=style,
-        )
+            return False
 
 
 # ===========================================================================
-# Class 5: GitAutoCommitPolicy
+# Class 6: GitAutoCommitPolicy - Main unified policy orchestrator
 # ===========================================================================
 
 class GitAutoCommitPolicy:
-    """Unified policy interface for git auto-commit operations.
+    """Unified git auto-commit policy interface.
 
-    This is the primary entry point for external callers and the CLI.
-    Delegates to the four specialised subsystems based on the requested
-    policy operation.
+    Orchestrates all components and provides main entry points for:
+      - Detection of uncommitted changes
+      - Message generation
+      - Enforcement of commit policy
+      - Validation and reporting
 
-    Public API:
-      enforce()  - Initialise all commit subsystems and run enforcement
-      validate() - Check git state and policy compliance
-      report()   - Generate commit statistics and policy status report
-
-    VERSION: 2.0.0
+    Attributes:
+        detector: AutoCommitDetector instance.
+        ai:       GitAutoCommitAI instance.
+        enforcer: AutoCommitEnforcer instance.
+        engine:   GitAutoCommitEngine instance.
+        trigger:  TriggerAutoCommit instance.
     """
 
-    VERSION = "2.0.0"
-
-    def __init__(self, workspace_path=None):
-        """Initialise the unified policy.
-
-        Args:
-            workspace_path: Override workspace root for multi-repo operations.
-        """
-        self.workspace_path = workspace_path or str(DEFAULT_WORKSPACE)
-        self._ai = GitAutoCommitAI()
-        self._detector = AutoCommitDetector()
-        self._engine = GitAutoCommitEngine()
-        self._enforcer = AutoCommitEnforcer(engine=self._engine)
-
-    # ------------------------------------------------------------------
-    # Policy interface: enforce
-    # ------------------------------------------------------------------
-
-    def enforce(
-        self,
-        project_dir=None,
-        push=False,
-        dry_run=False,
-        event="policy-enforce",
-    ):
-        """Initialise all commit subsystems and run enforcement.
-
-        When *project_dir* is provided, enforces on that specific repository.
-        Otherwise scans the entire workspace.
-
-        Args:
-            project_dir: Optional specific repository path to enforce on.
-            push:        Push after each successful commit.
-            dry_run:     Stage and generate messages without committing.
-            event:       Label for the enforcement event in logs.
-
-        Returns:
-            dict: Enforcement result.
-        """
-        _write_policy_log("git-auto-commit-policy", "enforce-start", "event={}".format(event))
-
-        if project_dir:
-            result = self._engine.trigger_commit(
-                project_dir=project_dir,
-                event=event,
-                push=push,
-                dry_run=dry_run,
-            )
-        else:
-            result = self._enforcer.enforce_auto_commit(
-                workspace_path=self.workspace_path,
-                dry_run=dry_run,
-            )
-
-        _write_policy_log(
-            "git-auto-commit-policy",
-            "enforce-complete",
-            "success={}".format(result.get("success")),
-        )
-        return result
-
-    # ------------------------------------------------------------------
-    # Policy interface: validate
-    # ------------------------------------------------------------------
-
-    def validate(self, project_dir=None):
-        """Check git state and policy compliance for a repository.
-
-        Performs:
-          - Repository existence check
-          - Branch naming convention validation
-          - Commit trigger evaluation
-          - Pending changes summary
-          - Sample commit message format validation
-
-        Args:
-            project_dir: Repository path to validate. Defaults to cwd.
-
-        Returns:
-            dict: Keys: valid (bool), checks (list of dict), path (str).
-        """
-        path = project_dir or os.getcwd()
-        checks = []
-        all_valid = True
-
-        print("\n" + "=" * 70)
-        print("GIT AUTO-COMMIT POLICY - VALIDATION")
-        print("=" * 70 + "\n")
-        print("Repository: {}\n".format(path))
-
-        # Check 1: Is git repo?
-        is_repo = _is_git_repo(path)
-        c1 = {
-            "check": "git_repository",
-            "valid": is_repo,
-            "message": "Directory is a git repository" if is_repo else "Not a git repository",
-        }
-        checks.append(c1)
-        print("{} Git Repository: {}".format("[OK]" if is_repo else "[FAIL]", c1["message"]))
-        if not is_repo:
-            all_valid = False
-
-        if is_repo:
-            # Check 2: Branch naming
-            branch = self._enforcer.get_current_branch(path)
-            branch_result = self._enforcer.validate_branch_name(branch)
-            c2 = {
-                "check": "branch_naming",
-                "valid": branch_result["valid"],
-                "message": branch_result["message"],
-                "branch": branch,
-            }
-            checks.append(c2)
-            print(
-                "{} Branch Naming: {}".format(
-                    "[OK]" if branch_result["valid"] else "[WARN]",
-                    branch_result["message"],
-                )
-            )
-            if not branch_result["valid"]:
-                all_valid = False
-
-            # Check 3: Commit triggers (informational)
-            trigger_result = self._detector.check_commit_triggers(path)
-            gs = trigger_result.get("git_status", {})
-            c3 = {
-                "check": "commit_triggers",
-                "valid": True,
-                "should_commit": trigger_result["should_commit"],
-                "trigger_count": trigger_result["trigger_count"],
-                "triggers_met": trigger_result["triggers_met"],
-                "git_status": gs,
-                "message": (
-                    "{} trigger(s) met".format(trigger_result["trigger_count"])
-                    if trigger_result["should_commit"]
-                    else "No commit triggers active"
-                ),
-            }
-            checks.append(c3)
-            print("[INFO] Commit Triggers: {}".format(c3["message"]))
-            if gs:
-                print(
-                    "       Staged={}, Modified={}, Untracked={}".format(
-                        gs.get("staged_count", 0),
-                        gs.get("modified_count", 0),
-                        gs.get("untracked_count", 0),
-                    )
-                )
-
-            # Check 4: Sample commit message validation
-            if trigger_result["should_commit"]:
-                sample_msg = self._ai.generate_message_for_path(path)
-                if sample_msg:
-                    msg_check = self._enforcer.validate_commit_message(sample_msg)
-                    c4 = {
-                        "check": "commit_message_format",
-                        "valid": msg_check["valid"],
-                        "message": msg_check["message"],
-                        "sample_message": sample_msg.splitlines()[0],
-                    }
-                    checks.append(c4)
-                    print(
-                        "{} Message Format: {}".format(
-                            "[OK]" if msg_check["valid"] else "[WARN]",
-                            msg_check["message"],
-                        )
-                    )
-                    if not msg_check["valid"]:
-                        all_valid = False
-
-        _write_policy_log(
-            "git-auto-commit-policy",
-            "validate",
-            "path={}, valid={}".format(path, all_valid),
-        )
-
-        print("\nOverall: {}".format("VALID" if all_valid else "ISSUES FOUND"))
-        print("=" * 70 + "\n")
-
-        return {"valid": all_valid, "checks": checks, "path": path}
-
-    # ------------------------------------------------------------------
-    # Policy interface: report
-    # ------------------------------------------------------------------
-
-    def report(self, project_dir=None):
-        """Generate a commit statistics and policy status report.
-
-        Reads from the commit log and policy-hits.log to produce a summary
-        of recent commit activity, success rates, and policy enforcement events.
-
-        Args:
-            project_dir: Optional path (unused, kept for API consistency).
-
-        Returns:
-            dict: Keys: total_commits, successful_commits, failed_commits,
-                  dry_runs, enforcement_events, last_commit_ts (str or None),
-                  workspace_repos (int), repos_with_changes (int).
-        """
-        print("\n" + "=" * 70)
-        print("GIT AUTO-COMMIT POLICY - STATISTICS REPORT")
-        print("=" * 70 + "\n")
-        print("Workspace: {}".format(self.workspace_path))
-        print("Report generated: {}\n".format(datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
-
-        # Parse commit log
-        total_commits = 0
-        successful = 0
-        failed = 0
-        dry_runs = 0
-        last_ts = None
-
-        if COMMIT_LOG.exists():
-            try:
-                with open(COMMIT_LOG, "r", encoding="utf-8") as fh:
-                    for line in fh:
-                        line = line.strip()
-                        if not line:
-                            continue
-                        try:
-                            entry = json.loads(line)
-                        except json.JSONDecodeError:
-                            continue
-                        total_commits += 1
-                        if entry.get("dry_run"):
-                            dry_runs += 1
-                        elif entry.get("success"):
-                            successful += 1
-                        else:
-                            failed += 1
-                        ts = entry.get("timestamp")
-                        if ts and (last_ts is None or ts > last_ts):
-                            last_ts = ts
-            except OSError as exc:
-                _logger.warning("Could not read commit log: %s", exc)
-
-        # Count policy enforcement events
-        enforcement_events = 0
-        if POLICY_HIT_LOG.exists():
-            try:
-                with open(POLICY_HIT_LOG, "r", encoding="utf-8", errors="ignore") as fh:
-                    for line in fh:
-                        if "auto-commit" in line or "git-auto-commit" in line:
-                            enforcement_events += 1
-            except OSError:
-                pass
-
-        # Workspace repo discovery and status
-        repos = self._detector.find_git_repos_in_workspace(self.workspace_path)
-        repos_with_changes = 0
-
-        print("Repositories in workspace: {}".format(len(repos)))
-        for rp in repos:
-            gs = self._detector.get_full_git_status(rp)
-            if gs and (gs["staged_count"] > 0 or gs["modified_count"] > 0):
-                repos_with_changes += 1
-                print(
-                    "   [CHANGES] {}: staged={}, modified={}, untracked={}".format(
-                        Path(rp).name,
-                        gs["staged_count"],
-                        gs["modified_count"],
-                        gs["untracked_count"],
-                    )
-                )
-
-        print("\nCommit Log Statistics (all time):")
-        print("   Total recorded commits:  {}".format(total_commits))
-        print("   Successful commits:      {}".format(successful))
-        print("   Failed commits:          {}".format(failed))
-        print("   Dry runs:                {}".format(dry_runs))
-        print("   Last commit recorded:    {}".format(last_ts or "N/A"))
-        print("\nPolicy Enforcement Events: {}".format(enforcement_events))
-        print("Repos with pending changes: {}/{}".format(repos_with_changes, len(repos)))
-
-        _write_policy_log(
-            "git-auto-commit-policy",
-            "report-generated",
-            "total_commits={}".format(total_commits),
-        )
-
-        print("\n" + "=" * 70 + "\n")
-
-        return {
-            "total_commits": total_commits,
-            "successful_commits": successful,
-            "failed_commits": failed,
-            "dry_runs": dry_runs,
-            "enforcement_events": enforcement_events,
-            "last_commit_ts": last_ts,
-            "workspace_repos": len(repos),
-            "repos_with_changes": repos_with_changes,
-        }
-
-    # ------------------------------------------------------------------
-    # Convenience wrappers
-    # ------------------------------------------------------------------
+    def __init__(self):
+        """Initialize GitAutoCommitPolicy with all components."""
+        self.detector = AutoCommitDetector()
+        self.ai = GitAutoCommitAI()
+        self.enforcer = AutoCommitEnforcer()
+        self.engine = GitAutoCommitEngine()
+        self.trigger = TriggerAutoCommit()
 
     def detect(self, project_dir=None):
-        """Run trigger detection for *project_dir* and print the report.
+        """Detect when to commit changes.
 
         Args:
-            project_dir: Repository path. Defaults to cwd.
+            project_dir: Git repository root. Defaults to current directory.
 
         Returns:
-            dict: Trigger detection result from check_commit_triggers().
+            dict: Detection result with triggers_met, details, etc.
         """
-        path = project_dir or os.getcwd()
-        result = self._detector.check_commit_triggers(path)
-        self._detector.print_detection_report(result)
-        return result
+        if not project_dir:
+            project_dir = os.getcwd()
 
-    def commit(
-        self,
-        project_dir=None,
-        context=None,
-        push=False,
-        dry_run=False,
-        auto_find=False,
-    ):
-        """Execute a commit for the given repository.
+        return self.detector.check_commit_triggers(project_dir)
 
-        When *auto_find* is True and *project_dir* is not a git repo,
-        searches the workspace for repositories and commits them all.
+    def commit(self, project_dir=None, push=False, dry_run=False):
+        """Execute auto-commit.
 
         Args:
-            project_dir: Repository path. Defaults to cwd.
-            context:     Optional context for commit message generation.
-            push:        Push after committing.
-            dry_run:     Stage/generate without committing.
-            auto_find:   Search workspace when cwd is not a git repo.
+            project_dir: Git repository root. Defaults to current directory.
+            push:        If True, push after commit.
+            dry_run:     If True, don't actually commit.
 
         Returns:
-            dict: Commit result.
+            dict: Commit result with success, committed, pushed, etc.
         """
-        path = project_dir or os.getcwd()
+        if not project_dir:
+            project_dir = os.getcwd()
 
-        if not _is_git_repo(path):
-            if auto_find:
-                result = self._engine.commit_workspace(
-                    workspace_path=self.workspace_path,
-                    context=context,
-                    push=push,
-                    dry_run=dry_run,
-                    require_triggers=False,
-                )
-            else:
-                result = {
-                    "success": False,
-                    "error": "Not a git repository",
-                    "suggestion": "Use --auto-find to search workspace, or cd to a git repo",
-                }
-        else:
-            result = self._engine.commit_single_repo(
-                path=path,
-                context=context,
-                push=push,
-                dry_run=dry_run,
-                require_triggers=False,
-            )
+        return self.ai.auto_commit(project_dir, push=push, dry_run=dry_run)
 
-        self._engine.print_commit_result(result)
-        return result
-
-    def generate_ai_message(self, project_dir=None, context=None):
-        """Generate and print an AI commit message for the repository.
+    def ai_message(self, project_dir=None, context=None):
+        """Generate AI commit message without committing.
 
         Args:
-            project_dir: Repository path. Defaults to cwd.
-            context:     Optional context string.
+            project_dir: Git repository root. Defaults to current directory.
+            context:     Optional task context for better messages.
 
         Returns:
-            str: Generated commit message string, or None if no changes.
+            dict: Message generation result with commit_message, changes, etc.
         """
-        path = project_dir or os.getcwd()
-        msg = self._ai.generate_message_for_path(path, context=context)
-        print("\n" + "=" * 70)
-        print("AI-Generated Commit Message")
-        print("=" * 70 + "\n")
-        if msg:
-            print(msg)
-        else:
-            print("No changes detected - cannot generate commit message")
-        print("\n" + "=" * 70 + "\n")
-        return msg
+        if not project_dir:
+            project_dir = os.getcwd()
 
+        if not self.ai.check_git_repo(project_dir):
+            return {"success": False, "error": "Not a git repository"}
 
-# ===========================================================================
-# Module-level backwards-compatible functions
-# (Preserves the original git-auto-commit-policy.py function API)
-# ===========================================================================
+        status = self.ai.get_git_status(project_dir)
+        if not status:
+            return {"success": False, "error": "Could not get git status"}
 
-def run_git_command(args, timeout=30, cwd=None):
-    """Run a git command and return the result.
+        diff = self.ai.get_git_diff(project_dir)
+        changes = self.ai.analyze_changes(status, diff)
+        style = self.ai.get_recent_commit_style(project_dir)
 
-    Backwards-compatible wrapper around _run_git.
+        message = self.ai.generate_commit_message(changes, context, style)
 
-    Args:
-        args:    List of git sub-command arguments.
-        timeout: Timeout in seconds.
-        cwd:     Working directory.
-
-    Returns:
-        subprocess.CompletedProcess or error object with returncode/stdout/stderr.
-    """
-    return _run_git(args, cwd=cwd, timeout=timeout)
-
-
-def log_policy_hit(action, context=""):
-    """Log a policy hit entry to the central policy log.
-
-    Args:
-        action:  Short action label.
-        context: Free-form context string.
-    """
-    _write_policy_log("git-auto-commit-policy", action, context)
-
-
-def check_git_repo(project_dir):
-    """Check if directory is a git repo.
-
-    Args:
-        project_dir: Directory path to check.
-
-    Returns:
-        bool: True if it is a git repository.
-    """
-    return _is_git_repo(project_dir)
-
-
-def get_git_status(project_dir):
-    """Get porcelain git status of a repo.
-
-    Args:
-        project_dir: Git repository root path.
-
-    Returns:
-        str: Status output, or None on failure.
-    """
-    result = _run_git(["status", "--porcelain"], cwd=project_dir, timeout=5)
-    return result.stdout.strip() if result.returncode == 0 else None
-
-
-def check_commit_triggers(project_dir):
-    """Check if any commit triggers are met for *project_dir*.
-
-    Returns a simple dict for backwards compatibility with the old script.
-
-    Args:
-        project_dir: Git repository root path.
-
-    Returns:
-        dict: Keys: has_changes (bool), milestone_detected (bool),
-              phase_completion (bool), todo_completion (bool).
-    """
-    detector = AutoCommitDetector()
-    full_result = detector.check_commit_triggers(project_dir)
-    gs = full_result.get("git_status", {})
-    return {
-        "has_changes": bool(gs.get("staged_count", 0) or gs.get("modified_count", 0)),
-        "milestone_detected": "milestone_signals" in full_result.get("triggers_met", []),
-        "phase_completion": "phase_completion" in full_result.get("triggers_met", []),
-        "todo_completion": "todo_completion" in full_result.get("triggers_met", []),
-    }
-
-
-def generate_commit_message(project_dir, git_status_raw):
-    """Generate a smart commit message.
-
-    Args:
-        project_dir:    Git repository root path.
-        git_status_raw: Raw porcelain git status string.
-
-    Returns:
-        str: Generated commit message.
-    """
-    ai = GitAutoCommitAI()
-    changes = ai.parse_status(git_status_raw or "")
-    return ai.generate_commit_message(changes)
-
-
-def stage_files(project_dir, git_status_raw):
-    """Stage all changed files.
-
-    Args:
-        project_dir:    Git repository root path.
-        git_status_raw: Raw git status (unused, kept for API compat).
-
-    Returns:
-        bool: True if staging succeeded.
-    """
-    result = _run_git(["add", "-A"], cwd=project_dir, timeout=10)
-    return result.returncode == 0
-
-
-def create_commit(project_dir, message, dry_run=False):
-    """Create a git commit.
-
-    Args:
-        project_dir: Git repository root path.
-        message:     Commit message string.
-        dry_run:     If True, print message without committing.
-
-    Returns:
-        bool: True on success.
-    """
-    if dry_run:
-        log_policy_hit("DRY_RUN_COMMIT", "Would commit: {}".format(message[:50]))
-        return True
-    result = _run_git(["commit", "-m", message], cwd=project_dir, timeout=10)
-    return result.returncode == 0
-
-
-def push_changes(project_dir, dry_run=False):
-    """Push changes to remote.
-
-    Args:
-        project_dir: Git repository root path.
-        dry_run:     If True, skip the actual push.
-
-    Returns:
-        bool: True on success.
-    """
-    if dry_run:
-        log_policy_hit("DRY_RUN_PUSH", "Would push to remote")
-        return True
-    result = _run_git(["push"], cwd=project_dir, timeout=30)
-    return result.returncode == 0
-
-
-def find_git_repos_with_changes():
-    """Find all git repos in workspace with uncommitted changes.
-
-    Returns:
-        list: Repository path strings with uncommitted changes.
-    """
-    enforcer = AutoCommitEnforcer()
-    return enforcer.find_git_repos_with_changes()
-
-
-def trigger_commit_for_repo(repo_path, push=False, dry_run=False):
-    """Trigger commit for a specific repo.
-
-    Args:
-        repo_path: Absolute path to the git repository.
-        push:      Whether to push after committing.
-        dry_run:   Whether to skip the actual commit.
-
-    Returns:
-        bool: True on success.
-    """
-    enforcer = AutoCommitEnforcer()
-    return enforcer.trigger_commit_for_repo(repo_path, push=push, dry_run=dry_run)
-
-
-def enforce_auto_commit(push=False, dry_run=False):
-    """Enforce auto-commit policy across all repos.
-
-    Args:
-        push:    Whether to push after committing each repo.
-        dry_run: Whether to skip actual commits.
-
-    Returns:
-        dict: Keys: total (int), committed (int), failed (int).
-    """
-    enforcer = AutoCommitEnforcer()
-    result = enforcer.enforce_auto_commit(dry_run=dry_run)
-    return {
-        "total": result.get("total", 0),
-        "committed": result.get("processed", 0),
-        "failed": result.get("total", 0) - result.get("processed", 0),
-    }
-
-
-def validate():
-    """Validate git auto-commit policy compliance (module-level function).
-
-    Returns:
-        bool: True if git is available and policy is valid.
-    """
-    try:
-        log_policy_hit("VALIDATE", "git-auto-commit-ready")
-        result = run_git_command(["--version"])
-        if result.returncode != 0:
-            return False
-        log_policy_hit("VALIDATE_SUCCESS", "git-auto-commit-validated")
-        return True
-    except Exception as exc:
-        log_policy_hit("VALIDATE_ERROR", str(exc))
-        return False
-
-
-def report():
-    """Generate compliance report (module-level function).
-
-    Returns:
-        dict: Report dict with status and metrics.
-    """
-    try:
-        policy = GitAutoCommitPolicy()
-        metrics = policy.report()
         return {
-            "status": "success",
-            "policy": "git-auto-commit",
-            "repos_checked": metrics.get("workspace_repos", 0),
-            "commits_ready": metrics.get("repos_with_changes", 0),
-            "total_commits": metrics.get("total_commits", 0),
-            "successful_commits": metrics.get("successful_commits", 0),
-            "timestamp": datetime.now().isoformat(),
+            "success": True,
+            "commit_message": message,
+            "changes": changes,
+            "path": project_dir,
         }
-    except Exception as exc:
-        return {"status": "error", "message": str(exc)}
 
+    def enforce(self, workspace_dir=None):
+        """Enforce auto-commit policy on all repositories.
 
-def enforce():
-    """Main policy enforcement function (module-level, backwards-compatible).
+        Args:
+            workspace_dir: Base directory to search. Defaults to DEFAULT_WORKSPACE.
 
-    Consolidates logic from 5 source scripts:
-      - auto-commit.py:          Commit execution
-      - auto-commit-enforcer.py: Policy enforcement
-      - auto-commit-detector.py: Trigger detection
-      - trigger-auto-commit.py:  Trigger management
-      - git-auto-commit-ai.py:   Message generation
+        Returns:
+            bool: True if enforcement successful.
+        """
+        return self.enforcer.enforce_auto_commit(workspace_dir, self.engine)
 
-    Returns:
-        dict: Status and results dict.
-    """
-    _track_start_time = datetime.now()
-    _sub_operations = []
-    try:
-        log_policy_hit("ENFORCE_START", "git-auto-commit-enforcement")
+    def trigger(self, project_dir=None, event="manual", push=True):
+        """Trigger auto-commit on lifecycle event.
 
-        _op_start = datetime.now()
-        results = enforce_auto_commit(push=False, dry_run=False)
+        Args:
+            project_dir: Project directory (will search for git root).
+            event:       Event name (e.g., 'task-completed', 'phase-complete').
+            push:        If True, push after commit.
+
+        Returns:
+            bool: True if successful.
+        """
+        if not project_dir:
+            project_dir = os.getcwd()
+
+        return self.trigger.trigger_auto_commit(project_dir, event, push)
+
+    def validate(self):
+        """Validate policy configuration and environment.
+
+        Returns:
+            dict: Validation result with status, checks, errors, etc.
+        """
+        checks = {
+            "memory_dir_exists": MEMORY_DIR.exists(),
+            "logs_dir_exists": LOGS_DIR.exists(),
+            "policy_log_accessible": self._check_log_accessible(),
+            "python_version": f"{sys.version_info.major}.{sys.version_info.minor}",
+            "platform": sys.platform,
+        }
+
+        errors = []
+        if not checks["memory_dir_exists"]:
+            errors.append(f"Memory directory not found: {MEMORY_DIR}")
+        if not checks["logs_dir_exists"]:
+            errors.append(f"Logs directory not found: {LOGS_DIR}")
+        if not checks["policy_log_accessible"]:
+            errors.append(f"Policy log not accessible: {POLICY_HIT_LOG}")
+
+        return {
+            "success": len(errors) == 0,
+            "checks": checks,
+            "errors": errors,
+        }
+
+    def report(self):
+        """Generate policy execution report.
+
+        Returns:
+            dict: Report with statistics, recent commits, etc.
+        """
+        report = {
+            "timestamp": datetime.now().isoformat(),
+            "memory_dir": str(MEMORY_DIR),
+            "logs_dir": str(LOGS_DIR),
+            "commit_log": str(COMMIT_LOG),
+        }
+
+        # Count recent commits
+        if COMMIT_LOG.exists():
+            try:
+                with open(COMMIT_LOG, "r", encoding="utf-8") as f:
+                    lines = f.readlines()
+                report["total_commits_logged"] = len(lines)
+                if lines:
+                    report["last_commit"] = lines[-1].strip()
+
+            except Exception as exc:
+                report["commit_log_error"] = str(exc)
+
+        # Count policy hits
+        if POLICY_HIT_LOG.exists():
+            try:
+                with open(POLICY_HIT_LOG, "r", encoding="utf-8") as f:
+                    lines = f.readlines()
+                report["total_policy_hits"] = len(lines)
+
+            except Exception as exc:
+                report["policy_log_error"] = str(exc)
+
+        return report
+
+    def _check_log_accessible(self):
+        """Check if policy log file is accessible.
+
+        Returns:
+            bool: True if log is readable and writable.
+        """
         try:
-            _sub_operations.append(record_sub_operation(
-                "run_auto_commit", "success",
-                int((datetime.now() - _op_start).total_seconds() * 1000),
-                {"committed": results.get("committed", 0), "failed": results.get("failed", 0)}
-            ))
-        except Exception:
-            pass
+            POLICY_HIT_LOG.parent.mkdir(parents=True, exist_ok=True)
+            # Try to write a test entry
+            test_entry = f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] test\n"
+            with open(POLICY_HIT_LOG, "a", encoding="utf-8") as f:
+                f.write(test_entry)
+            # Read it back
+            with open(POLICY_HIT_LOG, "r", encoding="utf-8") as f:
+                _ = f.read()
+            return True
 
-        log_policy_hit(
-            "ENFORCE_COMPLETE",
-            "Commits: {}, Failed: {}".format(results["committed"], results["failed"]),
-        )
-        print(
-            "[git-auto-commit-policy] Policy enforced - {} commits created".format(
-                results["committed"]
-            )
-        )
-        result = {"status": "success", "results": results}
-        try:
-            if HAS_TRACKING:
-                record_policy_execution(
-                    session_id=os.environ.get('CLAUDE_SESSION_ID', 'unknown'),
-                    policy_name="git-auto-commit-policy",
-                    policy_script="git-auto-commit-policy.py",
-                    policy_type="Policy Script",
-                    input_params={},
-                    output_results={"status": "success", "committed": results.get("committed", 0)},
-                    decision=f"{results.get('committed', 0)} commits created",
-                    duration_ms=int((datetime.now() - _track_start_time).total_seconds() * 1000),
-                    sub_operations=_sub_operations if _sub_operations else None
-                )
         except Exception:
-            pass
-        return result
-    except Exception as exc:
-        log_policy_hit("ENFORCE_ERROR", str(exc))
-        print("[git-auto-commit-policy] ERROR: {}".format(exc))
-        error_result = {"status": "error", "message": str(exc)}
-        try:
-            if HAS_TRACKING:
-                record_policy_execution(
-                    session_id=os.environ.get('CLAUDE_SESSION_ID', 'unknown'),
-                    policy_name="git-auto-commit-policy",
-                    policy_script="git-auto-commit-policy.py",
-                    policy_type="Policy Script",
-                    input_params={},
-                    output_results=error_result,
-                    decision=f"error: {str(exc)}",
-                    duration_ms=int((datetime.now() - _track_start_time).total_seconds() * 1000),
-                    sub_operations=_sub_operations if _sub_operations else None
-                )
-        except Exception:
-            pass
-        return error_result
+            return False
 
 
 # ===========================================================================
-# CLI entry point
+# CLI Entry Point
 # ===========================================================================
 
-def _build_cli_parser():
-    """Build and return the argparse argument parser for the CLI.
+def main():
+    """Main CLI entry point.
 
-    Returns:
-        argparse.ArgumentParser: Configured argument parser.
+    Parses arguments and executes the corresponding policy operation.
     """
-    import argparse
-
     parser = argparse.ArgumentParser(
-        prog="git-auto-commit-policy",
-        description=(
-            "Unified Git Auto-Commit Policy System\n"
-            "Consolidates AI message generation, trigger detection, "
-            "enforcement, and commit execution."
-        ),
+        description="Git Auto-Commit Policy - Unified Git Automation System",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
-MODES:
-  --detect        Check commit triggers for the repository
-  --commit        Execute auto-commit (with optional --push / --dry-run)
-  --ai-message    Generate and display an AI commit message
-  --enforce       Scan workspace and enforce commits on all repos
-  --enforce-now   Alias for --enforce (backwards compatibility)
-  --validate      Validate git state and policy compliance
-  --stats         Display commit statistics and policy report
-  --report        Alias for --stats
-  --check-task    Check if a task ID requires an auto-commit
-
-EXAMPLES:
+Examples:
+  # Detect commit triggers
   python git-auto-commit-policy.py --detect
-  python git-auto-commit-policy.py --commit --push
+
+  # Generate AI commit message
+  python git-auto-commit-policy.py --ai-message --context "fix bug in parser"
+
+  # Execute auto-commit (dry run)
   python git-auto-commit-policy.py --commit --dry-run
-  python git-auto-commit-policy.py --ai-message --context "fix login bug"
-  python git-auto-commit-policy.py --enforce --dry-run
+
+  # Enforce policy on all repos
+  python git-auto-commit-policy.py --enforce
+
+  # Trigger on lifecycle event
+  python git-auto-commit-policy.py --trigger --event task-completed --push
+
+  # Validate and report
   python git-auto-commit-policy.py --validate
-  python git-auto-commit-policy.py --stats
-  python git-auto-commit-policy.py --check-task 42
-""",
+  python git-auto-commit-policy.py --report
+        """,
     )
 
-    # Mode flags (mutually exclusive)
-    mode_group = parser.add_mutually_exclusive_group(required=True)
-    mode_group.add_argument(
+    # Action selection
+    action_group = parser.add_mutually_exclusive_group(required=True)
+    action_group.add_argument(
         "--detect",
         action="store_true",
-        help="Check commit triggers for the repository",
+        help="Detect commit triggers in current or specified repo",
     )
-    mode_group.add_argument(
+    action_group.add_argument(
         "--commit",
         action="store_true",
-        help="Execute auto-commit",
+        help="Execute auto-commit in current or specified repo",
     )
-    mode_group.add_argument(
+    action_group.add_argument(
         "--ai-message",
         action="store_true",
-        help="Generate an AI commit message",
+        help="Generate AI commit message without committing",
     )
-    mode_group.add_argument(
+    action_group.add_argument(
         "--enforce",
         action="store_true",
-        help="Enforce commits across all workspace repositories",
+        help="Enforce auto-commit on all repos with changes",
     )
-    mode_group.add_argument(
-        "--enforce-now",
+    action_group.add_argument(
+        "--trigger",
         action="store_true",
-        help="Alias for --enforce (backwards compatibility)",
+        help="Trigger auto-commit on lifecycle event",
     )
-    mode_group.add_argument(
+    action_group.add_argument(
         "--validate",
         action="store_true",
-        help="Validate git state and policy compliance",
+        help="Validate policy configuration and environment",
     )
-    mode_group.add_argument(
-        "--stats",
+    action_group.add_argument(
         "--report",
         action="store_true",
-        dest="stats",
-        help="Display commit statistics report",
+        help="Generate policy execution report",
     )
-    mode_group.add_argument(
-        "--check-task",
-        type=str,
-        metavar="TASK_ID",
-        help="Check whether a task requires an auto-commit",
+    action_group.add_argument(
+        "--stats",
+        action="store_true",
+        help="Show statistics (alias for --report)",
     )
 
-    # Shared options
+    # Options
     parser.add_argument(
         "--project-dir",
-        "--path",
         type=str,
         default=None,
-        dest="project_dir",
-        help="Target git repository path (default: current directory)",
+        help="Git repository or project directory (default: current directory)",
     )
     parser.add_argument(
         "--context",
         type=str,
         default=None,
-        help="Context string for AI message generation",
-    )
-    parser.add_argument(
-        "--push",
-        action="store_true",
-        help="Push to remote after committing",
-    )
-    parser.add_argument(
-        "--no-push",
-        action="store_true",
-        help="Do not push to remote (commit only)",
-    )
-    parser.add_argument(
-        "--dry-run",
-        action="store_true",
-        help="Stage files and generate messages without creating a commit",
-    )
-    parser.add_argument(
-        "--auto-find",
-        action="store_true",
-        help="Auto-discover git repositories in workspace when cwd is not a repo",
-    )
-    parser.add_argument(
-        "--json",
-        action="store_true",
-        help="Output result as JSON (for --detect mode)",
+        help="Task context for better commit messages",
     )
     parser.add_argument(
         "--event",
         type=str,
-        default="policy-enforce",
-        help="Event label for enforcement logging",
+        default="manual",
+        help="Event name for trigger (e.g., task-completed, phase-complete)",
     )
     parser.add_argument(
-        "--workspace",
-        type=str,
-        default=None,
-        help="Override workspace root for multi-repo operations",
+        "--push",
+        action="store_true",
+        help="Push to remote after commit (for --commit and --trigger)",
+    )
+    parser.add_argument(
+        "--no-push",
+        action="store_true",
+        help="Do not push to remote",
+    )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Dry run - show what would happen without making changes",
+    )
+    parser.add_argument(
+        "--json",
+        action="store_true",
+        help="Output as JSON (for programmatic parsing)",
     )
 
-    return parser
-
-
-def main():
-    """CLI entry point for git-auto-commit-policy."""
-    parser = _build_cli_parser()
     args = parser.parse_args()
 
-    policy = GitAutoCommitPolicy(workspace_path=args.workspace)
-    project_dir = args.project_dir
-    exit_code = 0
+    # Initialize policy
+    policy = GitAutoCommitPolicy()
 
-    # ------------------------------------------------------------------
-    # Mode: --detect
-    # ------------------------------------------------------------------
-    if args.detect:
-        path = project_dir or os.getcwd()
-        result = policy._detector.check_commit_triggers(path)
+    # Handle actions
+    try:
+        if args.detect:
+            project_dir = args.project_dir or os.getcwd()
+            result = policy.detect(project_dir)
+
+            if args.json:
+                print(json.dumps(result, indent=2, default=str))
+            else:
+                _print_detection_result(result)
+
+            sys.exit(0 if result.get("should_commit") else 1)
+
+        elif args.ai_message:
+            project_dir = args.project_dir or os.getcwd()
+            result = policy.ai_message(project_dir, args.context)
+
+            if args.json:
+                print(json.dumps(result, indent=2, default=str))
+            else:
+                _print_ai_message_result(result)
+
+            sys.exit(0 if result.get("success") else 1)
+
+        elif args.commit:
+            project_dir = args.project_dir or os.getcwd()
+            push = args.push and not args.no_push
+            result = policy.commit(project_dir, push, args.dry_run)
+
+            if args.json:
+                print(json.dumps(result, indent=2, default=str))
+            else:
+                _print_commit_result(result, args.dry_run)
+
+            sys.exit(0 if result.get("success") else 1)
+
+        elif args.enforce:
+            result = policy.enforce()
+
+            if args.json:
+                print(json.dumps({"success": result}, indent=2))
+            else:
+                print("[OK] Auto-commit enforcement complete" if result else "[FAIL] Enforcement failed")
+
+            sys.exit(0 if result else 1)
+
+        elif args.trigger:
+            project_dir = args.project_dir or os.getcwd()
+            push = args.push and not args.no_push
+            result = policy.trigger(project_dir, args.event, push)
+
+            if args.json:
+                print(json.dumps({"success": result}, indent=2))
+            else:
+                print("[OK] Auto-commit triggered" if result else "[FAIL] Trigger failed")
+
+            sys.exit(0 if result else 1)
+
+        elif args.validate:
+            result = policy.validate()
+
+            if args.json:
+                print(json.dumps(result, indent=2, default=str))
+            else:
+                _print_validation_result(result)
+
+            sys.exit(0 if result.get("success") else 1)
+
+        elif args.report or args.stats:
+            result = policy.report()
+
+            if args.json:
+                print(json.dumps(result, indent=2, default=str))
+            else:
+                _print_report_result(result)
+
+            sys.exit(0)
+
+    except Exception as exc:
+        _logger.error(f"Error: {exc}", exc_info=True)
         if args.json:
-            print(json.dumps(result, indent=2))
+            print(json.dumps({"success": False, "error": str(exc)}, indent=2))
         else:
-            policy._detector.print_detection_report(result)
-        exit_code = 0 if result["should_commit"] else 1
-
-    # ------------------------------------------------------------------
-    # Mode: --commit
-    # ------------------------------------------------------------------
-    elif args.commit:
-        do_push = args.push and not args.no_push
-        result = policy.commit(
-            project_dir=project_dir,
-            context=args.context,
-            push=do_push,
-            dry_run=args.dry_run,
-            auto_find=args.auto_find,
-        )
-        exit_code = 0 if result.get("success") else 1
-
-    # ------------------------------------------------------------------
-    # Mode: --ai-message
-    # ------------------------------------------------------------------
-    elif args.ai_message:
-        msg = policy.generate_ai_message(project_dir=project_dir, context=args.context)
-        exit_code = 0 if msg else 1
-
-    # ------------------------------------------------------------------
-    # Mode: --enforce / --enforce-now
-    # ------------------------------------------------------------------
-    elif args.enforce or args.enforce_now:
-        result = policy.enforce(
-            project_dir=project_dir,
-            push=args.push and not args.no_push,
-            dry_run=args.dry_run,
-            event=args.event,
-        )
-        exit_code = 0 if result.get("success") else 1
-
-    # ------------------------------------------------------------------
-    # Mode: --validate
-    # ------------------------------------------------------------------
-    elif args.validate:
-        result = policy.validate(project_dir=project_dir)
-        exit_code = 0 if result.get("valid") else 1
-
-    # ------------------------------------------------------------------
-    # Mode: --stats / --report
-    # ------------------------------------------------------------------
-    elif args.stats:
-        policy.report(project_dir=project_dir)
-        exit_code = 0
-
-    # ------------------------------------------------------------------
-    # Mode: --check-task
-    # ------------------------------------------------------------------
-    elif args.check_task:
-        result = policy._enforcer.check_task_requires_commit(args.check_task)
-        print(result["message"])
-        exit_code = 0
-
-    sys.exit(exit_code)
+            print(f"[FAIL] Error: {exc}")
+        sys.exit(1)
 
 
-# ---------------------------------------------------------------------------
-# Legacy CLI shim (backwards compat with old if __name__ == "__main__" block)
-# ---------------------------------------------------------------------------
-if __name__ == "__main__":
-    # If called with old-style flags like --enforce, --validate, --report
-    # delegate to the new full argparse main() if recognisable flags exist.
-    _legacy_flags = {"--enforce", "--validate", "--report"}
-    if len(sys.argv) > 1 and sys.argv[1] in _legacy_flags:
-        if sys.argv[1] == "--enforce":
-            _result = enforce()
-            sys.exit(0 if _result.get("status") == "success" else 1)
-        elif sys.argv[1] == "--validate":
-            _is_valid = validate()
-            sys.exit(0 if _is_valid else 1)
-        elif sys.argv[1] == "--report":
-            _r = report()
-            print(json.dumps(_r, indent=2))
-            sys.exit(0 if _r.get("status") == "success" else 1)
+def _print_detection_result(result):
+    """Pretty-print detection result."""
+    print("\n" + "=" * 70)
+    print("[CHART] AUTO-COMMIT TRIGGER DETECTION")
+    print("=" * 70)
+    print(f"\nProject: {result.get('project_dir', 'N/A')}")
+    print(f"Timestamp: {result.get('timestamp', 'N/A')}")
+
+    if result["should_commit"]:
+        print(f"\n[CHECK] AUTO-COMMIT RECOMMENDED ({result['trigger_count']} triggers met)")
+
+        if "git_status" in result:
+            git = result["git_status"]
+            print(f"\n[FOLDER] Git Status:")
+            print(f"   Staged: {git['staged_count']} files")
+            print(f"   Modified: {git['modified_count']} files")
+            print(f"   Untracked: {git['untracked_count']} files")
+
+        print("\n[TARGET] Triggers Met:")
+        for trigger in result["triggers_met"]:
+            details = result["details"].get(trigger, {})
+            reason = details.get("reason", "N/A")
+            print(f"   [CHECK] {trigger.replace('_', ' ').title()}: {reason}")
+
     else:
-        main()
+        reason = result.get("reason", "No triggers met")
+        print(f"\n[PAUSE] NO COMMIT NEEDED")
+        print(f"   Reason: {reason}")
+
+    print("\n" + "=" * 70 + "\n")
+
+
+def _print_ai_message_result(result):
+    """Pretty-print AI message generation result."""
+    print("\n" + "=" * 70)
+    print("[LIGHTBULB] AI COMMIT MESSAGE GENERATION")
+    print("=" * 70)
+
+    if not result.get("success"):
+        print(f"\n[FAIL] {result.get('error', 'Unknown error')}")
+        print("=" * 70 + "\n")
+        return
+
+    print(f"\nRepository: {result.get('path', 'N/A')}")
+
+    changes = result.get("changes", {})
+    print(f"\n[STATS] Changes Summary:")
+    print(f"   Added: {len(changes.get('added', []))}")
+    print(f"   Modified: {len(changes.get('modified', []))}")
+    print(f"   Deleted: {len(changes.get('deleted', []))}")
+
+    print(f"\n[MEMO] Generated Commit Message:")
+    print("─" * 70)
+    print(result.get("commit_message", "N/A"))
+    print("─" * 70)
+
+    print("\n" + "=" * 70 + "\n")
+
+
+def _print_commit_result(result, dry_run):
+    """Pretty-print commit result."""
+    print("\n" + "=" * 70)
+    print("[FLOPPY] AUTO-COMMIT EXECUTION")
+    print("=" * 70)
+
+    if result.get("skipped"):
+        print(f"\n[PAUSE] Skipped: {result.get('reason', 'No changes')}")
+        print("=" * 70 + "\n")
+        return
+
+    if not result.get("success"):
+        print(f"\n[FAIL] Error: {result.get('error', 'Unknown error')}")
+        print("=" * 70 + "\n")
+        return
+
+    print(f"\nRepository: {result.get('path', 'N/A')}")
+
+    changes = result.get("changes", {})
+    print(f"\n[STATS] Changes Summary:")
+    print(f"   Added: {len(changes.get('added', []))}")
+    print(f"   Modified: {len(changes.get('modified', []))}")
+    print(f"   Deleted: {len(changes.get('deleted', []))}")
+
+    print(f"\n[MEMO] Commit Message:")
+    print("─" * 70)
+    print(result.get("commit_message", "N/A"))
+    print("─" * 70)
+
+    if dry_run:
+        print("\n[WARNING] DRY RUN - No actual commit")
+    else:
+        if result.get("committed"):
+            print("\n[CHECK] Changes committed successfully!")
+
+        if result.get("pushed"):
+            print("[CHECK] Changes pushed to remote!")
+        elif result.get("push_error"):
+            print(f"[WARNING] Push failed: {result['push_error']}")
+
+    print("\n" + "=" * 70 + "\n")
+
+
+def _print_validation_result(result):
+    """Pretty-print validation result."""
+    print("\n" + "=" * 70)
+    print("[CLIPBOARD] POLICY VALIDATION")
+    print("=" * 70)
+
+    checks = result.get("checks", {})
+    print(f"\n[CHECKS] Configuration:")
+    print(f"   Memory dir: {'✓' if checks.get('memory_dir_exists') else '✗'}")
+    print(f"   Logs dir: {'✓' if checks.get('logs_dir_exists') else '✗'}")
+    print(f"   Policy log: {'✓' if checks.get('policy_log_accessible') else '✗'}")
+    print(f"   Python: {checks.get('python_version', 'N/A')}")
+    print(f"   Platform: {checks.get('platform', 'N/A')}")
+
+    errors = result.get("errors", [])
+    if errors:
+        print(f"\n[ERRORS] Issues Found:")
+        for error in errors:
+            print(f"   [FAIL] {error}")
+    else:
+        print(f"\n[OK] All checks passed!")
+
+    print("\n" + "=" * 70 + "\n")
+
+
+def _print_report_result(result):
+    """Pretty-print report result."""
+    print("\n" + "=" * 70)
+    print("[CHART] POLICY EXECUTION REPORT")
+    print("=" * 70)
+
+    print(f"\nReport Generated: {result.get('timestamp', 'N/A')}")
+    print(f"Memory Directory: {result.get('memory_dir', 'N/A')}")
+    print(f"Logs Directory: {result.get('logs_dir', 'N/A')}")
+
+    print(f"\n[STATISTICS]")
+    print(f"   Total commits logged: {result.get('total_commits_logged', 'N/A')}")
+    print(f"   Total policy hits: {result.get('total_policy_hits', 'N/A')}")
+
+    last_commit = result.get("last_commit")
+    if last_commit:
+        print(f"\n[LAST COMMIT]")
+        print(f"   {last_commit}")
+
+    print("\n" + "=" * 70 + "\n")
+
+
+if __name__ == "__main__":
+    main()
