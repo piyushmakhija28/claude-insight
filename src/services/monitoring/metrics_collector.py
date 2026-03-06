@@ -99,8 +99,8 @@ class MetricsCollector:
                 'hooks_total': hooks_total,
                 'running_daemons': hooks_present,   # backwards compat for dashboard widgets
                 'total_daemons': hooks_total,
-                'context_usage': 45,
-                'memory_usage': 60,
+                'context_usage': self.get_context_usage().get('percentage', 0),
+                'memory_usage': 0,   # Real source TBD
                 'uptime': 'Active'
             }
         except Exception as e:

@@ -88,6 +88,27 @@ class AnomalyDetector:
                 'last_updated': datetime.now().isoformat()
             }))
 
+    def feed_metrics(self, health_score, error_count, context_usage, response_time):
+        """Populate metric buffers with real data for anomaly detection.
+
+        Called by Flask background_thread to continuously feed metric data
+        from the monitoring system. Buffers maintain rolling windows of 100
+        most recent measurements for statistical anomaly detection.
+
+        Args:
+            health_score (float): System health score (0-100)
+            error_count (int): Count of errors in current period
+            context_usage (float): Context token usage percentage (0-100)
+            response_time (float): API response time in milliseconds
+        """
+        try:
+            self.health_score_buffer.append(health_score)
+            self.error_count_buffer.append(error_count)
+            self.context_usage_buffer.append(context_usage)
+            self.response_time_buffer.append(response_time)
+        except Exception as e:
+            print(f"Error feeding metrics to anomaly detector: {e}")
+
     def load_anomalies(self):
         """Load the anomalies dictionary from anomalies.json.
 

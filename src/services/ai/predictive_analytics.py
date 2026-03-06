@@ -89,6 +89,30 @@ class PredictiveAnalytics:
                 'last_trained': None
             }))
 
+    def feed_data_point(self, metric_name, value):
+        """Add a data point to a metric's buffer for time-series forecasting.
+
+        Called by Flask background_thread to continuously populate metric
+        buffers with real observations. Buffers maintain rolling windows of
+        1000 recent measurements for forecasting algorithms.
+
+        Args:
+            metric_name (str): Name of metric ('health_score', 'error_count',
+                'context_usage', 'response_time', 'cost', 'api_calls')
+            value (float/int): Metric value to add
+
+        Returns:
+            bool: True if metric was valid and added, False otherwise
+        """
+        try:
+            if metric_name in self.metric_buffers:
+                self.metric_buffers[metric_name].append(value)
+                return True
+            return False
+        except Exception as e:
+            print(f"Error feeding data point {metric_name}={value}: {e}")
+            return False
+
     def load_forecasts(self):
         """Load the forecasts dictionary from forecasts.json.
 

@@ -39,6 +39,7 @@ class SessionTracker:
         self.sessions_dir = self.memory_dir / 'sessions'
         self.session_logs_dir = self.memory_dir / 'logs' / 'sessions'
         self.progress_file = self.memory_dir / 'logs' / 'session-progress.json'
+        self.current_session_file = self.sessions_dir / 'current-session.json'
 
     def get_current_session(self):
         """Get current active session from session-progress.json (written by hooks)"""

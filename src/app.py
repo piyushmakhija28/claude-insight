@@ -192,7 +192,7 @@ app = Flask(
     template_folder=str(PROJECT_ROOT / 'templates'),
     static_folder=str(PROJECT_ROOT / 'static')
 )
-app.secret_key = 'claude-insight-secret-key-2026'
+app.secret_key = os.environ.get('SECRET_KEY', secrets.token_hex(32))
 
 # Endpoint to sidebar section mapping for active state highlighting
 ENDPOINT_TO_SECTION = {
@@ -1270,9 +1270,7 @@ def api_metrics():
         })
     except Exception as e:
         print(f"Error in api_metrics: {e}")
-        import traceback
-        traceback.print_exc()
-        return jsonify({'success': False, 'error': str(e)}), 500
+        return jsonify({'success': False, 'error': 'Failed to fetch metrics'}), 500
 
 @app.route('/api/activity')
 @login_required
@@ -6961,6 +6959,13 @@ def background_thread():
                 'memory_usage': system_health.get('memory_usage', 0),
                 'timestamp': datetime.now().isoformat()
             }, namespace='/')
+            # Feed metrics to AI services for anomaly detection and forecasting
+            error_count = len([d for d in daemon_status if d.get('status') == 'error'])
+            context_usage = system_health.get('context_usage', 0)
+            anomaly_detector.feed_metrics(health_score, error_count, context_usage, 0)
+            predictive_analytics.feed_data_point('health_score', health_score)
+            predictive_analytics.feed_data_point('context_usage', context_usage)
+            predictive_analytics.feed_data_point('error_count', error_count)
         except Exception as e:
             print(f"Error in background thread: {e}")
 
