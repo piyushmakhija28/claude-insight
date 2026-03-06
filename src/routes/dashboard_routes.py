@@ -35,7 +35,15 @@ def login_required(f):
 @login_required
 def dashboard():
     """Main dashboard page with real-time metrics."""
-    return render_template('dashboard.html')
+    # Default widget preferences (all widgets enabled by default)
+    widget_preferences = {
+        'system_health': True,
+        'recent_activity': True,
+        'historical_charts': True,
+        'context_usage': True,
+        'performance_metrics': True,
+    }
+    return render_template('dashboard.html', widget_preferences=widget_preferences)
 
 
 @dashboard_bp.route('/analytics')
