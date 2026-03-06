@@ -1890,6 +1890,17 @@ def main():
     if mode == 'verbose':
         print(f"   Action: {ctx_action}")
 
+    # CRITICAL FIX (v3.9.1): Force NEW session for each message
+    # Delete .current-session.json at the start of each hook run
+    # This ensures each Claude message gets its own session folder,
+    # not reusing SESSION-ID from earlier today
+    _current_sess_file = Path.home() / '.claude' / 'memory' / '.current-session.json'
+    if _current_sess_file.exists():
+        try:
+            _current_sess_file.unlink()
+        except Exception:
+            pass  # Silently ignore if can't delete (e.g., permission issues)
+
     # =========================================================================
     # LEVEL 1.2: SESSION MANAGEMENT
     # =========================================================================
