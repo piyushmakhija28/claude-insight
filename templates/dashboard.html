@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "macros.html" import stat_card, chart_container, loading_state %}
 
 {% block title %}Dashboard - Claude Insight{% endblock %}
 
@@ -43,54 +44,16 @@
 {% if widget_preferences.get('system_health', True) %}
 <div class="row mb-4" id="systemHealthWidget">
     <div class="col-xl-3 col-lg-6 col-md-6 mb-4">
-        <div class="card stat-card h-100">
-            <div class="card-body position-relative">
-                <i class="fas fa-heartbeat stat-icon text-success"></i>
-                <div class="stat-value text-success" id="healthScore">
-                    <i class="fas fa-spinner fa-spin"></i>
-                </div>
-                <div class="stat-label">Health Score</div>
-                <div class="progress mt-3" style="height: 6px; border-radius: 10px; background: rgba(16, 185, 129, 0.1);">
-                    <div class="progress-bar bg-success" id="healthScoreBar" role="progressbar" style="width: 0%; border-radius: 10px;"></div>
-                </div>
-            </div>
-        </div>
+        {{ stat_card('healthScore', 'Health Score', 'heartbeat', 'success', true, 'healthScoreBar') }}
     </div>
     <div class="col-xl-3 col-lg-6 col-md-6 mb-4">
-        <div class="card stat-card h-100">
-            <div class="card-body position-relative">
-                <i class="fas fa-plug stat-icon text-primary"></i>
-                <div class="stat-value text-primary" id="hooksActive">
-                    <span class="text-success">2</span>
-                </div>
-                <div class="stat-label">Hooks Active</div>
-                <small class="text-muted mt-2 d-block" id="hooksStatus">UserPromptSubmit + Stop</small>
-            </div>
-        </div>
+        {{ stat_card('hooksActive', 'Hooks Active', 'plug', 'primary') }}
     </div>
     <div class="col-xl-3 col-lg-6 col-md-6 mb-4">
-        <div class="card stat-card h-100">
-            <div class="card-body position-relative">
-                <i class="fas fa-shield-alt stat-icon text-info"></i>
-                <div class="stat-value text-info" id="activePolicies">
-                    <i class="fas fa-spinner fa-spin"></i>
-                </div>
-                <div class="stat-label">Active Policies</div>
-                <small class="text-muted mt-2 d-block" id="totalPoliciesText">Out of ... total</small>
-            </div>
-        </div>
+        {{ stat_card('activePolicies', 'Active Policies', 'shield-alt', 'info', false, '', 'totalPoliciesText') }}
     </div>
     <div class="col-xl-3 col-lg-6 col-md-6 mb-4">
-        <div class="card stat-card h-100">
-            <div class="card-body position-relative">
-                <i class="fas fa-chart-line stat-icon text-warning"></i>
-                <div class="stat-value text-warning" id="policyHits">
-                    <i class="fas fa-spinner fa-spin"></i>
-                </div>
-                <div class="stat-label">Policy Hits Today</div>
-                <small class="text-muted mt-2 d-block">Last 24 hours</small>
-            </div>
-        </div>
+        {{ stat_card('policyHits', 'Policy Hits Today', 'chart-line', 'warning') }}
     </div>
 </div>
 {% endif %}
@@ -114,9 +77,7 @@
                 </div>
             </div>
             <div class="card-body">
-                <div class="chart-container" style="position: relative; height: 400px; max-height: 400px;">
-                    <canvas id="metricsChart"></canvas>
-                </div>
+                {{ chart_container('metricsChart', '400px', '') }}
             </div>
         </div>
     </div>
