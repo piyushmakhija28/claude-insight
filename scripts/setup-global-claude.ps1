@@ -25,7 +25,7 @@ Write-Host "============================================================"
 Write-Host ""
 
 # Step 1: Create ~/.claude directory structure
-Write-Host "[1/6] Setting up ~/.claude directory..."
+Write-Host "[1/5] Setting up ~/.claude directory..."
 $dirs = @(
     $ClaudeDir,
     $MemoryCurrent,
@@ -43,10 +43,9 @@ foreach ($d in $dirs) {
 Write-Host "[OK] ~/.claude directory structure ready"
 
 # Step 2: Copy core enforcement scripts
-Write-Host "[2/6] Installing core enforcement scripts..."
+Write-Host "[2/5] Installing core enforcement scripts..."
 
 $scriptsToCopy = @(
-    "hook-downloader.py",
     "auto-fix-enforcer.sh",
     "auto-enforce-all-policies.sh",
     "session-start.sh",
@@ -82,7 +81,7 @@ foreach ($script in $scriptsToCopy) {
 Write-Host "[OK] $copied scripts copied, $skipped skipped"
 
 # Step 3: Install global CLAUDE.md
-Write-Host "[3/6] Installing global CLAUDE.md..."
+Write-Host "[3/5] Installing global CLAUDE.md..."
 
 $template = Join-Path $ScriptDir "global-claude-md-template.md"
 
@@ -115,7 +114,7 @@ if (Test-Path $GlobalClaudeMd) {
 }
 
 # Step 4: Install hooks in settings.json
-Write-Host "[4/6] Installing hooks in ~/.claude/settings.json..."
+Write-Host "[4/5] Installing hooks in ~/.claude/settings.json..."
 
 $hookCmd3Level   = "python " + (Join-Path $MemoryCurrent "3-level-flow.py") + " --summary"
 $hookCmdClear    = "python " + (Join-Path $MemoryCurrent "clear-session-handler.py")
@@ -199,20 +198,8 @@ if (Test-Path $SettingsFile) {
     Write-Host "  [OK] settings.json created with all 4 hooks (UserPromptSubmit + PreToolUse + PostToolUse + Stop)"
 }
 
-# Step 5: Copy hook-downloader to ~/.claude/scripts/
-Write-Host "[5/6] Installing hook-downloader to ~/.claude/scripts/..."
-$ScriptsDir = Join-Path $ClaudeDir "scripts"
-if (-not (Test-Path $ScriptsDir)) {
-    New-Item -ItemType Directory -Path $ScriptsDir -Force | Out-Null
-}
-$hookDownloaderSrc = Join-Path $ScriptDir "hook-downloader.py"
-if (Test-Path $hookDownloaderSrc) {
-    Copy-Item $hookDownloaderSrc (Join-Path $ScriptsDir "hook-downloader.py") -Force
-    Write-Host "  [OK] hook-downloader.py -> ~/.claude/scripts/"
-}
-
-# Step 6: Finalize
-Write-Host "[6/6] Finalizing..."
+# Step 5: Finalize
+Write-Host "[5/5] Finalizing..."
 Set-Content (Join-Path $MemoryCurrent "VERSION") "1.0.0" -Encoding UTF8
 
 $manifestContent = @"

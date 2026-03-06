@@ -41,7 +41,7 @@ echo "============================================================"
 echo ""
 
 # Step 1: Create ~/.claude directory structure
-echo "[1/6] Setting up ~/.claude directory..."
+echo "[1/5] Setting up ~/.claude directory..."
 mkdir -p "$CLAUDE_DIR"
 mkdir -p "$MEMORY_CURRENT"
 mkdir -p "$CLAUDE_DIR/memory/logs/sessions"
@@ -52,10 +52,9 @@ mkdir -p "$CLAUDE_DIR/hooks"
 echo "[OK] ~/.claude directory structure created"
 
 # Step 2: Copy core enforcement scripts from this project
-echo "[2/6] Installing core enforcement scripts..."
+echo "[2/5] Installing core enforcement scripts..."
 
 SCRIPTS_TO_COPY=(
-    "hook-downloader.py"
     "auto-fix-enforcer.sh"
     "auto-enforce-all-policies.sh"
     "session-start.sh"
@@ -96,17 +95,10 @@ if [ -f "$SCRIPT_DIR/3-level-flow.py" ]; then
     COPIED=$((COPIED + 1))
 fi
 
-# Copy hook-downloader to ~/.claude/scripts/ (required location for PreToolUse hook)
-mkdir -p "$CLAUDE_DIR/scripts"
-if [ -f "$SCRIPT_DIR/hook-downloader.py" ]; then
-    cp "$SCRIPT_DIR/hook-downloader.py" "$CLAUDE_DIR/scripts/hook-downloader.py"
-    echo "  [OK] hook-downloader.py -> ~/.claude/scripts/"
-fi
-
 echo "[OK] $COPIED scripts copied, $SKIPPED skipped"
 
 # Step 3: Install global CLAUDE.md
-echo "[3/6] Installing global CLAUDE.md..."
+echo "[3/5] Installing global CLAUDE.md..."
 
 TEMPLATE="$SCRIPT_DIR/global-claude-md-template.md"
 
@@ -147,7 +139,7 @@ EOF
 fi
 
 # Step 4: Install hooks in settings.json
-echo "[4/6] Installing hooks in ~/.claude/settings.json..."
+echo "[4/5] Installing hooks in ~/.claude/settings.json..."
 
 if [ -f "$SETTINGS_FILE" ]; then
     echo "  [INFO] Existing settings.json found"
@@ -224,7 +216,7 @@ EOF
     echo "  [OK] settings.json created with all 4 hooks (UserPromptSubmit + PreToolUse + PostToolUse + Stop)"
 fi
 
-# Step 5: Create VERSION file
+# Step 5: Finalize
 echo "[5/5] Finalizing..."
 echo "1.0.0" > "$MEMORY_CURRENT/VERSION"
 echo "Claude Insight Memory System" > "$MEMORY_CURRENT/MANIFEST.md"
