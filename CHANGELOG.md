@@ -1,3 +1,9 @@
+## [4.4.4] - 2026-03-06
+### Changed
+- Version bump to 4.4.4
+- Updated SYSTEM_REQUIREMENTS_SPECIFICATION.md
+- Auto-updated via version-release-policy.py
+
 # Claude Insight - Change Log
 
 **Project:** Claude Insight v4.0.0 → v5.0.0
