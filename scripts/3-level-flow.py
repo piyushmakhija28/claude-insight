@@ -1509,6 +1509,8 @@ def _ensure_architecture_modules_synced():
             'architecture/01-sync-system/user-preferences',
             'architecture/01-sync-system/pattern-detection',
             'architecture/02-standards-system',
+            'architecture/03-execution-system/00-context-reading',
+            'architecture/03-execution-system/00-code-graph-analysis',
             'architecture/03-execution-system/00-prompt-generation',
             'architecture/03-execution-system/01-task-breakdown',
             'architecture/03-execution-system/02-plan-mode',
@@ -2714,6 +2716,112 @@ def main():
     print(f"   [3.0.0] Context Reading: Complete")
 
     # ------------------------------------------------------------------
+    # STEP 3.0.1: CODE GRAPH ANALYSIS (PRE-FLIGHT)
+    # ------------------------------------------------------------------
+    step_start = datetime.now()
+    graph_analyzer_script = SCRIPT_DIR / 'architecture' / '03-execution-system' / '00-code-graph-analysis' / 'code-graph-analyzer.py'
+    if not graph_analyzer_script.exists():
+        graph_analyzer_script = MEMORY_BASE / '03-execution-system' / '00-code-graph-analysis' / 'code-graph-analyzer.py'
+
+    graph_complexity_score = 0
+    graph_metrics_summary = ''
+    graph_analysis_data = {}
+    ga_dur = 0
+
+    if graph_analyzer_script.exists():
+        # Pass project dir, session_id, and tech_stack CSV from enrichment
+        tech_stack_csv = ','.join(enrichment_data.get('tech_stack', [])) if enrichment_data else ''
+        ga_out, _, _, ga_dur = run_script_with_retry(
+            graph_analyzer_script,
+            [hook_cwd or str(Path.cwd()), session_id, tech_stack_csv],
+            timeout=10,
+            step_name='Step-3.0.1.Graph-Analysis'
+        )
+
+        # Parse output - last JSON line is the trace entry
+        try:
+            lines = ga_out.strip().splitlines()
+            for line in reversed(lines):
+                if line.startswith('{'):
+                    ga_trace = json.loads(line)
+                    if 'passed_to_next' in ga_trace:
+                        graph_analysis_data = ga_trace.get('passed_to_next', {})
+                        graph_complexity_score = graph_analysis_data.get('graph_complexity_score', 0)
+                        graph_metrics_summary = graph_analysis_data.get('graph_metrics_summary', '')
+                    break
+        except Exception as e:
+            print(f"[WARN] Could not parse graph-analyzer output: {e}")
+            graph_complexity_score = 0
+
+        # Save graph analysis data to session for prompt-generator
+        try:
+            graph_file = session_log_dir / 'graph-analysis-result.json'
+            graph_file.write_text(json.dumps({
+                'session_id': session_id,
+                'created_at': datetime.now().isoformat(),
+                'graph_complexity_score': graph_complexity_score,
+                'graph_analysis_data': graph_analysis_data
+            }, indent=2), encoding='utf-8')
+        except Exception as e:
+            print(f"[WARN] Could not save graph analysis result: {e}")
+
+        # Display result
+        if graph_complexity_score > 0:
+            print(f"   [3.0.1] Graph Complexity: {graph_complexity_score}/25")
+            if graph_metrics_summary:
+                print(f"   [3.0.1] Metrics: {graph_metrics_summary[:80]}")
+        else:
+            print(f"   [3.0.1] Graph Analysis: Not available")
+    else:
+        print(f"   [3.0.1] Graph Analyzer: Script not found")
+
+    step_3_0_1_output = {
+        "graph_complexity_score": graph_complexity_score,
+        "graph_metrics_summary": graph_metrics_summary,
+        "analysis_available": graph_complexity_score > 0,
+        "script_exists": graph_analyzer_script.exists()
+    }
+    step_3_0_1_decision = f"Graph complexity = {graph_complexity_score}/25 - {'structural analysis applied' if graph_complexity_score > 0 else 'analysis unavailable'}"
+
+    # Add STEP 3.0.1 to trace pipeline
+    trace["pipeline"].append({
+        "step": "LEVEL_3_STEP_3_0_1",
+        "name": "Code Graph Analysis (Pre-Flight)",
+        "level": 3,
+        "order": 0.1,
+        "is_blocking": False,
+        "timestamp": step_start.isoformat(),
+        "duration_ms": ga_dur,
+        "input": {
+            "hook_cwd": hook_cwd or str(Path.cwd()),
+            "session_id": session_id,
+            "tech_stack": enrichment_data.get('tech_stack', []) if enrichment_data else [],
+            "purpose": "Build dependency graph and calculate structural complexity"
+        },
+        "policy": {
+            "script": "code-graph-analyzer.py",
+            "args": [hook_cwd or str(Path.cwd()), session_id],
+            "rules_applied": [
+                "discover_source_files",
+                "extract_imports_ast_and_regex",
+                "build_dependency_digraph",
+                "calculate_centrality_metrics",
+                "calculate_cyclomatic_complexity",
+                "score_graph_complexity_1_25",
+            ]
+        },
+        "policy_output": step_3_0_1_output,
+        "decision": step_3_0_1_decision,
+        "passed_to_next": {
+            "graph_complexity_score": graph_complexity_score,
+            "graph_metrics_summary": graph_metrics_summary,
+            "top_bottleneck_files": graph_analysis_data.get('top_bottleneck_files', []),
+            "analysis_available": graph_complexity_score > 0
+        }
+    })
+    print(f"   [3.0.1] Code Graph Analysis: Complete")
+
+    # ------------------------------------------------------------------
     # STEP 3.0: PROMPT GENERATION
     # ------------------------------------------------------------------
     step_start = datetime.now()
@@ -2765,7 +2873,24 @@ def main():
         "effective_prompt": effective_prompt if effective_prompt else user_message,
         "script_exists": prompt_script.exists()
     }
-    step_3_0_decision = f"Complexity={complexity}, Type={task_type} - proceed with analysis"
+    # ------------------------------------------------------------------
+    # COMBINE COMPLEXITY: keyword (30%) + graph (70%)
+    # ------------------------------------------------------------------
+    keyword_complexity = complexity  # Save original keyword-based score
+    if graph_complexity_score > 0:
+        # Graph analysis available - combine both scores
+        combined = round((keyword_complexity * 0.3) + (graph_complexity_score * 0.7))
+        complexity = max(1, min(combined, 25))
+        print(f"   [3.0+] Combined Complexity: {complexity}/25 (keyword={keyword_complexity}, graph={graph_complexity_score})")
+    else:
+        print(f"   [3.0+] Keyword Complexity: {complexity}/25 (graph not available)")
+
+    step_3_0_output["keyword_complexity"] = keyword_complexity
+    step_3_0_output["graph_complexity"] = graph_complexity_score
+    step_3_0_output["combined_complexity"] = complexity
+    step_3_0_output["estimated_complexity"] = complexity  # Override with combined
+
+    step_3_0_decision = f"Complexity={complexity}/25 (kw={keyword_complexity}+graph={graph_complexity_score}), Type={task_type}"
 
     # STEP 3.0 MOVED TO AFTER SKILL SELECTION - See STEP 3.5
 
@@ -3969,7 +4094,10 @@ Work to complete: Execute phase {i} of the identified work breakdown.
     checkpoint_lines.append(f"  | Session ID         | {session_id:<51} |")
     checkpoint_lines.append(f"  | Task type          | {task_type:<51} |")
 
-    complexity_str = f"{adj_complexity}/25"
+    if graph_complexity_score > 0:
+        complexity_str = f"{adj_complexity}/25 (kw={keyword_complexity} + graph={graph_complexity_score})"
+    else:
+        complexity_str = f"{adj_complexity}/25 (keyword only)"
     checkpoint_lines.append(f"  | Complexity         | {complexity_str:<51} |")
     checkpoint_lines.append(f"  | Model selected     | {selected_model:<51} |")
     checkpoint_lines.append(f"  | Agent/Skill        | {skill_agent_name:<51} |")
@@ -4123,6 +4251,8 @@ def _build_script_inventory():
         {"name": "session-state.py", "path": "01-sync-system/session-management/", "hook": "3-level-flow.py L1.4", "status": "EXECUTED", "desc": "Maintains durable session state"},
         {"name": "load-preferences.py", "path": "01-sync-system/user-preferences/", "hook": "3-level-flow.py L1.3", "status": "EXECUTED", "desc": "Loads user preferences for decision-making"},
         {"name": "standards-loader.py", "path": "02-standards-system/", "hook": "3-level-flow.py L2", "status": "EXECUTED", "desc": "Loads all coding standards and rules"},
+        {"name": "context-reader.py", "path": "03-execution-system/00-context-reading/", "hook": "3-level-flow.py 3.0.0", "status": "EXECUTED", "desc": "Reads project context (README/SRS/VERSION) pre-flight"},
+        {"name": "code-graph-analyzer.py", "path": "03-execution-system/00-code-graph-analysis/", "hook": "3-level-flow.py 3.0.1", "status": "EXECUTED", "desc": "Builds dependency graph, calculates structural complexity"},
         {"name": "prompt-generator.py", "path": "03-execution-system/00-prompt-generation/", "hook": "3-level-flow.py 3.0+3.5", "status": "EXECUTED", "desc": "Generates structured prompts (called twice)"},
         {"name": "task-auto-analyzer.py", "path": "03-execution-system/01-task-breakdown/", "hook": "3-level-flow.py 3.1", "status": "EXECUTED", "desc": "Automatic task breakdown + complexity analysis"},
         {"name": "auto-plan-mode-suggester.py", "path": "03-execution-system/02-plan-mode/", "hook": "3-level-flow.py 3.2", "status": "EXECUTED", "desc": "Decides if plan mode needed"},
