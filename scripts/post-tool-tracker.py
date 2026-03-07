@@ -3,12 +3,12 @@
 post-tool-tracker.py - PostToolUse hook for progress tracking and policy enforcement.
 
 Script Name: post-tool-tracker.py
-Version:     3.1.0 (Policy-linked + task/phase enforcement)
-Last Modified: 2026-03-03
+Version:     4.0.0 (BLOCKING enforcement for Levels 3.8-3.12)
+Last Modified: 2026-03-07
 Author:      Claude Memory System
 
 Hook Type: PostToolUse
-Trigger:   Runs AFTER every tool call.  NEVER blocks (always exits 0).
+Trigger:   Runs AFTER every tool call.  Exits 2 (BLOCK) on policy violations.
 
 Level 3.9 - Execute Tasks (Auto-Tracking)
 ------------------------------------------
@@ -500,6 +500,222 @@ def _detect_result_failure(tool_response):
         return None
 
 
+# ===================================================================
+# BLOCKING ENFORCEMENT FUNCTIONS (v4.0.0 - Levels 3.8-3.12)
+# These functions return (should_block, message) tuples.
+# Callers MUST exit(2) when should_block is True.
+# ===================================================================
+
+def check_level_3_8_phase_requirement(tool_name, flow_ctx, state):
+    """Level 3.8: BLOCK Write/Edit if complexity >= 6 and 0 TaskCreate calls.
+
+    Policy: task-phase-enforcement-policy.md
+    Rule: High-complexity tasks MUST use phased execution via TaskCreate.
+    This converts the previous warn-only behaviour into a hard block.
+
+    Args:
+        tool_name: Current tool being invoked.
+        flow_ctx:  Flow-trace context dict with 'complexity' key.
+        state:     Session progress dict with 'tasks_created' key.
+
+    Returns:
+        (bool, str): (True, message) if blocked, (False, '') otherwise.
+    """
+    BLOCKED_TOOLS = {'Write', 'Edit', 'NotebookEdit'}
+    if tool_name not in BLOCKED_TOOLS:
+        return False, ''
+    complexity = flow_ctx.get('complexity', 0)
+    tasks_created = state.get('tasks_created', 0)
+    if complexity >= 6 and tasks_created == 0:
+        msg = (
+            '[BLOCKED L3.8] Phased execution required!\n'
+            '  Complexity : ' + str(complexity) + ' (>= 6 threshold)\n'
+            '  TaskCreate : 0 calls recorded this session\n'
+            '  Policy     : task-phase-enforcement-policy.md\n'
+            '  Action     : Call TaskCreate to define tasks BEFORE writing code.\n'
+            '  Rule       : Complexity >= 6 REQUIRES phased execution via TaskCreate.\n'
+            '  Tool       : ' + tool_name + ' is BLOCKED until tasks are created.'
+        )
+        return True, msg
+    return False, ''
+
+
+def check_level_3_9_build_validation(tool_name, tool_input, is_error, state):
+    """Level 3.9: BLOCK TaskUpdate(completed) when the last build failed.
+
+    Policy: build-validation-policy.md
+    Rule: A task CANNOT be marked completed if the build is currently broken.
+    This prevents silently shipping broken code by promoting build failure
+    to a blocking condition at task-completion time.
+
+    Detection: reads 'last_build_failed' flag from session-progress.json
+    which is written by auto_build_validator when a build check fails.
+
+    Args:
+        tool_name:   Current tool being invoked.
+        tool_input:  Input dict for the tool call (checked for status field).
+        is_error:    Whether the tool call itself errored.
+        state:       Session progress dict.
+
+    Returns:
+        (bool, str): (True, message) if blocked, (False, '') otherwise.
+    """
+    if tool_name != 'TaskUpdate' or is_error:
+        return False, ''
+    task_status = (tool_input or {}).get('status', '')
+    if task_status != 'completed':
+        return False, ''
+    if not state.get('last_build_failed', False):
+        return False, ''
+    failed_label = state.get('last_build_failed_label', 'unknown build step')
+    msg = (
+        '[BLOCKED L3.9] Cannot mark task completed - build is FAILING!\n'
+        '  Failed build : ' + failed_label + '\n'
+        '  Policy       : build-validation-policy.md\n'
+        '  Rule         : A task CANNOT be completed while the build is broken.\n'
+        '  Action       : Fix the build errors first, then re-mark as completed.\n'
+        '  Tip          : Run the failing build step and resolve all errors.'
+    )
+    return True, msg
+
+
+def check_level_3_10_version_release(tool_name, tool_input, state):
+    """Level 3.10: BLOCK git push when VERSION file was not modified.
+
+    Policy: version-release-policy.md
+    Rule: Every push to the remote MUST include a VERSION file update.
+    This enforces semantic versioning discipline and keeps the update
+    checker (which reads raw.githubusercontent.com/VERSION) accurate.
+
+    Detection: checks 'modified_files_since_commit' in session state for
+    any path that ends with 'VERSION' (case-insensitive).
+
+    Args:
+        tool_name:   Current tool being invoked.
+        tool_input:  Bash tool input dict (checked for git push command).
+        state:       Session progress dict.
+
+    Returns:
+        (bool, str): (True, message) if blocked, (False, '') otherwise.
+    """
+    if tool_name != 'Bash':
+        return False, ''
+    cmd = (tool_input or {}).get('command', '').lower()
+    # Must be a git push command (not a push to non-remote, not --dry-run)
+    if 'git push' not in cmd or '--dry-run' in cmd:
+        return False, ''
+    # Check if VERSION was among the files modified
+    modified = state.get('modified_files_since_commit', [])
+    version_modified = any(
+        f.lower().endswith('version') or f.lower().endswith('version.txt')
+        for f in modified
+    )
+    if version_modified:
+        return False, ''
+    # Also allow if no files have been modified (nothing to push)
+    if not modified:
+        return False, ''
+    msg = (
+        '[BLOCKED L3.10] git push blocked - VERSION file not updated!\n'
+        '  Modified files : ' + ', '.join(modified[-5:]) + ('' if len(modified) <= 5 else ' ...')+'\n'
+        '  VERSION file   : NOT in modified list\n'
+        '  Policy         : version-release-policy.md\n'
+        '  Rule           : Every push MUST include a VERSION file update.\n'
+        '  Action         : Update the VERSION file, then push again.\n'
+        '  Example        : echo "0.X.Y" > VERSION && git add VERSION'
+    )
+    return True, msg
+
+
+def check_level_3_11_git_status(tool_name, tool_input):
+    """Level 3.11: BLOCK git push when uncommitted changes exist in the repo.
+
+    Policy: git-workflow-policy.md
+    Rule: All changes must be committed before pushing to the remote.
+    This prevents accidental pushes that skip the commit step.
+
+    Detection: runs `git status --porcelain` in the current working directory.
+    If it returns any output (staged or unstaged changes), the push is blocked.
+
+    Args:
+        tool_name:  Current tool being invoked.
+        tool_input: Bash tool input dict (checked for git push command).
+
+    Returns:
+        (bool, str): (True, message) if blocked, (False, '') otherwise.
+    """
+    if tool_name != 'Bash':
+        return False, ''
+    cmd = (tool_input or {}).get('command', '').lower()
+    if 'git push' not in cmd or '--dry-run' in cmd:
+        return False, ''
+    try:
+        import subprocess as _sp
+        result = _sp.run(
+            ['git', 'status', '--porcelain'],
+            capture_output=True, text=True, timeout=10
+        )
+        dirty_lines = [l for l in result.stdout.splitlines() if l.strip()]
+        if not dirty_lines:
+            return False, ''
+        preview = dirty_lines[:5]
+        more = len(dirty_lines) - 5 if len(dirty_lines) > 5 else 0
+        msg = (
+            '[BLOCKED L3.11] git push blocked - uncommitted changes detected!\n'
+            '  Dirty files : ' + str(len(dirty_lines)) + ' file(s) with changes\n'
+            '  Preview     :\n'
+            + '\n'.join('    ' + l for l in preview)
+            + ('\n    ... and ' + str(more) + ' more' if more else '') + '\n'
+            '  Policy      : git-workflow-policy.md\n'
+            '  Rule        : All changes must be committed before pushing.\n'
+            '  Action      : git add <files> && git commit -m "..." then push again.'
+        )
+        return True, msg
+    except Exception:
+        return False, ''  # Fail-open: never block on git status errors
+
+
+def close_github_issues_on_completion(tool_name, tool_input, tool_response, is_error, state):
+    """Level 3.12: Close GitHub issues when a task is marked completed (non-blocking).
+
+    Policy: github-integration-policy.md
+    Rule: On TaskUpdate(status=completed), close the linked GitHub issue.
+    This is informational only - never exits 2, always returns False.
+
+    Args:
+        tool_name:     Current tool being invoked.
+        tool_input:    Input dict for the tool call.
+        tool_response: Tool response (used to extract task ID).
+        is_error:      Whether the tool call errored.
+        state:         Session progress dict.
+
+    Returns:
+        (bool, str): Always (False, '') - this check is non-blocking.
+    """
+    if tool_name != 'TaskUpdate' or is_error:
+        return False, ''
+    task_status = (tool_input or {}).get('status', '')
+    if task_status != 'completed':
+        return False, ''
+    try:
+        gim = _get_github_issue_manager()
+        if gim:
+            closed_task_id = (tool_input or {}).get('taskId', '')
+            if closed_task_id:
+                closed = gim.close_github_issue(closed_task_id)
+                if closed:
+                    sys.stdout.write('[GH L3.12] Issue closed for task ' + str(closed_task_id) + '\n')
+                    sys.stdout.flush()
+    except Exception:
+        pass  # Non-blocking: GitHub errors never fail the hook
+    return False, ''
+
+
+# Module-level flag: set inside main()'s try block so blocking checks
+# can be evaluated AFTER the broad except clause.
+_BLOCKING_RESULT = None   # (exit_code, message) or None
+
+
 def main():
     """PostToolUse hook entry point.
 
@@ -515,9 +731,10 @@ def main():
       8. Clears task-breakdown and skill-selection flags as appropriate.
       9. Triggers auto-commit, build validation, and GitHub issue
          management on task completion.
+     10. Runs BLOCKING checks (Levels 3.8-3.11) and exits 2 on violation.
+     11. Runs non-blocking Level 3.12 GitHub issue close.
 
-    Always exits 0.  Errors are caught and swallowed to ensure
-    the hook never disrupts the tool call flow.
+    Exits 2 on policy violations (blocking).  Exits 0 otherwise.
     """
     # ===================================================================
     # TRACKING: Record start time
@@ -997,16 +1214,26 @@ def main():
                             modified_files=modified
                         )
                         if build_result['all_passed']:
+                            # Build passed: clear the failure flag so next TaskUpdate is not blocked
+                            state['last_build_failed'] = False
+                            state['last_build_failed_label'] = ''
+                            save_session_progress(state)
                             sys.stdout.write(
                                 '[BUILD] ' + build_result['summary'] + '\n'
                             )
                             sys.stdout.flush()
                         else:
-                            # BUILD FAILED - tell Claude to fix it
+                            # BUILD FAILED - persist flag for Level 3.9 blocking check
+                            failed_labels = [r['label'] for r in build_result.get('results', []) if not r.get('passed')]
+                            state['last_build_failed'] = True
+                            state['last_build_failed_label'] = ', '.join(failed_labels) if failed_labels else build_result.get('summary', 'unknown')
+                            save_session_progress(state)
+                            # Tell Claude to fix it
                             sys.stdout.write(
                                 '[BUILD FAILED] ' + build_result['summary'] + '\n'
                                 '  ACTION: FIX the build errors below BEFORE moving to next task!\n'
                                 '  DO NOT mark this task complete until build passes.\n'
+                                '  NOTE: Next TaskUpdate(completed) will be BLOCKED until build passes (L3.9).\n'
                             )
                             for r in build_result['results']:
                                 if not r['passed']:
@@ -1040,6 +1267,28 @@ def main():
 
             except Exception:
                 pass
+
+        # -----------------------------------------------------------------------
+        # BLOCKING ENFORCEMENT: Levels 3.8-3.12 (v4.0.0)
+        # Evaluated after all tracking/state work is done.
+        # Stores result in module-level _BLOCKING_RESULT so sys.exit(2) can
+        # propagate AFTER the broad except clause below.
+        # -----------------------------------------------------------------------
+        global _BLOCKING_RESULT
+        try:
+            _block, _msg = check_level_3_8_phase_requirement(tool_name, flow_ctx, state)
+            if not _block:
+                _block, _msg = check_level_3_9_build_validation(tool_name, tool_input, is_error, state)
+            if not _block:
+                _block, _msg = check_level_3_10_version_release(tool_name, tool_input, state)
+            if not _block:
+                _block, _msg = check_level_3_11_git_status(tool_name, tool_input)
+            if _block:
+                _BLOCKING_RESULT = (2, _msg)
+            # Level 3.12: non-blocking GitHub issue close (runs regardless)
+            close_github_issues_on_completion(tool_name, tool_input, tool_response, is_error, state)
+        except Exception:
+            pass  # Never block on enforcement errors (fail-open)
 
         # GIT REMINDER: When 10+ files modified without commit
         modified_count = len(state.get('modified_files_since_commit', []))
@@ -1137,6 +1386,27 @@ def main():
         )
     except Exception:
         pass  # NEVER block on tracking errors
+
+    # ===================================================================
+    # BLOCKING RESULT EVALUATION (v4.0.0)
+    # Must be OUTSIDE the broad try/except so sys.exit(2) propagates.
+    # _BLOCKING_RESULT is set inside main()'s try block by the Level
+    # 3.8-3.11 enforcement functions above.
+    # ===================================================================
+    if _BLOCKING_RESULT is not None:
+        exit_code, block_msg = _BLOCKING_RESULT
+        sys.stdout.write(block_msg + '\n')
+        sys.stdout.flush()
+        # Update metrics with blocking exit code before exiting
+        try:
+            _sid_blk = _get_session_id_from_progress() or ''
+            _dur_blk = int((datetime.now() - _HOOK_START).total_seconds() * 1000)
+            emit_hook_execution('post-tool-tracker.py', _dur_blk,
+                                session_id=_sid_blk, exit_code=exit_code,
+                                extra={'blocked': True, 'block_level': block_msg[:30]})
+        except Exception:
+            pass
+        sys.exit(exit_code)
 
     sys.exit(0)
 
