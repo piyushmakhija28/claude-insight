@@ -1890,23 +1890,16 @@ def main():
     if mode == 'verbose':
         print(f"   Action: {ctx_action}")
 
-    # CRITICAL FIX (v3.9.1): Force NEW session for each message
-    # Delete .current-session.json at the start of each hook run
-    # This ensures each Claude message gets its own session folder,
-    # not reusing SESSION-ID from earlier today
-    _current_sess_file = Path.home() / '.claude' / 'memory' / '.current-session.json'
-    if _current_sess_file.exists():
-        try:
-            _current_sess_file.unlink()
-        except Exception:
-            pass  # Silently ignore if can't delete (e.g., permission issues)
-
     # =========================================================================
     # LEVEL 1.2: SESSION MANAGEMENT
     # =========================================================================
     step_start = datetime.now()
     sess_script = CURRENT_DIR / 'session-id-generator.py'
-    sess_stdout, _, sess_rc, sess_dur = run_script_with_retry(sess_script, ['current'], timeout=8, step_name='Level-1.2.Session')
+    # Use run_script (NOT run_script_with_retry) because "no active session"
+    # is an expected condition on first run or after /clear - not a failure.
+    # run_script_with_retry would hard-break (sys.exit(1)) after 3 retries,
+    # preventing the auto-create fallback below from ever running.
+    sess_stdout, _, sess_rc, sess_dur = run_script(sess_script, ['current'], timeout=8)
 
     session_id = 'UNKNOWN'
     for line in sess_stdout.splitlines():
@@ -1924,8 +1917,8 @@ def main():
     # This happens on first run, or after /clear (clear-session-handler deletes .current-session.json)
     if session_id == 'UNKNOWN' or sess_rc != 0:
         create_desc = f"Session auto-created at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
-        new_out, _, new_rc, new_dur2 = run_script_with_retry(
-            sess_script, ['create', '--description', create_desc], timeout=8, step_name='Level-1.2.Session-Create'
+        new_out, _, new_rc, new_dur2 = run_script(
+            sess_script, ['create', '--description', create_desc], timeout=8
         )
         sess_dur += new_dur2
         for line in new_out.splitlines():

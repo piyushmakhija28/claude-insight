@@ -453,9 +453,12 @@ if __name__ == "__main__":
             # Check for incomplete work on specified project
             project = sys.argv[1]
             has_incomplete = show_resume_prompt(project)
-            sys.exit(1 if has_incomplete else 0)
+            # Exit 0 always - finding incomplete work is informational, not an error.
+            # Exit 1 here caused false retries in post-tool-tracker.py on every tool call.
+            sys.exit(0)
     else:
         # Default: check current project
         project = get_current_project()
         has_incomplete = show_resume_prompt(project)
-        sys.exit(1 if has_incomplete else 0)
+        # Exit 0 always - finding incomplete work is informational, not an error
+        sys.exit(0)
