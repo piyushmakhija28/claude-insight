@@ -46,6 +46,12 @@ requests>=2.31.0
 TTS>=0.22.0                 # Coqui TTS - neural voice synthesis (primary engine)
 
 # ============================================================================
+# CODE GRAPH ANALYSIS (Step 3.0.1 - Dependency Graph Complexity)
+# ============================================================================
+networkx>=3.1               # Graph construction + algorithms (centrality, pagerank, density)
+lizard>=1.17.0              # Multi-language cyclomatic complexity (Python/Java/JS/Go/C++)
+
+# ============================================================================
 # SYSTEM MONITORING & ANALYTICS
 # ============================================================================
 numpy>=1.24.3
