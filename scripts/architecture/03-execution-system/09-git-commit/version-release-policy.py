@@ -63,12 +63,15 @@ except ImportError:
 # ===================================================================
 # POLICY TRACKING INTEGRATION
 # ===================================================================
-try:
-    sys.path.insert(0, str(Path(__file__).parent.parent))
-    from policy_tracking_helper import record_policy_execution, record_sub_operation
-    HAS_TRACKING = True
-except ImportError:
-    HAS_TRACKING = False
+# Policy tracking - mandatory (find helper by walking up to scripts root)
+_scripts_root = Path(__file__).resolve().parent
+while _scripts_root != _scripts_root.parent:
+    if (_scripts_root / 'policy_tracking_helper.py').exists():
+        if str(_scripts_root) not in sys.path:
+            sys.path.insert(0, str(_scripts_root))
+        break
+    _scripts_root = _scripts_root.parent
+from policy_tracking_helper import record_policy_execution, record_sub_operation, get_session_id
 
 if sys.platform == 'win32':
     try:
@@ -1311,7 +1314,7 @@ def enforce():
                     "new_version": bump_result.get("new_version"),
                     "mode": bump_result.get("mode", "unknown")
                 }
-            ) if HAS_TRACKING else None
+            )
         )
 
         if bump_result.get("status") != "success":
@@ -1328,19 +1331,18 @@ def enforce():
         }
 
         try:
-            if HAS_TRACKING:
-                record_policy_execution(
-                    session_id=os.environ.get('CLAUDE_SESSION_ID', 'unknown'),
-                    policy_name="version-release-policy",
-                    policy_script="version-release-policy.py",
-                    policy_type="Policy Script",
-                    input_params={"current_version": bump_result.get("old_version")},
-                    output_results=result,
-                    decision=(f"Version bumped to {bump_result.get('new_version')} "
-                              f"({bump_result.get('mode', 'unknown')})"),
-                    duration_ms=int((datetime.now() - _track_start_time).total_seconds() * 1000),
-                    sub_operations=[op for op in _sub_operations if op is not None]
-                )
+            record_policy_execution(
+                session_id=get_session_id(),
+                policy_name="version-release-policy",
+                policy_script="version-release-policy.py",
+                policy_type="Policy Script",
+                input_params={"current_version": bump_result.get("old_version")},
+                output_results=result,
+                decision=(f"Version bumped to {bump_result.get('new_version')} "
+                          f"({bump_result.get('mode', 'unknown')})"),
+                duration_ms=int((datetime.now() - _track_start_time).total_seconds() * 1000),
+                sub_operations=[op for op in _sub_operations if op is not None]
+            )
         except Exception:
             pass
 
@@ -1350,18 +1352,17 @@ def enforce():
         log_action("ENFORCE_ERROR", str(e))
         error_result = {"status": "error", "message": str(e)}
         try:
-            if HAS_TRACKING:
-                record_policy_execution(
-                    session_id=os.environ.get('CLAUDE_SESSION_ID', 'unknown'),
-                    policy_name="version-release-policy",
-                    policy_script="version-release-policy.py",
-                    policy_type="Policy Script",
-                    input_params={},
-                    output_results=error_result,
-                    decision=f"error: {str(e)}",
-                    duration_ms=int((datetime.now() - _track_start_time).total_seconds() * 1000),
-                    sub_operations=[op for op in _sub_operations if op is not None]
-                )
+            record_policy_execution(
+                session_id=get_session_id(),
+                policy_name="version-release-policy",
+                policy_script="version-release-policy.py",
+                policy_type="Policy Script",
+                input_params={},
+                output_results=error_result,
+                decision=f"error: {str(e)}",
+                duration_ms=int((datetime.now() - _track_start_time).total_seconds() * 1000),
+                sub_operations=[op for op in _sub_operations if op is not None]
+            )
         except Exception:
             pass
         return error_result

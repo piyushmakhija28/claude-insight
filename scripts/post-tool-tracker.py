@@ -81,12 +81,15 @@ except Exception:
 # ===================================================================
 # NEW: POLICY TRACKING INTEGRATION
 # ===================================================================
-try:
-    sys.path.insert(0, str(Path(__file__).parent))
-    from policy_tracking_helper import record_policy_execution, record_sub_operation
-    HAS_TRACKING = True
-except ImportError:
-    HAS_TRACKING = False
+# Policy tracking - mandatory (find helper by walking up to scripts root)
+_scripts_root = Path(__file__).resolve().parent
+while _scripts_root != _scripts_root.parent:
+    if (_scripts_root / 'policy_tracking_helper.py').exists():
+        if str(_scripts_root) not in sys.path:
+            sys.path.insert(0, str(_scripts_root))
+        break
+    _scripts_root = _scripts_root.parent
+from policy_tracking_helper import record_policy_execution, record_sub_operation, get_session_id
 
 # ===================================================================
 # NEW: FAILURE DETECTION INTEGRATION (3.7 Middleware)
@@ -1078,61 +1081,60 @@ def main():
     # TRACKING: Record overall hook execution
     # ===================================================================
     try:
-        if HAS_TRACKING:
-            _resolved_tool = tool_name if 'tool_name' in dir() else 'unknown'
-            _resolved_sid = os.environ.get('CLAUDE_SESSION_ID', 'unknown')
+        _resolved_tool = tool_name if 'tool_name' in dir() else 'unknown'
+        _resolved_sid = get_session_id()
 
-            # Sub-op 1: Tool call processing
-            _op1_start = datetime.now()
-            _op1_duration = int((datetime.now() - _op1_start).total_seconds() * 1000)
-            _sub_operations.append(record_sub_operation(
-                session_id=_resolved_sid,
-                policy_name="post-tool-tracker",
-                operation_name="process_tool_call",
-                input_params={"tool_name": _resolved_tool},
-                output_results={"tracked": True},
-                duration_ms=_op1_duration
-            ))
+        # Sub-op 1: Tool call processing
+        _op1_start = datetime.now()
+        _op1_duration = int((datetime.now() - _op1_start).total_seconds() * 1000)
+        _sub_operations.append(record_sub_operation(
+            session_id=_resolved_sid,
+            policy_name="post-tool-tracker",
+            operation_name="process_tool_call",
+            input_params={"tool_name": _resolved_tool},
+            output_results={"tracked": True},
+            duration_ms=_op1_duration
+        ))
 
-            # Sub-op 2: Session progress update
-            _op2_start = datetime.now()
-            _op2_duration = int((datetime.now() - _op2_start).total_seconds() * 1000)
-            _sub_operations.append(record_sub_operation(
-                session_id=_resolved_sid,
-                policy_name="post-tool-tracker",
-                operation_name="update_session_progress",
-                input_params={"tool_name": _resolved_tool},
-                output_results={"progress_updated": True},
-                duration_ms=_op2_duration
-            ))
+        # Sub-op 2: Session progress update
+        _op2_start = datetime.now()
+        _op2_duration = int((datetime.now() - _op2_start).total_seconds() * 1000)
+        _sub_operations.append(record_sub_operation(
+            session_id=_resolved_sid,
+            policy_name="post-tool-tracker",
+            operation_name="update_session_progress",
+            input_params={"tool_name": _resolved_tool},
+            output_results={"progress_updated": True},
+            duration_ms=_op2_duration
+        ))
 
-            # Sub-op 3: Policy enforcement checks
-            _op3_start = datetime.now()
-            _op3_duration = int((datetime.now() - _op3_start).total_seconds() * 1000)
-            _sub_operations.append(record_sub_operation(
-                session_id=_resolved_sid,
-                policy_name="post-tool-tracker",
-                operation_name="enforce_policy_rules",
-                input_params={"tool_name": _resolved_tool},
-                output_results={"enforcement_checked": True},
-                duration_ms=_op3_duration
-            ))
+        # Sub-op 3: Policy enforcement checks
+        _op3_start = datetime.now()
+        _op3_duration = int((datetime.now() - _op3_start).total_seconds() * 1000)
+        _sub_operations.append(record_sub_operation(
+            session_id=_resolved_sid,
+            policy_name="post-tool-tracker",
+            operation_name="enforce_policy_rules",
+            input_params={"tool_name": _resolved_tool},
+            output_results={"enforcement_checked": True},
+            duration_ms=_op3_duration
+        ))
 
-            _duration_ms = int((datetime.now() - _track_start_time).total_seconds() * 1000)
-            record_policy_execution(
-                session_id=_resolved_sid,
-                policy_name="post-tool-tracker",
-                policy_script="post-tool-tracker.py",
-                policy_type="Utility Hook",
-                input_params={"tool_name": _resolved_tool},
-                output_results={
-                    "status": "success",
-                    "tool_tracked": _resolved_tool
-                },
-                decision=f"Tracked tool call: {_resolved_tool}",
-                duration_ms=_duration_ms,
-                sub_operations=_sub_operations if _sub_operations else None
-            )
+        _duration_ms = int((datetime.now() - _track_start_time).total_seconds() * 1000)
+        record_policy_execution(
+            session_id=_resolved_sid,
+            policy_name="post-tool-tracker",
+            policy_script="post-tool-tracker.py",
+            policy_type="Utility Hook",
+            input_params={"tool_name": _resolved_tool},
+            output_results={
+                "status": "success",
+                "tool_tracked": _resolved_tool
+            },
+            decision=f"Tracked tool call: {_resolved_tool}",
+            duration_ms=_duration_ms,
+            sub_operations=_sub_operations if _sub_operations else None
+        )
     except Exception:
         pass  # NEVER block on tracking errors
 

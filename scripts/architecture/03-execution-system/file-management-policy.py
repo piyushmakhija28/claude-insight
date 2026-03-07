@@ -44,12 +44,15 @@ from datetime import datetime
 # ===================================================================
 # NEW: POLICY TRACKING INTEGRATION
 # ===================================================================
-try:
-    sys.path.insert(0, str(Path(__file__).parent))
-    from policy_tracking_helper import record_policy_execution, record_sub_operation
-    HAS_TRACKING = True
-except ImportError:
-    HAS_TRACKING = False
+# Policy tracking - mandatory (find helper by walking up to scripts root)
+_scripts_root = Path(__file__).resolve().parent
+while _scripts_root != _scripts_root.parent:
+    if (_scripts_root / 'policy_tracking_helper.py').exists():
+        if str(_scripts_root) not in sys.path:
+            sys.path.insert(0, str(_scripts_root))
+        break
+    _scripts_root = _scripts_root.parent
+from policy_tracking_helper import record_policy_execution, record_sub_operation, get_session_id
 
 if sys.platform == 'win32':
     try:
@@ -187,18 +190,17 @@ def enforce():
 
         result = {"status": "success", "policy": "file-management"}
         try:
-            if HAS_TRACKING:
-                record_policy_execution(
-                    session_id=os.environ.get('CLAUDE_SESSION_ID', 'unknown'),
-                    policy_name="file-management-policy",
-                    policy_script="file-management-policy.py",
-                    policy_type="Policy Script",
-                    input_params={},
-                    output_results=result,
-                    decision="file management standards active",
-                    duration_ms=int((datetime.now() - _track_start_time).total_seconds() * 1000),
-                    sub_operations=_sub_operations if _sub_operations else None
-                )
+            record_policy_execution(
+                session_id=get_session_id(),
+                policy_name="file-management-policy",
+                policy_script="file-management-policy.py",
+                policy_type="Policy Script",
+                input_params={},
+                output_results=result,
+                decision="file management standards active",
+                duration_ms=int((datetime.now() - _track_start_time).total_seconds() * 1000),
+                sub_operations=_sub_operations if _sub_operations else None
+            )
         except Exception:
             pass
         return result
@@ -207,18 +209,17 @@ def enforce():
         print(f"[file-management-policy] ERROR: {e}")
         error_result = {"status": "error", "message": str(e)}
         try:
-            if HAS_TRACKING:
-                record_policy_execution(
-                    session_id=os.environ.get('CLAUDE_SESSION_ID', 'unknown'),
-                    policy_name="file-management-policy",
-                    policy_script="file-management-policy.py",
-                    policy_type="Policy Script",
-                    input_params={},
-                    output_results=error_result,
-                    decision=f"error: {str(e)}",
-                    duration_ms=int((datetime.now() - _track_start_time).total_seconds() * 1000),
-                    sub_operations=_sub_operations if _sub_operations else None
-                )
+            record_policy_execution(
+                session_id=get_session_id(),
+                policy_name="file-management-policy",
+                policy_script="file-management-policy.py",
+                policy_type="Policy Script",
+                input_params={},
+                output_results=error_result,
+                decision=f"error: {str(e)}",
+                duration_ms=int((datetime.now() - _track_start_time).total_seconds() * 1000),
+                sub_operations=_sub_operations if _sub_operations else None
+            )
         except Exception:
             pass
         return error_result

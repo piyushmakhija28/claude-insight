@@ -44,12 +44,15 @@ if sys.stderr.encoding != 'utf-8':
 # ===================================================================
 # NEW: POLICY TRACKING INTEGRATION
 # ===================================================================
-try:
-    sys.path.insert(0, str(Path(__file__).parent))
-    from policy_tracking_helper import record_policy_execution, record_sub_operation
-    HAS_TRACKING = True
-except ImportError:
-    HAS_TRACKING = False
+# Policy tracking - mandatory (find helper by walking up to scripts root)
+_scripts_root = Path(__file__).resolve().parent
+while _scripts_root != _scripts_root.parent:
+    if (_scripts_root / 'policy_tracking_helper.py').exists():
+        if str(_scripts_root) not in sys.path:
+            sys.path.insert(0, str(_scripts_root))
+        break
+    _scripts_root = _scripts_root.parent
+from policy_tracking_helper import record_policy_execution, record_sub_operation, get_session_id
 
 if sys.platform == 'win32':
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
@@ -585,18 +588,17 @@ def enforce():
         status = monitor.get_current_status()
         context_percentage = status.get('percentage', 0)
         _op1_duration = int((datetime.now() - _op1_start).total_seconds() * 1000)
-        if HAS_TRACKING:
-            _sub_operations.append(record_sub_operation(
-                session_id=os.environ.get('CLAUDE_SESSION_ID', 'unknown'),
-                policy_name="session-pruning-policy",
-                operation_name="check_context_usage",
-                input_params={},
-                output_results={
-                    "context_percentage": context_percentage,
-                    "context_level": status.get('level')
-                },
-                duration_ms=_op1_duration
-            ))
+        _sub_operations.append(record_sub_operation(
+            session_id=get_session_id(),
+            policy_name="session-pruning-policy",
+            operation_name="check_context_usage",
+            input_params={},
+            output_results={
+                "context_percentage": context_percentage,
+                "context_level": status.get('level')
+            },
+            duration_ms=_op1_duration
+        ))
 
         log_policy_hit("CONTEXT_MONITORED", f"percentage={context_percentage}%, level={status.get('level')}")
 
@@ -605,18 +607,17 @@ def enforce():
         prune_result = check_and_prune()
         prune_needed = prune_result.get('prune_needed', False)
         _op2_duration = int((datetime.now() - _op2_start).total_seconds() * 1000)
-        if HAS_TRACKING:
-            _sub_operations.append(record_sub_operation(
-                session_id=os.environ.get('CLAUDE_SESSION_ID', 'unknown'),
-                policy_name="session-pruning-policy",
-                operation_name="evaluate_cleanup_strategy",
-                input_params={"context_pct": context_percentage},
-                output_results={
-                    "prune_needed": prune_needed,
-                    "strategy": prune_result.get('strategy', 'none')
-                },
-                duration_ms=_op2_duration
-            ))
+        _sub_operations.append(record_sub_operation(
+            session_id=get_session_id(),
+            policy_name="session-pruning-policy",
+            operation_name="evaluate_cleanup_strategy",
+            input_params={"context_pct": context_percentage},
+            output_results={
+                "prune_needed": prune_needed,
+                "strategy": prune_result.get('strategy', 'none')
+            },
+            duration_ms=_op2_duration
+        ))
 
         if prune_needed:
             strategy = get_cleanup_strategy(prune_result.get('strategy', 'moderate'))
@@ -629,18 +630,17 @@ def enforce():
         session_count = get_session_count()
         update_context_stats(context_percentage)
         _op3_duration = int((datetime.now() - _op3_start).total_seconds() * 1000)
-        if HAS_TRACKING:
-            _sub_operations.append(record_sub_operation(
-                session_id=os.environ.get('CLAUDE_SESSION_ID', 'unknown'),
-                policy_name="session-pruning-policy",
-                operation_name="archive_old_sessions",
-                input_params={"keep_count": 5},
-                output_results={
-                    "sessions_archived": 0,
-                    "archive_completed": True
-                },
-                duration_ms=_op3_duration
-            ))
+        _sub_operations.append(record_sub_operation(
+            session_id=get_session_id(),
+            policy_name="session-pruning-policy",
+            operation_name="archive_old_sessions",
+            input_params={"keep_count": 5},
+            output_results={
+                "sessions_archived": 0,
+                "archive_completed": True
+            },
+            duration_ms=_op3_duration
+        ))
 
         log_policy_hit("ENFORCE_COMPLETE", f"sessions={session_count}, context={context_percentage}%, prune={'YES' if prune_needed else 'NO'}")
         print(f"[session-pruning-policy] Policy enforced - {session_count} sessions, context: {context_percentage}%")
@@ -648,24 +648,23 @@ def enforce():
         # ===================================================================
         # TRACKING: Record overall execution
         # ===================================================================
-        if HAS_TRACKING:
-            _duration_ms = int((datetime.now() - _track_start_time).total_seconds() * 1000)
-            record_policy_execution(
-                session_id=os.environ.get('CLAUDE_SESSION_ID', 'unknown'),
-                policy_name="session-pruning-policy",
-                policy_script="session-pruning-policy.py",
-                policy_type="Policy Script",
-                input_params={},
-                output_results={
-                    "status": "success",
-                    "session_count": session_count,
-                    "context_percentage": context_percentage,
-                    "prune_needed": prune_needed
-                },
-                decision=f"Context healthy, sessions: {session_count}, cleanup: {prune_needed}",
-                duration_ms=_duration_ms,
-                sub_operations=_sub_operations if _sub_operations else None
-            )
+        _duration_ms = int((datetime.now() - _track_start_time).total_seconds() * 1000)
+        record_policy_execution(
+            session_id=get_session_id(),
+            policy_name="session-pruning-policy",
+            policy_script="session-pruning-policy.py",
+            policy_type="Policy Script",
+            input_params={},
+            output_results={
+                "status": "success",
+                "session_count": session_count,
+                "context_percentage": context_percentage,
+                "prune_needed": prune_needed
+            },
+            decision=f"Context healthy, sessions: {session_count}, cleanup: {prune_needed}",
+            duration_ms=_duration_ms,
+            sub_operations=_sub_operations if _sub_operations else None
+        )
 
         return {
             "status": "success",
@@ -682,19 +681,18 @@ def enforce():
         # ===================================================================
         # TRACKING: Record error
         # ===================================================================
-        if HAS_TRACKING:
-            _duration_ms = int((datetime.now() - _track_start_time).total_seconds() * 1000)
-            record_policy_execution(
-                session_id=os.environ.get('CLAUDE_SESSION_ID', 'unknown'),
-                policy_name="session-pruning-policy",
-                policy_script="session-pruning-policy.py",
-                policy_type="Policy Script",
-                input_params={},
-                output_results={"status": "error", "error": str(e)},
-                decision=f"Policy failed: {e}",
-                duration_ms=_duration_ms,
-                sub_operations=_sub_operations if _sub_operations else None
-            )
+        _duration_ms = int((datetime.now() - _track_start_time).total_seconds() * 1000)
+        record_policy_execution(
+            session_id=get_session_id(),
+            policy_name="session-pruning-policy",
+            policy_script="session-pruning-policy.py",
+            policy_type="Policy Script",
+            input_params={},
+            output_results={"status": "error", "error": str(e)},
+            decision=f"Policy failed: {e}",
+            duration_ms=_duration_ms,
+            sub_operations=_sub_operations if _sub_operations else None
+        )
 
         return {
             "status": "error",

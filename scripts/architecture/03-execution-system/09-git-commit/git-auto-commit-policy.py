@@ -54,12 +54,15 @@ from pathlib import Path
 # ===================================================================
 # POLICY TRACKING INTEGRATION
 # ===================================================================
-try:
-    sys.path.insert(0, str(Path(__file__).parent.parent))
-    from policy_tracking_helper import record_policy_execution, record_sub_operation
-    HAS_TRACKING = True
-except ImportError:
-    HAS_TRACKING = False
+# Policy tracking - mandatory (find helper by walking up to scripts root)
+_scripts_root = Path(__file__).resolve().parent
+while _scripts_root != _scripts_root.parent:
+    if (_scripts_root / 'policy_tracking_helper.py').exists():
+        if str(_scripts_root) not in sys.path:
+            sys.path.insert(0, str(_scripts_root))
+        break
+    _scripts_root = _scripts_root.parent
+from policy_tracking_helper import record_policy_execution, record_sub_operation, get_session_id
 
 # ---------------------------------------------------------------------------
 # Platform: fix Windows console encoding

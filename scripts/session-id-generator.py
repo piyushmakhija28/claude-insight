@@ -55,13 +55,15 @@ if sys.stderr.encoding != 'utf-8':
 # ===================================================================
 # NEW: POLICY TRACKING INTEGRATION
 # ===================================================================
-try:
-    sys.path.insert(0, str(Path(__file__).parent))
-    from policy_tracking_helper import record_policy_execution, record_sub_operation
-    HAS_TRACKING = True
-except ImportError:
-    HAS_TRACKING = False
-    print("[WARN] Policy tracking not available - continuing without tracking")
+# Policy tracking - mandatory (find helper by walking up to scripts root)
+_scripts_root = Path(__file__).resolve().parent
+while _scripts_root != _scripts_root.parent:
+    if (_scripts_root / 'policy_tracking_helper.py').exists():
+        if str(_scripts_root) not in sys.path:
+            sys.path.insert(0, str(_scripts_root))
+        break
+    _scripts_root = _scripts_root.parent
+from policy_tracking_helper import record_policy_execution, record_sub_operation, get_session_id
 
 class SessionIDGenerator:
     """Generates and manages Claude Code session IDs and lifecycle state.
@@ -176,26 +178,25 @@ class SessionIDGenerator:
             # ===================================================================
             # TRACKING: Record execution
             # ===================================================================
-            if HAS_TRACKING:
-                _duration_ms = int((datetime.now() - _track_start_time).total_seconds() * 1000)
-                record_policy_execution(
-                    session_id=session_id,
-                    policy_name="session-id-generator",
-                    policy_script="session-id-generator.py",
-                    policy_type="Utility Hook",
-                    input_params={
-                        "session_type": session_type,
-                        "description": description,
-                        "metadata": metadata or {}
-                    },
-                    output_results={
-                        "session_id": session_id,
-                        "session_is_new": True,
-                        "status": "ACTIVE"
-                    },
-                    decision=f"Created new session {session_type}",
-                    duration_ms=_duration_ms
-                )
+            _duration_ms = int((datetime.now() - _track_start_time).total_seconds() * 1000)
+            record_policy_execution(
+                session_id=session_id,
+                policy_name="session-id-generator",
+                policy_script="session-id-generator.py",
+                policy_type="Utility Hook",
+                input_params={
+                    "session_type": session_type,
+                    "description": description,
+                    "metadata": metadata or {}
+                },
+                output_results={
+                    "session_id": session_id,
+                    "session_is_new": True,
+                    "status": "ACTIVE"
+                },
+                decision=f"Created new session {session_type}",
+                duration_ms=_duration_ms
+            )
 
             return session_id, session_data
 
@@ -203,21 +204,20 @@ class SessionIDGenerator:
             # ===================================================================
             # TRACKING: Record error
             # ===================================================================
-            if HAS_TRACKING:
-                _duration_ms = int((datetime.now() - _track_start_time).total_seconds() * 1000)
-                record_policy_execution(
-                    session_id="unknown",
-                    policy_name="session-id-generator",
-                    policy_script="session-id-generator.py",
-                    policy_type="Utility Hook",
-                    input_params={
-                        "session_type": session_type,
-                        "description": description
-                    },
-                    output_results={"status": "ERROR", "error": str(e)},
-                    decision=f"Failed to create session: {e}",
-                    duration_ms=_duration_ms
-                )
+            _duration_ms = int((datetime.now() - _track_start_time).total_seconds() * 1000)
+            record_policy_execution(
+                session_id="unknown",
+                policy_name="session-id-generator",
+                policy_script="session-id-generator.py",
+                policy_type="Utility Hook",
+                input_params={
+                    "session_type": session_type,
+                    "description": description
+                },
+                output_results={"status": "ERROR", "error": str(e)},
+                decision=f"Failed to create session: {e}",
+                duration_ms=_duration_ms
+            )
             raise
 
     def get_current_session(self) -> str:

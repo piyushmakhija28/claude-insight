@@ -92,11 +92,15 @@ except Exception:
 # ===================================================================
 # NEW: POLICY TRACKING INTEGRATION
 # ===================================================================
-try:
-    from policy_tracking_helper import record_policy_execution, record_sub_operation
-    HAS_TRACKING = True
-except ImportError:
-    HAS_TRACKING = False
+# Policy tracking - mandatory (find helper by walking up to scripts root)
+_scripts_root = Path(__file__).resolve().parent
+while _scripts_root != _scripts_root.parent:
+    if (_scripts_root / 'policy_tracking_helper.py').exists():
+        if str(_scripts_root) not in sys.path:
+            sys.path.insert(0, str(_scripts_root))
+        break
+    _scripts_root = _scripts_root.parent
+from policy_tracking_helper import record_policy_execution, record_sub_operation, get_session_id
 
 # ===================================================================
 # NEW: TOOL OPTIMIZATION INTEGRATION (3.6 Middleware)
@@ -1436,25 +1440,24 @@ def main():
         # TRACKING: Record blocking event
         # ===================================================================
         try:
-            if HAS_TRACKING:
-                _session_id = get_current_session_id() or 'unknown'
-                _duration_ms = int((datetime.now() - _track_start_time).total_seconds() * 1000)
-                record_policy_execution(
-                    session_id=_session_id,
-                    policy_name="pre-tool-enforcer",
-                    policy_script="pre-tool-enforcer.py",
-                    policy_type="Core Hook",
-                    input_params={
-                        "tool": tool_name if 'tool_name' in dir() else "unknown"
-                    },
-                    output_results={
-                        "status": "BLOCKED",
-                        "blocks_count": len(all_blocks) if 'all_blocks' in dir() else 0,
-                        "hints_provided": len(all_hints) if 'all_hints' in dir() else 0
-                    },
-                    decision=f"Tool {tool_name if 'tool_name' in dir() else 'unknown'} blocked by enforcement policy",
-                    duration_ms=_duration_ms
-                )
+            _session_id = get_current_session_id() or 'unknown'
+            _duration_ms = int((datetime.now() - _track_start_time).total_seconds() * 1000)
+            record_policy_execution(
+                session_id=_session_id,
+                policy_name="pre-tool-enforcer",
+                policy_script="pre-tool-enforcer.py",
+                policy_type="Core Hook",
+                input_params={
+                    "tool": tool_name if 'tool_name' in dir() else "unknown"
+                },
+                output_results={
+                    "status": "BLOCKED",
+                    "blocks_count": len(all_blocks) if 'all_blocks' in dir() else 0,
+                    "hints_provided": len(all_hints) if 'all_hints' in dir() else 0
+                },
+                decision=f"Tool {tool_name if 'tool_name' in dir() else 'unknown'} blocked by enforcement policy",
+                duration_ms=_duration_ms
+            )
         except Exception:
             pass
 
@@ -1473,24 +1476,23 @@ def main():
     # TRACKING: Record overall execution (success path)
     # ===================================================================
     try:
-        if HAS_TRACKING:
-            _session_id = get_current_session_id() or 'unknown'
-            _duration_ms = int((datetime.now() - _track_start_time).total_seconds() * 1000)
-            record_policy_execution(
-                session_id=_session_id,
-                policy_name="pre-tool-enforcer",
-                policy_script="pre-tool-enforcer.py",
-                policy_type="Core Hook",
-                input_params={
-                    "tool": tool_name if 'tool_name' in dir() else "unknown"
-                },
-                output_results={
-                    "status": "ALLOWED",
-                    "hints_provided": len(all_hints) if 'all_hints' in dir() else 0
-                },
-                decision=f"Tool {tool_name if 'tool_name' in dir() else 'unknown'} allowed with optimization hints",
-                duration_ms=_duration_ms
-            )
+        _session_id = get_current_session_id() or 'unknown'
+        _duration_ms = int((datetime.now() - _track_start_time).total_seconds() * 1000)
+        record_policy_execution(
+            session_id=_session_id,
+            policy_name="pre-tool-enforcer",
+            policy_script="pre-tool-enforcer.py",
+            policy_type="Core Hook",
+            input_params={
+                "tool": tool_name if 'tool_name' in dir() else "unknown"
+            },
+            output_results={
+                "status": "ALLOWED",
+                "hints_provided": len(all_hints) if 'all_hints' in dir() else 0
+            },
+            decision=f"Tool {tool_name if 'tool_name' in dir() else 'unknown'} allowed with optimization hints",
+            duration_ms=_duration_ms
+        )
     except Exception:
         pass
 

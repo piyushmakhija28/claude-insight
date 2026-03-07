@@ -46,12 +46,15 @@ from pathlib import Path
 # ===================================================================
 # NEW: POLICY TRACKING INTEGRATION
 # ===================================================================
-try:
-    sys.path.insert(0, str(Path(__file__).parent))
-    from policy_tracking_helper import record_policy_execution, record_sub_operation
-    HAS_TRACKING = True
-except ImportError:
-    HAS_TRACKING = False
+# Policy tracking - mandatory (find helper by walking up to scripts root)
+_scripts_root = Path(__file__).resolve().parent
+while _scripts_root != _scripts_root.parent:
+    if (_scripts_root / 'policy_tracking_helper.py').exists():
+        if str(_scripts_root) not in sys.path:
+            sys.path.insert(0, str(_scripts_root))
+        break
+    _scripts_root = _scripts_root.parent
+from policy_tracking_helper import record_policy_execution, record_sub_operation, get_session_id
 
 # Flag auto-expiry configuration (Loophole #10)
 FLAG_EXPIRY_MINUTES = 60   # Auto-delete flags older than 60 minutes
@@ -868,7 +871,7 @@ class AutoFixEnforcer:
         if hasattr(self, '_sub_op_timings'):
             for timing in self._sub_op_timings:
                 _sub_operations.append(record_sub_operation(
-                    session_id=os.environ.get('CLAUDE_SESSION_ID', 'unknown'),
+                    session_id=get_session_id(),
                     policy_name="auto-fix-enforcer",
                     operation_name=timing['name'],
                     input_params={},
@@ -882,23 +885,22 @@ class AutoFixEnforcer:
             # ===================================================================
             # TRACKING: Record successful execution
             # ===================================================================
-            if HAS_TRACKING:
-                _duration_ms = int((datetime.now() - _track_start_time).total_seconds() * 1000)
-                record_policy_execution(
-                    session_id=os.environ.get('CLAUDE_SESSION_ID', 'unknown'),
-                    policy_name="auto-fix-enforcer",
-                    policy_script="auto-fix-enforcer.py",
-                    policy_type="Core Hook",
-                    input_params={"auto_fix": auto_fix},
-                    output_results={
-                        "status": "ALL_SYSTEMS_OK",
-                        "failures_count": 0,
-                        "auto_fixed_count": 0
-                    },
-                    decision="All 7 system checks passed",
-                    duration_ms=_duration_ms,
-                    sub_operations=_sub_operations if _sub_operations else None
-                )
+            _duration_ms = int((datetime.now() - _track_start_time).total_seconds() * 1000)
+            record_policy_execution(
+                session_id=get_session_id(),
+                policy_name="auto-fix-enforcer",
+                policy_script="auto-fix-enforcer.py",
+                policy_type="Core Hook",
+                input_params={"auto_fix": auto_fix},
+                output_results={
+                    "status": "ALL_SYSTEMS_OK",
+                    "failures_count": 0,
+                    "auto_fixed_count": 0
+                },
+                decision="All 7 system checks passed",
+                duration_ms=_duration_ms,
+                sub_operations=_sub_operations if _sub_operations else None
+            )
             return 0
 
         # Try auto-fix if enabled
@@ -915,25 +917,24 @@ class AutoFixEnforcer:
         # ===================================================================
         # TRACKING: Record execution with failures
         # ===================================================================
-        if HAS_TRACKING:
-            _duration_ms = int((datetime.now() - _track_start_time).total_seconds() * 1000)
-            critical_count = sum(1 for f in self.failures if f['type'] == 'CRITICAL')
-            record_policy_execution(
-                session_id=os.environ.get('CLAUDE_SESSION_ID', 'unknown'),
-                policy_name="auto-fix-enforcer",
-                policy_script="auto-fix-enforcer.py",
-                policy_type="Core Hook",
-                input_params={"auto_fix": auto_fix},
-                output_results={
-                    "status": "FAILURES_DETECTED",
-                    "failures_count": len(self.failures),
-                    "auto_fixed_count": len(self.auto_fixed),
-                    "critical_failures": critical_count
-                },
-                decision=f"{len(self.failures)} system failures detected",
-                duration_ms=_duration_ms,
-                sub_operations=_sub_operations if _sub_operations else None
-            )
+        _duration_ms = int((datetime.now() - _track_start_time).total_seconds() * 1000)
+        critical_count = sum(1 for f in self.failures if f['type'] == 'CRITICAL')
+        record_policy_execution(
+            session_id=get_session_id(),
+            policy_name="auto-fix-enforcer",
+            policy_script="auto-fix-enforcer.py",
+            policy_type="Core Hook",
+            input_params={"auto_fix": auto_fix},
+            output_results={
+                "status": "FAILURES_DETECTED",
+                "failures_count": len(self.failures),
+                "auto_fixed_count": len(self.auto_fixed),
+                "critical_failures": critical_count
+            },
+            decision=f"{len(self.failures)} system failures detected",
+            duration_ms=_duration_ms,
+            sub_operations=_sub_operations if _sub_operations else None
+        )
 
         # Return exit code
         if all_ok:

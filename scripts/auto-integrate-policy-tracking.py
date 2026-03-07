@@ -40,18 +40,21 @@ class PolicyTrackingIntegrator:
 
     # Import statement to add
     TRACKING_IMPORT = """# Policy Tracking Integration
-try:
-    sys.path.insert(0, str(Path(__file__).parent))
-    from policy_tracking_helper import record_policy_execution, record_sub_operation
-    HAS_TRACKING = True
-except ImportError:
-    HAS_TRACKING = False
+# Policy tracking - mandatory (find helper by walking up to scripts root)
+_scripts_root = Path(__file__).resolve().parent
+while _scripts_root != _scripts_root.parent:
+    if (_scripts_root / 'policy_tracking_helper.py').exists():
+        if str(_scripts_root) not in sys.path:
+            sys.path.insert(0, str(_scripts_root))
+        break
+    _scripts_root = _scripts_root.parent
+from policy_tracking_helper import record_policy_execution, record_sub_operation, get_session_id
 """
 
     # Setup code to add after imports
     TRACKING_SETUP = """
 # Get session ID for tracking
-_TRACKING_SESSION_ID = os.environ.get('CLAUDE_SESSION_ID', 'unknown')
+_TRACKING_SESSION_ID = get_session_id()
 _TRACKING_START_TIME = None
 """
 

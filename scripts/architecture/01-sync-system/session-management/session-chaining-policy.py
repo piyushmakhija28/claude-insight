@@ -43,12 +43,15 @@ if sys.platform == 'win32':
 # ===================================================================
 # NEW: POLICY TRACKING INTEGRATION
 # ===================================================================
-try:
-    sys.path.insert(0, str(Path(__file__).parent))
-    from policy_tracking_helper import record_policy_execution, record_sub_operation
-    HAS_TRACKING = True
-except ImportError:
-    HAS_TRACKING = False
+# Policy tracking - mandatory (find helper by walking up to scripts root)
+_scripts_root = Path(__file__).resolve().parent
+while _scripts_root != _scripts_root.parent:
+    if (_scripts_root / 'policy_tracking_helper.py').exists():
+        if str(_scripts_root) not in sys.path:
+            sys.path.insert(0, str(_scripts_root))
+        break
+    _scripts_root = _scripts_root.parent
+from policy_tracking_helper import record_policy_execution, record_sub_operation, get_session_id
 
 MEMORY_DIR = Path.home() / ".claude" / "memory"
 LOG_FILE = MEMORY_DIR / "logs" / "policy-hits.log"
@@ -219,43 +222,40 @@ def enforce():
         log_policy_hit("ENFORCE_START", "session-chaining")
         manager = SessionChainManager()
         _op1_duration = int((datetime.now() - _op1_start).total_seconds() * 1000)
-        if HAS_TRACKING:
-            _sub_operations.append(record_sub_operation(
-                session_id=os.environ.get('CLAUDE_SESSION_ID', 'unknown'),
-                policy_name="session-chaining-policy",
-                operation_name="initialize_manager",
-                input_params={},
-                output_results={"manager_ready": True},
-                duration_ms=_op1_duration
-            ))
+        _sub_operations.append(record_sub_operation(
+            session_id=get_session_id(),
+            policy_name="session-chaining-policy",
+            operation_name="initialize_manager",
+            input_params={},
+            output_results={"manager_ready": True},
+            duration_ms=_op1_duration
+        ))
 
         # Sub-op 2: Archive old sessions
         _op2_start = datetime.now()
         archived = manager.archive_old_sessions()
         _op2_duration = int((datetime.now() - _op2_start).total_seconds() * 1000)
-        if HAS_TRACKING:
-            _sub_operations.append(record_sub_operation(
-                session_id=os.environ.get('CLAUDE_SESSION_ID', 'unknown'),
-                policy_name="session-chaining-policy",
-                operation_name="archive_old_sessions",
-                input_params={"keep_threshold": 10},
-                output_results={"sessions_archived": archived},
-                duration_ms=_op2_duration
-            ))
+        _sub_operations.append(record_sub_operation(
+            session_id=get_session_id(),
+            policy_name="session-chaining-policy",
+            operation_name="archive_old_sessions",
+            input_params={"keep_threshold": 10},
+            output_results={"sessions_archived": archived},
+            duration_ms=_op2_duration
+        ))
 
         # Sub-op 3: Get session chain
         _op3_start = datetime.now()
         chain = manager.get_session_chain()
         _op3_duration = int((datetime.now() - _op3_start).total_seconds() * 1000)
-        if HAS_TRACKING:
-            _sub_operations.append(record_sub_operation(
-                session_id=os.environ.get('CLAUDE_SESSION_ID', 'unknown'),
-                policy_name="session-chaining-policy",
-                operation_name="get_session_chain",
-                input_params={},
-                output_results={"chain_length": len(chain)},
-                duration_ms=_op3_duration
-            ))
+        _sub_operations.append(record_sub_operation(
+            session_id=get_session_id(),
+            policy_name="session-chaining-policy",
+            operation_name="get_session_chain",
+            input_params={},
+            output_results={"chain_length": len(chain)},
+            duration_ms=_op3_duration
+        ))
 
         log_policy_hit("ENFORCE_COMPLETE", f"Archived {archived} old sessions")
         print("[session-chaining-policy] Policy enforced - Session chaining manager ready")
@@ -263,23 +263,22 @@ def enforce():
         # ===================================================================
         # TRACKING: Record overall execution
         # ===================================================================
-        if HAS_TRACKING:
-            _duration_ms = int((datetime.now() - _track_start_time).total_seconds() * 1000)
-            record_policy_execution(
-                session_id=os.environ.get('CLAUDE_SESSION_ID', 'unknown'),
-                policy_name="session-chaining-policy",
-                policy_script="session-chaining-policy.py",
-                policy_type="Policy Script",
-                input_params={},
-                output_results={
-                    "status": "success",
-                    "archived_sessions": archived,
-                    "chain_length": len(chain)
-                },
-                decision=f"Archived {archived} sessions, chain length: {len(chain)}",
-                duration_ms=_duration_ms,
-                sub_operations=_sub_operations if _sub_operations else None
-            )
+        _duration_ms = int((datetime.now() - _track_start_time).total_seconds() * 1000)
+        record_policy_execution(
+            session_id=get_session_id(),
+            policy_name="session-chaining-policy",
+            policy_script="session-chaining-policy.py",
+            policy_type="Policy Script",
+            input_params={},
+            output_results={
+                "status": "success",
+                "archived_sessions": archived,
+                "chain_length": len(chain)
+            },
+            decision=f"Archived {archived} sessions, chain length: {len(chain)}",
+            duration_ms=_duration_ms,
+            sub_operations=_sub_operations if _sub_operations else None
+        )
 
         return {"status": "success", "archived_sessions": archived}
     except Exception as e:
@@ -288,19 +287,18 @@ def enforce():
         # ===================================================================
         # TRACKING: Record error
         # ===================================================================
-        if HAS_TRACKING:
-            _duration_ms = int((datetime.now() - _track_start_time).total_seconds() * 1000)
-            record_policy_execution(
-                session_id=os.environ.get('CLAUDE_SESSION_ID', 'unknown'),
-                policy_name="session-chaining-policy",
-                policy_script="session-chaining-policy.py",
-                policy_type="Policy Script",
-                input_params={},
-                output_results={"status": "error", "error": str(e)},
-                decision=f"Policy failed: {e}",
-                duration_ms=_duration_ms,
-                sub_operations=_sub_operations if _sub_operations else None
-            )
+        _duration_ms = int((datetime.now() - _track_start_time).total_seconds() * 1000)
+        record_policy_execution(
+            session_id=get_session_id(),
+            policy_name="session-chaining-policy",
+            policy_script="session-chaining-policy.py",
+            policy_type="Policy Script",
+            input_params={},
+            output_results={"status": "error", "error": str(e)},
+            decision=f"Policy failed: {e}",
+            duration_ms=_duration_ms,
+            sub_operations=_sub_operations if _sub_operations else None
+        )
 
         return {"status": "error", "message": str(e)}
 

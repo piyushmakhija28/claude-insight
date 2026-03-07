@@ -51,12 +51,15 @@ except Exception:
 # ===================================================================
 # NEW: POLICY TRACKING INTEGRATION
 # ===================================================================
-try:
-    from policy_tracking_helper import record_policy_execution, record_sub_operation
-    HAS_TRACKING = True
-except ImportError:
-    HAS_TRACKING = False
-    print("[WARN] Policy tracking not available - continuing without tracking")
+# Policy tracking - mandatory (find helper by walking up to scripts root)
+_scripts_root = Path(__file__).resolve().parent
+while _scripts_root != _scripts_root.parent:
+    if (_scripts_root / 'policy_tracking_helper.py').exists():
+        if str(_scripts_root) not in sys.path:
+            sys.path.insert(0, str(_scripts_root))
+        break
+    _scripts_root = _scripts_root.parent
+from policy_tracking_helper import record_policy_execution, record_sub_operation, get_session_id
 
 # Track hook start time
 _HOOK_START = datetime.now()
@@ -951,7 +954,7 @@ def main():
         _policy_duration = int((datetime.now() - _policy_start_time).total_seconds() * 1000)
         _current_session = get_current_session_id()
 
-        if HAS_TRACKING and _current_session:
+        if _current_session:
             record_policy_execution(
                 session_id=_current_session,
                 policy_name="clear-session-handler",
