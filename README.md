@@ -104,25 +104,25 @@ python scripts/3-level-flow.py \
 flowchart TD
     IN(["Input: Fix the login timeout bug"])
 
-    LM1["Level -1 : Auto-Fix\nUnicode check · encoding fix · path normalization"]
-    L1["Level 1 : Context Sync\nSession load + parallel complexity and context extraction\nOutput: combined_complexity_score 1-25 scale"]
-    L2["Level 2 : Standards NO-OP\nPolicies read from policies/ at runtime — zero overhead"]
-    P0["Pre-0 : Pre-Analysis\nCallGraph scan → hot_nodes, danger_zones, complexity_boost"]
+    LM1["Level 0 : Pre-Flight Sanity Guard\nUnicode check · encoding fix · path normalization"]
+    L1["Level 1 : Session & Context Synchronization\nSession load + parallel complexity and context extraction\nOutput: combined_complexity_score 1-25 scale"]
+    L2["Standards (non-numbered, always-on)\nPolicies read from policies/ at runtime — zero overhead"]
+    P0["Step 0 : Pre-Analysis & CallGraph Scan\nCallGraph scan → hot_nodes, danger_zones, complexity_boost"]
 
-    subgraph S0["Step 0 : Task Analysis ~15s"]
+    subgraph S0["Step 1 : Task Orchestration & Planning ~15s"]
         direction LR
         C1["Call 1: prompt_gen_expert_caller\nfills orchestration template"]
         C2["Call 2: orchestrator_agent_caller\nexecutes full plan, streamed live"]
         C1 --> C2
     end
 
-    S8["Step 8 : GitHub Issue created\nJira Issue if ENABLE_JIRA=1"]
-    S9["Step 9 : Branch\nfeature/PROJ-123 or issue number"]
-    S10["Step 10 : Implement\ncode written · call graph snapshot · Jira In Progress"]
-    S11["Step 11 : PR + Review\nPR opened · call graph diff · Jira In Review"]
-    S12["Step 12 : Close\nGitHub + Jira closed · Figma complete comment"]
-    S13["Step 13 : Docs + UML\ndocs updated · 13 UML diagram types generated"]
-    S14["Step 14 : Summary\nfinal report + optional voice notification"]
+    S8["Step 2 : Issue Tracking\nGitHub Issue created · Jira Issue if ENABLE_JIRA=1"]
+    S9["Step 3 : Branch & Workspace Setup\nfeature/PROJ-123 or issue number"]
+    S10["Step 4 : Implementation & Code Generation\ncode written · call graph snapshot · Jira In Progress"]
+    S11["Step 5 : Pull Request & Automated Review\nPR opened · call graph diff · Jira In Review"]
+    S12["Step 6 : Issue & Ticket Closure\nGitHub + Jira closed · Figma complete comment"]
+    S13["Step 7 : Documentation & UML Generation\ndocs updated · 13 UML diagram types generated"]
+    S14["Step 8 : Final Telemetry & Summary Report\nfinal report + optional voice notification"]
 
     OUT(["Done — ~15s planning, ~120s full pipeline"])
 
@@ -154,12 +154,12 @@ flowchart TD
 flowchart TD
     START(["Task Input\npython scripts/3-level-flow.py --task ..."])
 
-    subgraph LM1["Level -1 : Auto-Fix"]
+    subgraph LM1["Level 0 : Pre-Flight Sanity Guard"]
         direction LR
         U["Unicode\nNormalize"] --> E["Encoding\nValidate\nUTF-8 / cp1252"] --> P["Path\nResolve\npath_resolver.py"]
     end
 
-    subgraph L1["Level 1 : Sync"]
+    subgraph L1["Level 1 : Session & Context Synchronization"]
         direction TB
         SS["Session Sync"]
         subgraph PAR["Parallel"]
@@ -171,13 +171,13 @@ flowchart TD
         SS --> PAR --> MG
     end
 
-    subgraph L2["Level 2 : Standards NO-OP"]
-        POL["policies/02-standards-system/ .md files\nread directly from disk, zero pipeline overhead"]
+    subgraph L2["Standards (non-numbered, always-on)"]
+        POL[".md files under policies/\nread directly from disk, zero pipeline overhead"]
     end
 
-    subgraph L3["Level 3 : Execution 8 active steps"]
+    subgraph L3["Level 2 : SDLC Execution Core, 9 active steps"]
         direction LR
-        P0["Pre-0\nCallGraph\nScan"] --> S0["Step 0\nPromptGen +\nOrchestrator\n~15s"] --> S8["Step 8\nIssue\nCreate"] --> S9["Step 9\nBranch"] --> S10["Step 10\nImplement"] --> S11["Step 11\nPR + Review"] --> S12["Step 12\nClose"] --> S13["Step 13\nDocs + UML"] --> S14["Step 14\nSummary"]
+        P0["Step 0\nCallGraph\nScan"] --> S0["Step 1\nPromptGen +\nOrchestrator\n~15s"] --> S8["Step 2\nIssue\nTracking"] --> S9["Step 3\nBranch\nSetup"] --> S10["Step 4\nImplement"] --> S11["Step 5\nPR + Review"] --> S12["Step 6\nClose"] --> S13["Step 7\nDocs + UML"] --> S14["Step 8\nSummary"]
     end
 
     END(["Workflow Complete"])
@@ -194,49 +194,50 @@ flowchart TD
 
 The mermaid diagrams above are the summary view. This is the literal edge order from `create_flow_graph()` in `langgraph_engine/orchestrator.py`, including the two conditional branches that change the path at runtime.
 
-**Level −1 · Auto-Fix** — three sequential checks, merged, with an interactive repair loop on failure:
+**Level 0 · Pre-Flight Sanity Guard** — three sequential checks, merged, with an interactive repair loop on failure:
 
 ```
-level_minus1_unicode → level_minus1_encoding → level_minus1_windows → level_minus1_merge
+preflight_guard_unicode → preflight_guard_encoding → preflight_guard_windows → preflight_guard_merge
                                                                             │
-                                            fail ─ ask_level_minus1_fix ─ fix_level_minus1 ─⤺ back to unicode
+                                        fail ─ ask_preflight_guard_fix ─ fix_preflight_guard ─⤺ back to unicode
 ```
 
-**Level 1 · Sync** — session load fans out to two parallel branches, merges, then prunes memory:
+**Level 1 · Session & Context Synchronization** — session load fans out to two parallel branches, merges, then prunes memory:
 
 ```
 level1_session ⇉ [level1_complexity ‖ level1_context] → level1_merge → level1_cleanup
 ```
 
-**Level 2 · Standards** — genuinely a no-op. No `add_node` / `add_edge` calls exist for it — Level 3 nodes read standards `.md` files straight off disk when they need them, so there is nothing for the StateGraph to schedule.
+**Standards (non-numbered, always-on)** — genuinely a no-op. No `add_node` / `add_edge` calls exist for it — SDLC Execution Core nodes read standards `.md` files straight off disk when they need them, so there is nothing for the StateGraph to schedule.
 
-**Level 3 · Execution** — Pre-0 decides whether Step 0's planning phase runs at all; Step 11 can loop back into Step 10 on a failed review:
+**Level 2 · SDLC Execution Core** — Step 0 decides whether Step 1's planning phase runs at all; Step 5 can loop back into Step 4 on a failed review:
 
 ```
-level3_init → level3_pre_analysis
+sdlc_init → sdlc_step0_pre_analysis
                   │
-                  ├─ template fast-path ──────────────────────────────────────┐
-                  │                                                            │
-                  └─ miss → level3_step0_0 → level3_step0_1 → level3_step0 ────┤
-                                                                                ▼
-                                                              level3_step8 → level3_step9
-                                                                                │
-                                          hook mode ⤷ level3_output → END ─────┤ (steps 10-14 skipped)
-                                                                                ▼
-                            level3_step10 → standards_hook_step10 → level3_step11
-                                    ▲                                    │
-                                    └──── level3_step11_retry ⤺ review fail
+                  ├─ template fast-path ────────────────────────────────────────────┐
+                  │                                                                  │
+                  └─ miss → sdlc_step0_project_context → sdlc_step0_callgraph_snapshot ─┤
+                                        → sdlc_step1_task_orchestration ─────────────┤
+                                                                                      ▼
+                                                    sdlc_step2_issue_tracking → sdlc_step3_branch_setup
+                                                                                      │
+                                          hook mode ⤷ sdlc_output → END ─────────────┤ (steps 4-8 skipped)
+                                                                                      ▼
+                sdlc_step4_implementation → sdlc_standards_hook_step4 → sdlc_step5_pr_review
+                                    ▲                                          │
+                                    └──── sdlc_step5_retry ⤺ review fail
                                                                           │ pass / max-retry
                                                                           ▼
-             level3_step12 → level3_step13 → standards_hook_step13 → level3_step14 → level3_output → END
+     sdlc_step6_issue_closure → sdlc_step7_documentation → sdlc_standards_hook_step7 → sdlc_step8_final_summary → sdlc_output → END
 ```
 
 ### Execution Modes
 
 | Mode | Env Var | Steps Active | Use Case |
 |---|---|---|---|
-| **Hook Mode** | `CLAUDE_HOOK_MODE=1` (default) | Pre-0, Step 0, Steps 8-9 | Daily dev workflow — Claude Code hooks trigger analysis + issue + branch |
-| **Full Mode** | `CLAUDE_HOOK_MODE=0` | Pre-0, Step 0, Steps 8-14 | End-to-end automation — all steps run sequentially |
+| **Hook Mode** | `CLAUDE_HOOK_MODE=1` (default) | Steps 0-3 | Daily dev workflow — Claude Code hooks trigger analysis + issue + branch |
+| **Full Mode** | `CLAUDE_HOOK_MODE=0` | Steps 0-8 | End-to-end automation — all steps run sequentially |
 
 ### CallGraph-Driven Intelligence
 
@@ -251,9 +252,9 @@ flowchart LR
 
     CGA["call_graph_analyzer.py\n578 classes · 3985 methods"]
 
-    P0G["Pre-0\nanalyze_impact_before_change()\n→ risk_level\n→ danger_zones\n→ affected_methods"]
-    S10G["Step 10\nsnapshot_call_graph()\npre-change state captured\ncall_graph_stale = True after writes"]
-    S11G["Step 11\nreview_change_impact()\nbefore vs after graph diff\nbreaking changes flagged"]
+    P0G["Step 0\nanalyze_impact_before_change()\n→ risk_level\n→ danger_zones\n→ affected_methods"]
+    S10G["Step 4\nsnapshot_call_graph()\npre-change state captured\ncall_graph_stale = True after writes"]
+    S11G["Step 5\nreview_change_impact()\nbefore vs after graph diff\nbreaking changes flagged"]
 
     CGB --> CGA --> P0G --> S10G --> S11G
 
@@ -266,7 +267,7 @@ flowchart LR
 
 This means the planner knows what could break **before** suggesting changes, and the reviewer detects regressions based on actual method-level diffs — not just file diffs.
 
-**Stale Graph Guard:** After Step 10 writes files, `call_graph_stale = True` is set. The analyzer silently rebuilds the graph when stale instead of returning a Phase-0 cached snapshot — preventing multi-phase implementations from making decisions on out-of-date graph data.
+**Stale Graph Guard:** After Step 4 writes files, `call_graph_stale = True` is set. The analyzer silently rebuilds the graph when stale instead of returning a Phase-0 cached snapshot — preventing multi-phase implementations from making decisions on out-of-date graph data.
 
 **Language support:**
 
@@ -277,13 +278,13 @@ This means the planner knows what could break **before** suggesting changes, and
 | TypeScript | Regex-based | Classes, functions, exports |
 | Kotlin | Regex-based | Classes, functions, companion objects |
 
-### Planning Phase (Step 0)
+### Planning Phase (Step 1)
 
-Step 0 runs two sequential subprocess calls against the Claude CLI (~15s total):
+Step 1 runs two sequential subprocess calls against the Claude CLI (~15s total):
 
 ```mermaid
 flowchart LR
-    IN(["combined_complexity_score\n+ call graph metrics\nfrom Pre-0"])
+    IN(["combined_complexity_score\n+ call graph metrics\nfrom Step 0"])
 
     subgraph C1["Call 1 · PromptGen Expert (~10s)"]
         direction TB
@@ -408,18 +409,18 @@ claude-workflow-engine/           # 369 Python files total
 │   │   └── drawio/               # DrawioConverter — .drawio XML for all 13 diagram types
 │   ├── parsers/                  # Abstract Factory: Python (AST), Java, TypeScript, Kotlin parsers
 │   ├── integrations/             # GitHub, Jira, Figma, Jenkins integrations
-│   ├── level_minus1/             # Level -1: Auto-Fix (nodes, merge, recovery)
-│   ├── level1_sync/              # Level 1: Session + context sync (10 modules)
-│   ├── level3_execution/         # Level 3: 8-step SDLC execution
-│   │   ├── subgraph.py           # Level 3 StateGraph + _run_step helper
+│   ├── preflight_guard/           # Level 0: Pre-Flight Sanity Guard (nodes, merge, recovery)
+│   ├── context_sync/              # Level 1: Session & Context Synchronization (10 modules)
+│   ├── sdlc_pipeline/              # Level 2: SDLC Execution Core, 9-step execution
+│   │   ├── subgraph.py           # StateGraph + _run_step helper
 │   │   ├── nodes/                # Step node wrappers + step implementation facades
 │   │   ├── architecture/         # prompt_gen_expert_caller, orchestrator_agent_caller
 │   │   ├── templates/            # orchestration_system_prompt.txt
 │   │   ├── sonarqube/            # SonarQube Facade: api_client, lightweight, aggregator, auto_fixer
 │   │   ├── documentation_manager.py
 │   │   ├── figma_workflow.py
-│   │   ├── steps8to12_github.py
-│   │   └── steps8to12_jira.py
+│   │   ├── github_lifecycle.py
+│   │   └── jira_lifecycle.py
 │   ├── build_dependency_resolver/ # Multi-language build dependency parser
 │   ├── call_graph_builder.py     # Compat shim → parsers/
 │   ├── call_graph_analyzer.py    # Impact analysis: risk_level, danger_zones, affected_methods
@@ -529,7 +530,7 @@ All options are set via environment variables. Copy `.env.example` and fill in:
 
 | Variable | Default | Description |
 |---|---|---|
-| `CLAUDE_HOOK_MODE` | `1` | `1` = Hook Mode (Steps Pre-0 to 9), `0` = Full Mode (all 8 steps) |
+| `CLAUDE_HOOK_MODE` | `1` | `1` = Hook Mode (Steps 0-3), `0` = Full Mode (all 9 steps) |
 | `CLAUDE_DEBUG` | `0` | `1` = verbose debug logging |
 | `LLM_PROVIDER` | `claude_cli` | `claude_cli` or `anthropic` |
 

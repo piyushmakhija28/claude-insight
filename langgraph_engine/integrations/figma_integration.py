@@ -1,7 +1,7 @@
 """
 Figma integration adapter.
 
-Wraps Level3FigmaWorkflow (level3_figma_workflow.py) behind the
+Wraps Level3FigmaWorkflow (figma_workflow.py) behind the
 AbstractIntegration lifecycle interface.
 
 Active when ENABLE_FIGMA=1 and FIGMA_ACCESS_TOKEN is set.
@@ -65,7 +65,7 @@ class FigmaIntegration(AbstractIntegration):
         """
         if self._workflow is None:
             try:
-                from ..level3_execution.figma_workflow import Level3FigmaWorkflow  # type: ignore[import]
+                from ..sdlc_pipeline.figma_workflow import Level3FigmaWorkflow  # type: ignore[import]
 
                 self._workflow = Level3FigmaWorkflow()
                 logger.debug("[FigmaIntegration] Level3FigmaWorkflow loaded")
@@ -81,7 +81,7 @@ class FigmaIntegration(AbstractIntegration):
         """Step 8/3: Extract Figma components for task breakdown.
 
         Detects the Figma file key from the user message or reads it from
-        context, then delegates to Level3FigmaWorkflow.step3_extract_components.
+        context, then delegates to Level3FigmaWorkflow.step1_extract_components.
 
         Args:
             context: Pipeline state.  Expected keys:
@@ -117,7 +117,7 @@ class FigmaIntegration(AbstractIntegration):
         self._artifact_id = file_key
 
         try:
-            result = workflow.step3_extract_components(file_key=file_key)
+            result = workflow.step1_extract_components(file_key=file_key)
             if result.get("success"):
                 self._components = result.get("components", [])
                 self._state = IntegrationState.CREATED
@@ -156,7 +156,7 @@ class FigmaIntegration(AbstractIntegration):
             return {"success": False, "reason": "Level3FigmaWorkflow unavailable"}
 
         try:
-            return workflow.step7_extract_design_tokens(
+            return workflow.step1_extract_design_tokens(
                 file_key=resolved_key,
                 node_ids=node_ids,
             )
@@ -167,7 +167,7 @@ class FigmaIntegration(AbstractIntegration):
     def update(self, context: Dict[str, Any]) -> Dict[str, Any]:
         """Step 10: Post 'implementation started' comment to Figma file.
 
-        Delegates to Level3FigmaWorkflow.step10_implementation_started.
+        Delegates to Level3FigmaWorkflow.step4_implementation_started.
 
         Args:
             context: Pipeline state.  Uses 'figma_file_key' or artifact_id.
@@ -191,7 +191,7 @@ class FigmaIntegration(AbstractIntegration):
 
         try:
             components = context.get("figma_components", self._components)
-            result = workflow.step10_implementation_started(
+            result = workflow.step4_implementation_started(
                 file_key=file_key,
                 components=components if isinstance(components, list) else [],
             )
@@ -205,7 +205,7 @@ class FigmaIntegration(AbstractIntegration):
     def on_review(self, pr_data: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
         """Step 11: Generate design fidelity review checklist.
 
-        Delegates to Level3FigmaWorkflow.step11_design_review.
+        Delegates to Level3FigmaWorkflow.step5_design_review.
 
         Args:
             pr_data: Dict with pr_url (str), pr_number (int) - not used by
@@ -230,7 +230,7 @@ class FigmaIntegration(AbstractIntegration):
             return {"success": False, "reason": "Level3FigmaWorkflow unavailable"}
 
         try:
-            result = workflow.step11_design_review(
+            result = workflow.step5_design_review(
                 file_key=file_key,
                 implementation_summary=context.get("implementation_summary", ""),
             )
@@ -244,7 +244,7 @@ class FigmaIntegration(AbstractIntegration):
     def close(self, context: Dict[str, Any]) -> Dict[str, Any]:
         """Step 12: Post 'implementation complete' comment to Figma file.
 
-        Delegates to Level3FigmaWorkflow.step12_implementation_complete.
+        Delegates to Level3FigmaWorkflow.step6_implementation_complete.
 
         Args:
             context: Pipeline state.  Expected keys:
@@ -269,7 +269,7 @@ class FigmaIntegration(AbstractIntegration):
             return {"success": False, "reason": "Level3FigmaWorkflow unavailable"}
 
         try:
-            result = workflow.step12_implementation_complete(
+            result = workflow.step6_implementation_complete(
                 file_key=file_key,
                 pr_number=int(context.get("pr_number", 0)),
                 pr_url=context.get("pr_url", ""),

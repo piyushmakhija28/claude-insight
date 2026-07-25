@@ -3,6 +3,18 @@
 Moved from langgraph_engine/flow_trace_converter.py to the context/ domain package.
 Backward-compat shim at the original location re-exports from here.
 
+Marker scheme (Level/Step domain-driven rename):
+    LEVEL_0_PREFLIGHT           - Level 0: Pre-Flight Sanity Guard
+    LEVEL_1_SESSION/CONTEXT     - Level 1: Session & Context Synchronization (unchanged)
+    SDLC_STEP_0 .. SDLC_STEP_8  - Level 2: SDLC Execution Core, Steps 0-8
+
+LEGACY_MARKER_ALIASES below maps the old marker strings (LEVEL_MINUS_1,
+LEVEL_3_STEP_0, ...) to their new equivalents so any downstream reader of
+a pre-rename flow-trace.json (e.g. MCP tools that scan historical trace
+files generically) can normalize old and new files the same way. No live
+hook currently matches on these old markers -- pre_tool_enforcer's
+policies only match LEVEL_1_* markers, which are unchanged by this rename.
+
 Windows-safe: ASCII only (cp1252 compatible).
 """
 
@@ -27,6 +39,29 @@ except ImportError:
     _FLOW_TRACE_MEMORY_DIR = Path.home() / ".claude" / "memory"
 
 
+# Old marker -> new marker, for any consumer normalizing pre-rename flow-trace.json files.
+LEGACY_MARKER_ALIASES: Dict[str, str] = {
+    "LEVEL_MINUS_1": "LEVEL_0_PREFLIGHT",
+    "LEVEL_2_STANDARDS": "STANDARDS",
+    "LEVEL_3_STEP_0": "SDLC_STEP_1",
+    "LEVEL_3_STEP_8": "SDLC_STEP_2",
+    "LEVEL_3_STEP_9": "SDLC_STEP_3",
+    "LEVEL_3_STEP_10": "SDLC_STEP_4",
+    "LEVEL_3_STEP_11": "SDLC_STEP_5",
+    "LEVEL_3_STEP_12": "SDLC_STEP_6",
+    "LEVEL_3_STEP_13": "SDLC_STEP_7",
+    "LEVEL_3_STEP_14": "SDLC_STEP_8",
+}
+
+
+def normalize_legacy_marker(marker: str) -> str:
+    """Map a pre-rename flow-trace 'step' marker to its current equivalent.
+
+    Returns the marker unchanged if it is already current or unrecognized.
+    """
+    return LEGACY_MARKER_ALIASES.get(marker, marker)
+
+
 def convert_flow_state_to_trace(state: FlowState) -> Dict[str, Any]:
     """Convert FlowState to flow-trace.json format.
 
@@ -44,30 +79,30 @@ def convert_flow_state_to_trace(state: FlowState) -> Dict[str, Any]:
 
     pipeline = []
 
-    if state.get("level_minus1_status"):
+    if state.get("preflight_status"):
         pipeline.append(
             {
-                "step": "LEVEL_MINUS_1",
-                "name": "Auto-Fix Enforcement",
-                "level": -1,
+                "step": "LEVEL_0_PREFLIGHT",
+                "name": "Pre-Flight Sanity Guard",
+                "level": 0,
                 "order": 0,
                 "is_blocking": True,
                 "timestamp": timestamp,
-                "duration_ms": state.get("level_durations", {}).get("level_minus1", 0),
+                "duration_ms": state.get("level_durations", {}).get("preflight_guard", 0),
                 "input": {
                     "trigger": "user_prompt_received",
                     "purpose": "Verify ALL systems operational before any work",
                     "is_blocking": True,
                 },
                 "policy_output": {
-                    "status": state.get("level_minus1_status"),
+                    "status": state.get("preflight_status"),
                     "unicode_check": state.get("unicode_check", False),
                     "encoding_check": state.get("encoding_check", False),
                     "windows_path_check": state.get("windows_path_check", False),
                 },
-                "decision": "Auto-fix checks completed - {}".format(state.get("level_minus1_status")),
+                "decision": "Auto-fix checks completed - {}".format(state.get("preflight_status")),
                 "passed_to_next": {
-                    "status": state.get("level_minus1_status"),
+                    "status": state.get("preflight_status"),
                 },
             }
         )
@@ -120,120 +155,99 @@ def convert_flow_state_to_trace(state: FlowState) -> Dict[str, Any]:
             }
         )
 
-    if state.get("level2_status"):
-        pipeline.append(
-            {
-                "step": "LEVEL_2_STANDARDS",
-                "name": "Standards System",
-                "level": 2,
-                "order": 3,
-                "is_blocking": False,
-                "timestamp": timestamp,
-                "duration_ms": state.get("level_durations", {}).get("level2", 0),
-                "input": {
-                    "purpose": "Load coding standards and language-specific rules",
-                    "is_java_project": state.get("is_java_project", False),
-                },
-                "policy_output": {
-                    "standards_loaded": state.get("standards_loaded", False),
-                    "standards_count": state.get("standards_count", 0),
-                    "java_standards_loaded": state.get("java_standards_loaded", False),
-                },
-                "decision": "Standards loaded - {}".format(state.get("level2_status")),
-                "passed_to_next": {
-                    "standards_active": state.get("standards_count", 0),
-                },
-            }
-        )
+    # NOTE: no numbered "Level 2: Standards" trace entry -- that concept was
+    # retired (it never had pipeline nodes; state["level2_status"] was never
+    # assigned a real value anywhere). Standards loading is an always-on,
+    # disk-loaded mechanism, not a pipeline phase, so it has no trace step.
 
-    level3_steps = [
+    sdlc_steps = [
         (
-            "LEVEL_3_STEP_0",
-            "Task Analysis",
-            "step0_task_type",
+            1,
+            "Task Orchestration & Planning",
+            "step1_task_type",
             {
-                "task_type": state.get("step0_task_type"),
-                "complexity": state.get("step0_complexity"),
-                "reasoning": state.get("step0_reasoning"),
-                "task_count": state.get("step0_task_count"),
+                "task_type": state.get("step1_task_type"),
+                "complexity": state.get("step1_complexity"),
+                "reasoning": state.get("step1_reasoning"),
+                "task_count": state.get("step1_task_count"),
             },
         ),
         (
-            "LEVEL_3_STEP_8",
-            "GitHub Issue Creation",
+            2,
+            "Issue Tracking",
+            "step2_status",
+            {
+                "issue_id": state.get("step2_issue_id"),
+                "issue_created": state.get("step2_issue_created"),
+                "status": state.get("step2_status"),
+            },
+        ),
+        (
+            3,
+            "Branch & Workspace Setup",
+            "step3_status",
+            {
+                "branch_name": state.get("step3_branch_name"),
+                "branch_created": state.get("step3_branch_created"),
+                "status": state.get("step3_status"),
+            },
+        ),
+        (
+            4,
+            "Implementation & Code Generation",
+            "step4_status",
+            {
+                "implementation_status": state.get("step4_implementation_status"),
+                "tasks_executed": state.get("step4_tasks_executed"),
+                "modified_files": state.get("step4_modified_files"),
+            },
+        ),
+        (
+            5,
+            "Pull Request & Automated Review",
+            "step5_status",
+            {
+                "review_passed": state.get("step5_review_passed"),
+                "retry_count": state.get("step5_retry_count"),
+                "status": state.get("step5_status"),
+            },
+        ),
+        (
+            6,
+            "Issue & Ticket Closure",
+            "step6_status",
+            {
+                "issue_closed": state.get("step6_issue_closed"),
+                "status": state.get("step6_status"),
+            },
+        ),
+        (
+            7,
+            "Documentation & UML Generation",
+            "step7_documentation_status",
+            {
+                "updates_prepared": state.get("step7_updates_prepared"),
+                "status": state.get("step7_documentation_status"),
+            },
+        ),
+        (
+            8,
+            "Final Telemetry & Summary Report",
             "step8_status",
             {
-                "issue_id": state.get("step8_issue_id"),
-                "issue_created": state.get("step8_issue_created"),
                 "status": state.get("step8_status"),
-            },
-        ),
-        (
-            "LEVEL_3_STEP_9",
-            "Branch Creation",
-            "step9_status",
-            {
-                "branch_name": state.get("step9_branch_name"),
-                "branch_created": state.get("step9_branch_created"),
-                "status": state.get("step9_status"),
-            },
-        ),
-        (
-            "LEVEL_3_STEP_10",
-            "Implementation",
-            "step10_status",
-            {
-                "implementation_status": state.get("step10_implementation_status"),
-                "tasks_executed": state.get("step10_tasks_executed"),
-                "modified_files": state.get("step10_modified_files"),
-            },
-        ),
-        (
-            "LEVEL_3_STEP_11",
-            "Pull Request Review",
-            "step11_status",
-            {
-                "review_passed": state.get("step11_review_passed"),
-                "retry_count": state.get("step11_retry_count"),
-                "status": state.get("step11_status"),
-            },
-        ),
-        (
-            "LEVEL_3_STEP_12",
-            "Issue Closure",
-            "step12_status",
-            {
-                "issue_closed": state.get("step12_issue_closed"),
-                "status": state.get("step12_status"),
-            },
-        ),
-        (
-            "LEVEL_3_STEP_13",
-            "Documentation Update",
-            "step13_documentation_status",
-            {
-                "updates_prepared": state.get("step13_updates_prepared"),
-                "status": state.get("step13_documentation_status"),
-            },
-        ),
-        (
-            "LEVEL_3_STEP_14",
-            "Final Summary",
-            "step14_status",
-            {
-                "status": state.get("step14_status"),
-                "summary": state.get("step14_summary"),
+                "summary": state.get("step8_summary"),
             },
         ),
     ]
 
-    for step_num, (step_id, step_name, state_key, step_output) in enumerate(level3_steps):
+    for step_num, step_name, state_key, step_output in sdlc_steps:
         pipeline.append(
             {
-                "step": step_id,
+                "step": "SDLC_STEP_%d" % step_num,
                 "name": step_name,
-                "level": 3,
-                "order": 4 + step_num,
+                "level": 2,
+                "order": 3 + step_num,
                 "is_blocking": False,
                 "timestamp": timestamp,
                 "duration_ms": state.get("level_durations", {}).get(state_key, 0),
@@ -264,14 +278,14 @@ def convert_flow_state_to_trace(state: FlowState) -> Dict[str, Any]:
         "final_decision": {
             "timestamp": datetime.now().isoformat(),
             "session_id": session_id,
-            "task_type": state.get("step0_task_type", "General Task"),
-            "complexity": state.get("step0_complexity", 5),
+            "task_type": state.get("step1_task_type", "General Task"),
+            "complexity": state.get("step1_complexity", 5),
             "context_pct": state.get("context_percentage", 0),
             "standards_active": state.get("standards_count", 0),
-            "model_selected": state.get("step4_model", "haiku"),
+            "model_selected": state.get("step1_model", "haiku"),
             "plan_required": False,
-            "issue_id": state.get("step8_issue_id", ""),
-            "branch_name": state.get("step9_branch_name", ""),
+            "issue_id": state.get("step2_issue_id", ""),
+            "branch_name": state.get("step3_branch_name", ""),
             "proceed": state.get("final_status") != "BLOCKED",
             "summary": "Status={} Context={:.1f}%".format(
                 state.get("final_status"),
@@ -331,7 +345,7 @@ def print_flow_checkpoint(state: FlowState, verbose: bool = False) -> None:
     status = state.get("final_status", "UNKNOWN")
     session_id = state.get("session_id", "SESSION-UNKNOWN")
     context_pct = state.get("context_percentage", 0)
-    model = state.get("step4_model", "complex_reasoning")
+    model = state.get("step1_model", "complex_reasoning")
     synthesized_prompt = state.get("synthesized_prompt", "")
 
     print("\n[FLOW CHECKPOINT]")

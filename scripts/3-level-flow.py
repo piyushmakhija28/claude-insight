@@ -495,9 +495,9 @@ def main():
         # Dry-run summary
         if os.environ.get("CLAUDE_DRY_RUN") == "1":
             print("\n=== DRY RUN COMPLETE ===")
-            print(f"Task Type: {result.get('step0_task_type', 'N/A')}")
-            print(f"Complexity: {result.get('step0_complexity', 'N/A')}/25")
-            print(f"Prompt saved to: {result.get('step7_system_prompt_file', 'N/A')}")
+            print(f"Task Type: {result.get('step1_task_type', 'N/A')}")
+            print(f"Complexity: {result.get('step1_complexity', 'N/A')}/25")
+            print(f"Prompt saved to: {result.get('step1_system_prompt_file', 'N/A')}")
             print("===")
             print("GitHub issue, implementation, PR, review, docs SKIPPED (--dry-run)")
 

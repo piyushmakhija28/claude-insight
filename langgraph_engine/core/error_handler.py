@@ -152,9 +152,9 @@ class NodeResult:
 
         return (
             NodeResult()
-            .set("step0_task_type", "Bug Fix")
-            .set("step0_complexity", 7)
-            .add_pipeline_entry("step0_analysis", {"type": "Bug Fix"})
+            .set("step1_task_type", "Bug Fix")
+            .set("step1_complexity", 7)
+            .add_pipeline_entry("step1_analysis", {"type": "Bug Fix"})
             .build()
         )
     """

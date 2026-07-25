@@ -9,7 +9,7 @@ Covers two things found via real execution, not speculation:
    claude-global-library's application-security-core skill.
 """
 
-from langgraph_engine.level3_execution.sonar_auto_fixer import (
+from langgraph_engine.sdlc_pipeline.sonar_auto_fixer import (
     _GENERIC_OWASP_GUIDANCE,
     _owasp_guidance_for_finding,
     generate_fix_instruction,

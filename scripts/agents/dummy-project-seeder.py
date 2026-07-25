@@ -56,9 +56,9 @@ class DummyProjectSeeder:
         # Level -1: Auto-Fix Enforcement
         pipeline.append(
             {
-                "step": "LEVEL_MINUS_1",
+                "step": "LEVEL_0_PREFLIGHT",
                 "name": "Auto-Fix Enforcement",
-                "level": -1,
+                "level": 0,
                 "order": 0,
                 "is_blocking": True,
                 "status": "PASSED",
@@ -193,9 +193,9 @@ class DummyProjectSeeder:
             step_num = i + 1
             pipeline.append(
                 {
-                    "step": f"LEVEL_3_STEP_{step_num}",
+                    "step": f"SDLC_STEP_{step_num}",
                     "name": step_name,
-                    "level": 3,
+                    "level": 2,
                     "order": len(pipeline),
                     "is_blocking": False,
                     "status": "PASSED",
@@ -229,7 +229,7 @@ class DummyProjectSeeder:
                 {
                     "step": f"LEVEL_3_POLICY_{step_num}",
                     "name": policy_name,
-                    "level": 3,
+                    "level": 2,
                     "order": len(pipeline),
                     "is_blocking": False,
                     "status": "PASSED",

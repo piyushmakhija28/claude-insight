@@ -100,7 +100,7 @@ _VIOLATION_EXEC_RESULT = {"orchestration_prompt": "too short", "status": "ok"}
 def mock_call_execution_script_happy():
     """B.1 happy: returns orchestration_prompt of 250 chars -- satisfies postcondition."""
     with patch(
-        "langgraph_engine.level3_execution.helpers.call_execution_script",
+        "langgraph_engine.sdlc_pipeline.helpers.call_execution_script",
         return_value=_HAPPY_EXEC_RESULT,
     ) as mock:
         yield mock
@@ -110,7 +110,7 @@ def mock_call_execution_script_happy():
 def mock_call_execution_script_violation():
     """B.1 violation: returns short orchestration_prompt -- triggers postcondition failure."""
     with patch(
-        "langgraph_engine.level3_execution.helpers.call_execution_script",
+        "langgraph_engine.sdlc_pipeline.helpers.call_execution_script",
         return_value=_VIOLATION_EXEC_RESULT,
     ) as mock:
         yield mock
@@ -125,7 +125,7 @@ def mock_call_execution_script_violation():
 def mock_step8():
     """B.3: stub GitHub issue creation (Step 8)."""
     with patch(
-        "langgraph_engine.level3_execution.nodes.step_wrappers_5to9.step8_github_issue_creation",
+        "langgraph_engine.sdlc_pipeline.nodes.issue_and_branch_wrapper.step2_github_issue_creation",
         return_value={"github_issue_number": 42, "github_issue_url": "https://github.com/mock/issues/42"},
     ) as mock:
         yield mock
@@ -135,7 +135,7 @@ def mock_step8():
 def mock_step9():
     """B.4: stub branch creation (Step 9)."""
     with patch(
-        "langgraph_engine.level3_execution.nodes.step_wrappers_5to9.step9_branch_creation",
+        "langgraph_engine.sdlc_pipeline.nodes.issue_and_branch_wrapper.step3_branch_creation",
         return_value={"branch_name": "feature/mock-42"},
     ) as mock:
         yield mock

@@ -17,9 +17,8 @@ Usage in orchestrator.py graph construction::
 
     from langgraph_engine.core.integration_hook import create_integration_hook
 
-    graph.add_node("level3_standards_hook_step1",  create_integration_hook(1))
-    graph.add_node("level3_standards_hook_step5",  create_integration_hook(5))
-    graph.add_node("level3_standards_hook_step13", create_integration_hook(13))
+    graph.add_node("sdlc_standards_hook_step4", create_integration_hook(4))
+    graph.add_node("sdlc_standards_hook_step7", create_integration_hook(7))
 """
 
 from typing import Any, Callable, Dict

@@ -1,4 +1,4 @@
-"""NodeContract definitions for 3 core Level 3 LangGraph nodes.
+"""NodeContract definitions for 3 core Level 2 (SDLC Execution Core) LangGraph nodes.
 
 Contracts declare which FlowState keys each node requires as preconditions
 and guarantees as postconditions. The verifier (RuntimeVerifier) evaluates
@@ -6,7 +6,7 @@ these at node entry/exit when ENABLE_RUNTIME_VERIFICATION=1.
 
 Key names are sourced directly from the node implementations:
   - orchestration_pre_analysis_node -> orchestration.py
-  - step0_task_analysis_node (prompt_gen + orchestrator) -> step_wrappers_0to4.py
+  - step1_task_analysis_node (prompt_gen + orchestrator) -> task_orchestration.py
   - FlowState field names -> state/state_definition.py
 
 Windows-safe: ASCII only.
@@ -71,7 +71,7 @@ ORCHESTRATOR_CONTRACT = NodeContract(
 )
 
 # ---------------------------------------------------------------------------
-# step0_task_analysis_node (fused prompt_gen + orchestrator, v1.14+)
+# step1_task_analysis_node (fused prompt_gen + orchestrator, v1.14+)
 #
 # The prompt-gen and orchestrator phases run inside a single node, so
 # orchestration_prompt is produced internally and is NOT present on entry --
@@ -81,8 +81,8 @@ ORCHESTRATOR_CONTRACT = NodeContract(
 # raw-task fallback is a legitimate degraded path, so orchestration_prompt is
 # only required non-empty, not the 200-char "useful prompt" bar.
 # ---------------------------------------------------------------------------
-STEP0_CONTRACT = NodeContract(
-    node_name="step0_task_analysis_node",
+STEP1_CONTRACT = NodeContract(
+    node_name="step1_task_analysis_node",
     preconditions=[
         PreconditionSpec(key="user_message", expected_type=str, required=True, min_val=1),
         PreconditionSpec(key="combined_complexity_score", expected_type=int, required=False),
@@ -100,5 +100,5 @@ NODE_CONTRACT_REGISTRY = {
     PRE_ANALYSIS_CONTRACT.node_name: PRE_ANALYSIS_CONTRACT,
     PROMPT_GEN_CONTRACT.node_name: PROMPT_GEN_CONTRACT,
     ORCHESTRATOR_CONTRACT.node_name: ORCHESTRATOR_CONTRACT,
-    STEP0_CONTRACT.node_name: STEP0_CONTRACT,
+    STEP1_CONTRACT.node_name: STEP1_CONTRACT,
 }

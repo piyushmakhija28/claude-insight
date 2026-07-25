@@ -5,7 +5,7 @@ Tests verify that RuntimeVerifier.check_level_transition() correctly enforces
 state preconditions at every level boundary defined in LEVEL_TRANSITION_GUARDS.
 
 Coverage:
-  - level_minus1 -> level1   (auto_fix_complete: bool, required)
+  - preflight_guard -> level1   (auto_fix_complete: bool, required)
   - level1 -> level3         (combined_complexity_score: 1-25, session_synced: bool)
   - pre_analysis -> step0    (pre_analysis_result: dict, call_graph_metrics: dict)
   - step0 -> step8           (orchestration_prompt: str >=200, orchestrator_result: str >=50)
@@ -33,24 +33,24 @@ def reset_verifier(monkeypatch):
 
 
 # ---------------------------------------------------------------------------
-# Guard: level_minus1 -> level1
+# Guard: preflight_guard -> level1
 # PreconditionSpec: key="auto_fix_complete", expected_type=bool, required=True
 # ---------------------------------------------------------------------------
 
 
-def test_guard_level_minus1_to_level1_pass():
+def test_guard_preflight_guard_to_level1_pass():
     """auto_fix_complete=True satisfies the bool/required precondition."""
     state = {"auto_fix_complete": True}
     verifier = RuntimeVerifier.get_instance()
-    violations = verifier.check_level_transition("level_minus1", "level1", state)
+    violations = verifier.check_level_transition("preflight_guard", "level1", state)
     assert violations == []
 
 
-def test_guard_level_minus1_to_level1_fail():
+def test_guard_preflight_guard_to_level1_fail():
     """Missing auto_fix_complete key triggers a CRITICAL transition violation."""
     state = {}  # auto_fix_complete absent
     verifier = RuntimeVerifier.get_instance()
-    violations = verifier.check_level_transition("level_minus1", "level1", state)
+    violations = verifier.check_level_transition("preflight_guard", "level1", state)
     assert len(violations) >= 1
     assert violations[0]["check_type"] == "transition"
 
@@ -110,7 +110,7 @@ def test_guard_level1_to_level3_fail_not_synced():
 # ---------------------------------------------------------------------------
 
 
-def test_guard_pre0_to_step0_pass():
+def test_guard_pre0_to_step1_pass():
     """Both dict fields present and non-None pass the guard."""
     state = {
         "pre_analysis_result": {"hot_nodes": []},
@@ -121,7 +121,7 @@ def test_guard_pre0_to_step0_pass():
     assert violations == []
 
 
-def test_guard_pre0_to_step0_fail():
+def test_guard_pre0_to_step1_fail():
     """pre_analysis_result=None triggers a CRITICAL transition violation (present but None)."""
     state = {
         "pre_analysis_result": None,
@@ -138,7 +138,7 @@ def test_guard_pre0_to_step0_fail():
 # ---------------------------------------------------------------------------
 
 
-def test_guard_step0_to_step8_pass():
+def test_guard_step1_to_step2_pass():
     """
     orchestration_prompt must be >= 200 chars and orchestrator_result >= 50 chars.
 

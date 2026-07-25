@@ -21,8 +21,8 @@ sys.path.insert(0, str(_REPO_ROOT / "scripts"))
 
 # Current architecture module locations after the v1.16.0 reorganization.
 _ARCH_DIRS = [
-    _REPO_ROOT / "langgraph_engine" / "level1_sync" / "architecture",
-    _REPO_ROOT / "langgraph_engine" / "level3_execution" / "architecture",
+    _REPO_ROOT / "langgraph_engine" / "context_sync" / "architecture",
+    _REPO_ROOT / "langgraph_engine" / "sdlc_pipeline" / "architecture",
     _REPO_ROOT / "scripts" / "architecture" / "03-execution-system",
 ]
 
@@ -69,12 +69,12 @@ class TestArchitectureSmokeImports:
     def test_level1_has_python_files(self):
         """Level 1 sync architecture must contain at least one Python module."""
         files = _collect_py_files(_LEVEL1_ARCH_DIR)
-        assert len(files) > 0, "No Python files found in langgraph_engine/level1_sync/architecture"
+        assert len(files) > 0, "No Python files found in langgraph_engine/context_sync/architecture"
 
     def test_level3_has_python_files(self):
         """Level 3 execution architecture must contain at least one Python module."""
         files = _collect_py_files(_LEVEL3_ARCH_DIR)
-        assert len(files) > 0, "No Python files found in langgraph_engine/level3_execution/architecture"
+        assert len(files) > 0, "No Python files found in langgraph_engine/sdlc_pipeline/architecture"
 
     @pytest.mark.parametrize(
         "py_file",

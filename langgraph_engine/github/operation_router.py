@@ -12,7 +12,7 @@ Features:
 - Feature flags for progressive rollout
 - ZERO breaking changes to existing code
 
-Used by: level3_steps8to12_github.py, github_issue_manager.py, github_pr_workflow.py
+Used by: github_lifecycle.py, github_issue_manager.py, github_pr_workflow.py
 Replaces: Direct GitHubIntegration usage
 """
 

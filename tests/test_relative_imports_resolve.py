@@ -40,14 +40,14 @@ _SEARCH_ROOTS = ["langgraph_engine", "src", "scripts"]
 # sonarqube_integration: referenced only in the IntegrationRegistry factory,
 #   wrapped in try/except ImportError -> logs a warning and returns None;
 #   zero call sites anywhere (real SonarQube functionality lives in the
-#   separate level3_execution/sonarqube/ package instead).
-# remaining_steps: referenced only in steps8to12_github.py, wrapped in
+#   separate sdlc_pipeline/sonarqube/ package instead).
+# remaining_steps: referenced only in github_lifecycle.py, wrapped in
 #   try/except ImportError with a full working inline fallback
 #   implementation of _llm_call_with_retry defined right there -- the
 #   except branch IS the real, working code path, not a degraded one.
 _KNOWN_MISSING_MODULES = {
     ("langgraph_engine/integrations/__init__.py", "sonarqube_integration"),
-    ("langgraph_engine/level3_execution/steps8to12_github.py", "remaining_steps"),
+    ("langgraph_engine/sdlc_pipeline/github_lifecycle.py", "remaining_steps"),
 }
 
 

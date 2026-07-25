@@ -8,17 +8,17 @@ langgraph_engine/standards/integration.py always fell back to their hardcoded
 defaults.
 
 Covers:
-- step0_task_analysis_node PRE-INJECTION D: populates
+- step1_task_analysis_node PRE-INJECTION D: populates
   state["standards_selection"]/state["standards_merged_rules"] from a real
   project structure; fail-open on select_standards() exception (mirrors the
   existing CallGraph/KG-routing pre-injection pattern).
-- apply_standards_at_step(10, state) / apply_standards_at_step(13, state):
+- apply_standards_at_step(4, state) / apply_standards_at_step(7, state):
   now produces a checklist/doc-requirements list that actually reflects
   library-sourced standards content when standards_selection is populated --
   proving the Step 0 -> Step 10/13 wiring is closed, not just that Step 0
   computes a value nobody reads.
-- End-to-end: step0_task_analysis_node's own output, merged into state and
-  fed into apply_standards_at_step(10, ...), produces a checklist item
+- End-to-end: step1_task_analysis_node's own output, merged into state and
+  fed into apply_standards_at_step(4, ...), produces a checklist item
   sourced from the injected standards_selection.
 - LibrarySkillLanguageAdapter (P1, new language-tier adapter): real mapped
   language resolves real sibling content, unmapped language returns [],
@@ -68,13 +68,13 @@ def _mock_call_execution_script(captured_calls):
 
 
 # ===========================================================================
-# step0_task_analysis_node PRE-INJECTION D -- populate + fail-open
+# step1_task_analysis_node PRE-INJECTION D -- populate + fail-open
 # ===========================================================================
 
 
 class TestStep0StandardsSelectionPreInjection:
     def test_populates_standards_selection_and_merged_rules(self):
-        from langgraph_engine.level3_execution.nodes.step_wrappers_0to4 import step0_task_analysis_node
+        from langgraph_engine.sdlc_pipeline.nodes.task_orchestration import step1_task_analysis_node
 
         captured_calls = []
         state = {
@@ -83,10 +83,10 @@ class TestStep0StandardsSelectionPreInjection:
         }
 
         with patch(
-            "langgraph_engine.level3_execution.helpers.call_execution_script",
+            "langgraph_engine.sdlc_pipeline.helpers.call_execution_script",
             side_effect=_mock_call_execution_script(captured_calls),
         ):
-            result = step0_task_analysis_node(state)
+            result = step1_task_analysis_node(state)
 
         assert "standards_selection" in result
         assert "standards_merged_rules" in result
@@ -98,7 +98,7 @@ class TestStep0StandardsSelectionPreInjection:
         assert result.get("standards_count") == selection.get("total_loaded", 0)
 
     def test_standards_count_not_clobbered_when_already_set(self):
-        from langgraph_engine.level3_execution.nodes.step_wrappers_0to4 import step0_task_analysis_node
+        from langgraph_engine.sdlc_pipeline.nodes.task_orchestration import step1_task_analysis_node
 
         captured_calls = []
         state = {
@@ -108,26 +108,26 @@ class TestStep0StandardsSelectionPreInjection:
         }
 
         with patch(
-            "langgraph_engine.level3_execution.helpers.call_execution_script",
+            "langgraph_engine.sdlc_pipeline.helpers.call_execution_script",
             side_effect=_mock_call_execution_script(captured_calls),
         ):
-            result = step0_task_analysis_node(state)
+            result = step1_task_analysis_node(state)
 
         assert "standards_count" not in result
 
     def test_select_standards_exception_is_fail_open(self):
         """An exception raised inside select_standards() must not propagate out
-        of step0_task_analysis_node -- PRE-INJECTION D mirrors the existing
+        of step1_task_analysis_node -- PRE-INJECTION D mirrors the existing
         CallGraph/KG-routing pre-injection fail-open try/except pattern.
         """
-        from langgraph_engine.level3_execution.nodes.step_wrappers_0to4 import step0_task_analysis_node
+        from langgraph_engine.sdlc_pipeline.nodes.task_orchestration import step1_task_analysis_node
 
         captured_calls = []
         state = {"user_message": "anything", "project_root": str(_PROJECT_ROOT)}
 
         with (
             patch(
-                "langgraph_engine.level3_execution.helpers.call_execution_script",
+                "langgraph_engine.sdlc_pipeline.helpers.call_execution_script",
                 side_effect=_mock_call_execution_script(captured_calls),
             ),
             patch(
@@ -135,7 +135,7 @@ class TestStep0StandardsSelectionPreInjection:
                 side_effect=RuntimeError("boom"),
             ),
         ):
-            result = step0_task_analysis_node(state)
+            result = step1_task_analysis_node(state)
 
         assert result["standards_selection"] == {}
         assert result["standards_merged_rules"] == {}
@@ -144,14 +144,14 @@ class TestStep0StandardsSelectionPreInjection:
 
     def test_select_standards_called_at_most_once(self):
         """No hot-loop re-invocation within a single Step 0 call."""
-        from langgraph_engine.level3_execution.nodes.step_wrappers_0to4 import step0_task_analysis_node
+        from langgraph_engine.sdlc_pipeline.nodes.task_orchestration import step1_task_analysis_node
 
         captured_calls = []
         state = {"user_message": "anything", "project_root": str(_PROJECT_ROOT)}
 
         with (
             patch(
-                "langgraph_engine.level3_execution.helpers.call_execution_script",
+                "langgraph_engine.sdlc_pipeline.helpers.call_execution_script",
                 side_effect=_mock_call_execution_script(captured_calls),
             ),
             patch(
@@ -165,13 +165,13 @@ class TestStep0StandardsSelectionPreInjection:
                 },
             ) as mock_select,
         ):
-            step0_task_analysis_node(state)
+            step1_task_analysis_node(state)
 
         assert mock_select.call_count == 1
 
 
 # ===========================================================================
-# apply_standards_at_step(10/13, ...) -- prove the wiring loop is closed
+# apply_standards_at_step(4/7, ...) -- prove the wiring loop is closed
 # ===========================================================================
 
 
@@ -193,10 +193,10 @@ class TestStandardsHookReflectsSelection:
         "total_loaded": 1,
     }
 
-    def test_step10_checklist_gains_library_item_when_selection_present(self):
-        without = apply_standards_at_step(10, {"session_id": "wiring-test-step10-a"})
+    def test_step4_checklist_gains_library_item_when_selection_present(self):
+        without = apply_standards_at_step(4, {"session_id": "wiring-test-step10-a"})
         with_selection = apply_standards_at_step(
-            10,
+            4,
             {
                 "session_id": "wiring-test-step10-b",
                 "standards_selection": self._FAKE_SELECTION,
@@ -204,8 +204,8 @@ class TestStandardsHookReflectsSelection:
             },
         )
 
-        checklist_without = without["step10_standards_checklist"]["checklist"]
-        checklist_with = with_selection["step10_standards_checklist"]["checklist"]
+        checklist_without = without["step4_standards_checklist"]["checklist"]
+        checklist_with = with_selection["step4_standards_checklist"]["checklist"]
 
         ids_without = {c["check"] for c in checklist_without}
         ids_with = {c["check"] for c in checklist_with}
@@ -218,10 +218,10 @@ class TestStandardsHookReflectsSelection:
         assert "library_skill_standards" in lib_item["description"]
         assert "library_skill_fastapi" in lib_item["description"]
 
-    def test_step13_doc_requirements_gain_library_item_when_selection_present(self):
-        without = apply_standards_at_step(13, {"session_id": "wiring-test-step13-a"})
+    def test_step7_doc_requirements_gain_library_item_when_selection_present(self):
+        without = apply_standards_at_step(7, {"session_id": "wiring-test-step13-a"})
         with_selection = apply_standards_at_step(
-            13,
+            7,
             {
                 "session_id": "wiring-test-step13-b",
                 "standards_selection": self._FAKE_SELECTION,
@@ -229,8 +229,8 @@ class TestStandardsHookReflectsSelection:
             },
         )
 
-        reqs_without = without["step13_standards_doc_requirements"]["required_updates"]
-        reqs_with = with_selection["step13_standards_doc_requirements"]["required_updates"]
+        reqs_without = without["step7_standards_doc_requirements"]["required_updates"]
+        reqs_with = with_selection["step7_standards_doc_requirements"]["required_updates"]
 
         files_without = {r["file"] for r in reqs_without}
         files_with = {r["file"] for r in reqs_with}
@@ -262,28 +262,28 @@ class TestStandardsHookReflectsSelection:
             "total_loaded": 1,
         }
 
-        step10_result = apply_standards_at_step(
-            10, {"session_id": "wiring-test-custom-10", "standards_selection": selection}
+        step4_result = apply_standards_at_step(
+            4, {"session_id": "wiring-test-custom-10", "standards_selection": selection}
         )
-        step13_result = apply_standards_at_step(
-            13, {"session_id": "wiring-test-custom-13", "standards_selection": selection}
+        step7_result = apply_standards_at_step(
+            7, {"session_id": "wiring-test-custom-13", "standards_selection": selection}
         )
 
-        checklist_ids = {c["check"] for c in step10_result["step10_standards_checklist"]["checklist"]}
-        doc_files = {r["file"] for r in step13_result["step13_standards_doc_requirements"]["required_updates"]}
+        checklist_ids = {c["check"] for c in step4_result["step4_standards_checklist"]["checklist"]}
+        doc_files = {r["file"] for r in step7_result["step7_standards_doc_requirements"]["required_updates"]}
 
         assert "standards_source_custom_naming" in checklist_ids
         assert "/fake/.claude/standards/naming.md" not in doc_files
 
 
 class TestStandardsWiringEndToEnd:
-    def test_step0_output_flows_into_step10_checklist(self):
-        """The full loop: step0_task_analysis_node's own returned
+    def test_step1_output_flows_into_step4_checklist(self):
+        """The full loop: step1_task_analysis_node's own returned
         standards_selection, merged into state exactly as the LangGraph
         orchestrator does (state.update(result)), must change apply_standards_
         at_step(10, ...)'s checklist output. This is the wiring-closed proof.
         """
-        from langgraph_engine.level3_execution.nodes.step_wrappers_0to4 import step0_task_analysis_node
+        from langgraph_engine.sdlc_pipeline.nodes.task_orchestration import step1_task_analysis_node
 
         captured_calls = []
         state = {
@@ -311,7 +311,7 @@ class TestStandardsWiringEndToEnd:
 
         with (
             patch(
-                "langgraph_engine.level3_execution.helpers.call_execution_script",
+                "langgraph_engine.sdlc_pipeline.helpers.call_execution_script",
                 side_effect=_mock_call_execution_script(captured_calls),
             ),
             patch(
@@ -319,14 +319,14 @@ class TestStandardsWiringEndToEnd:
                 return_value=fake_selection,
             ),
         ):
-            step0_result = step0_task_analysis_node(state)
+            step1_result = step1_task_analysis_node(state)
 
         # This is exactly what the LangGraph orchestrator does with a node's
         # return value: merge it into the running FlowState.
-        state.update(step0_result)
+        state.update(step1_result)
 
-        step10_result = apply_standards_at_step(10, state)
-        checklist_ids = {c["check"] for c in step10_result["step10_standards_checklist"]["checklist"]}
+        step4_result = apply_standards_at_step(4, state)
+        checklist_ids = {c["check"] for c in step4_result["step4_standards_checklist"]["checklist"]}
 
         assert "standards_source_library_skill_fastapi" in checklist_ids
 

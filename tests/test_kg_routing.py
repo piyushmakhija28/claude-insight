@@ -12,7 +12,7 @@ Covers:
   domain, pattern, agent, skills, persona_markdown all populated), ambiguous
   task -> unresolved with null/empty fields, sibling missing ->
   library_missing with no exception raised
-- step0_task_analysis_node PRE-INJECTION C: fail-open on KGRouter exception,
+- step1_task_analysis_node PRE-INJECTION C: fail-open on KGRouter exception,
   --kg-routing-json present in prompt_gen_expert_caller args
 - prompt_gen_expert_caller: {kg_routing_block} substitution for both
   resolved and unresolved routing JSON
@@ -29,11 +29,6 @@ _PROJECT_ROOT = Path(__file__).resolve().parent.parent
 if str(_PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(_PROJECT_ROOT))
 
-from langgraph_engine.level3_execution.architecture.prompt_gen_expert_caller import (  # noqa: E402
-    _build_filled_prompt,
-    _parse_args,
-    _render_kg_routing_block,
-)
 from langgraph_engine.library.resolver import (  # noqa: E402
     ChainedResourceResolver,
     HardFailAdapter,
@@ -49,6 +44,11 @@ from langgraph_engine.routing.kg_lookup import (  # noqa: E402
     normalize_kg_ref,
 )
 from langgraph_engine.routing.kg_router import route_task  # noqa: E402
+from langgraph_engine.sdlc_pipeline.architecture.prompt_gen_expert_caller import (  # noqa: E402
+    _build_filled_prompt,
+    _parse_args,
+    _render_kg_routing_block,
+)
 
 
 @pytest.fixture(autouse=True)
@@ -415,7 +415,7 @@ class TestBuildFilledPromptKgRoutingBlock:
 
 
 # ===========================================================================
-# step0_task_analysis_node PRE-INJECTION C -- fail-open + CLI arg wiring
+# step1_task_analysis_node PRE-INJECTION C -- fail-open + CLI arg wiring
 # ===========================================================================
 
 
@@ -432,16 +432,16 @@ class TestStep0KgRoutingPreInjection:
         return _side_effect
 
     def test_kg_routing_json_flag_present_in_prompt_gen_args(self):
-        from langgraph_engine.level3_execution.nodes.step_wrappers_0to4 import step0_task_analysis_node
+        from langgraph_engine.sdlc_pipeline.nodes.task_orchestration import step1_task_analysis_node
 
         captured_calls = []
         state = {"user_message": "Design a healthcare clinical FHIR interoperability system", "project_root": "."}
 
         with patch(
-            "langgraph_engine.level3_execution.helpers.call_execution_script",
+            "langgraph_engine.sdlc_pipeline.helpers.call_execution_script",
             side_effect=self._mock_call_execution_script(captured_calls),
         ):
-            result = step0_task_analysis_node(state)
+            result = step1_task_analysis_node(state)
 
         prompt_gen_calls = [c for c in captured_calls if c[0] == "prompt_gen_expert_caller"]
         assert len(prompt_gen_calls) == 1
@@ -455,17 +455,17 @@ class TestStep0KgRoutingPreInjection:
 
     def test_kg_router_exception_is_fail_open(self):
         """An exception raised inside route_task must not propagate out of
-        step0_task_analysis_node -- PRE-INJECTION C mirrors the existing
+        step1_task_analysis_node -- PRE-INJECTION C mirrors the existing
         CallGraph pre-injection's fail-open try/except pattern.
         """
-        from langgraph_engine.level3_execution.nodes.step_wrappers_0to4 import step0_task_analysis_node
+        from langgraph_engine.sdlc_pipeline.nodes.task_orchestration import step1_task_analysis_node
 
         captured_calls = []
         state = {"user_message": "anything", "project_root": "."}
 
         with (
             patch(
-                "langgraph_engine.level3_execution.helpers.call_execution_script",
+                "langgraph_engine.sdlc_pipeline.helpers.call_execution_script",
                 side_effect=self._mock_call_execution_script(captured_calls),
             ),
             patch(
@@ -473,7 +473,7 @@ class TestStep0KgRoutingPreInjection:
                 side_effect=RuntimeError("boom"),
             ),
         ):
-            result = step0_task_analysis_node(state)
+            result = step1_task_analysis_node(state)
 
         assert result["routing"]["status"] == "unresolved"
         prompt_gen_calls = [c for c in captured_calls if c[0] == "prompt_gen_expert_caller"]

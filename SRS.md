@@ -9,7 +9,7 @@
 
 ## Executive Summary
 
-Claude Workflow Engine is a LangGraph-based 4-level pipeline that automates the full Software Development Life Cycle (SDLC) — from task analysis to merged PR closure — using LLM inference, template-driven orchestration, AST-based call graph analysis, and 13 MCP servers (295 tools). It is the only AI tool that automates all 8 active SDLC steps including GitHub Issues, branch creation, code review, PR merge, Jira tracking, Figma design-to-code, Jenkins CI/CD, SonarQube scanning, UML generation, and documentation updates.
+Claude Workflow Engine is a LangGraph-based 3-level pipeline that automates the full Software Development Life Cycle (SDLC) — from task analysis to merged PR closure — using LLM inference, template-driven orchestration, AST-based call graph analysis, and 13 MCP servers (295 tools). It is the only AI tool that automates all 8 active SDLC steps including GitHub Issues, branch creation, code review, PR merge, Jira tracking, Figma design-to-code, Jenkins CI/CD, SonarQube scanning, UML generation, and documentation updates.
 
 ---
 
@@ -31,7 +31,7 @@ The system aims to:
 #### Included
 
 - Python 3.8+ pipeline execution on Windows/Linux/macOS
-- LangGraph StateGraph orchestration (Level -1 through Level 3)
+- LangGraph StateGraph orchestration (Level 0 through Level 2)
 - 13 FastMCP servers (295 tools) for GitHub, Jira, Figma, Jenkins, Git, LLM, etc.
 - Template-driven orchestration (single LLM call for full planning phase)
 - Hybrid LLM inference (Claude CLI → Anthropic API)
@@ -58,36 +58,36 @@ The system aims to:
 
 ## Functional Requirements
 
-### FR-1: 4-Level Pipeline Execution
+### FR-1: 3-Level Pipeline Execution
 
-**Description:** Pipeline must execute 4 levels in order: Level -1 (Auto-Fix), Level 1 (Sync), Level 2 (Standards), Level 3 (8-Step Execution). Each level must be independently removable or bypassable.
+**Description:** Pipeline must execute 3 levels in order: Level 0 (Pre-Flight Sanity Guard), Level 1 (Session & Context Synchronization), Level 2 (SDLC Execution Core). Each level must be independently removable or bypassable. Standards loading (project type/framework detection, policy loading) is an always-on, disk-loaded mechanism -- not a numbered pipeline level; it has never had pipeline nodes of its own.
 **Priority:** Critical
 **Status:** Implemented
-**Key Module:** `orchestrator.py`, `pipeline_builder.py`
+**Key Module:** `orchestrator.py`
 
-### FR-2: 8-Step SDLC Automation (Level 3)
+### FR-2: 9-Step SDLC Automation (Level 2)
 
-**Description:** Level 3 must execute 8 active steps (Pre-0, Step 0, Steps 8-14) with optional Hook Mode (Pre-0, Step 0, Steps 8-9 only) via `CLAUDE_HOOK_MODE` env var.
+**Description:** Level 2 (SDLC Execution Core) must execute 9 active steps (Steps 0-8) with optional Hook Mode (Steps 0-3 only) via `CLAUDE_HOOK_MODE` env var.
 
 | Step | Action |
 |------|--------|
-| Pre-0 | Orchestration pre-analysis: CallGraph scan, template fast-path detection |
-| Step 0 | Task analysis + template fill (prompt_gen_expert_caller) + orchestration execution |
-| Step 8 | GitHub Issue + Jira Issue creation (dual, cross-linked) |
-| Step 9 | Branch creation (from Jira key if ENABLE_JIRA) |
-| Step 10 | Implementation + Jira "In Progress" + Figma "started" |
-| Step 11 | PR creation + code review + Jira "In Review" + Figma fidelity check |
-| Step 12 | Issue closure: GitHub + Jira "Done" + Figma "complete" |
-| Step 13 | Documentation update + 13 UML diagram types |
-| Step 14 | Final execution summary + voice notification |
+| Step 0 | Pre-Analysis & CallGraph Scan: CallGraph scan, template fast-path detection |
+| Step 1 | Task Orchestration & Planning: template fill (prompt_gen_expert_caller) + orchestration execution |
+| Step 2 | Issue Tracking: GitHub Issue + Jira Issue creation (dual, cross-linked) |
+| Step 3 | Branch & Workspace Setup (from Jira key if ENABLE_JIRA) |
+| Step 4 | Implementation & Code Generation + Jira "In Progress" + Figma "started" |
+| Step 5 | Pull Request & Automated Review: PR creation + code review + Jira "In Review" + Figma fidelity check |
+| Step 6 | Issue & Ticket Closure: GitHub + Jira "Done" + Figma "complete" |
+| Step 7 | Documentation & UML Generation: doc update + 13 UML diagram types |
+| Step 8 | Final Telemetry & Summary Report + voice notification |
 
 **Priority:** Critical
 **Status:** Implemented
-**Key Module:** `level3_execution/subgraph.py`
+**Key Module:** `sdlc_pipeline/subgraph.py`
 
 ### FR-3: AST-Based Call Graph Analysis
 
-**Description:** Full class-level call graph supporting Python (AST), Java, TypeScript, Kotlin (regex). Used at Pre-0, Step 0, Step 10, and Step 11 for impact analysis, implementation context, and PR review.
+**Description:** Full class-level call graph supporting Python (AST), Java, TypeScript, Kotlin (regex). Used at Steps 0, 1, 4, and 5 for impact analysis, implementation context, and PR review.
 **Priority:** High
 **Status:** Implemented
 **Key Modules:** `parsers/` (Abstract Factory), `call_graph_builder.py`, `call_graph_analyzer.py`
@@ -98,10 +98,10 @@ The system aims to:
 
 | Integration | Flag | Lifecycle Steps |
 |-------------|------|----------------|
-| Jira | `ENABLE_JIRA=1` | Create (8), Branch (9), In Progress (10), In Review (11), Done (12) |
-| Figma | `ENABLE_FIGMA=1` | Extract (Step 0 template), Comment started (10), Review (11), Comment done (12) |
-| Jenkins | `ENABLE_JENKINS=1` | Trigger (10), Validate (11) |
-| SonarQube | `ENABLE_SONARQUBE=1` | Scan (10), Auto-fix loop |
+| Jira | `ENABLE_JIRA=1` | Create (2), Branch (3), In Progress (4), In Review (5), Done (6) |
+| Figma | `ENABLE_FIGMA=1` | Extract (Step 1 template), Comment started (4), Review (5), Comment done (6) |
+| Jenkins | `ENABLE_JENKINS=1` | Trigger (4), Validate (5) |
+| SonarQube | `ENABLE_SONARQUBE=1` | Scan (4), Auto-fix loop |
 
 **Priority:** Medium
 **Status:** Implemented
@@ -131,10 +131,10 @@ PipelineBuilder().add_level_minus1().add_level1().add_level3().build()
 
 ### FR-7: Multi-Project Standards Enforcement
 
-**Description:** Level 2 must auto-detect project type (language, framework) and load appropriate coding standards from 63 policy files.
+**Description:** The always-on, non-numbered Standards mechanism must auto-detect project type (language, framework) and load appropriate coding standards from 63 policy files, read directly from `policies/` on disk (no pipeline nodes involved).
 **Priority:** High
 **Status:** Implemented
-**Key Module:** `subgraphs/level2_standards.py`
+**Key Module:** `langgraph_engine/standards/`
 
 ### FR-8: Hybrid LLM Inference
 
@@ -156,9 +156,9 @@ PipelineBuilder().add_level_minus1().add_level1().add_level3().build()
 
 ### NFR-1: Performance
 
-- **Hook Mode target:** Pre-0 + Step 0 + Steps 8-9 complete in < 60 seconds
-- **Full Mode target:** All 8 active steps complete in < 170 seconds
-- **Template fast-path:** Bypasses Step 0 entirely, jumps directly to Step 8
+- **Hook Mode target:** Steps 0-3 complete in < 60 seconds
+- **Full Mode target:** All 9 active steps complete in < 170 seconds
+- **Template fast-path:** Bypasses Step 1 entirely, jumps directly to Step 2
 - **Token savings:** 60-85% reduction via AST navigation + dedup
 - **Status:** Implemented
 
@@ -216,16 +216,16 @@ User Prompt
     v
 [LangGraph StateGraph] (orchestrator.py)
     |
-    +-- Level -1: Auto-Fix (Unicode, encoding, path checks)
+    +-- Level 0: Pre-Flight Sanity Guard (Unicode, encoding, path checks)
     |
-    +-- Level 1:  Context Sync (session, complexity scoring)
+    +-- Level 1:  Session & Context Synchronization (session, complexity scoring)
     |
-    +-- Level 2:  Standards (project detection, policy loading)
+    +-- Standards (non-numbered, always-on): project detection, policy loading from disk
     |
-    +-- Level 3:  Execution (8-step SDLC pipeline)
+    +-- Level 2:  SDLC Execution Core (9-step pipeline)
             |
-            +-- Pre-0: CallGraph pre-analysis + template fast-path detection
-            +-- Step 0: Template fill + orchestration execution (2 subprocess calls)
+            +-- Step 0: CallGraph pre-analysis + template fast-path detection
+            +-- Step 1: Template fill + orchestration execution (2 subprocess calls)
             +-- Integration lifecycle (Jira/Figma/Jenkins/SonarQube)
             +-- MCP tool calls (13 servers, 295 tools)
 ```

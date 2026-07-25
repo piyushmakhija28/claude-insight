@@ -167,7 +167,7 @@ def emit_policy_step(
 
     Parameters
     ----------
-    step_name   : e.g. 'LEVEL_1_CONTEXT', 'LEVEL_3_STEP_4'
+    step_name   : e.g. 'LEVEL_1_CONTEXT', 'SDLC_STEP_4'
     level       : top-level policy level (-1, 1, 2, or 3)
     passed      : True if the step completed successfully
     duration_ms : time the step took (0 if not measured)
@@ -264,7 +264,7 @@ if __name__ == "__main__":
         session_id="SESSION-TEST-001",
     )
     emit_policy_step(
-        "LEVEL_3_STEP_4",
+        "SDLC_STEP_4",
         level=3,
         passed=True,
         duration_ms=5,

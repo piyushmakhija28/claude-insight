@@ -5,7 +5,7 @@ Targeted regression tests for all defects fixed in build_dependency_resolver/.
 Each test is self-contained, fast (<100ms), and uses synthetic in-memory fixtures.
 
 Defects covered:
-  D1  -- step_wrappers_10_11 guard-and-skip for pre_change_graph is None
+  D1  -- implementation_and_review_wrapper guard-and-skip for pre_change_graph is None
   D2  -- edge dedup schema (from/to/type canonical key)
   D3  -- FQN namespacing with dep:: prefix to prevent collision
   D4  -- parent search env gate + symlink guard
@@ -77,7 +77,7 @@ def _make_graph(
 
 
 # ---------------------------------------------------------------------------
-# D1 -- step_wrappers_10_11 guard-and-skip
+# D1 -- implementation_and_review_wrapper guard-and-skip
 # ---------------------------------------------------------------------------
 
 
@@ -102,7 +102,7 @@ class TestD1StepWrapperGuard:
             raising=False,
         )
 
-        # Simulate the guard condition directly from step_wrappers_10_11.py line 91:
+        # Simulate the guard condition directly from implementation_and_review_wrapper.py line 91:
         # if call_context.get("call_graph_available") and pre_change_graph is not None:
         call_context = {"call_graph_available": True}
         pre_change_graph = None  # This is the D1 scenario

@@ -9,7 +9,7 @@ passing test was reported as missing one.
 
 from pathlib import Path
 
-from langgraph_engine.level3_execution.quality_gate import _evaluate_tests_exist_gate
+from langgraph_engine.sdlc_pipeline.quality_gate import _evaluate_tests_exist_gate
 
 _PROJECT_ROOT = str(Path(__file__).resolve().parent.parent)
 
@@ -33,10 +33,10 @@ def test_underscore_source_file_still_matches_underscore_test_file():
         _PROJECT_ROOT,
         {},
         {"require_tests_for_modified": True},
-        ["langgraph_engine/level3_execution/faithfulness_gate.py"],
+        ["langgraph_engine/sdlc_pipeline/faithfulness_gate.py"],
     )
     assert gate["passed"] is True
-    assert "langgraph_engine/level3_execution/faithfulness_gate.py" in gate["modified_with_tests"]
+    assert "langgraph_engine/sdlc_pipeline/faithfulness_gate.py" in gate["modified_with_tests"]
 
 
 def test_genuinely_untested_file_still_reported_missing():
@@ -45,10 +45,10 @@ def test_genuinely_untested_file_still_reported_missing():
         _PROJECT_ROOT,
         {},
         {"require_tests_for_modified": True},
-        ["langgraph_engine/level3_execution/nonexistent_module_xyz123.py"],
+        ["langgraph_engine/sdlc_pipeline/nonexistent_module_xyz123.py"],
     )
     assert gate["passed"] is False
-    assert "langgraph_engine/level3_execution/nonexistent_module_xyz123.py" in gate["modified_without_tests"]
+    assert "langgraph_engine/sdlc_pipeline/nonexistent_module_xyz123.py" in gate["modified_without_tests"]
 
 
 def test_require_tests_false_downgrades_to_warning_only():
@@ -57,7 +57,7 @@ def test_require_tests_false_downgrades_to_warning_only():
         _PROJECT_ROOT,
         {},
         {"require_tests_for_modified": False},
-        ["langgraph_engine/level3_execution/nonexistent_module_xyz123.py"],
+        ["langgraph_engine/sdlc_pipeline/nonexistent_module_xyz123.py"],
     )
     assert gate["passed"] is True
-    assert "langgraph_engine/level3_execution/nonexistent_module_xyz123.py" in gate["modified_without_tests"]
+    assert "langgraph_engine/sdlc_pipeline/nonexistent_module_xyz123.py" in gate["modified_without_tests"]

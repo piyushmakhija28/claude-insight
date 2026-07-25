@@ -7,7 +7,7 @@ state transitions (e.g., retry counter increments).
 from ..flow_state import FlowState, StepKeys
 
 
-def step11_retry_increment_node(state: FlowState) -> dict:
+def step5_retry_increment_node(state: FlowState) -> dict:
     """Increment retry count before re-routing to Step 10.
 
     State mutations must happen in nodes, not routing functions (LangGraph anti-pattern).

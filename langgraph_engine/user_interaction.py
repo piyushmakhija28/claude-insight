@@ -17,22 +17,22 @@ Public API
 ----------
 make_interaction_request(...)     - Factory for InteractionRequest dicts
 InteractionManager                - Manages request lifecycle for one session
-generate_step0_questions(state)   - Step 0 task-type question
-generate_step2_questions(state)   - Step 2 high-risk planning question
-generate_step5_questions(state)   - Step 5 low-confidence skill question
-generate_step10_questions(state)  - Step 10 unresolved dependency questions
-generate_step11_questions(state)  - Step 11 breaking-change review question
-generate_step13_questions(state)  - Step 13 major-change doc-update question
+generate_step1_questions(state)   - Step 0 task-type question
+generate_step1_questions(state)   - Step 2 high-risk planning question
+generate_step1_questions(state)   - Step 5 low-confidence skill question
+generate_step4_questions(state)  - Step 10 unresolved dependency questions
+generate_step5_questions(state)  - Step 11 breaking-change review question
+generate_step7_questions(state)  - Step 13 major-change doc-update question
 
 Usage
 -----
     from langgraph_engine.user_interaction import (
         InteractionManager,
-        generate_step2_questions,
+        generate_step1_questions,
     )
 
     manager = InteractionManager()
-    questions = generate_step2_questions(state)
+    questions = generate_step1_questions(state)
     for q in questions:
         manager.ask_user(**q)   # or simply append the dicts
 
@@ -457,124 +457,20 @@ class InteractionManager:
 
 # ---------------------------------------------------------------------------
 # Pipeline-specific question generators
+#
+# CHANGE LOG (Level/Step domain-driven rename): removed three dead question
+# generators here (originally for the pre-v1.13.0 Step 0/Step 2/Step 5
+# concepts -- task-type ambiguity, plan-execution call-graph risk, and
+# skill-selection confidence). Confirmed via repo-wide grep that none of
+# them were imported or called anywhere; the mechanical step-prefix rename
+# had also collapsed all three into one silently-shadowed function name
+# (generate_step1_questions x3), the same class of bug fixed in
+# standards/integration.py. Only generate_step5_questions below is live
+# (called from sdlc_pipeline/nodes/implementation_and_review_wrapper.py).
 # ---------------------------------------------------------------------------
 
 
-def generate_step0_questions(state: Dict[str, Any]) -> List[Dict[str, Any]]:
-    """Generate questions for Step 0 (Task Analysis) when the task type is ambiguous.
-
-    A question is generated only when ``step0_task_type`` is absent or is
-    the generic "General Task" placeholder set by the pipeline default.
-
-    Args:
-        state: Current flow_state dict.
-
-    Returns:
-        List of InteractionRequest dicts (zero or one element).
-    """
-    questions: List[Dict[str, Any]] = []
-    try:
-        task_type = state.get("step0_task_type", "")
-        if not task_type or task_type == "General Task":
-            questions.append(
-                make_interaction_request(
-                    step=0,
-                    question="What type of task is this?",
-                    suggestion=("Based on your message, this looks like a feature request."),
-                    options=[
-                        "New Feature",
-                        "Bug Fix",
-                        "Refactoring",
-                        "Documentation",
-                        "Other",
-                    ],
-                    risk_level="low",
-                    context=("Task type affects planning strategy and skill selection."),
-                    fallback="General Task",
-                )
-            )
-    except Exception as exc:
-        logger.warning("generate_step0_questions failed: %s", exc)
-    return questions
-
-
-def generate_step2_questions(state: Dict[str, Any]) -> List[Dict[str, Any]]:
-    """Generate questions for Step 2 (Planning) when the call graph risk is HIGH.
-
-    A question is generated only when ``step2_graph_risk_level`` equals
-    "high".  The affected method count is extracted from
-    ``step2_affected_methods`` for the question body.
-
-    Args:
-        state: Current flow_state dict.
-
-    Returns:
-        List of InteractionRequest dicts (zero or one element).
-    """
-    questions: List[Dict[str, Any]] = []
-    try:
-        risk = state.get("step2_graph_risk_level", "low")
-        if risk == "high":
-            affected = state.get("step2_affected_methods", [])
-            affected_count = len(affected) if isinstance(affected, list) else 0
-            questions.append(
-                make_interaction_request(
-                    step=2,
-                    question=("Risk is HIGH - %d method(s) could be affected. " "How should I plan?" % affected_count),
-                    suggestion=("I recommend careful, phased planning with extra testing " "at each phase."),
-                    options=[
-                        "Careful phased planning (recommended)",
-                        "Standard planning",
-                        "I'll handle the risk manually",
-                    ],
-                    risk_level="high",
-                    context=("CallGraph shows many callers could break. " "Careful planning reduces regressions."),
-                    fallback="Careful phased planning",
-                )
-            )
-    except Exception as exc:
-        logger.warning("generate_step2_questions failed: %s", exc)
-    return questions
-
-
-def generate_step5_questions(state: Dict[str, Any]) -> List[Dict[str, Any]]:
-    """Generate questions for Step 5 (Skill Selection) when confidence is low.
-
-    A question is generated when ``step5_confidence`` is below 0.70.
-
-    Args:
-        state: Current flow_state dict.
-
-    Returns:
-        List of InteractionRequest dicts (zero or one element).
-    """
-    questions: List[Dict[str, Any]] = []
-    try:
-        skill = state.get("step5_skill", "")
-        confidence = float(state.get("step5_confidence", 1.0))
-        if confidence < 0.7:
-            confidence_pct = int(confidence * 100)
-            questions.append(
-                make_interaction_request(
-                    step=5,
-                    question=("I'm not very confident about skill selection: '%s'. " "Is this correct?" % skill),
-                    suggestion=("Based on the codebase patterns, '%s' seems like the " "best match." % skill),
-                    options=[
-                        "Yes, use %s" % skill,
-                        "No, let me specify",
-                        "Show all available skills",
-                    ],
-                    risk_level="low",
-                    context=("Low confidence (%d%%) in skill matching." % confidence_pct),
-                    fallback=skill,
-                )
-            )
-    except Exception as exc:
-        logger.warning("generate_step5_questions failed: %s", exc)
-    return questions
-
-
-def generate_step10_questions(state: Dict[str, Any]) -> List[Dict[str, Any]]:
+def generate_step4_questions(state: Dict[str, Any]) -> List[Dict[str, Any]]:
     """Generate questions for Step 10 (Implementation) about unresolved dependencies.
 
     At most ``_MAX_DEP_INTERACTIONS`` questions are generated to avoid
@@ -617,14 +513,14 @@ def generate_step10_questions(state: Dict[str, Any]) -> List[Dict[str, Any]]:
                 )
             )
     except Exception as exc:
-        logger.warning("generate_step10_questions failed: %s", exc)
+        logger.warning("generate_step4_questions failed: %s", exc)
     return questions
 
 
-def generate_step11_questions(state: Dict[str, Any]) -> List[Dict[str, Any]]:
+def generate_step5_questions(state: Dict[str, Any]) -> List[Dict[str, Any]]:
     """Generate questions for Step 11 (Review) when breaking changes are detected.
 
-    A question is generated whenever ``step11_breaking_changes`` is a
+    A question is generated whenever ``step5_breaking_changes`` is a
     non-empty list.  The first five breaking change method names are
     embedded in the context text.
 
@@ -636,7 +532,7 @@ def generate_step11_questions(state: Dict[str, Any]) -> List[Dict[str, Any]]:
     """
     questions: List[Dict[str, Any]] = []
     try:
-        breaking = state.get("step11_breaking_changes", [])
+        breaking = state.get("step5_breaking_changes", [])
         if not isinstance(breaking, list) or not breaking:
             return questions
 
@@ -664,14 +560,14 @@ def generate_step11_questions(state: Dict[str, Any]) -> List[Dict[str, Any]]:
             )
         )
     except Exception as exc:
-        logger.warning("generate_step11_questions failed: %s", exc)
+        logger.warning("generate_step5_questions failed: %s", exc)
     return questions
 
 
-def generate_step13_questions(state: Dict[str, Any]) -> List[Dict[str, Any]]:
+def generate_step7_questions(state: Dict[str, Any]) -> List[Dict[str, Any]]:
     """Generate questions for Step 13 (Documentation) for high-complexity tasks.
 
-    A question is generated when ``step0_complexity`` is 7 or higher.
+    A question is generated when ``step1_complexity`` is 7 or higher.
 
     Args:
         state: Current flow_state dict.
@@ -681,7 +577,7 @@ def generate_step13_questions(state: Dict[str, Any]) -> List[Dict[str, Any]]:
     """
     questions: List[Dict[str, Any]] = []
     try:
-        complexity = int(state.get("step0_complexity", 5))
+        complexity = int(state.get("step1_complexity", 5))
         if complexity >= 7:
             questions.append(
                 make_interaction_request(
@@ -704,5 +600,5 @@ def generate_step13_questions(state: Dict[str, Any]) -> List[Dict[str, Any]]:
                 )
             )
     except Exception as exc:
-        logger.warning("generate_step13_questions failed: %s", exc)
+        logger.warning("generate_step7_questions failed: %s", exc)
     return questions

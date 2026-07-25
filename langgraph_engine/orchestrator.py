@@ -11,22 +11,22 @@ This StateGraph wires together 3 levels (Level -1, Level 1, Level 3) with condit
 
 Note: LangGraph 1.0.10 doesn't support add_graph() nesting, so we flatten
 all nodes into one graph. This works fine - the graph structure is still clear
-via node naming (level_minus1_*, level1_*, etc.)
+via node naming (preflight_guard_*, level1_*, etc.)
 
 CHANGE LOG (v1.13.0):
   Steps 1, 3, 4, 5, 6, 7 removed from Level 3 graph.
-  Their outputs are now populated by step0_task_analysis_node after a single
+  Their outputs are now populated by step1_task_analysis_node after a single
   consolidated LLM call (orchestration template). Steps 8-14 are unchanged.
   route_after_step1_decision local function removed (step1 no longer exists).
   apply_integration_step1/2/3/4/5/6/7 removed (hooks only needed for live steps).
-  route_pre_analysis updated: template fast-path routes to "level3_step8".
+  route_pre_analysis updated: template fast-path routes to "sdlc_step2_issue_tracking".
 
 CHANGE LOG (v1.14.0):
   Step 0 caller scripts use claude CLI subprocess (not direct LLM API calls).
   Step 2 (plan execution) removed from pipeline -- orchestrator subprocess
-  already produces a comprehensive plan. route_after_step0_to_step2_or_step8
+  already produces a comprehensive plan. route_after_step1_to_step1_or_step8
   removed; Step 0 now routes directly to Step 8.
-  Direct edge: level3_step0 -> level3_step8.
+  Direct edge: sdlc_step1_task_orchestration -> sdlc_step2_issue_tracking.
   Active step count: Pre-0, 0.0, 0.1, 0, 8, 9, [10-14] = 8 active steps.
 
 CHANGE LOG (v1.15.0):
@@ -37,12 +37,12 @@ CHANGE LOG (v1.15.0):
 CHANGE LOG (v1.15.2):
   level3_merge_node removed from import and graph.
   The function body was never implemented in subgraph.py (comment stub only).
-  Hook mode: level3_step9 -> level3_output (direct edge, no merge node).
-  Full mode: level3_step14 -> level3_output (direct edge, no merge node).
+  Hook mode: sdlc_step3_branch_setup -> sdlc_output (direct edge, no merge node).
+  Full mode: sdlc_step8_final_summary -> sdlc_output (direct edge, no merge node).
 
 CHANGE LOG (v1.16.0):
   Level 2 Standards Loader scripts fully removed.
-  Pipeline now flows: level1_cleanup -> level3_init directly.
+  Pipeline now flows: level1_cleanup -> sdlc_init directly.
   Rules/policies are loaded directly from policies/ directory on disk.
   Removed imports: level2_standards, standard_selector.
   Removed local functions: route_context_threshold, route_standards_loading,
@@ -72,65 +72,65 @@ except ImportError:
     _LANGGRAPH_AVAILABLE = False
 
 from .checkpointer import CheckpointerManager
-from .core.logger_factory import get_logger
-from .flow_state import FlowState, StepKeys, WorkflowContextOptimizer
-from .level1_sync import (
+from .context_sync import (
     cleanup_level1_memory,
     level1_merge_node,
     node_complexity_calculation,
     node_context_loader,
     node_session_loader,
 )
-from .level3_execution.subgraph import (
-    level3_init_node,
-    orchestration_pre_analysis_node,
-    route_pre_analysis,
-    step0_0_project_context_node,
-    step0_1_initial_callgraph_node,
-    step0_task_analysis_node,
-    step8_github_issue_node,
-    step9_branch_creation_node,
-    step10_implementation_note,
-    step11_pull_request_node,
-    step12_issue_closure_node,
-    step13_docs_update_node,
-    step14_final_summary_node,
-)
-from .level_minus1 import (
-    ask_level_minus1_fix,
-    fix_level_minus1_issues,
-    level_minus1_merge_node,
+from .core.logger_factory import get_logger
+from .flow_state import FlowState, StepKeys, WorkflowContextOptimizer
+from .preflight_guard import (
+    ask_preflight_guard_fix,
+    fix_preflight_guard_issues,
     node_encoding_validation,
     node_unicode_fix,
     node_windows_path_check,
+    preflight_guard_merge_node,
 )
 
 # Level -1 routing functions (canonical definitions live in routing/)
-from .routing import route_after_level_minus1, route_after_level_minus1_user_choice, route_after_step11_review
+from .routing import route_after_preflight_guard, route_after_preflight_guard_user_choice, route_after_step5_review
 
 # Runtime Verification wrapping: verify_node reads ENABLE_RUNTIME_VERIFICATION at
 # decoration time and returns the original function unchanged when it is "0"
 # (default), so these wrappers add zero overhead unless verification is enabled.
 from .runtime_verification.decorators import verify_node
-from .runtime_verification.node_contracts import PRE_ANALYSIS_CONTRACT, STEP0_CONTRACT
+from .runtime_verification.node_contracts import PRE_ANALYSIS_CONTRACT, STEP1_CONTRACT
+from .sdlc_pipeline.subgraph import (
+    orchestration_pre_analysis_node,
+    route_pre_analysis,
+    sdlc_init_node,
+    step0_callgraph_snapshot_node,
+    step0_project_context_node,
+    step1_task_analysis_node,
+    step2_github_issue_node,
+    step3_branch_creation_node,
+    step4_implementation_note,
+    step5_pull_request_node,
+    step6_issue_closure_node,
+    step7_docs_update_node,
+    step8_final_summary_node,
+)
 from .standards_integration import apply_standards_at_step
 
 logger = get_logger(__name__)
 
 _rv_pre_analysis_node = verify_node(PRE_ANALYSIS_CONTRACT)(orchestration_pre_analysis_node)
 # Step 0 fuses prompt-gen + orchestrator into one node, so it uses the single
-# STEP0_CONTRACT (precondition user_message; postconditions orchestration_prompt +
+# STEP1_CONTRACT (precondition user_message; postconditions orchestration_prompt +
 # orchestrator_result). The separate-phase PROMPT_GEN/ORCHESTRATOR contracts would
 # false-fire here -- their orchestration_prompt precondition and 200-char bar
 # cannot hold on a node that produces orchestration_prompt internally.
-_rv_step0_node = verify_node(STEP0_CONTRACT)(step0_task_analysis_node)
+_rv_step1_node = verify_node(STEP1_CONTRACT)(step1_task_analysis_node)
 
-# REMOVED (v1.14.0): route_after_step0_to_step2_or_step8 -- Step 2 removed from pipeline.
+# REMOVED (v1.14.0): route_after_step1_to_step1_or_step8 -- Step 2 removed from pipeline.
 #   Step 0 now routes directly to Step 8.
-# route_after_step11_review now imported from .routing (single canonical definition).
+# route_after_step5_review now imported from .routing (single canonical definition).
 
 
-def step11_retry_increment_node(state: FlowState) -> dict:
+def step5_retry_increment_node(state: FlowState) -> dict:
     """Increment retry count before re-routing to Step 10.
 
     State mutations must happen in nodes, not routing functions (LangGraph anti-pattern).
@@ -295,23 +295,23 @@ def synthesize_prompt_with_flow_data(state: FlowState) -> dict:
         plan_phases = plan_exec.get("phases", []) if isinstance(plan_exec, dict) else []
 
         flow_data = {
-            "level_minus1": {
+            "level0_preflight": {
                 "unicode_check": state.get(StepKeys.UNICODE_CHECK, False),
                 "encoding_check": state.get(StepKeys.ENCODING_CHECK, False),
                 "windows_path_check": state.get(StepKeys.WINDOWS_PATH_CHECK, False),
             },
-            "level1": {
+            "level1_context_sync": {
                 "context_percentage": state.get(StepKeys.CONTEXT_PERCENTAGE, 0),
                 "session_chain_loaded": state.get(StepKeys.SESSION_CHAIN_LOADED, False),
                 "patterns_detected": state.get(StepKeys.PATTERNS_DETECTED, []),
                 "project_type": state.get(StepKeys.DETECTED_FRAMEWORK, "Unknown"),
             },
-            "level2": {
+            "standards": {
                 "standards_count": state.get(StepKeys.STANDARDS_COUNT, 0),
                 "is_java_project": state.get(StepKeys.IS_JAVA_PROJECT, False),
                 "java_standards_loaded": state.get(StepKeys.JAVA_STANDARDS_LOADED, False),
             },
-            "level3": {
+            "level2_sdlc_pipeline": {
                 "task_type": state.get(StepKeys.TASK_TYPE, "General"),
                 "complexity": state.get(StepKeys.COMPLEXITY, 5),
                 "suggested_model": state.get(StepKeys.SELECTED_MODEL, "complex_reasoning"),
@@ -391,7 +391,7 @@ def output_node(state: FlowState) -> dict:
     save_workflow_memory(state)
 
     # Determine final status based on actual step results (not just errors list)
-    if state.get(StepKeys.LEVEL_MINUS1_STATUS) == "BLOCKED":
+    if state.get(StepKeys.PREFLIGHT_STATUS) == "BLOCKED":
         final_status = "BLOCKED"
     else:
         step_failures = []
@@ -408,7 +408,7 @@ def output_node(state: FlowState) -> dict:
     # Save detailed pipeline execution log to session folder
     _save_pipeline_execution_log(state, final_status)
 
-    # In hook_mode, Step 14 doesn't run. Save a quick summary anyway.
+    # In hook_mode, Step 8 (Final Telemetry & Summary Report) doesn't run. Save a quick summary anyway.
     if not state.get(StepKeys.SUMMARY_SAVED):
         session_dir = state.get(StepKeys.SESSION_DIR) or state.get(StepKeys.SESSION_PATH, "")
         if session_dir:
@@ -484,16 +484,16 @@ def _save_pipeline_execution_log(state: FlowState, final_status: str) -> None:
         log_lines.append(f"**Framework**: {state.get(StepKeys.DETECTED_FRAMEWORK, 'unknown')}")
         log_lines.append("")
 
-        # Level -1
-        log_lines.append("## Level -1: Auto-Fix")
+        # Level 0: Pre-Flight Sanity Guard
+        log_lines.append("## Level 0: Pre-Flight Sanity Guard")
         log_lines.append(f"- Unicode: {'PASS' if state.get(StepKeys.UNICODE_CHECK) else 'FAIL'}")
         log_lines.append(f"- Encoding: {'PASS' if state.get(StepKeys.ENCODING_CHECK) else 'FAIL'}")
         log_lines.append(f"- Paths: {'PASS' if state.get(StepKeys.WINDOWS_PATH_CHECK) else 'FAIL'}")
-        log_lines.append(f"- Status: {state.get(StepKeys.LEVEL_MINUS1_STATUS, 'unknown')}")
+        log_lines.append(f"- Status: {state.get(StepKeys.PREFLIGHT_STATUS, 'unknown')}")
         log_lines.append("")
 
-        # Level 1
-        log_lines.append("## Level 1: Context Sync")
+        # Level 1: Session & Context Synchronization
+        log_lines.append("## Level 1: Session & Context Synchronization")
         log_lines.append(f"- Session: {state.get(StepKeys.SESSION_ID, 'none')}")
         log_lines.append(f"- Complexity: {state.get(StepKeys.COMPLEXITY_SCORE, '?')}/10")
         graph_score = state.get(StepKeys.GRAPH_COMPLEXITY_SCORE)
@@ -506,30 +506,30 @@ def _save_pipeline_execution_log(state: FlowState, final_status: str) -> None:
         log_lines.append(f"- Cache Hit: {state.get(StepKeys.CONTEXT_CACHE_HIT, False)}")
         log_lines.append("")
 
-        # Level 2 (removed v1.16.0 -- log retained for historical visibility; fields will be empty)
-        log_lines.append("## Level 2: Standards (removed v1.16.0)")
+        # Standards (always-on, loaded from disk -- not a numbered pipeline level)
+        log_lines.append("## Standards (loaded from disk)")
         log_lines.append(f"- Standards Loaded: {state.get(StepKeys.STANDARDS_COUNT, 0)}")
         log_lines.append(f"- Framework Detected: {state.get(StepKeys.DETECTED_FRAMEWORK, 'unknown')}")
         log_lines.append(f"- MCP Discovered: {state.get(StepKeys.MCP_DISCOVERED_COUNT, 0)}")
         log_lines.append(f"- Tool Rules: {'Loaded' if state.get(StepKeys.TOOL_OPTIMIZATION_LOADED) else 'Missing'}")
-        log_lines.append(f"- Status: {state.get(StepKeys.LEVEL2_STATUS, 'n/a (removed)')}")
         log_lines.append("")
 
-        # Level 3 Steps (v1.14.0: Steps 1-7 removed; Step 0 routes directly to Step 8)
-        log_lines.append("## Level 3: Execution Steps")
+        # Level 2: SDLC Execution Core (Steps 0-8)
+        log_lines.append("## Level 2: SDLC Execution Core")
         log_lines.append("")
         log_lines.append("| Step | Name | Status | Duration | Details |")
         log_lines.append("|------|------|--------|----------|---------|")
 
         step_info = [
-            (0, "Task Analysis + Template", "step0_task_type", "step0_complexity"),
-            (8, "GitHub Issue Creation", "step8_status", "step8_issue_url"),
-            (9, "Branch Creation", "step9_status", "step9_branch_name"),
-            (10, "Implementation", "step10_implementation_status", "step10_llm_invoked"),
-            (11, "PR & Code Review", "step11_status", "step11_pr_url"),
-            (12, "Issue Closure", "step12_status", "step12_issue_closed"),
-            (13, "Documentation", "step13_documentation_status", "step13_update_count"),
-            (14, "Final Summary", "step14_status", "step14_voice_sent"),
+            (0, "Pre-Analysis & CallGraph Scan", "step1_callgraph_available", "step1_files_read"),
+            (1, "Task Orchestration & Planning", "step1_task_type", "step1_complexity"),
+            (2, "Issue Tracking", "step1_status", "step1_issue_url"),
+            (3, "Branch & Workspace Setup", "step1_status", "step1_branch_name"),
+            (4, "Implementation & Code Generation", "step1_implementation_status", "step1_llm_invoked"),
+            (5, "Pull Request & Automated Review", "step1_status", "step1_pr_url"),
+            (6, "Issue & Ticket Closure", "step1_status", "step1_issue_closed"),
+            (7, "Documentation & UML Generation", "step1_documentation_status", "step1_update_count"),
+            (8, "Final Telemetry & Summary Report", "step2_status", "step2_voice_sent"),
         ]
 
         for step_num, name, status_key, detail_key in step_info:
@@ -617,7 +617,7 @@ def create_flow_graph(hook_mode: bool = False):
         Step 0 now does consolidated LLM call (orchestration template) and
         populates all migration fields previously written by steps 1-7.
         Step 2 (plan execution) removed from pipeline (v1.14.0).
-        route_pre_analysis targets updated to "level3_step8" for both fast paths.
+        route_pre_analysis targets updated to "sdlc_step2_issue_tracking" for both fast paths.
         Standards hooks for removed steps are no longer registered.
 
     CHANGE LOG (v1.15.0):
@@ -626,12 +626,12 @@ def create_flow_graph(hook_mode: bool = False):
 
     CHANGE LOG (v1.15.2):
         level3_merge node removed (level3_merge_node was a comment stub, never
-        implemented). Hook mode: level3_step9 -> level3_output directly.
-        Full mode: level3_step14 -> level3_output directly.
+        implemented). Hook mode: sdlc_step3_branch_setup -> sdlc_output directly.
+        Full mode: sdlc_step8_final_summary -> sdlc_output directly.
 
     CHANGE LOG (v1.16.0):
         Level 2 Standards Loader nodes fully removed from graph.
-        Direct bridge added: level1_cleanup -> level3_init.
+        Direct bridge added: level1_cleanup -> sdlc_init.
         Removed nodes: level2_emergency_archive, level2_common_standards,
           level2_java_standards, level2_tool_optimization, level2_mcp_discovery,
           level2_merge, level2_select_standards, level2_optimize_context.
@@ -654,43 +654,43 @@ def create_flow_graph(hook_mode: bool = False):
     # ========================================================================
     # LEVEL -1: AUTO-FIX ENFORCEMENT (3 checks, sequential)
     # ========================================================================
-    graph.add_node("level_minus1_unicode", node_unicode_fix)
-    graph.add_node("level_minus1_encoding", node_encoding_validation)
-    graph.add_node("level_minus1_windows", node_windows_path_check)
-    graph.add_node("level_minus1_merge", level_minus1_merge_node)
+    graph.add_node("preflight_guard_unicode", node_unicode_fix)
+    graph.add_node("preflight_guard_encoding", node_encoding_validation)
+    graph.add_node("preflight_guard_windows", node_windows_path_check)
+    graph.add_node("preflight_guard_merge", preflight_guard_merge_node)
 
     # Sequential: START -> unicode -> encoding -> windows -> merge
-    graph.add_edge(START, "level_minus1_unicode")
-    graph.add_edge("level_minus1_unicode", "level_minus1_encoding")
-    graph.add_edge("level_minus1_encoding", "level_minus1_windows")
-    graph.add_edge("level_minus1_windows", "level_minus1_merge")
+    graph.add_edge(START, "preflight_guard_unicode")
+    graph.add_edge("preflight_guard_unicode", "preflight_guard_encoding")
+    graph.add_edge("preflight_guard_encoding", "preflight_guard_windows")
+    graph.add_edge("preflight_guard_windows", "preflight_guard_merge")
 
     # Add interactive nodes for Level -1 failure handling
-    graph.add_node("ask_level_minus1_fix", ask_level_minus1_fix)
-    graph.add_node("fix_level_minus1", fix_level_minus1_issues)
+    graph.add_node("ask_preflight_guard_fix", ask_preflight_guard_fix)
+    graph.add_node("fix_preflight_guard", fix_preflight_guard_issues)
 
     # Route based on Level -1 status
     graph.add_conditional_edges(
-        "level_minus1_merge",
-        route_after_level_minus1,
+        "preflight_guard_merge",
+        route_after_preflight_guard,
         {
-            "ask_level_minus1_fix": "ask_level_minus1_fix",
+            "ask_preflight_guard_fix": "ask_preflight_guard_fix",
             "level1_session": "level1_session",  # Session loader is first Level 1 node
         },
     )
 
     # After user choice, route to fix or continue to Level 1
     graph.add_conditional_edges(
-        "ask_level_minus1_fix",
-        route_after_level_minus1_user_choice,
+        "ask_preflight_guard_fix",
+        route_after_preflight_guard_user_choice,
         {
-            "fix_level_minus1": "fix_level_minus1",
+            "fix_preflight_guard": "fix_preflight_guard",
             "level1_session": "level1_session",  # Go to Level 1 session loader
         },
     )
 
     # After fix attempt, always retry Level -1 checks from start
-    graph.add_edge("fix_level_minus1", "level_minus1_unicode")
+    graph.add_edge("fix_preflight_guard", "preflight_guard_unicode")
 
     # ========================================================================
     # LEVEL 1: CONTEXT SYNC (CORRECTED FLOW)
@@ -720,42 +720,42 @@ def create_flow_graph(hook_mode: bool = False):
     #
     # Active steps: Pre-0, 0.0, 0.1, 0, 8, 9, [10-14 full mode]
     # Steps 1, 3, 4, 5, 6, 7 removed -- outputs merged into Step 0 template call.
-    # Level 2 removed (v1.16.0) -- direct bridge: level1_cleanup -> level3_init
+    # Level 2 removed (v1.16.0) -- direct bridge: level1_cleanup -> sdlc_init
     # ========================================================================
 
     # Bridge node: session_path -> session_dir
     # Direct connection: Level 1 cleanup -> Level 3 init (Level 2 removed in v1.16.0)
-    graph.add_node("level3_init", level3_init_node)
-    graph.add_edge("level1_cleanup", "level3_init")
+    graph.add_node("sdlc_init", sdlc_init_node)
+    graph.add_edge("level1_cleanup", "sdlc_init")
 
     # Pre-analysis gate: call graph scan
-    # Template fast-path (--orchestration-template): jumps directly to level3_step8
-    # Normal path: falls through to level3_step0_0 (pre-flight flow)
-    graph.add_node("level3_pre_analysis", _rv_pre_analysis_node)
-    graph.add_edge("level3_init", "level3_pre_analysis")
+    # Template fast-path (--orchestration-template): jumps directly to sdlc_step2_issue_tracking
+    # Normal path: falls through to sdlc_step0_project_context (pre-flight flow)
+    graph.add_node("sdlc_step0_pre_analysis", _rv_pre_analysis_node)
+    graph.add_edge("sdlc_init", "sdlc_step0_pre_analysis")
     graph.add_conditional_edges(
-        "level3_pre_analysis",
+        "sdlc_step0_pre_analysis",
         route_pre_analysis,
         {
-            "level3_step0_0": "level3_step0_0",
-            "level3_step8": "level3_step8",
+            "sdlc_step0_project_context": "sdlc_step0_project_context",
+            "sdlc_step2_issue_tracking": "sdlc_step2_issue_tracking",
         },
     )
 
     # Step 0.0: Pre-flight - Project Context (README, CHANGELOG, etc.)
-    graph.add_node("level3_step0_0", step0_0_project_context_node)
+    graph.add_node("sdlc_step0_project_context", step0_project_context_node)
 
     # Step 0.1: Pre-flight - Initial CallGraph Snapshot (baseline for Step 11 diff)
-    graph.add_node("level3_step0_1", step0_1_initial_callgraph_node)
-    graph.add_edge("level3_step0_0", "level3_step0_1")
+    graph.add_node("sdlc_step0_callgraph_snapshot", step0_callgraph_snapshot_node)
+    graph.add_edge("sdlc_step0_project_context", "sdlc_step0_callgraph_snapshot")
 
     # Step 0: Task Analysis + Orchestration (2 claude CLI subprocess calls).
     # Populates all migration fields for steps 8-14 (previously written by 1/3/4/5/6/7).
-    graph.add_node("level3_step0", _rv_step0_node)
-    graph.add_edge("level3_step0_1", "level3_step0")
+    graph.add_node("sdlc_step1_task_orchestration", _rv_step1_node)
+    graph.add_edge("sdlc_step0_callgraph_snapshot", "sdlc_step1_task_orchestration")
 
     # Direct edge: Step 0 -> Step 8 (Step 2 removed in v1.14.0)
-    graph.add_edge("level3_step0", "level3_step8")
+    graph.add_edge("sdlc_step1_task_orchestration", "sdlc_step2_issue_tracking")
 
     # ========================================================================
     # STEPS 8-9: Issue + Branch Creation (runs in BOTH hook and full mode)
@@ -763,11 +763,11 @@ def create_flow_graph(hook_mode: bool = False):
     # ========================================================================
 
     # Step 8: GitHub Issue Creation
-    graph.add_node("level3_step8", step8_github_issue_node)
+    graph.add_node("sdlc_step2_issue_tracking", step2_github_issue_node)
 
     # Step 9: Branch Creation (issue-42-bug format)
-    graph.add_node("level3_step9", step9_branch_creation_node)
-    graph.add_edge("level3_step8", "level3_step9")
+    graph.add_node("sdlc_step3_branch_setup", step3_branch_creation_node)
+    graph.add_edge("sdlc_step2_issue_tracking", "sdlc_step3_branch_setup")
 
     # ========================================================================
     # HOOK MODE: After Steps 8-9, go to output
@@ -776,9 +776,9 @@ def create_flow_graph(hook_mode: bool = False):
     # v1.15.2: level3_merge removed (was never implemented); direct edge used.
     # ========================================================================
     if hook_mode:
-        graph.add_node("level3_output", output_node)
-        graph.add_edge("level3_step9", "level3_output")
-        graph.add_edge("level3_output", END)
+        graph.add_node("sdlc_output", output_node)
+        graph.add_edge("sdlc_step3_branch_setup", "sdlc_output")
+        graph.add_edge("sdlc_output", END)
 
         try:
             checkpointer = CheckpointerManager.get_default_checkpointer(use_sqlite=True)
@@ -793,54 +793,54 @@ def create_flow_graph(hook_mode: bool = False):
     # ========================================================================
 
     # Step 10: Implementation (in full mode)
-    graph.add_node("level3_step10", step10_implementation_note)
-    graph.add_edge("level3_step9", "level3_step10")
+    graph.add_node("sdlc_step4_implementation", step4_implementation_note)
+    graph.add_edge("sdlc_step3_branch_setup", "sdlc_step4_implementation")
 
     # Standards integration hook: Step 10 (code review) - builds compliance checklist
     # Runs after step10, before step11, so PR review has the checklist available
-    graph.add_node("level3_standards_hook_step10", apply_integration_step10)
-    graph.add_edge("level3_step10", "level3_standards_hook_step10")
+    graph.add_node("sdlc_standards_hook_step4", apply_integration_step10)
+    graph.add_edge("sdlc_step4_implementation", "sdlc_standards_hook_step4")
 
     # Step 11: PR Creation & Merge
-    graph.add_node("level3_step11", step11_pull_request_node)
-    graph.add_edge("level3_standards_hook_step10", "level3_step11")
+    graph.add_node("sdlc_step5_pr_review", step5_pull_request_node)
+    graph.add_edge("sdlc_standards_hook_step4", "sdlc_step5_pr_review")
 
     # Step 11 -> Conditional Routing (retry loop or continue to closure)
     # Retry goes through increment node first (state mutations only in nodes)
-    graph.add_node("level3_step11_retry", step11_retry_increment_node)
-    graph.add_edge("level3_step11_retry", "level3_step10")
+    graph.add_node("sdlc_step5_retry", step5_retry_increment_node)
+    graph.add_edge("sdlc_step5_retry", "sdlc_step4_implementation")
 
     graph.add_conditional_edges(
-        "level3_step11",
-        route_after_step11_review,
+        "sdlc_step5_pr_review",
+        route_after_step5_review,
         {
-            "level3_step12": "level3_step12",  # Review passed or max retries reached
-            "level3_step11_retry": "level3_step11_retry",  # Review failed, increment then retry
+            "sdlc_step6_issue_closure": "sdlc_step6_issue_closure",  # Review passed or max retries reached
+            "sdlc_step5_retry": "sdlc_step5_retry",  # Review failed, increment then retry
         },
     )
 
     # Step 12: Issue Closure
-    graph.add_node("level3_step12", step12_issue_closure_node)
+    graph.add_node("sdlc_step6_issue_closure", step6_issue_closure_node)
 
     # Step 13: Documentation Update
-    graph.add_node("level3_step13", step13_docs_update_node)
-    graph.add_edge("level3_step12", "level3_step13")
+    graph.add_node("sdlc_step7_documentation", step7_docs_update_node)
+    graph.add_edge("sdlc_step6_issue_closure", "sdlc_step7_documentation")
 
     # Standards integration hook: Step 13 - documentation requirements from standards
-    graph.add_node("level3_standards_hook_step13", apply_integration_step13)
-    graph.add_edge("level3_step13", "level3_standards_hook_step13")
+    graph.add_node("sdlc_standards_hook_step7", apply_integration_step13)
+    graph.add_edge("sdlc_step7_documentation", "sdlc_standards_hook_step7")
 
     # Step 14: Final Summary + Voice Notification
-    graph.add_node("level3_step14", step14_final_summary_node)
-    graph.add_edge("level3_standards_hook_step13", "level3_step14")
+    graph.add_node("sdlc_step8_final_summary", step8_final_summary_node)
+    graph.add_edge("sdlc_standards_hook_step7", "sdlc_step8_final_summary")
 
     # ========================================================================
     # OUTPUT
     # v1.15.2: level3_merge removed (was never implemented); direct edge used.
     # ========================================================================
-    graph.add_node("level3_output", output_node)
-    graph.add_edge("level3_step14", "level3_output")
-    graph.add_edge("level3_output", END)
+    graph.add_node("sdlc_output", output_node)
+    graph.add_edge("sdlc_step8_final_summary", "sdlc_output")
+    graph.add_edge("sdlc_output", END)
 
     # Compile graph with SqliteSaver checkpointer for state persistence
     # Enables resume from any step if pipeline is interrupted

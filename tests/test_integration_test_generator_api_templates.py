@@ -1,4 +1,4 @@
-"""Unit tests for langgraph_engine/level3_execution/integration_test_generator.py --
+"""Unit tests for langgraph_engine/sdlc_pipeline/integration_test_generator.py --
 generate_api_test() and its per-framework template constants (HLD Section 3 row
 C13, FR-5).
 
@@ -22,7 +22,7 @@ _PROJECT_ROOT = Path(__file__).resolve().parent.parent
 if str(_PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(_PROJECT_ROOT))
 
-from langgraph_engine.level3_execution.integration_test_generator import generate_api_test  # noqa: E402
+from langgraph_engine.sdlc_pipeline.integration_test_generator import generate_api_test  # noqa: E402
 
 
 def _wrap_in_class(stub_body: str) -> str:

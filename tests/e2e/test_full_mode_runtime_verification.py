@@ -108,7 +108,7 @@ def test_strict_mode_gate_sets_passed_false_on_violations(monkeypatch):
     monkeypatch.setenv("STRICT_RUNTIME_VERIFICATION", "1")
     monkeypatch.setenv("CLAUDE_HOOK_MODE", "0")
 
-    from langgraph_engine.level3_execution.quality_gate import evaluate_quality_gate
+    from langgraph_engine.sdlc_pipeline.quality_gate import evaluate_quality_gate
 
     # State contains a verification report with violations
     state = {
@@ -124,9 +124,9 @@ def test_strict_mode_gate_sets_passed_false_on_violations(monkeypatch):
             ],
             "pass_fail": False,
         },
-        "step10_modified_files": [],
-        "step11_review_result": {},
-        "step11_pr_url": "",
+        "step4_modified_files": [],
+        "step5_review_result": {},
+        "step5_pr_url": "",
     }
 
     # evaluate_quality_gate must NOT raise -- it returns a dict (ADR-3)
@@ -154,7 +154,7 @@ def test_non_strict_mode_gate_does_not_block_on_violations(monkeypatch):
     monkeypatch.setenv("STRICT_RUNTIME_VERIFICATION", "0")
     monkeypatch.setenv("CLAUDE_HOOK_MODE", "0")
 
-    from langgraph_engine.level3_execution.quality_gate import evaluate_quality_gate
+    from langgraph_engine.sdlc_pipeline.quality_gate import evaluate_quality_gate
 
     state = {
         "verification_report": {
@@ -169,9 +169,9 @@ def test_non_strict_mode_gate_does_not_block_on_violations(monkeypatch):
             ],
             "pass_fail": False,
         },
-        "step10_modified_files": [],
-        "step11_review_result": {},
-        "step11_pr_url": "",
+        "step4_modified_files": [],
+        "step5_review_result": {},
+        "step5_pr_url": "",
     }
 
     import tempfile
@@ -194,12 +194,12 @@ def test_verification_gate_disabled_when_env_not_set(monkeypatch):
     monkeypatch.delenv("ENABLE_RUNTIME_VERIFICATION", raising=False)
     monkeypatch.setenv("CLAUDE_HOOK_MODE", "0")
 
-    from langgraph_engine.level3_execution.quality_gate import evaluate_quality_gate
+    from langgraph_engine.sdlc_pipeline.quality_gate import evaluate_quality_gate
 
     state = {
-        "step10_modified_files": [],
-        "step11_review_result": {},
-        "step11_pr_url": "",
+        "step4_modified_files": [],
+        "step5_review_result": {},
+        "step5_pr_url": "",
     }
 
     import tempfile

@@ -54,7 +54,7 @@ __all__ = [
 # of a cached submodule does not re-bind the parent attribute, so without this
 # hook patch("langgraph_engine.github.X") fails with AttributeError (3.11+ self-heal).
 _LAZY_SUBMODULES = frozenset(
-    {"github", "github_mcp", "github_operation_router", "level3_execution", "quality", "runtime_verification"}
+    {"github", "github_mcp", "github_operation_router", "sdlc_pipeline", "quality", "runtime_verification"}
 )
 
 

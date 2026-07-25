@@ -456,7 +456,7 @@ _BLOCKING_POLICIES = [
     ("task_breakdown", check_task_breakdown_pending),
     ("skill_selection", check_skill_selection_pending),
     ("context_read", check_context_read_complete),
-    ("level1_sync", check_level1_sync_complete),
+    ("context_sync", check_level1_sync_complete),
     ("python_unicode", check_python_unicode),
     ("bash_commands", check_bash_commands),
     ("grep_opt", check_grep_opt),
