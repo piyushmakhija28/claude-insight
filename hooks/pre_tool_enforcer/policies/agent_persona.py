@@ -15,7 +15,11 @@ _BLOCK_MSG = (
     "               of the prompt (see ORCHESTRATION_TEMPLATE.md STEP 0.05,\n"
     "               Subagent Dispatch Contract).\n"
     "  Escape hatch: prefix the prompt/description with [GENERIC-OK] for a\n"
-    "               genuinely generic one-off task with no matching persona.\n"
+    "               genuinely generic one-off task with no matching persona,\n"
+    "               OR a recurring task with no persona to inject because the\n"
+    "               persona/skill IS what the task produces (e.g. authoring a\n"
+    "               new SKILL.md / agent.md for a library that doesn't have\n"
+    "               that persona yet).\n"
     "  Note       : Local code exploration should use the built-in 'Explore'\n"
     "               subagent_type instead -- it is not gated by this policy.\n"
     "  Action     : Add subagent_type of a named library agent, or inject the\n"
@@ -31,7 +35,10 @@ def check_agent_persona(tool_name, tool_input):
     prompt, per the Subagent Dispatch Contract. Named built-in subagent
     types (e.g. Explore, Plan) are never gated. An explicit '[GENERIC-OK]'
     marker in the prompt/description is an escape hatch for genuinely
-    generic one-off tasks.
+    generic one-off tasks, and also for recurring tasks with no persona
+    to inject because the persona/skill itself is what the task produces
+    (e.g. authoring a new SKILL.md/agent.md for a library domain that
+    doesn't have that persona yet).
 
     Args:
         tool_name (str): Name of the tool (must be 'Agent' or 'Task' to trigger).
