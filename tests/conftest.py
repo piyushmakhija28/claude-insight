@@ -25,9 +25,9 @@ sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 # chance -- it passed on Python 3.11 but broke every such patch on 3.10 in CI.
 # Importing them here makes resolution deterministic across interpreter versions.
 import langgraph_engine.github  # noqa: E402,F401
-import langgraph_engine.level3_execution  # noqa: E402,F401
 import langgraph_engine.quality  # noqa: E402,F401
 import langgraph_engine.runtime_verification  # noqa: E402,F401
+import langgraph_engine.sdlc_pipeline  # noqa: E402,F401
 
 
 @pytest.fixture(scope="session", autouse=True)

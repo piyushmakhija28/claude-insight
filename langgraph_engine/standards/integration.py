@@ -1,4 +1,4 @@
-"""standards/integration.py -- Standards Integration Points - Level 2 Standards System.
+"""standards/integration.py -- Standards Integration Points - Level 2 (SDLC Execution Core).
 
 Moved from langgraph_engine/standards_integration.py to the standards/ domain package.
 Backward-compat shim at the original location re-exports from here.
@@ -6,12 +6,21 @@ Backward-compat shim at the original location re-exports from here.
 Defines WHERE and HOW standards are applied during execution flow.
 Each integration point hooks into a specific step to ensure compliance.
 
-5 Integration Points:
-  Step 1  - Before plan mode decision
-  Step 2  - During plan execution
-  Step 5  - After skill selection
-  Step 10 - During code review
-  Step 13 - During doc update
+2 Integration Points (live -- both wired into the current graph):
+  Step 4 - During code review (after implementation, before PR review)
+  Step 7 - During doc update
+
+CHANGE LOG (Level/Step domain-driven rename):
+  Removed the old step_1/step_2/step_5 integration points (pre-v1.13.0
+  Plan Mode Decision / Plan Execution / Skill Selection hooks). Nothing in
+  the live graph has called apply_standards_at_step() with those numbers
+  since v1.13.0 collapsed those steps into the single consolidated task-
+  orchestration node -- confirmed via repo-wide grep before deletion. Their
+  handler functions had also silently collided under one shared name
+  (_apply_step1_standards x3) after the mechanical step-prefix rename,
+  since old steps 1/2/5 all mapped to the same new-scheme step number;
+  removing the dead entries resolves that collision at its root instead of
+  papering over it with distinct names for otherwise-unreachable code.
 
 Windows-safe: ASCII only (cp1252 compatible).
 """
@@ -22,42 +31,7 @@ from langgraph_engine.engine_logging.error_logger import ErrorLogger
 from langgraph_engine.flow_state import FlowState
 
 STANDARDS_INTEGRATION_POINTS = {
-    "step_1": {
-        "location": "Plan mode decision",
-        "purpose": "Load standards for complexity assessment",
-        "trigger": "before_plan_decision",
-        "applies_to": ["all"],
-        "blocking": False,
-        "description": (
-            "Standards are loaded before the plan mode decision so that "
-            "complexity scoring can account for project conventions and required "
-            "tooling. This prevents over-engineering simple tasks."
-        ),
-    },
-    "step_2": {
-        "location": "Plan execution",
-        "purpose": "Ensure plan follows project standards",
-        "trigger": "during_planning",
-        "applies_to": ["all"],
-        "blocking": False,
-        "description": (
-            "During plan execution, standards are injected so that file naming, "
-            "layer separation, and framework-specific patterns are respected in "
-            "the generated plan structure."
-        ),
-    },
-    "step_5": {
-        "location": "Skill selection",
-        "purpose": "Validate skill selection against standards",
-        "trigger": "after_skill_selection",
-        "applies_to": ["all"],
-        "blocking": True,
-        "description": (
-            "After skill/agent selection, standards are checked to confirm the "
-            "chosen skill is appropriate for the project type."
-        ),
-    },
-    "step_10": {
+    "step_4": {
         "location": "Code review",
         "purpose": "Code review checks standards compliance",
         "trigger": "during_implementation",
@@ -69,7 +43,7 @@ STANDARDS_INTEGRATION_POINTS = {
             "thresholds). Review failures trigger a retry loop up to 3 times."
         ),
     },
-    "step_13": {
+    "step_7": {
         "location": "Documentation",
         "purpose": "Documentation matches standards",
         "trigger": "during_doc_update",
@@ -129,7 +103,7 @@ def load_standards(state: FlowState) -> Dict[str, Any]:
     standards["__meta"] = {
         "count": standards_count,
         "loaded": state.get("standards_loaded", False),
-        "level2_status": state.get("level2_status", "UNKNOWN"),
+        "legacy_level2_status": state.get("level2_status", "UNKNOWN"),
         "project_type": project_type,
         "framework": detected_framework or (standards_selection or {}).get("framework", "unknown"),
         "priority_chain": "custom(4) > team(3) > framework(2) > library_skill(1.5) > language(1) > library_language_skill(0.5)",
@@ -142,7 +116,7 @@ def apply_standards_at_step(step: int, state: FlowState) -> FlowState:
     """Apply standards at a specific pipeline step.
 
     Args:
-        step: Step number (1, 2, 5, 10, or 13).
+        step: Step number (4 or 7).
         state: Current FlowState.
 
     Returns:
@@ -170,11 +144,8 @@ def apply_standards_at_step(step: int, state: FlowState) -> FlowState:
     standards = load_standards(state)
 
     hook_dispatch = {
-        1: _apply_step1_standards,
-        2: _apply_step2_standards,
-        5: _apply_step5_standards,
-        10: _apply_step10_standards,
-        13: _apply_step13_standards,
+        4: _apply_step4_standards,
+        7: _apply_step7_standards,
     }
 
     hook_fn = hook_dispatch.get(step)
@@ -199,189 +170,12 @@ def apply_standards_at_step(step: int, state: FlowState) -> FlowState:
     return state
 
 
-def _apply_step1_standards(
+def _apply_step4_standards(
     state: FlowState,
     standards: Dict[str, Any],
     logger: ErrorLogger,
 ) -> Dict[str, Any]:
-    """Step 1 hook: inject standards metadata before plan mode decision.
-
-    Args:
-        state:     Current FlowState.
-        standards: Aggregated standards dict from load_standards().
-        logger:    ErrorLogger for audit trail.
-
-    Returns:
-        State updates to merge.
-    """
-    updates: Dict[str, Any] = {}
-
-    meta = standards.get("__meta", {})
-    standards_count = meta.get("count", 0)
-    project_type = meta.get("project_type", "unknown")
-    framework = meta.get("framework", "unknown")
-    has_merged_rules = bool(standards.get("merged_rules"))
-    has_selection = bool(standards.get("selection"))
-
-    updates["step1_standards_context"] = {
-        "active_standards": standards_count,
-        "project_type": project_type,
-        "framework": framework,
-        "tool_rules_loaded": "tool_optimization" in standards,
-        "merged_rules_available": has_merged_rules,
-        "standards_selection_available": has_selection,
-        "priority_chain": "custom(4) > team(3) > framework(2) > library_skill(1.5) > language(1) > library_language_skill(0.5)",
-        "note": (
-            "Account for {}/{} standards when scoring complexity. "
-            "Higher standard count may increase required steps.".format(project_type, framework)
-        ),
-    }
-
-    logger.log_decision(
-        step="Level 2 - Step 1",
-        decision="Standards context prepared for plan decision",
-        reasoning="project_type={}, framework={}, active_standards={}".format(project_type, framework, standards_count),
-        chosen_option="standards_context_injected",
-    )
-
-    return updates
-
-
-def _apply_step2_standards(
-    state: FlowState,
-    standards: Dict[str, Any],
-    logger: ErrorLogger,
-) -> Dict[str, Any]:
-    """Step 2 hook: inject standards constraints during plan execution.
-
-    Args:
-        state:     Current FlowState.
-        standards: Aggregated standards dict.
-        logger:    ErrorLogger for audit trail.
-
-    Returns:
-        State updates to merge.
-    """
-    updates: Dict[str, Any] = {}
-
-    project_type = standards.get("__meta", {}).get("project_type", "unknown")
-
-    constraints = _build_planning_constraints(project_type, standards)
-
-    updates["step2_standards_constraints"] = {
-        "project_type": project_type,
-        "constraints": constraints,
-        "enforce_layers": True,
-        "note": "Plan must respect these naming and structural constraints.",
-    }
-
-    logger.log_decision(
-        step="Level 2 - Step 2",
-        decision="Planning constraints injected",
-        reasoning="project_type={}, constraints count={}".format(project_type, len(constraints)),
-        chosen_option="constraints_active",
-    )
-
-    return updates
-
-
-def _apply_step5_standards(
-    state: FlowState,
-    standards: Dict[str, Any],
-    logger: ErrorLogger,
-) -> Dict[str, Any]:
-    """Step 5 hook: validate skill selection against project standards.
-
-    Args:
-        state:     Current FlowState.
-        standards: Aggregated standards dict.
-        logger:    ErrorLogger for audit trail.
-
-    Returns:
-        State updates to merge.
-    """
-    updates: Dict[str, Any] = {}
-
-    meta = standards.get("__meta", {})
-    project_type = meta.get("project_type", "unknown")
-    framework = meta.get("framework", "unknown")
-    selected_skill = state.get("step5_skill", "") or ""
-    selected_agent = state.get("step5_agent", "") or ""
-
-    validation_warnings: List[str] = []
-    validation_info: List[str] = []
-
-    cross_type_checks = [
-        ("java", _is_python_only_skill, "Python-only", "Java/Spring"),
-        ("python", _is_java_only_skill, "Java-only", "Python/Flask/Django/FastAPI"),
-        ("go", _is_python_only_skill, "Python-only", "Go"),
-        ("go", _is_java_only_skill, "Java-only", "Go"),
-        ("rust", _is_python_only_skill, "Python-only", "Rust"),
-        ("rust", _is_java_only_skill, "Java-only", "Rust"),
-    ]
-
-    for pt, check_fn, skill_label, suggestion in cross_type_checks:
-        if project_type == pt and check_fn(selected_skill):
-            msg = "Skill '{}' appears {} but project is {}. " "Consider using a {} skill instead.".format(
-                selected_skill, skill_label, project_type.upper(), suggestion
-            )
-            validation_warnings.append(msg)
-            logger.log_error(
-                step="Level 2 - Step 5",
-                error_message=msg,
-                severity="WARNING",
-                error_type="SkillMismatch",
-                recovery_action="Warning logged; execution continues with selected skill",
-                context={
-                    "project_type": project_type,
-                    "framework": framework,
-                    "selected_skill": selected_skill,
-                },
-            )
-            break
-
-    if not validation_warnings:
-        validation_info.append(
-            "Skill '{}' is compatible with {}/{} project".format(selected_skill, project_type, framework)
-        )
-
-    updates["step5_standards_validation"] = {
-        "passed": len(validation_warnings) == 0,
-        "warnings": validation_warnings,
-        "info": validation_info,
-        "project_type": project_type,
-        "framework": framework,
-        "skill_checked": selected_skill,
-        "agent_checked": selected_agent,
-        "traceability": {
-            "checks_run": len(cross_type_checks),
-            "priority_chain": meta.get(
-                "priority_chain",
-                "custom(4) > team(3) > framework(2) > library_skill(1.5) > language(1) > library_language_skill(0.5)",
-            ),
-        },
-    }
-
-    logger.log_validation_result(
-        step="Level 2 - Step 5",
-        check_name="Skill/Standards compatibility",
-        passed=len(validation_warnings) == 0,
-        details=(
-            "; ".join(validation_warnings)
-            if validation_warnings
-            else "Skill '{}' compatible with {}/{}".format(selected_skill, project_type, framework)
-        ),
-    )
-
-    return updates
-
-
-def _apply_step10_standards(
-    state: FlowState,
-    standards: Dict[str, Any],
-    logger: ErrorLogger,
-) -> Dict[str, Any]:
-    """Step 10 hook: provide standards checklist for code review.
+    """Step 4 hook: provide standards checklist for code review.
 
     Args:
         state:     Current FlowState.
@@ -396,7 +190,7 @@ def _apply_step10_standards(
     project_type = standards.get("__meta", {}).get("project_type", "unknown")
     checklist = _build_review_checklist(project_type, standards)
 
-    updates["step10_standards_checklist"] = {
+    updates["step4_standards_checklist"] = {
         "checklist": checklist,
         "total_checks": len(checklist),
         "project_type": project_type,
@@ -404,7 +198,7 @@ def _apply_step10_standards(
     }
 
     logger.log_decision(
-        step="Level 2 - Step 10",
+        step="Level 2 - Step 4",
         decision="Code review standards checklist prepared",
         reasoning="project_type={}, checks={}".format(project_type, len(checklist)),
         chosen_option="checklist_ready",
@@ -413,12 +207,12 @@ def _apply_step10_standards(
     return updates
 
 
-def _apply_step13_standards(
+def _apply_step7_standards(
     state: FlowState,
     standards: Dict[str, Any],
     logger: ErrorLogger,
 ) -> Dict[str, Any]:
-    """Step 13 hook: specify documentation requirements from standards.
+    """Step 7 hook: specify documentation requirements from standards.
 
     Args:
         state:     Current FlowState.
@@ -433,7 +227,7 @@ def _apply_step13_standards(
     project_type = standards.get("__meta", {}).get("project_type", "unknown")
     doc_requirements = _build_doc_requirements(project_type, standards)
 
-    updates["step13_standards_doc_requirements"] = {
+    updates["step7_standards_doc_requirements"] = {
         "required_updates": doc_requirements,
         "total_required": len(doc_requirements),
         "project_type": project_type,
@@ -441,44 +235,13 @@ def _apply_step13_standards(
     }
 
     logger.log_decision(
-        step="Level 2 - Step 13",
+        step="Level 2 - Step 7",
         decision="Documentation requirements loaded from standards",
         reasoning="project_type={}, required_updates={}".format(project_type, len(doc_requirements)),
         chosen_option="doc_requirements_set",
     )
 
     return updates
-
-
-def _build_planning_constraints(
-    project_type: str,
-    standards: Dict[str, Any],
-) -> List[Dict[str, str]]:
-    """Build planning constraints based on project type."""
-    constraints: List[Dict[str, str]] = []
-
-    if project_type == "python":
-        constraints += [
-            {"rule": "naming.files", "value": "snake_case.py"},
-            {"rule": "naming.classes", "value": "PascalCase"},
-            {"rule": "naming.functions", "value": "snake_case"},
-            {"rule": "structure.business_logic", "value": "services/ layer"},
-            {"rule": "structure.data_access", "value": "repositories/ layer"},
-            {"rule": "structure.endpoints", "value": "routes/ layer (thin handlers)"},
-        ]
-    elif project_type == "java":
-        spring_patterns = standards.get("spring_boot", {})
-        annotations = spring_patterns.get("annotations", [])
-        patterns = spring_patterns.get("patterns", [])
-
-        constraints += [
-            {"rule": "naming.classes", "value": "PascalCase"},
-            {"rule": "naming.methods", "value": "camelCase"},
-            {"rule": "annotations.required", "value": ", ".join(annotations)},
-            {"rule": "patterns.required", "value": ", ".join(patterns)},
-        ]
-
-    return constraints
 
 
 def _build_review_checklist(
@@ -540,7 +303,7 @@ def _build_selected_standards_checklist_items(standards: Dict[str, Any]) -> List
     ``state["standards_selection"]``, which Step 0's PRE-INJECTION D block
     sets from ``select_standards()`` -- so custom/team/framework/
     library_skill/language/library_language-sourced content actually reaches
-    Step 10's review checklist instead of only the hardcoded project_type
+    Step 4's review checklist instead of only the hardcoded project_type
     defaults above.
     """
     items: List[Dict[str, str]] = []

@@ -22,7 +22,7 @@ CHANGE LOG (v1.15.0):
     toon_schema_errors, toon_version (TOON compression node removed from pipeline).
 
 CHANGE LOG (v1.15.2):
-  Removed step4_toon_refined field (TOON removed in v1.15.0, stale field purged).
+  Removed step1_toon_refined field (TOON removed in v1.15.0, stale field purged).
 """
 
 from typing import Annotated, Any, Dict, List, Optional, TypedDict
@@ -59,8 +59,8 @@ class FlowState(TypedDict, total=False):
     # ===========================================================================
     # LEVEL -1: AUTO-FIX ENFORCEMENT
     # ===========================================================================
-    level_minus1_status: str  # OK / BLOCKED / SKIPPED
-    level_minus1_errors: List[str]  # Any auto-fix errors encountered
+    preflight_status: str  # OK / BLOCKED / SKIPPED
+    preflight_guard_errors: List[str]  # Any auto-fix errors encountered
 
     # Auto-fix checks
     unicode_check: bool  # Windows Unicode fix applied
@@ -79,14 +79,14 @@ class FlowState(TypedDict, total=False):
     failure_kb_suggestions: Optional[List[Dict]]  # KB matches for current failures
 
     # Recovery state (written by ask/fix nodes, read by routing)
-    level_minus1_retry_count: int  # attempt counter (incremented by ask node)
-    level_minus1_user_choice: str  # "auto-fix" | "skip" | "force_continue"
-    level_minus1_fixes_applied: List[str]  # applied fixes (from fix node)
-    level_minus1_fix_errors: List[str]  # errors during fix attempts
-    level_minus1_ready_to_retry: bool  # True after fix node completes
-    level_minus1_max_attempts_reached: bool  # True when 3 attempts exceeded
-    level_minus1_fatal_failure: bool  # True on unrecoverable failure
-    level_minus1_failed_checks: List[str]  # messages for failed checks
+    preflight_retry_count: int  # attempt counter (incremented by ask node)
+    preflight_user_choice: str  # "auto-fix" | "skip" | "force_continue"
+    preflight_fixes_applied: List[str]  # applied fixes (from fix node)
+    preflight_fix_errors: List[str]  # errors during fix attempts
+    preflight_ready_to_retry: bool  # True after fix node completes
+    preflight_max_attempts_reached: bool  # True when 3 attempts exceeded
+    preflight_fatal_failure: bool  # True on unrecoverable failure
+    preflight_failed_checks: List[str]  # messages for failed checks
 
     # Encoding scan results
     encoding_nonascii_files: List[str]  # files with non-ASCII content
@@ -203,10 +203,10 @@ class FlowState(TypedDict, total=False):
 
     # Step-specific standards context injected by integration hooks
     step1_standards_context: Optional[Dict]  # Standards metadata for plan complexity scorer
-    step2_standards_constraints: Optional[Dict]  # Naming/layer constraints for planner
-    step5_standards_validation: Optional[Dict]  # Skill/standards compatibility check result
-    step10_standards_checklist: Optional[Dict]  # Code review compliance checklist
-    step13_standards_doc_requirements: Optional[Dict]  # Documentation update requirements
+    step1_standards_constraints: Optional[Dict]  # Naming/layer constraints for planner
+    step1_standards_validation: Optional[Dict]  # Skill/standards compatibility check result
+    step4_standards_checklist: Optional[Dict]  # Code review compliance checklist
+    step7_standards_doc_requirements: Optional[Dict]  # Documentation update requirements
 
     # Level 2: Standards enforcement (linting, non-blocking)
     standards_enforcement_ran: Optional[bool]  # True if linter ran successfully
@@ -229,28 +229,28 @@ class FlowState(TypedDict, total=False):
     # Orchestration Template fast-path (--orchestration-template CLI flag)
     orchestration_template: Optional[Dict]  # Pre-filled template from prompt-generation-expert
     template_fast_path: Optional[bool]  # True -> skip Steps 0-5, jump to Step 6
-    step0_complexity_boosted: Optional[bool]  # True if boost was applied by call graph
-    step0_complexity_boost_source: Optional[str]  # Source of boost: "call_graph"
+    step1_complexity_boosted: Optional[bool]  # True if boost was applied by call graph
+    step1_complexity_boost_source: Optional[str]  # Source of boost: "call_graph"
 
     # Step 0.0: Pre-flight - Project Context
-    step0_0_project_context: Optional[Dict]  # README, CHANGELOG, VERSION, etc.
-    step0_0_files_read: Optional[List[str]]  # Files successfully read
-    step0_0_error: Optional[str]
-    step0_0_execution_time_ms: Optional[float]
+    step0_project_context: Optional[Dict]  # README, CHANGELOG, VERSION, etc.
+    step0_files_read: Optional[List[str]]  # Files successfully read
+    step0_project_context_error: Optional[str]
+    step0_project_context_time_ms: Optional[float]
 
     # Step 0.1: Pre-flight - Initial CallGraph Snapshot
-    step0_1_initial_callgraph: Optional[Dict]  # Baseline call graph for Step 11 diff
-    step0_1_callgraph_available: Optional[bool]  # True if snapshot succeeded
-    step0_1_error: Optional[str]
-    step0_1_execution_time_ms: Optional[float]
+    step0_callgraph_snapshot: Optional[Dict]  # Baseline call graph for Step 11 diff
+    step0_callgraph_available: Optional[bool]  # True if snapshot succeeded
+    step0_callgraph_error: Optional[str]
+    step0_callgraph_time_ms: Optional[float]
 
     # User Preferences Context (extracted from Level 1 preferences_data)
     user_preferences_context: Optional[Dict]  # Pre-computed model/skill/complexity hints
 
     # Step 0: Prompt Generation
-    step0_prompt: Dict  # Prompt context and metadata
-    step0_task_type: str  # Detected task type
-    step0_error: Optional[str]
+    step1_prompt: Dict  # Prompt context and metadata
+    step1_task_type: str  # Detected task type
+    step1_error: Optional[str]
 
     # Step 1: Task Breakdown
     step1_tasks: Dict  # Broken down tasks
@@ -258,52 +258,52 @@ class FlowState(TypedDict, total=False):
     step1_error: Optional[str]
 
     # Step 2: Plan Mode Decision
-    step2_plan_mode: bool  # Whether to suggest EnterPlanMode
-    step2_reasoning: str  # Why plan mode was chosen
-    step2_error: Optional[str]
+    step1_plan_mode: bool  # Whether to suggest EnterPlanMode
+    step1_reasoning: str  # Why plan mode was chosen
+    step1_error: Optional[str]
 
     # Step 3: Context Read Enforcement
-    step3_context_read: bool  # Context read check passed
-    step3_enforcement_applies: bool  # Whether enforcement applies to this project
-    step3_error: Optional[str]
+    step1_context_read: bool  # Context read check passed
+    step1_enforcement_applies: bool  # Whether enforcement applies to this project
+    step1_error: Optional[str]
 
     # Step 4: Model Selection
-    step4_model: str  # Selected model: fast_classification/complex_reasoning
-    step4_reasoning: str  # Why this model was chosen
-    step4_error: Optional[str]
+    step1_model: str  # Selected model: fast_classification/complex_reasoning
+    step1_reasoning: str  # Why this model was chosen
+    step1_error: Optional[str]
 
     # Step 5: Skill & Agent Selection (removed in v1.13 -- fields kept for state compat)
-    step5_skill: str  # Selected skill name (if any)
-    step5_agent: str  # Selected agent name (if any)
-    step5_reasoning: str  # Why this skill/agent was chosen
-    step5_error: Optional[str]
-    step5_llm_query_needed: bool  # True if LLM needed to decide
+    step1_skill: str  # Selected skill name (if any)
+    step1_agent: str  # Selected agent name (if any)
+    step1_reasoning: str  # Why this skill/agent was chosen
+    step1_error: Optional[str]
+    step1_llm_query_needed: bool  # True if LLM needed to decide
 
     # Step 6: Tool Optimization
-    step6_tool_hints: List[str]  # Optimization hints for tools
-    step6_read_optimization: Dict  # Read tool optimization (offset, limit)
-    step6_grep_optimization: Dict  # Grep tool optimization (head_limit)
-    step6_error: Optional[str]
+    step1_tool_hints: List[str]  # Optimization hints for tools
+    step1_read_optimization: Dict  # Read tool optimization (offset, limit)
+    step1_grep_optimization: Dict  # Grep tool optimization (head_limit)
+    step1_error: Optional[str]
 
     # Step 7: Auto-Recommendations
-    step7_recommendations: List[str]  # Automatic recommendations to user
-    step7_error: Optional[str]
+    step1_recommendations: List[str]  # Automatic recommendations to user
+    step1_error: Optional[str]
 
     # Step 8: Progress Tracking
-    step8_progress: Dict  # Task progress metadata
-    step8_incomplete_work: List[str]  # Any incomplete work detected
-    step8_error: Optional[str]
+    step2_progress: Dict  # Task progress metadata
+    step2_incomplete_work: List[str]  # Any incomplete work detected
+    step2_error: Optional[str]
 
     # Step 9: Git Commit Preparation
-    step9_commit_ready: bool  # Commit can be auto-created
-    step9_commit_message: str  # Prepared commit message
-    step9_version_bump: str  # Version to bump to
-    step9_error: Optional[str]
+    step3_commit_ready: bool  # Commit can be auto-created
+    step3_commit_message: str  # Prepared commit message
+    step3_version_bump: str  # Version to bump to
+    step3_error: Optional[str]
 
     # Step 10: Session Save
-    step10_session: Dict  # Session save preparation
-    step10_archive_needed: bool  # Session should be archived
-    step10_error: Optional[str]
+    step4_session: Dict  # Session save preparation
+    step4_archive_needed: bool  # Session should be archived
+    step4_error: Optional[str]
 
     # Step 11 (implicit): Failure Prevention
     failure_prevention: Dict  # Failure KB checks
@@ -323,59 +323,59 @@ class FlowState(TypedDict, total=False):
     step1_error: Optional[str]
 
     # Step 2: Plan Execution
-    step2_plan: Optional[str]
-    step2_files_affected: Optional[List[str]]
-    step2_phases: Optional[List[Dict]]
-    step2_risks: Optional[Dict]
-    step2_code_context: Optional[str]  # Code analysis from exploration tools
-    step2_selected_model: Optional[str]  # Which model was used (fast_classification/complex_reasoning)
-    step2_execution_time_ms: Optional[float]
-    step2_error: Optional[str]
+    step1_plan: Optional[str]
+    step1_files_affected: Optional[List[str]]
+    step1_phases: Optional[List[Dict]]
+    step1_risks: Optional[Dict]
+    step1_code_context: Optional[str]  # Code analysis from exploration tools
+    step1_model: Optional[str]  # Which model was used (fast_classification/complex_reasoning)
+    step1_execution_time_ms: Optional[float]
+    step1_error: Optional[str]
 
     # Step 3: Task Breakdown
-    step3_tasks: Optional[List[Dict]]
-    step3_task_count: Optional[int]
-    step3_execution_time_ms: Optional[float]
-    step3_error: Optional[str]
+    step1_tasks: Optional[List[Dict]]
+    step1_task_count: Optional[int]
+    step1_execution_time_ms: Optional[float]
+    step1_error: Optional[str]
 
     # Step 4: TOON Refinement
-    step4_blueprint: Optional[Dict]
-    step4_execution_time_ms: Optional[float]
-    step4_error: Optional[str]
+    step1_blueprint: Optional[Dict]
+    step1_execution_time_ms: Optional[float]
+    step1_error: Optional[str]
 
     # Step 5: Skill Selection
-    step5_available_skills: Optional[List[str]]
-    step5_available_agents: Optional[List[str]]
-    step5_available_skills_full: Optional[List[Dict]]
-    step5_available_agents_full: Optional[List[Dict]]
-    step5_skill_mappings: Optional[Dict]
-    step5_skills: Optional[List[str]]
-    step5_agents: Optional[List[str]]
-    step5_execution_time_ms: Optional[float]
-    step5_error: Optional[str]
+    step1_available_skills: Optional[List[str]]
+    step1_available_agents: Optional[List[str]]
+    step1_available_skills_full: Optional[List[Dict]]
+    step1_available_agents_full: Optional[List[Dict]]
+    step1_skill_mappings: Optional[Dict]
+    step1_skills: Optional[List[str]]
+    step1_agents: Optional[List[str]]
+    step1_execution_time_ms: Optional[float]
+    step1_error: Optional[str]
 
     # Step 6: Skill Validation & Download
-    step6_available_on_system: Optional[List[str]]
-    step6_final_skills: Optional[List[Dict]]
-    step6_final_agents: Optional[List[Dict]]
-    step6_downloaded: Optional[List[str]]
-    step6_execution_time_ms: Optional[float]
-    step6_error: Optional[str]
+    step1_available_on_system: Optional[List[str]]
+    step1_final_skills: Optional[List[Dict]]
+    step1_final_agents: Optional[List[Dict]]
+    step1_downloaded: Optional[List[str]]
+    step1_execution_time_ms: Optional[float]
+    step1_error: Optional[str]
 
     # Step 7: Final Prompt Generation
-    step7_execution_prompt: Optional[str]
-    step7_execution_time_ms: Optional[float]
-    step7_error: Optional[str]
+    step1_execution_prompt: Optional[str]
+    step1_execution_time_ms: Optional[float]
+    step1_error: Optional[str]
 
     # Step 0: Task Analysis (PHASE 2A - New)
-    step0_task_type: str  # Detected task type
-    step0_complexity: int  # Complexity score (1-10)
-    step0_reasoning: str  # Reasoning for task analysis
-    step0_tasks: Dict  # Broken down tasks
-    step0_task_count: int  # Number of tasks identified
-    step0_docs_found: Optional[Dict[str, Any]]  # Which project docs exist (SDLC read phase)
-    step0_target_files: Optional[List[str]]  # Target files identified from task analysis
-    step0_error: Optional[str]
+    step1_task_type: str  # Detected task type
+    step1_complexity: int  # Complexity score (1-10)
+    step1_reasoning: str  # Reasoning for task analysis
+    step1_tasks: Dict  # Broken down tasks
+    step1_task_count: int  # Number of tasks identified
+    step1_docs_found: Optional[Dict[str, Any]]  # Which project docs exist (SDLC read phase)
+    step1_target_files: Optional[List[str]]  # Target files identified from task analysis
+    step1_error: Optional[str]
     orchestration_prompt: Optional[str]  # Prompt generated by prompt-gen-expert for orchestrator
     routing: Optional[Dict[str, Any]]  # KGRouter grounding object (FR-3); default {}, keyed by "status"
     orchestrator_result: Optional[Dict[str, Any]]  # Full result dict from orchestrator-agent-caller
@@ -384,7 +384,7 @@ class FlowState(TypedDict, total=False):
     completed_todos: Annotated[Optional[List[str]], _merge_lists]  # IDs of completed TODOs (merged across invocations)
     current_todo_index: Optional[int]  # Current execution index into todo_list
 
-    # Step 1: Plan Mode Decision (PHASE 2A - Renamed from step2_plan_mode)
+    # Step 1: Plan Mode Decision (PHASE 2A - Renamed from step1_plan_mode)
     step1_plan_required: bool  # Whether plan mode is needed
     step1_reasoning: str  # Reasoning for plan decision
     step1_complexity_score: int  # Complexity score from Step 1
@@ -392,132 +392,132 @@ class FlowState(TypedDict, total=False):
     step1_error: Optional[str]
 
     # Step 2: Plan Execution (PHASE 2A - Renamed from step2b_plan_exec)
-    step2_plan_execution: Optional[Dict]  # Detailed execution plan
-    step2_plan_status: Optional[str]  # Plan generation status
-    step2_phases: Optional[List[Dict]]  # Plan phases
-    step2_total_estimated_steps: Optional[int]  # Total estimated steps
+    step1_plan_execution: Optional[Dict]  # Detailed execution plan
+    step1_plan_status: Optional[str]  # Plan generation status
+    step1_phases: Optional[List[Dict]]  # Plan phases
+    step1_total_estimated_steps: Optional[int]  # Total estimated steps
+    step1_execution_time_ms: Optional[float]
+    step1_error: Optional[str]
+
+    # Step 2: CallGraph impact analysis (pre-change)
+    step1_impact_analysis: Optional[Dict]  # CallGraph impact before change
+    step1_graph_risk_level: Optional[str]  # "low", "medium", "high"
+    step1_affected_methods: Optional[List[str]]  # Methods that could break
+    step1_plan_validated: Optional[bool]  # Whether plan passed CallGraph validation
+    step1_plan_validation_issues: Optional[List[str]]  # Validation issues found (empty = passed)
+
+    # Step 3: Task Breakdown Validation (PHASE 2A - Renamed from step1_breakdown)
+    step1_tasks_validated: Optional[List[Dict]]  # Validated task list
+    step1_task_count: Optional[int]  # Number of validated tasks
+    step1_validation_status: Optional[str]  # Validation status
+    step1_validation_errors: Optional[List[str]]  # Any validation errors
+    step1_execution_time_ms: Optional[float]
+    step1_error: Optional[str]
+
+    # Step 3: CallGraph phase-file mapping
+    step1_phase_file_map: Annotated[Optional[Dict], _merge_dicts]  # {task_id: [files]} from graph analysis
+    step1_graph_snapshot: Optional[Dict]  # Cached graph snapshot for Step 4 reuse
+
+    # Step 4: TOON Refinement (PHASE 2A)
+    # v1.15.2: step1_toon_refined removed (TOON removed in v1.15.0)
+    step1_refinement_status: Optional[str]  # Refinement status
+    step1_complexity_adjusted: Optional[int]  # Adjusted complexity
+    step1_execution_time_ms: Optional[float]
+    step1_error: Optional[str]
+
+    # Step 4: Phase-scoped CallGraph context
+    step1_phase_contexts: Optional[Dict]  # {task_id: phase_scoped_context} per phase
+    step1_phase_scope_files: Optional[List[str]]  # All files in scope across phases
+    step1_old_context_cleared: Optional[bool]  # Whether broad context was replaced with phase context
+
+    # Step 5: Skill & Agent Selection (PHASE 2A - Renamed from step1_skill)
+    step1_skill: str  # Selected skill name
+    step1_agent: str  # Selected agent name
+    step1_skill_definition: Optional[str]  # Full skill definition
+    step1_agent_definition: Optional[str]  # Full agent definition
+    step1_reasoning: str  # Reasoning for selection
+    step1_confidence: float  # Confidence score
+    step1_alternatives: List[Dict]  # Alternative selections
+    step1_llm_query_needed: bool  # Whether LLM was needed
+    step1_conflicts_detected: Optional[int]  # Number of skill/agent conflicts found
+    step1_conflicts_removed: Optional[List[str]]  # Names removed due to conflicts
+    step1_execution_time_ms: Optional[float]
+    step1_error: Optional[str]
+
+    # Step 6: Skill Validation & Download (PHASE 2A - Renamed from step6b_validation)
+    step1_skill_validation: Optional[Dict]  # Validation results
+    step1_skill_ready: bool  # Skill is ready to use
+    step1_agent_ready: bool  # Agent is ready to use
+    step1_validation_status: Optional[str]  # Validation status
+    step1_execution_time_ms: Optional[float]
+    step1_error: Optional[str]
+
+    # Step 7: Final Prompt Generation (PHASE 2A - Renamed from step6_prompt)
+    step1_prompt_saved: bool  # Prompt successfully saved
+    step1_prompt_file: Optional[str]  # Path to saved prompt
+    step1_prompt_size: Optional[int]  # Size of prompt in bytes
+    step1_execution_time_ms: Optional[float]
+    step1_error: Optional[str]
+
+    # Step 8: GitHub Issue Creation (NEW - PHASE 2B)
+    step2_issue_id: str  # GitHub issue ID
+    step2_issue_url: str  # GitHub issue URL
+    step2_issue_created: bool  # Issue successfully created
+    step2_title: Optional[str]  # Issue title
+    step2_label: Optional[str]  # Issue label (bug/feature/enhancement/etc)
+    step2_status: Optional[str]  # Creation status (OK/ERROR/FALLBACK)
     step2_execution_time_ms: Optional[float]
     step2_error: Optional[str]
 
-    # Step 2: CallGraph impact analysis (pre-change)
-    step2_impact_analysis: Optional[Dict]  # CallGraph impact before change
-    step2_graph_risk_level: Optional[str]  # "low", "medium", "high"
-    step2_affected_methods: Optional[List[str]]  # Methods that could break
-    step2_plan_validated: Optional[bool]  # Whether plan passed CallGraph validation
-    step2_plan_validation_issues: Optional[List[str]]  # Validation issues found (empty = passed)
-
-    # Step 3: Task Breakdown Validation (PHASE 2A - Renamed from step3_breakdown)
-    step3_tasks_validated: Optional[List[Dict]]  # Validated task list
-    step3_task_count: Optional[int]  # Number of validated tasks
-    step3_validation_status: Optional[str]  # Validation status
-    step3_validation_errors: Optional[List[str]]  # Any validation errors
+    # Step 9: Branch Creation (NEW - PHASE 2B)
+    step3_branch_name: str  # Created branch name (may differ if conflict resolved)
+    step3_original_branch: Optional[str]  # Originally requested branch name
+    step3_branch_created: bool  # Branch successfully created
+    step3_conflict_detected: Optional[bool]  # True if branch name collision was found & auto-resolved
+    step3_status: Optional[str]  # Creation status (OK/ERROR)
     step3_execution_time_ms: Optional[float]
     step3_error: Optional[str]
 
-    # Step 3: CallGraph phase-file mapping
-    step3_phase_file_map: Annotated[Optional[Dict], _merge_dicts]  # {task_id: [files]} from graph analysis
-    step3_graph_snapshot: Optional[Dict]  # Cached graph snapshot for Step 4 reuse
-
-    # Step 4: TOON Refinement (PHASE 2A)
-    # v1.15.2: step4_toon_refined removed (TOON removed in v1.15.0)
-    step4_refinement_status: Optional[str]  # Refinement status
-    step4_complexity_adjusted: Optional[int]  # Adjusted complexity
+    # Step 10: Implementation Execution (NEW - PHASE 2B)
+    step4_tasks_executed: int  # Number of tasks executed
+    step4_modified_files: List[str]  # List of modified files
+    step4_implementation_status: str  # Implementation status (OK/ERROR)
+    step4_changes_summary: Optional[Dict]  # Summary of changes
     step4_execution_time_ms: Optional[float]
     step4_error: Optional[str]
 
-    # Step 4: Phase-scoped CallGraph context
-    step4_phase_contexts: Optional[Dict]  # {task_id: phase_scoped_context} per phase
-    step4_phase_scope_files: Optional[List[str]]  # All files in scope across phases
-    step4_old_context_cleared: Optional[bool]  # Whether broad context was replaced with phase context
-
-    # Step 5: Skill & Agent Selection (PHASE 2A - Renamed from step6_skill)
-    step5_skill: str  # Selected skill name
-    step5_agent: str  # Selected agent name
-    step5_skill_definition: Optional[str]  # Full skill definition
-    step5_agent_definition: Optional[str]  # Full agent definition
-    step5_reasoning: str  # Reasoning for selection
-    step5_confidence: float  # Confidence score
-    step5_alternatives: List[Dict]  # Alternative selections
-    step5_llm_query_needed: bool  # Whether LLM was needed
-    step5_conflicts_detected: Optional[int]  # Number of skill/agent conflicts found
-    step5_conflicts_removed: Optional[List[str]]  # Names removed due to conflicts
-    step5_execution_time_ms: Optional[float]
-    step5_error: Optional[str]
-
-    # Step 6: Skill Validation & Download (PHASE 2A - Renamed from step6b_validation)
-    step6_skill_validation: Optional[Dict]  # Validation results
-    step6_skill_ready: bool  # Skill is ready to use
-    step6_agent_ready: bool  # Agent is ready to use
-    step6_validation_status: Optional[str]  # Validation status
-    step6_execution_time_ms: Optional[float]
-    step6_error: Optional[str]
-
-    # Step 7: Final Prompt Generation (PHASE 2A - Renamed from step12_prompt)
-    step7_prompt_saved: bool  # Prompt successfully saved
-    step7_prompt_file: Optional[str]  # Path to saved prompt
-    step7_prompt_size: Optional[int]  # Size of prompt in bytes
-    step7_execution_time_ms: Optional[float]
-    step7_error: Optional[str]
-
-    # Step 8: GitHub Issue Creation (NEW - PHASE 2B)
-    step8_issue_id: str  # GitHub issue ID
-    step8_issue_url: str  # GitHub issue URL
-    step8_issue_created: bool  # Issue successfully created
-    step8_title: Optional[str]  # Issue title
-    step8_label: Optional[str]  # Issue label (bug/feature/enhancement/etc)
-    step8_status: Optional[str]  # Creation status (OK/ERROR/FALLBACK)
-    step8_execution_time_ms: Optional[float]
-    step8_error: Optional[str]
-
-    # Step 9: Branch Creation (NEW - PHASE 2B)
-    step9_branch_name: str  # Created branch name (may differ if conflict resolved)
-    step9_original_branch: Optional[str]  # Originally requested branch name
-    step9_branch_created: bool  # Branch successfully created
-    step9_conflict_detected: Optional[bool]  # True if branch name collision was found & auto-resolved
-    step9_status: Optional[str]  # Creation status (OK/ERROR)
-    step9_execution_time_ms: Optional[float]
-    step9_error: Optional[str]
-
-    # Step 10: Implementation Execution (NEW - PHASE 2B)
-    step10_tasks_executed: int  # Number of tasks executed
-    step10_modified_files: List[str]  # List of modified files
-    step10_implementation_status: str  # Implementation status (OK/ERROR)
-    step10_changes_summary: Optional[Dict]  # Summary of changes
-    step10_execution_time_ms: Optional[float]
-    step10_error: Optional[str]
-
     # Step 10: CallGraph implementation context
-    step10_call_context: Optional[Dict]  # Implementation context from CallGraph
-    step10_pre_change_graph: Optional[Dict]  # Serialized CallGraph snapshot (before changes)
-    step10_suggested_test_scope: Optional[List[str]]  # Test files to run
+    step4_call_context: Optional[Dict]  # Implementation context from CallGraph
+    step4_pre_change_graph: Optional[Dict]  # Serialized CallGraph snapshot (before changes)
+    step4_suggested_test_scope: Optional[List[str]]  # Test files to run
     call_graph_stale: Optional[
         bool
     ]  # True after Step 10 writes files; cached snapshots from pre-implementation are stale
 
     # Step 11: Pull Request & Code Review (NEW - PHASE 2B)
-    step11_pr_id: str  # GitHub PR ID
-    step11_pr_url: str  # GitHub PR URL
-    step11_review_passed: bool  # Code review passed
-    step11_review_issues: List[str]  # Issues found in review
-    step11_merged: Optional[bool]  # PR was merged
-    step11_retry_count: int  # Number of retry attempts
-    step11_criteria_result: Optional[Dict]  # Full ReviewCriteria evaluation result
-    step11_criteria_score: Optional[float]  # ReviewCriteria score (0.0-1.0)
-    step11_status: Optional[str]  # PR status (OK/ERROR)
-    step11_execution_time_ms: Optional[float]
-    step11_error: Optional[str]
+    step5_pr_id: str  # GitHub PR ID
+    step5_pr_url: str  # GitHub PR URL
+    step5_review_passed: bool  # Code review passed
+    step5_review_issues: List[str]  # Issues found in review
+    step5_merged: Optional[bool]  # PR was merged
+    step5_retry_count: int  # Number of retry attempts
+    step5_criteria_result: Optional[Dict]  # Full ReviewCriteria evaluation result
+    step5_criteria_score: Optional[float]  # ReviewCriteria score (0.0-1.0)
+    step5_status: Optional[str]  # PR status (OK/ERROR)
+    step5_execution_time_ms: Optional[float]
+    step5_error: Optional[str]
 
     # Step 11: CallGraph review analysis
-    step11_impact_review: Optional[Dict]  # Post-change impact comparison
-    step11_breaking_changes: Optional[List[Dict]]  # Methods with signature changes + callers
-    step11_risk_assessment: Optional[str]  # "safe", "caution", "risky"
+    step5_impact_review: Optional[Dict]  # Post-change impact comparison
+    step5_breaking_changes: Optional[List[Dict]]  # Methods with signature changes + callers
+    step5_risk_assessment: Optional[str]  # "safe", "caution", "risky"
 
     # Step 12: Issue Closure (NEW - PHASE 2B)
-    step12_issue_closed: bool  # Issue successfully closed
-    step12_closing_comment: Optional[str]  # Closing comment text
-    step12_status: Optional[str]  # Closure status (OK/ERROR)
-    step12_execution_time_ms: Optional[float]
-    step12_error: Optional[str]
+    step6_issue_closed: bool  # Issue successfully closed
+    step6_closing_comment: Optional[str]  # Closing comment text
+    step6_status: Optional[str]  # Closure status (OK/ERROR)
+    step6_execution_time_ms: Optional[float]
+    step6_error: Optional[str]
 
     # ===========================================================================
     # INTEGRATION FIELDS: JIRA (optional, ENABLE_JIRA=1)
@@ -543,24 +543,24 @@ class FlowState(TypedDict, total=False):
     figma_error: Optional[str]  # Last Figma error (non-blocking)
 
     # Step 13: Project Documentation (PHASE 2A - Renamed from existing)
-    step13_updates_prepared: bool  # Documentation updates prepared
-    step13_update_count: int  # Number of updates
-    step13_documentation_status: Optional[str]  # Update status (OK/ERROR)
-    step13_updated_files: Optional[List[str]]  # Files that were updated
-    step13_docs_created: Optional[List[str]]  # Files created (fresh project SDLC)
-    step13_execution_time_ms: Optional[float]
-    step13_error: Optional[str]
+    step7_updates_prepared: bool  # Documentation updates prepared
+    step7_update_count: int  # Number of updates
+    step7_documentation_status: Optional[str]  # Update status (OK/ERROR)
+    step7_updated_files: Optional[List[str]]  # Files that were updated
+    step7_docs_created: Optional[List[str]]  # Files created (fresh project SDLC)
+    step7_execution_time_ms: Optional[float]
+    step7_error: Optional[str]
 
     # Step 14: Final Summary (PHASE 2A - Renamed from existing)
-    step14_summary: Optional[Dict]  # Execution summary
-    step14_status: Optional[str]  # Summary generation status
-    step14_voice_sent: Optional[bool]  # Voice notification sent
-    step14_execution_time_ms: Optional[float]
-    step14_error: Optional[str]
+    step8_summary: Optional[Dict]  # Execution summary
+    step8_status: Optional[str]  # Summary generation status
+    step8_voice_sent: Optional[bool]  # Voice notification sent
+    step8_execution_time_ms: Optional[float]
+    step8_error: Optional[str]
 
     # Level 3 Overall Status (PHASE 2A)
-    level3_status: Optional[str]  # Overall Level 3 execution status
-    level3_total_execution_time_ms: Optional[float]
+    sdlc_status: Optional[str]  # Overall Level 2 (SDLC Execution Core) status
+    sdlc_total_execution_time_ms: Optional[float]
 
     # ===========================================================================
     # USER INTERACTION SYSTEM (FUTURE EXPANSION)

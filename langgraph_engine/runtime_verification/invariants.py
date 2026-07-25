@@ -15,7 +15,7 @@ from langgraph_engine.runtime_verification.contracts import PreconditionSpec
 # For str expected_type: min_val = minimum string length
 # IMPORTANT: combined_complexity_score is 1-25 scale (NOT 1-10)
 LEVEL_TRANSITION_GUARDS: Dict[Tuple[str, str], List[PreconditionSpec]] = {
-    ("level_minus1", "level1"): [
+    ("preflight_guard", "level1"): [
         PreconditionSpec(
             key="auto_fix_complete",
             expected_type=bool,

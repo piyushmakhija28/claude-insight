@@ -91,23 +91,23 @@ def synthesize_prompt_with_flow_data(state: FlowState) -> dict:
         plan_phases = plan_exec.get("phases", []) if isinstance(plan_exec, dict) else []
 
         flow_data = {
-            "level_minus1": {
+            "level0_preflight": {
                 "unicode_check": state.get(StepKeys.UNICODE_CHECK, False),
                 "encoding_check": state.get(StepKeys.ENCODING_CHECK, False),
                 "windows_path_check": state.get(StepKeys.WINDOWS_PATH_CHECK, False),
             },
-            "level1": {
+            "level1_context_sync": {
                 "context_percentage": state.get(StepKeys.CONTEXT_PERCENTAGE, 0),
                 "session_chain_loaded": state.get(StepKeys.SESSION_CHAIN_LOADED, False),
                 "patterns_detected": state.get(StepKeys.PATTERNS_DETECTED, []),
                 "project_type": state.get(StepKeys.DETECTED_FRAMEWORK, "Unknown"),
             },
-            "level2": {
+            "standards": {
                 "standards_count": state.get(StepKeys.STANDARDS_COUNT, 0),
                 "is_java_project": state.get(StepKeys.IS_JAVA_PROJECT, False),
                 "java_standards_loaded": state.get(StepKeys.JAVA_STANDARDS_LOADED, False),
             },
-            "level3": {
+            "level2_sdlc_pipeline": {
                 "task_type": state.get(StepKeys.TASK_TYPE, "General"),
                 "complexity": state.get(StepKeys.COMPLEXITY, 5),
                 "suggested_model": state.get(StepKeys.SELECTED_MODEL, "complex_reasoning"),
@@ -185,7 +185,7 @@ def output_node(state: FlowState) -> dict:
     save_workflow_memory(state)
 
     # Determine final status based on actual step results (not just errors list)
-    if state.get(StepKeys.LEVEL_MINUS1_STATUS) == "BLOCKED":
+    if state.get(StepKeys.PREFLIGHT_STATUS) == "BLOCKED":
         final_status = "BLOCKED"
     else:
         step_failures = []
@@ -202,7 +202,7 @@ def output_node(state: FlowState) -> dict:
     # Save detailed pipeline execution log to session folder
     _save_pipeline_execution_log(state, final_status)
 
-    # In hook_mode, Step 14 doesn't run. Save a quick summary anyway.
+    # In hook_mode, Step 8 (Final Telemetry & Summary Report) doesn't run. Save a quick summary anyway.
     if not state.get(StepKeys.SUMMARY_SAVED):
         session_dir = state.get(StepKeys.SESSION_DIR) or state.get(StepKeys.SESSION_PATH, "")
         if session_dir:
@@ -278,16 +278,16 @@ def _save_pipeline_execution_log(state: FlowState, final_status: str) -> None:
         log_lines.append(f"**Framework**: {state.get(StepKeys.DETECTED_FRAMEWORK, 'unknown')}")
         log_lines.append("")
 
-        # Level -1
-        log_lines.append("## Level -1: Auto-Fix")
+        # Level 0: Pre-Flight Sanity Guard
+        log_lines.append("## Level 0: Pre-Flight Sanity Guard")
         log_lines.append(f"- Unicode: {'PASS' if state.get(StepKeys.UNICODE_CHECK) else 'FAIL'}")
         log_lines.append(f"- Encoding: {'PASS' if state.get(StepKeys.ENCODING_CHECK) else 'FAIL'}")
         log_lines.append(f"- Paths: {'PASS' if state.get(StepKeys.WINDOWS_PATH_CHECK) else 'FAIL'}")
-        log_lines.append(f"- Status: {state.get(StepKeys.LEVEL_MINUS1_STATUS, 'unknown')}")
+        log_lines.append(f"- Status: {state.get(StepKeys.PREFLIGHT_STATUS, 'unknown')}")
         log_lines.append("")
 
-        # Level 1
-        log_lines.append("## Level 1: Context Sync")
+        # Level 1: Session & Context Synchronization
+        log_lines.append("## Level 1: Session & Context Synchronization")
         log_lines.append(f"- Session: {state.get(StepKeys.SESSION_ID, 'none')}")
         log_lines.append(f"- Complexity: {state.get(StepKeys.COMPLEXITY_SCORE, '?')}/10")
         graph_score = state.get(StepKeys.GRAPH_COMPLEXITY_SCORE)
@@ -300,35 +300,30 @@ def _save_pipeline_execution_log(state: FlowState, final_status: str) -> None:
         log_lines.append(f"- Cache Hit: {state.get(StepKeys.CONTEXT_CACHE_HIT, False)}")
         log_lines.append("")
 
-        # Level 2
-        log_lines.append("## Level 2: Standards")
+        # Standards (always-on, loaded from disk -- not a numbered pipeline level)
+        log_lines.append("## Standards (loaded from disk)")
         log_lines.append(f"- Standards Loaded: {state.get(StepKeys.STANDARDS_COUNT, 0)}")
         log_lines.append(f"- Framework Detected: {state.get(StepKeys.DETECTED_FRAMEWORK, 'unknown')}")
         log_lines.append(f"- MCP Discovered: {state.get(StepKeys.MCP_DISCOVERED_COUNT, 0)}")
         log_lines.append(f"- Tool Rules: {'Loaded' if state.get(StepKeys.TOOL_OPTIMIZATION_LOADED) else 'Missing'}")
-        log_lines.append(f"- Status: {state.get(StepKeys.LEVEL2_STATUS, 'unknown')}")
         log_lines.append("")
 
-        # Level 3 Steps (active steps only: Pre-0, Step 0, Steps 8-14)
-        # v1.15.2: removed rows for steps 4-7 (TOON Refinement, Skill & Agent Selection,
-        #          Skill Validation, Final Prompt Generation -- removed from pipeline in v1.13.0)
-        log_lines.append("## Level 3: Execution Steps")
+        # Level 2: SDLC Execution Core (Steps 0-8)
+        log_lines.append("## Level 2: SDLC Execution Core")
         log_lines.append("")
         log_lines.append("| Step | Name | Status | Duration | Details |")
         log_lines.append("|------|------|--------|----------|---------|")
 
         step_info = [
-            (0, "Task Analysis", "step0_task_type", "step0_complexity"),
-            (1, "Plan Mode Decision", "step1_plan_required", "step1_reasoning"),
-            (2, "Plan Execution", "step2_plan_status", "step2_phases"),
-            (3, "Task Breakdown", "step3_validation_status", "step3_task_count"),
-            (8, "GitHub Issue Creation", "step8_status", "step8_issue_url"),
-            (9, "Branch Creation", "step9_status", "step9_branch_name"),
-            (10, "Implementation", "step10_implementation_status", "step10_llm_invoked"),
-            (11, "PR & Code Review", "step11_status", "step11_pr_url"),
-            (12, "Issue Closure", "step12_status", "step12_issue_closed"),
-            (13, "Documentation", "step13_documentation_status", "step13_update_count"),
-            (14, "Final Summary", "step14_status", "step14_voice_sent"),
+            (0, "Pre-Analysis & CallGraph Scan", "step1_callgraph_available", "step1_files_read"),
+            (1, "Task Orchestration & Planning", "step1_task_type", "step1_complexity"),
+            (2, "Issue Tracking", "step1_status", "step1_issue_url"),
+            (3, "Branch & Workspace Setup", "step1_status", "step1_branch_name"),
+            (4, "Implementation & Code Generation", "step1_implementation_status", "step1_llm_invoked"),
+            (5, "Pull Request & Automated Review", "step1_status", "step1_pr_url"),
+            (6, "Issue & Ticket Closure", "step1_status", "step1_issue_closed"),
+            (7, "Documentation & UML Generation", "step1_documentation_status", "step1_update_count"),
+            (8, "Final Telemetry & Summary Report", "step2_status", "step2_voice_sent"),
         ]
 
         for step_num, name, status_key, detail_key in step_info:

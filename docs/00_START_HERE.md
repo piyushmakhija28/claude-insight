@@ -13,26 +13,27 @@ documentation, and issue closure.
 
 ---
 
-## Current Pipeline (v1.15.1)
+## Current Pipeline
 
 ```
-Level -1: Auto-Fix (Unicode, encoding, paths)
-Level 1:  Context Sync (complexity, session)
-Level 2:  Standards Loading (common, Java, tool-opt, MCP discovery)
-Level 3:  Execution
-  Pre-0:  Call graph scan + template fast-path detection
-  Step 0: Task Analysis (prompt-gen-expert + orchestrator-agent chain)
-  Step 8: GitHub Issue Creation
-  Step 9: Branch Creation
-  Step 10: Implementation
-  Step 11: PR Creation & Review (with retry loop)
-  Step 12: Issue Closure
-  Step 13: Documentation Update
-  Step 14: Final Summary
+Level 0: Pre-Flight Sanity Guard (Unicode, encoding, paths)
+Level 1: Session & Context Synchronization (complexity, session)
+Standards: always-on, loaded from disk (common, Java, tool-opt, MCP discovery) -- non-numbered
+Level 2: SDLC Execution Core
+  Step 0: Pre-Analysis & CallGraph Scan -- call graph scan + template fast-path detection
+  Step 1: Task Orchestration & Planning (prompt-gen-expert + orchestrator-agent chain)
+  Step 2: Issue Tracking -- GitHub Issue Creation
+  Step 3: Branch & Workspace Setup
+  Step 4: Implementation & Code Generation
+  Step 5: Pull Request & Automated Review (with retry loop)
+  Step 6: Issue & Ticket Closure
+  Step 7: Documentation & UML Generation
+  Step 8: Final Telemetry & Summary Report
 ```
 
-**Steps 1, 3, 4, 5, 6, 7 were removed in v1.13.0** -- collapsed into Step 0's
-orchestration template call. See `CLAUDE.md` for the full architecture.
+**The old Steps 1, 3, 4, 5, 6, 7 (pre-v1.13.0 numbering) were removed in v1.13.0** -- collapsed
+into the single consolidated Task Orchestration node (now Step 1). See `CLAUDE.md` for the full
+architecture, including the domain-driven Level/Step rename this pipeline diagram reflects.
 
 ---
 

@@ -5,9 +5,9 @@ Extracted from orchestrator.py to separate routing decisions from graph construc
 Each level has its own routing submodule.
 
 CHANGE LOG (v1.15.0):
-  Removed route_after_step1_decision export -- Step 1 no longer exists in the
-  active pipeline graph (removed in v1.13.0). Kept stub in level3_routes.py
-  for backward-compat test imports only.
+  Removed route_after_step1_decision export -- Step 1 (pre-v1.13.0 numbering)
+  no longer exists in the active pipeline graph. The deprecated stub itself
+  was later deleted outright during the Level/Step domain-driven rename.
 
 CHANGE LOG (FR-3):
   Added kg_lookup.py (DecisionTreeTraverser, DomainKGReader -- HLD Section 7.2
@@ -27,13 +27,13 @@ from .kg_lookup import (  # noqa: F401
     normalize_kg_ref,
 )
 from .kg_router import KGRouter, route_task  # noqa: F401
-from .level3_routes import route_after_step11_review
-from .level_minus1_routes import route_after_level_minus1, route_after_level_minus1_user_choice
+from .preflight_guard_routes import route_after_preflight_guard, route_after_preflight_guard_user_choice
+from .sdlc_pipeline_routes import route_after_step5_review
 
 __all__ = [
-    "route_after_level_minus1",
-    "route_after_level_minus1_user_choice",
-    "route_after_step11_review",
+    "route_after_preflight_guard",
+    "route_after_preflight_guard_user_choice",
+    "route_after_step5_review",
     "AgentRef",
     "DecisionPath",
     "DecisionTreeTraverser",

@@ -8,7 +8,7 @@ ContextCache, toons, write_level_log) are mocked before import.
 ASCII-safe, UTF-8 encoded - Windows cp1252 compatible.
 
 CHANGE LOG (v1.15.0):
-  Fixed deprecated import path: subgraphs/level1_sync.py -> level1_sync/ package.
+  Fixed deprecated import path: subgraphs/context_sync.py -> context_sync/ package.
   Removed TestNodeToonCompression and test_level1_merge_node_preserves_toon (TOON removed).
 """
 
@@ -32,7 +32,7 @@ for _p in [_REPO_ROOT, _SCRIPTS]:
 
 
 # ---------------------------------------------------------------------------
-# Pre-import stubs (must be registered BEFORE importing level1_sync modules)
+# Pre-import stubs (must be registered BEFORE importing context_sync modules)
 # ---------------------------------------------------------------------------
 
 
@@ -91,13 +91,13 @@ _stub("langgraph_engine.complexity_calculator")
 
 
 # ---------------------------------------------------------------------------
-# Import each level1_sync submodule now that stubs are in place
+# Import each context_sync submodule now that stubs are in place
 # ---------------------------------------------------------------------------
 
-_l1_session = _importlib.import_module("langgraph_engine.level1_sync.session_loader")
-_l1_complexity = _importlib.import_module("langgraph_engine.level1_sync.complexity_calculator")
-_l1_context = _importlib.import_module("langgraph_engine.level1_sync.context_loader")
-_l1_routing = _importlib.import_module("langgraph_engine.level1_sync.routing")
+_l1_session = _importlib.import_module("langgraph_engine.context_sync.session_loader")
+_l1_complexity = _importlib.import_module("langgraph_engine.context_sync.complexity_calculator")
+_l1_context = _importlib.import_module("langgraph_engine.context_sync.context_loader")
+_l1_routing = _importlib.import_module("langgraph_engine.context_sync.routing")
 
 # Public function aliases
 node_session_loader = _l1_session.node_session_loader

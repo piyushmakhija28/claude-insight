@@ -1,6 +1,6 @@
 """Step execution decorator and factory for Level 3 pipeline steps.
 
-Replaces the repetitive _run_step() wrapper pattern in level3_execution/subgraph.py
+Replaces the repetitive _run_step() wrapper pattern in sdlc_pipeline/subgraph.py
 where each step node is a thin wrapper around _run_step() with step-specific
 parameters.  Moving the wrapper logic here lets callers register new step nodes
 with a single function call instead of duplicating ~300 lines of
@@ -49,7 +49,7 @@ logger = get_logger(__name__)
 # Constants
 # ---------------------------------------------------------------------------
 
-# Telemetry directory under the user home (mirrors level3_execution/subgraph.py).
+# Telemetry directory under the user home (mirrors sdlc_pipeline/subgraph.py).
 _TELEMETRY_DIR = Path.home() / ".claude" / "logs" / "telemetry"
 
 

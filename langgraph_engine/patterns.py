@@ -10,7 +10,7 @@ Pattern 1 (original): Memoize Decorator
 
 Pattern 2: Step Decorators (NEW)
   Composable decorators for LangGraph node functions (state: dict -> dict).
-  Eliminates the boilerplate repeated in every step of level3_execution_v2:
+  Eliminates the boilerplate repeated in every step of sdlc_pipeline_v2:
   timing, try/catch, metrics recording, logging, timeout enforcement.
 
     @with_logging("step5")

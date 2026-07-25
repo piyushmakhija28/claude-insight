@@ -231,13 +231,13 @@ def _run_post_implementation_steps():
             return
 
         # Step 12: Close GitHub issue (if issue was created in Step 8)
-        _step12_close_issue(session_dir)
+        _step6_close_issue(session_dir)
 
         # Step 13: Update project docs
-        _step13_update_docs()
+        _step7_update_docs()
 
         # Step 14: Generate summary
-        _step14_generate_summary(session_dir, current_branch, commits_ahead)
+        _step8_generate_summary(session_dir, current_branch, commits_ahead)
 
         print("[STOP] Post-implementation steps complete", file=sys.stderr)
 
@@ -245,19 +245,19 @@ def _run_post_implementation_steps():
         print(f"[STOP] Post-implementation steps error: {e}", file=sys.stderr)
 
 
-def _step12_close_issue(session_dir):
+def _step6_close_issue(session_dir):
     """Step 12: Close the GitHub issue created in Step 8."""
     try:
         import json
 
         # Read step 8 log to get issue ID
-        step8_log = session_dir / "step-logs" / "step-08.json"
-        if not step8_log.exists():
+        step2_log = session_dir / "step-logs" / "step-08.json"
+        if not step2_log.exists():
             return
 
-        step8_data = json.loads(step8_log.read_text(encoding="utf-8"))
-        result_summary = step8_data.get("result_summary", {})
-        issue_id = result_summary.get("step8_issue_id", "")
+        step2_data = json.loads(step2_log.read_text(encoding="utf-8"))
+        result_summary = step2_data.get("result_summary", {})
+        issue_id = result_summary.get("step2_issue_id", "")
 
         if not issue_id or issue_id == "0":
             return
@@ -276,7 +276,7 @@ def _step12_close_issue(session_dir):
         print(f"[STOP] Step 12 skipped: {e}", file=sys.stderr)
 
 
-def _step13_update_docs():
+def _step7_update_docs():
     """Step 13: Run version sync to update docs."""
     try:
         import subprocess
@@ -289,7 +289,7 @@ def _step13_update_docs():
         print(f"[STOP] Step 13 skipped: {e}", file=sys.stderr)
 
 
-def _step14_generate_summary(session_dir, branch, commits):
+def _step8_generate_summary(session_dir, branch, commits):
     """Step 14: Write final summary to session dir."""
     try:
         from datetime import datetime

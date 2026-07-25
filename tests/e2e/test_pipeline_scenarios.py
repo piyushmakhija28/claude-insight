@@ -50,13 +50,13 @@ class TestStaleCallGraphGuard:
 
         mock_state = {
             "call_graph_stale": True,
-            "step10_pre_change_graph": {
+            "step4_pre_change_graph": {
                 "nodes": ["old_node"],
                 "call_graph_available": True,
             },
         }
 
-        with patch("langgraph_engine.level3_execution.call_graph_analyzer.snapshot_call_graph") as mock_snap:
+        with patch("langgraph_engine.sdlc_pipeline.call_graph_analyzer.snapshot_call_graph") as mock_snap:
             mock_snap.return_value = {
                 "nodes": ["fresh_node"],
                 "call_graph_available": True,
@@ -82,10 +82,10 @@ class TestStaleCallGraphGuard:
         }
         mock_state = {
             "call_graph_stale": False,
-            "step10_pre_change_graph": cached,
+            "step4_pre_change_graph": cached,
         }
 
-        with patch("langgraph_engine.level3_execution.call_graph_analyzer.snapshot_call_graph") as mock_snap:
+        with patch("langgraph_engine.sdlc_pipeline.call_graph_analyzer.snapshot_call_graph") as mock_snap:
             result = refresh_call_graph_if_stale(mock_state, str(tmp_path))
 
         mock_snap.assert_not_called()
@@ -105,7 +105,7 @@ class TestStaleCallGraphGuard:
             "call_graph_stale": False,
         }
 
-        with patch("langgraph_engine.level3_execution.call_graph_analyzer.snapshot_call_graph") as mock_snap:
+        with patch("langgraph_engine.sdlc_pipeline.call_graph_analyzer.snapshot_call_graph") as mock_snap:
             mock_snap.return_value = {"call_graph_available": False}
             result = refresh_call_graph_if_stale(empty_state, str(tmp_path))
 

@@ -261,11 +261,11 @@ class TestContextDeduplication:
         """Fingerprint function should use MD5 for dedup hashing.
 
         _fingerprint is a private helper inside the real implementation at
-        langgraph_engine.level1_sync.context_deduplicator. The compat shim
+        langgraph_engine.context_sync.context_deduplicator. The compat shim
         at langgraph_engine.context_deduplicator only re-exports the public
         'deduplicate_context' function.
         """
-        from langgraph_engine.level1_sync.context_deduplicator import _fingerprint
+        from langgraph_engine.context_sync.context_deduplicator import _fingerprint
 
         fp1 = _fingerprint("hello world")
         fp2 = _fingerprint("hello world")

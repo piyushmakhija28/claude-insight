@@ -1,6 +1,12 @@
 # Claude Workflow Engine — Pipeline Architecture
 
-> Version 1.19.x · LangGraph 0.2.0+ · Python 3.10+
+> Version 1.20.x · LangGraph 0.2.0+ · Python 3.10+
+>
+> Domain-driven Level/Step naming (see `CLAUDE.md` "Latest Execution Insight" for the rename
+> rationale): `Level -1/1/2/3` + `Pre-0, Step 0, Steps 8-14` became `Level 0/1/2` (Pre-Flight
+> Sanity Guard / Session & Context Synchronization / SDLC Execution Core) + `Steps 0-8`, each
+> carrying a purpose name. The dead "Level 2: Standards" (never had pipeline nodes) is retired
+> from the level count and documented below as a non-numbered, always-on mechanism.
 
 ---
 
@@ -10,7 +16,7 @@
 flowchart TD
     START(["User Task Input\npython scripts/3-level-flow.py --task ..."])
 
-    subgraph LM1["Level -1 : Auto-Fix"]
+    subgraph LM1["Level 0 : Pre-Flight Sanity Guard"]
         direction LR
         U["Unicode\nNormalize"]
         E["Encoding\nValidate\nUTF-8 / ASCII"]
@@ -18,7 +24,7 @@ flowchart TD
         U --> E --> P
     end
 
-    subgraph L1["Level 1 : Sync"]
+    subgraph L1["Level 1 : Session & Context Synchronization"]
         direction TB
         SS["Session\nSync"]
         subgraph PAR["Parallel Analysis"]
@@ -30,22 +36,22 @@ flowchart TD
         SS --> PAR --> MG
     end
 
-    subgraph L2["Level 2 : Standards NO-OP"]
+    subgraph L2["Standards (non-numbered, always-on)"]
         direction LR
-        POL["policies/02-standards-system/\n.md files loaded from disk\nNo pipeline nodes"]
+        POL[".md files under policies/\nloaded from disk\nNo pipeline nodes"]
     end
 
-    subgraph L3["Level 3 : Execution"]
+    subgraph L3["Level 2 : SDLC Execution Core"]
         direction TB
-        P0["Pre-0\nOrchestration\nPre-Analysis"]
-        S0["Step 0\nTask Analysis v2\nPromptGen + Orchestrator\n~15s planning"]
-        S8["Step 8\nGitHub + Jira\nIssue Creation"]
-        S9["Step 9\nBranch Creation"]
-        S10["Step 10\nImplementation\n+ Jira In Progress"]
-        S11["Step 11\nPR + Code Review\n+ Jira In Review"]
-        S12["Step 12\nIssue Closure\nGitHub + Jira Done"]
-        S13["Step 13\nDocumentation\n+ UML Generation"]
-        S14["Step 14\nFinal Summary"]
+        P0["Step 0\nPre-Analysis &\nCallGraph Scan"]
+        S0["Step 1\nTask Orchestration & Planning\nPromptGen + Orchestrator\n~15s planning"]
+        S8["Step 2\nIssue Tracking\nGitHub + Jira"]
+        S9["Step 3\nBranch & Workspace Setup"]
+        S10["Step 4\nImplementation & Code Generation\n+ Jira In Progress"]
+        S11["Step 5\nPull Request & Automated Review\n+ Jira In Review"]
+        S12["Step 6\nIssue & Ticket Closure\nGitHub + Jira Done"]
+        S13["Step 7\nDocumentation & UML Generation"]
+        S14["Step 8\nFinal Telemetry &\nSummary Report"]
         P0 --> S0 --> S8 --> S9 --> S10 --> S11 --> S12 --> S13 --> S14
     end
 
@@ -61,7 +67,7 @@ flowchart TD
 
 ---
 
-## 2. Level -1 : Auto-Fix Detail
+## 2. Level 0 : Pre-Flight Sanity Guard Detail
 
 ```mermaid
 flowchart LR
@@ -94,11 +100,11 @@ flowchart LR
 
 ---
 
-## 3. Level 1 : Sync Detail
+## 3. Level 1 : Session & Context Synchronization Detail
 
 ```mermaid
 flowchart TD
-    IN(["State from\nLevel -1"])
+    IN(["State from\nLevel 0"])
 
     SS["Session Sync\nsession_id, metadata\nloaded from MCP session-mgr"]
 
@@ -110,7 +116,7 @@ flowchart TD
 
     MG["Merge Node\nLinear-scale simple score to 1-25\ncombined_complexity_score\n= simple x 0.3 + graph x 0.7\nResult stored in state"]
 
-    NEXT(["Level 2 NO-OP\nthen Level 3"])
+    NEXT(["Standards (non-numbered)\nthen Level 2"])
 
     IN --> SS --> PAR --> MG --> NEXT
 
@@ -120,25 +126,25 @@ flowchart TD
 
 ---
 
-## 4. Level 3 : Pre-0 + Step 0 Detail
+## 4. Level 2 : Step 0 + Step 1 Detail
 
 ```mermaid
 flowchart TD
-    IN(["combined_complexity_score\n+ session context\nenters Level 3"])
+    IN(["combined_complexity_score\n+ session context\nenters Level 2"])
 
-    subgraph P0["Pre-0 : Orchestration Pre-Analysis"]
+    subgraph P0["Step 0 : Pre-Analysis & CallGraph Scan"]
         direction TB
         CG["CallGraph Scan\n578 classes · 3985 methods\nPython / Java / TS / Kotlin"]
         IA["analyze_impact_before_change\nrisk_level\ndanger_zones\naffected_methods\nhot_nodes\ncomplexity_boost"]
         TFP{Template\nFast-Path\ndetected?}
-        FP["Skip Step 0\nJump to Step 8"]
+        FP["Skip Step 1\nJump to Step 2"]
         NP["Normal Path\nInject call-graph data into state"]
         CG --> IA --> TFP
         TFP -- yes --> FP
         TFP -- no  --> NP
     end
 
-    subgraph S0["Step 0 : Task Analysis v2  ~15s"]
+    subgraph S0["Step 1 : Task Orchestration & Planning  ~15s"]
         direction TB
         C1["Call 1 : PromptGen Expert ~10s\nprompt_gen_expert_caller.py\nReads: orchestration_system_prompt.txt\nInjects: user_requirements\nruntime_context_json_block\ncomplexity_score_display\ncodebase_risk_level\ncodebase_danger_zones\ncodebase_hot_nodes\nOutputs: state orchestration_prompt"]
         C2["Call 2 : Orchestrator Agent ~30-90s\norchestrator_agent_caller.py\nReads: orchestration_prompt via temp file\nExecutes: solution-architect\nconsensus, squad agents, QA\nStreams live to terminal\nOutputs: state orchestrator_result"]
@@ -146,8 +152,8 @@ flowchart TD
     end
 
     NP  --> S0
-    FP  --> STEP8
-    S0  --> STEP8(["Step 8"])
+    FP  --> STEP2
+    S0  --> STEP2(["Step 2"])
 
     style P0  fill:#f0fdf4,stroke:#16a34a
     style S0  fill:#dcfce7,stroke:#16a34a
@@ -156,25 +162,25 @@ flowchart TD
 
 ---
 
-## 5. Level 3 : Steps 8-14 Execution Flow
+## 5. Level 2 : Steps 2-8 Execution Flow
 
 ```mermaid
 flowchart TD
-    IN(["orchestrator_result\nfrom Step 0"])
+    IN(["orchestrator_result\nfrom Step 1"])
 
-    S8["Step 8 : Issue Creation\nGitHub Issue created\nJira Issue created if ENABLE_JIRA\nCross-linked dual-tracked\nLabel + assignee applied"]
+    S8["Step 2 : Issue Tracking\nGitHub Issue created\nJira Issue created if ENABLE_JIRA\nCross-linked dual-tracked\nLabel + assignee applied"]
 
-    S9["Step 9 : Branch Creation\nBranch from Jira key\nfeature/PROJ-123\nor from GitHub issue slug\nPushed to remote"]
+    S9["Step 3 : Branch & Workspace Setup\nBranch from Jira key\nfeature/PROJ-123\nor from GitHub issue slug\nPushed to remote"]
 
-    S10["Step 10 : Implementation\nCallGraph snapshot pre-change\ncall_graph_stale = True after writes\nJira → In Progress\nFigma → Implementation started\nSonarQube scan if ENABLE_SONARQUBE\nJenkins trigger if ENABLE_JENKINS"]
+    S10["Step 4 : Implementation & Code Generation\nCallGraph snapshot pre-change\ncall_graph_stale = True after writes\nJira -> In Progress\nFigma -> Implementation started\nSonarQube scan if ENABLE_SONARQUBE\nJenkins trigger if ENABLE_JENKINS"]
 
-    S11["Step 11 : PR + Code Review\nPR opened on GitHub\nCallGraph diff: before vs after\nbreaking changes detected\norphaned methods flagged\nJira → In Review, PR linked\nFigma design fidelity checklist\nJenkins build validate\nQuality Gate: 4-gate merge check"]
+    S11["Step 5 : Pull Request & Automated Review\nPR opened on GitHub\nCallGraph diff: before vs after\nbreaking changes detected\norphaned methods flagged\nJira -> In Review, PR linked\nFigma design fidelity checklist\nJenkins build validate\nQuality Gate: 4-gate merge check"]
 
-    S12["Step 12 : Issue Closure\nGitHub Issue closed\nPR merged post-merge cleanup\nJira → Done\nFigma → Implementation complete"]
+    S12["Step 6 : Issue & Ticket Closure\nGitHub Issue closed\nPR merged post-merge cleanup\nJira -> Done\nFigma -> Implementation complete"]
 
-    S13["Step 13 : Documentation + UML\nCHANGELOG.md finalized\nVERSION bumped\nREADME.md updated\n13 UML diagrams regenerated\n13 draw.io diagrams regenerated"]
+    S13["Step 7 : Documentation & UML Generation\nCHANGELOG.md finalized\nVERSION bumped\nREADME.md updated\n13 UML diagrams regenerated\n13 draw.io diagrams regenerated"]
 
-    S14["Step 14 : Final Summary\nSession metrics aggregated\nCLAUDE.md Latest Execution Insight updated\nAudit log entry written\nPrometheus metrics flushed"]
+    S14["Step 8 : Final Telemetry & Summary Report\nSession metrics aggregated\nCLAUDE.md Latest Execution Insight updated\nAudit log entry written\nPrometheus metrics flushed"]
 
     END(["Workflow Complete"])
 
@@ -205,17 +211,17 @@ flowchart LR
 
     CGA["call_graph_analyzer.py\n578 classes\n3985 methods\nFQN call stack"]
 
-    subgraph P0B["Pre-0"]
+    subgraph P0B["Step 0"]
         IP["analyze_impact_before_change\nrisk_level · danger_zones\naffected_methods · hot_nodes"]
     end
 
-    subgraph S10B["Step 10"]
+    subgraph S10B["Step 4"]
         SN["snapshot_call_graph\npre-change state\nget_implementation_context\ncaller/callee awareness"]
         SF["call_graph_stale = True\nafter file writes"]
         SN --> SF
     end
 
-    subgraph S11B["Step 11"]
+    subgraph S11B["Step 5"]
         RC["review_change_impact\nbefore vs after diff\nbreaking changes\norphaned methods\nrisk delta"]
     end
 
@@ -223,7 +229,7 @@ flowchart LR
         direction TB
         GC{stale\nflag?}
         RB["refresh_call_graph_if_stale\nsilent rebuild"]
-        FB["Fallback priority\n1. fresh scan if stale\n2. step10_pre_change_graph\n3. step2_impact_analysis\n4. pre_analysis_result\n5. fresh scan"]
+        FB["Fallback priority\n1. fresh scan if stale\n2. step4_pre_change_graph\n3. pre_analysis_result\n4. fresh scan"]
         GC -- yes --> RB --> FB
         GC -- no  --> FB
     end
@@ -247,20 +253,20 @@ flowchart LR
 flowchart LR
     subgraph JL["Jira Lifecycle  ENABLE_JIRA=1"]
         direction TB
-        J8["Step 8\nCREATE\nJira issue + GitHub link"]
-        J9["Step 9\nBRANCH\nfeature/PROJ-123"]
-        J10["Step 10\nUPDATE\nIn Progress"]
-        J11["Step 11\nLINK\nPR linked\nIn Review"]
-        J12["Step 12\nCLOSE\nDone"]
+        J8["Step 2\nCREATE\nJira issue + GitHub link"]
+        J9["Step 3\nBRANCH\nfeature/PROJ-123"]
+        J10["Step 4\nUPDATE\nIn Progress"]
+        J11["Step 5\nLINK\nPR linked\nIn Review"]
+        J12["Step 6\nCLOSE\nDone"]
         J8 --> J9 --> J10 --> J11 --> J12
     end
 
     subgraph FL["Figma Lifecycle  ENABLE_FIGMA=1"]
         direction TB
-        F0["Step 0\nEXTRACT + INJECT\nComponents + design tokens\ninto orchestration template"]
-        F10["Step 10\nCOMMENT\nImplementation started\n+ component list"]
-        F11["Step 11\nREVIEW\nDesign fidelity checklist"]
-        F12["Step 12\nCOMMENT\nImplementation complete\n+ PR link"]
+        F0["Step 1\nEXTRACT + INJECT\nComponents + design tokens\ninto orchestration template"]
+        F10["Step 4\nCOMMENT\nImplementation started\n+ component list"]
+        F11["Step 5\nREVIEW\nDesign fidelity checklist"]
+        F12["Step 6\nCOMMENT\nImplementation complete\n+ PR link"]
         F0 --> F10 --> F11 --> F12
     end
 
@@ -278,22 +284,22 @@ flowchart TD
 
     subgraph HM["Hook Mode  default = 1"]
         direction TB
-        H1["Pre-0 : Orchestration Pre-Analysis"]
-        H2["Step 0 : PromptGen + Orchestrator"]
-        H3["Step 8 : GitHub Issue Creation"]
-        H4["Step 9 : Branch Creation"]
-        HSKIP["Steps 10-14\nSKIPPED\nUser implements manually\nthen runs Full Mode for PR/closure"]
+        H1["Step 0 : Pre-Analysis & CallGraph Scan"]
+        H2["Step 1 : Task Orchestration & Planning"]
+        H3["Step 2 : Issue Tracking"]
+        H4["Step 3 : Branch & Workspace Setup"]
+        HSKIP["Steps 4-8\nSKIPPED\nUser implements manually\nthen runs Full Mode for PR/closure"]
         H1 --> H2 --> H3 --> H4 --> HSKIP
     end
 
     subgraph FM["Full Mode  = 0"]
         direction TB
-        F1["Pre-0 : Orchestration Pre-Analysis"]
-        F2["Step 0 : PromptGen + Orchestrator"]
-        F3["Steps 8-9 : Issue + Branch"]
-        F4["Step 10 : Implementation"]
-        F5["Step 11 : PR + Code Review"]
-        F6["Steps 12-14 : Close + Docs + Summary"]
+        F1["Step 0 : Pre-Analysis & CallGraph Scan"]
+        F2["Step 1 : Task Orchestration & Planning"]
+        F3["Steps 2-3 : Issue Tracking + Branch Setup"]
+        F4["Step 4 : Implementation & Code Generation"]
+        F5["Step 5 : Pull Request & Automated Review"]
+        F6["Steps 6-8 : Closure + Docs + Summary"]
         F1 --> F2 --> F3 --> F4 --> F5 --> F6
     end
 
@@ -353,6 +359,11 @@ graph TD
 
 ## 10. Version History — Planning Evolution
 
+Historical record -- entries below use the step numbering that was live at each version and
+are intentionally NOT retconned to the current scheme (rewriting them would falsify the
+historical record). The v1.12.0-v1.16.0 entries predate the domain-driven Level/Step rename
+covered by this document; see `CLAUDE.md` "Latest Execution Insight" for that rename's details.
+
 ```mermaid
 timeline
     title Planning Phase Evolution
@@ -361,7 +372,8 @@ timeline
     v1.14.0 : 8 active steps  : 2 subprocess calls : ~15s planning : Step 0 = template fill + orchestrator
     v1.15.0 : 8 active steps  : 2 subprocess calls : ~15s : TOON compression removed from Level 1
     v1.16.0 : 8 active steps  : 2 subprocess calls : ~15s : Level 2 script purge, policies on disk only
-    v1.19.x : 8 active steps  : 2 subprocess calls : ~15s : Current stable release
+    v1.19.x : 8 active steps  : 2 subprocess calls : ~15s : Old numbering, last version before rename
+    v1.20.x : 9 active steps (0-8) : 2 subprocess calls : ~15s : Domain-driven Level/Step rename (current)
 ```
 
 ---

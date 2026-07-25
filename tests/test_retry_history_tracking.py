@@ -17,7 +17,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 sys.path.insert(0, str(Path(__file__).parent.parent / "scripts"))
 
 from langgraph_engine.flow_state import FlowState
-from langgraph_engine.level3_execution.subgraph import _build_retry_history_context, step10_implementation_note
+from langgraph_engine.sdlc_pipeline.subgraph import _build_retry_history_context, step4_implementation_note
 
 
 class TestRetryHistoryTracking:
@@ -30,10 +30,10 @@ class TestRetryHistoryTracking:
         print("=" * 70)
 
         state = FlowState(
-            step11_retry_count=0,
-            step11_retry_messages=[],
-            step11_review_issues=[],
-            step7_execution_prompt="Initial prompt",
+            step5_retry_count=0,
+            step5_retry_messages=[],
+            step5_review_issues=[],
+            step1_execution_prompt="Initial prompt",
             session_dir=str(getattr(self, "_tmp", Path(tempfile.mkdtemp()))),
         )
 
@@ -49,10 +49,10 @@ class TestRetryHistoryTracking:
         print("=" * 70)
 
         state = FlowState(
-            step11_retry_count=1,
-            step11_retry_messages=["Fixed print() statement in main function"],
-            step11_review_issues=["Missing logger import"],
-            step7_execution_prompt="Original prompt",
+            step5_retry_count=1,
+            step5_retry_messages=["Fixed print() statement in main function"],
+            step5_review_issues=["Missing logger import"],
+            step1_execution_prompt="Original prompt",
             session_dir=str(getattr(self, "_tmp", Path(tempfile.mkdtemp()))),
         )
 
@@ -75,17 +75,17 @@ class TestRetryHistoryTracking:
         print("=" * 70)
 
         state = FlowState(
-            step11_retry_count=2,
-            step11_retry_messages=[
+            step5_retry_count=2,
+            step5_retry_messages=[
                 "Attempt 1: Fixed print() -> added logging",
                 "Attempt 2: Added logger import -> fixed import error",
             ],
-            step11_review_issues=[
+            step5_review_issues=[
                 "Missing @Autowired annotation",
                 "No error handling in try/catch",
                 "Unused variable 'result'",
             ],
-            step7_execution_prompt="Original prompt",
+            step1_execution_prompt="Original prompt",
             session_dir=str(getattr(self, "_tmp", Path(tempfile.mkdtemp()))),
         )
 
@@ -109,13 +109,13 @@ class TestRetryHistoryTracking:
         print("=" * 70)
 
         state = FlowState(
-            step11_retry_count=3,
-            step11_retry_messages=[
+            step5_retry_count=3,
+            step5_retry_messages=[
                 "Attempt 1: Fixed issue A",
                 "Attempt 2: Fixed issue B",
             ],
-            step11_review_issues=["Issue C"],
-            step7_execution_prompt="Original prompt",
+            step5_review_issues=["Issue C"],
+            step1_execution_prompt="Original prompt",
             session_dir=str(getattr(self, "_tmp", Path(tempfile.mkdtemp()))),
         )
 
@@ -129,28 +129,28 @@ class TestRetryHistoryTracking:
         print("[OK] Final attempt warning shown (correct)")
         print("[WARN]  User alerted about manual review fallback")
 
-    def test_step10_implementation_note_with_history(self):
+    def test_step4_implementation_note_with_history(self):
         """Test step10 generates prompt with complete history."""
         print("\n" + "=" * 70)
         print("[OK] TEST 5: Step 10 Full Prompt with History")
         print("=" * 70)
 
         state = FlowState(
-            step11_retry_count=1,
-            step11_retry_messages=["Removed print() statements"],
-            step11_review_issues=["Missing imports at top", "No docstring in main function"],
-            step7_execution_prompt="Implement the feature...",
+            step5_retry_count=1,
+            step5_retry_messages=["Removed print() statements"],
+            step5_review_issues=["Missing imports at top", "No docstring in main function"],
+            step1_execution_prompt="Implement the feature...",
             session_dir=str(getattr(self, "_tmp", Path(tempfile.mkdtemp()))),
         )
 
-        result = step10_implementation_note(state)
+        result = step4_implementation_note(state)
 
-        print(f"Status: {result['step10_status']}")
-        print(f"Message: {result['step10_message']}")
-        print(f"Has retry context: {result['step10_has_retry_context']}")
+        print(f"Status: {result['step4_status']}")
+        print(f"Message: {result['step4_message']}")
+        print(f"Has retry context: {result['step4_has_retry_context']}")
 
         # Check prompt includes history
-        prompt = result["step10_execution_prompt"]
+        prompt = result["step4_execution_prompt"]
         print(f"\nPrompt preview:\n{prompt[:500]}...")
 
         assert "COMPLETE RETRY HISTORY" in prompt
@@ -170,10 +170,10 @@ class TestRetryHistoryTracking:
         issues = [f"Issue #{i}" for i in range(1, 21)]
 
         state = FlowState(
-            step11_retry_count=1,
-            step11_retry_messages=["Fixed previous issue"],
-            step11_review_issues=issues,
-            step7_execution_prompt="Prompt",
+            step5_retry_count=1,
+            step5_retry_messages=["Fixed previous issue"],
+            step5_review_issues=issues,
+            step1_execution_prompt="Prompt",
             session_dir=str(getattr(self, "_tmp", Path(tempfile.mkdtemp()))),
         )
 

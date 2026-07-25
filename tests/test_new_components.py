@@ -4,7 +4,7 @@ test_new_components.py - Tests for new components added to the Claude Workflow E
 
 Covers:
   1. Code Graph Analyzer (scripts/architecture/03-execution-system/00-code-graph-analysis/)
-  2. Level 1 Sync System scripts (langgraph_engine/level1_sync/architecture/)
+  2. Level 1 Sync System scripts (langgraph_engine/context_sync/architecture/)
   3. Pre-tool Enforcer Level 1 / Level 2 blocking functions (scripts/pre-tool-enforcer.py)
 
 All tests are designed to pass without external dependencies (networkx, etc.).
@@ -22,7 +22,7 @@ from typing import Any, Dict
 # ---------------------------------------------------------------------------
 
 REPO_ROOT = Path(__file__).parent.parent
-SYNC_SYSTEM_DIR = REPO_ROOT / "langgraph_engine" / "level1_sync" / "architecture"
+SYNC_SYSTEM_DIR = REPO_ROOT / "langgraph_engine" / "context_sync" / "architecture"
 CODE_GRAPH_DIR = REPO_ROOT / "scripts" / "architecture" / "03-execution-system" / "00-code-graph-analysis"
 SCRIPTS_DIR = REPO_ROOT / "scripts"
 HOOKS_DIR = REPO_ROOT / "hooks"

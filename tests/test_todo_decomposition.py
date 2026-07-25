@@ -4,15 +4,13 @@ Covers:
   - todo_decomposer: _parse_args, _extract_todo_list, _load_prompt_file, _build_decompose_prompt
   - todo_executor: _load_checkpoint, _save_checkpoint, execute_todo_list
   - FlowState new fields: todo_list, todo_results, completed_todos, current_todo_index
-  - step_wrappers_0to4: import smoke test for step0_task_analysis_node
+  - task_orchestration: import smoke test for step1_task_analysis_node
 """
 
 import json
 import sys
 from pathlib import Path
 from unittest.mock import MagicMock, patch
-
-import pytest
 
 # ---------------------------------------------------------------------------
 # Ensure project root is on sys.path for all imports
@@ -21,18 +19,17 @@ _PROJECT_ROOT = Path(__file__).resolve().parent.parent
 if str(_PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(_PROJECT_ROOT))
 
-from langgraph_engine.level3_execution.architecture.todo_decomposer import (
+from langgraph_engine.sdlc_pipeline.architecture.todo_decomposer import (  # noqa: E402
     _build_decompose_prompt,
     _extract_todo_list,
     _load_prompt_file,
     _parse_args,
 )
-from langgraph_engine.level3_execution.architecture.todo_executor import (
+from langgraph_engine.sdlc_pipeline.architecture.todo_executor import (  # noqa: E402
     _load_checkpoint,
     _save_checkpoint,
     execute_todo_list,
 )
-
 
 # ===========================================================================
 # Group 1: todo_decomposer._parse_args
@@ -260,7 +257,7 @@ class TestExecuteTodoList:
         state = self._make_state(tmp_path)
         todo_list = [{"id": "todo_001", "prompt": "do something"}]
 
-        with patch("langgraph_engine.level3_execution.architecture.todo_executor.subprocess.run") as mock_run:
+        with patch("langgraph_engine.sdlc_pipeline.architecture.todo_executor.subprocess.run") as mock_run:
             results = execute_todo_list(state, todo_list)
 
         mock_run.assert_not_called()
@@ -275,7 +272,7 @@ class TestExecuteTodoList:
         fake_proc = self._make_proc(returncode=0, stdout=self._FAKE_SUCCESS_STDOUT)
 
         with patch(
-            "langgraph_engine.level3_execution.architecture.todo_executor.subprocess.run",
+            "langgraph_engine.sdlc_pipeline.architecture.todo_executor.subprocess.run",
             return_value=fake_proc,
         ):
             results = execute_todo_list(state, todo_list)
@@ -291,7 +288,7 @@ class TestExecuteTodoList:
         fake_proc = self._make_proc(returncode=1, stdout="", stderr="some error message")
 
         with patch(
-            "langgraph_engine.level3_execution.architecture.todo_executor.subprocess.run",
+            "langgraph_engine.sdlc_pipeline.architecture.todo_executor.subprocess.run",
             return_value=fake_proc,
         ):
             results = execute_todo_list(state, todo_list)
@@ -305,7 +302,7 @@ class TestExecuteTodoList:
         todo_list = [{"id": "todo_004", "prompt": "do something dangerous"}]
 
         with patch(
-            "langgraph_engine.level3_execution.architecture.todo_executor.subprocess.run",
+            "langgraph_engine.sdlc_pipeline.architecture.todo_executor.subprocess.run",
             side_effect=RuntimeError("unexpected subprocess failure"),
         ):
             results = execute_todo_list(state, todo_list)
@@ -321,7 +318,7 @@ class TestExecuteTodoList:
         fake_proc = self._make_proc(returncode=0, stdout=self._FAKE_SUCCESS_STDOUT)
 
         with patch(
-            "langgraph_engine.level3_execution.architecture.todo_executor.subprocess.run",
+            "langgraph_engine.sdlc_pipeline.architecture.todo_executor.subprocess.run",
             return_value=fake_proc,
         ):
             execute_todo_list(state, todo_list)
@@ -356,16 +353,14 @@ class TestStateDefinitionRegression:
 
 
 # ===========================================================================
-# Group 9: step_wrappers_0to4 smoke (import only)
+# Group 9: task_orchestration smoke (import only)
 # ===========================================================================
 
 
 class TestStepWrappersSmoke:
-    """Import smoke test ensuring step0_task_analysis_node is importable."""
+    """Import smoke test ensuring step1_task_analysis_node is importable."""
 
-    def test_step0_imports(self):
-        from langgraph_engine.level3_execution.nodes.step_wrappers_0to4 import (
-            step0_task_analysis_node,
-        )
+    def test_step1_imports(self):
+        from langgraph_engine.sdlc_pipeline.nodes.task_orchestration import step1_task_analysis_node
 
-        assert callable(step0_task_analysis_node)
+        assert callable(step1_task_analysis_node)

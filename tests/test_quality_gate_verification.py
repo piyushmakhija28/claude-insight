@@ -2,7 +2,7 @@
 C-4 Runtime Verification Gate Tests (v1.18.0)
 ==============================================
 Tests for Gate 5 (_evaluate_verification_gate) in:
-    langgraph_engine/level3_execution/quality_gate.py
+    langgraph_engine/sdlc_pipeline/quality_gate.py
 
 Covers:
   1. Gate skipped when ENABLE_RUNTIME_VERIFICATION is not set / set to '0'
@@ -16,7 +16,7 @@ isolated and do not affect each other or the rest of the test suite.
 
 from __future__ import annotations
 
-from langgraph_engine.level3_execution.quality_gate import _evaluate_verification_gate
+from langgraph_engine.sdlc_pipeline.quality_gate import _evaluate_verification_gate
 
 # ---------------------------------------------------------------------------
 # Test data helpers

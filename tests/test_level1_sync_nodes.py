@@ -11,7 +11,7 @@ Python 3.8+ compatible - no walrus operator, no match, no | union types.
 ASCII-only source (cp1252 safe for Windows terminals).
 
 CHANGE LOG (v1.15.0):
-  Fixed deprecated import path: subgraphs/level1_sync.py -> level1_sync/ package.
+  Fixed deprecated import path: subgraphs/context_sync.py -> context_sync/ package.
   Each submodule (session_loader, complexity_calculator, context_loader, routing)
   is imported individually; patch.object targets the specific submodule that owns
   the attribute being patched.
@@ -52,7 +52,7 @@ def _stub_module(name, **attrs):
 
 
 # ---------------------------------------------------------------------------
-# Stub heavy optional dependencies BEFORE importing level1_sync modules.
+# Stub heavy optional dependencies BEFORE importing context_sync modules.
 # Order: parent packages must be registered before children.
 # ---------------------------------------------------------------------------
 
@@ -86,14 +86,14 @@ _stub_module("langgraph_engine.complexity_calculator")
 
 
 # ---------------------------------------------------------------------------
-# Import each level1_sync submodule now that stubs are registered.
+# Import each context_sync submodule now that stubs are registered.
 # Each submodule is stored separately so patch.object targets the right owner.
 # ---------------------------------------------------------------------------
 
-_l1_session = importlib.import_module("langgraph_engine.level1_sync.session_loader")
-_l1_complexity = importlib.import_module("langgraph_engine.level1_sync.complexity_calculator")
-_l1_context = importlib.import_module("langgraph_engine.level1_sync.context_loader")
-_l1_routing = importlib.import_module("langgraph_engine.level1_sync.routing")
+_l1_session = importlib.import_module("langgraph_engine.context_sync.session_loader")
+_l1_complexity = importlib.import_module("langgraph_engine.context_sync.complexity_calculator")
+_l1_context = importlib.import_module("langgraph_engine.context_sync.context_loader")
+_l1_routing = importlib.import_module("langgraph_engine.context_sync.routing")
 
 # Ensure calculate_complexity sentinel exists for tests that patch it
 if not hasattr(_l1_complexity, "calculate_complexity"):

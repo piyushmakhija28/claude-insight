@@ -2,10 +2,10 @@
 Gate 6 (Faithfulness) Tests
 ============================
 Tests for:
-    langgraph_engine/level3_execution/faithfulness_gate.py
+    langgraph_engine/sdlc_pipeline/faithfulness_gate.py
         - build_faithfulness_prompt()
         - run_faithfulness_check()
-    langgraph_engine/level3_execution/quality_gate.py
+    langgraph_engine/sdlc_pipeline/quality_gate.py
         - _evaluate_faithfulness_gate() (Gate 6 wiring)
 
 Covers the two-tier opt-in contract (ENABLE_FAITHFULNESS_GATE /
@@ -24,9 +24,9 @@ from __future__ import annotations
 from typing import Optional, Tuple
 from unittest.mock import Mock
 
-from langgraph_engine.level3_execution import faithfulness_gate
-from langgraph_engine.level3_execution.faithfulness_gate import build_faithfulness_prompt, run_faithfulness_check
-from langgraph_engine.level3_execution.quality_gate import _evaluate_faithfulness_gate
+from langgraph_engine.sdlc_pipeline import faithfulness_gate
+from langgraph_engine.sdlc_pipeline.faithfulness_gate import build_faithfulness_prompt, run_faithfulness_check
+from langgraph_engine.sdlc_pipeline.quality_gate import _evaluate_faithfulness_gate
 
 # ---------------------------------------------------------------------------
 # Fake caller helpers
@@ -234,7 +234,7 @@ def test_gate6_disabled_by_default_never_calls_check(tmp_path, monkeypatch):
 
     state = {
         "user_message": "Add a function that returns 1",
-        "step10_modified_files": ["mod.py"],
+        "step4_modified_files": ["mod.py"],
     }
 
     result = _evaluate_faithfulness_gate(str(tmp_path), state)
@@ -265,7 +265,7 @@ def test_gate6_enabled_invokes_check_and_propagates_result(tmp_path, monkeypatch
 
     state = {
         "user_message": "Add a function that returns 1",
-        "step10_modified_files": ["mod.py"],
+        "step4_modified_files": ["mod.py"],
     }
 
     result = _evaluate_faithfulness_gate(str(tmp_path), state)
@@ -287,7 +287,7 @@ def test_gate6_evaluation_error_fails_safe(tmp_path, monkeypatch):
 
     state = {
         "user_message": "Add a function that returns 1",
-        "step10_modified_files": ["mod.py"],
+        "step4_modified_files": ["mod.py"],
     }
 
     result = _evaluate_faithfulness_gate(str(tmp_path), state)

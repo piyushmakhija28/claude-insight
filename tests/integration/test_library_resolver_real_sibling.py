@@ -196,8 +196,8 @@ def test_prompt_contains_real_skill_content():
     content, not an invented rubric. This reads the real SKILL.md from the
     sibling claude-global-library and asserts a specific, real phrase from it
     appears verbatim in the generated prompt."""
-    from langgraph_engine.level3_execution import faithfulness_gate
-    from langgraph_engine.level3_execution.faithfulness_gate import build_faithfulness_prompt
+    from langgraph_engine.sdlc_pipeline import faithfulness_gate
+    from langgraph_engine.sdlc_pipeline.faithfulness_gate import build_faithfulness_prompt
 
     resolver = build_default_resolver()
     resource = resolver.fetch_skill("hallucination-detection-core")

@@ -2,7 +2,43 @@
 
 Centralizes all step state key strings so typos become import errors
 instead of silent bugs. String VALUES are preserved for backward
-compatibility with flow-trace.json and existing state serialization.
+compatibility with flow-trace.json and existing state serialization,
+except where noted in CHANGE LOG entries below.
+
+Naming scheme (domain-driven rename, see CHANGE LOG):
+    Level 0 - Pre-Flight Sanity Guard   (was "Level -1: Auto-Fix")
+    Level 1 - Session & Context Sync    (unchanged)
+    Level 2 - SDLC Execution Core       (was "Level 3: Execution"; dead
+                                          "Level 2: Standards" retired --
+                                          it never had pipeline nodes)
+    Step 0  - Pre-Analysis & CallGraph Scan       (was "Pre-0")
+    Step 1  - Task Orchestration & Planning       (was "Step 0")
+    Step 2  - Issue Tracking (GitHub/Jira)        (was "Step 8")
+    Step 3  - Branch & Workspace Setup            (was "Step 9")
+    Step 4  - Implementation & Code Generation    (was "Step 10")
+    Step 5  - Pull Request & Automated Review     (was "Step 11")
+    Step 6  - Issue & Ticket Closure              (was "Step 12")
+    Step 7  - Documentation & UML Generation      (was "Step 13")
+    Step 8  - Final Telemetry & Summary Report    (was "Step 14")
+
+CHANGE LOG (this rename):
+    Renamed all Level/Step key VALUES to the scheme above. Deleted ~25
+    entries confirmed (via repo-wide grep) to have zero readers outside
+    this file -- they described old Steps 1-7 (pre-v1.13.0 scheme) that
+    no longer execute: STEP1_REASONING/ERROR, PLAN_STATUS, STEP2_ERROR/
+    IMPACT_ANALYSIS/GRAPH_RISK_LEVEL/AFFECTED_METHODS, STEP3_TASK_COUNT/
+    VALIDATION_STATUS/ERROR/PHASE_FILE_MAP/GRAPH_SNAPSHOT, STEP4_
+    REFINEMENT_STATUS/COMPLEXITY_ADJUSTED/ERROR/PHASE_CONTEXTS/
+    PHASE_SCOPE_FILES/OLD_CONTEXT_CLEARED, STEP5_REASONING/ERROR,
+    STEP6_VALIDATION_STATUS/ERROR, SKILL_READY, AGENT_READY,
+    PROMPT_SAVED/FILE/SIZE, STEP7_ERROR, LEVEL2_STATUS (never assigned
+    a real value anywhere -- "Level 2: Standards" has no pipeline nodes).
+    Old Steps 1-7 identifiers named above are gone; fields still
+    actively read (SELECTED_MODEL, SKILL, AGENT, SKILLS, AGENTS,
+    SKILL_DEFINITION, AGENT_DEFINITION, PLAN_REQUIRED, PLAN_EXECUTION,
+    TASKS_VALIDATED) were re-prefixed to step1_* because the single
+    consolidated Step 1 (Task Orchestration) node is what actually
+    populates them now.
 
 Usage:
     state.get(StepKeys.TASK_TYPE, "task")
@@ -31,17 +67,17 @@ class StepKeys:
     USER_MESSAGE_ORIGINAL = "user_message_original"
 
     # ------------------------------------------------------------------
-    # LEVEL -1: AUTO-FIX
+    # LEVEL 0: PRE-FLIGHT SANITY GUARD
     # ------------------------------------------------------------------
-    LEVEL_MINUS1_STATUS = "level_minus1_status"
-    LEVEL_MINUS1_USER_CHOICE = "level_minus1_user_choice"
-    LEVEL_MINUS1_RETRY_COUNT = "level_minus1_retry_count"
-    LEVEL_MINUS1_FIXES_APPLIED = "level_minus1_fixes_applied"
-    LEVEL_MINUS1_FIX_ERRORS = "level_minus1_fix_errors"
-    LEVEL_MINUS1_READY_TO_RETRY = "level_minus1_ready_to_retry"
-    LEVEL_MINUS1_MAX_ATTEMPTS_REACHED = "level_minus1_max_attempts_reached"
-    LEVEL_MINUS1_FATAL_FAILURE = "level_minus1_fatal_failure"
-    LEVEL_MINUS1_FAILED_CHECKS = "level_minus1_failed_checks"
+    PREFLIGHT_STATUS = "preflight_status"
+    PREFLIGHT_USER_CHOICE = "preflight_user_choice"
+    PREFLIGHT_RETRY_COUNT = "preflight_retry_count"
+    PREFLIGHT_FIXES_APPLIED = "preflight_fixes_applied"
+    PREFLIGHT_FIX_ERRORS = "preflight_fix_errors"
+    PREFLIGHT_READY_TO_RETRY = "preflight_ready_to_retry"
+    PREFLIGHT_MAX_ATTEMPTS_REACHED = "preflight_max_attempts_reached"
+    PREFLIGHT_FATAL_FAILURE = "preflight_fatal_failure"
+    PREFLIGHT_FAILED_CHECKS = "preflight_failed_checks"
     ENCODING_NONASCII_FILES = "encoding_nonascii_files"
     UNICODE_CHECK = "unicode_check"
     ENCODING_CHECK = "encoding_check"
@@ -50,7 +86,7 @@ class StepKeys:
     FAILURE_KB_SUGGESTIONS = "failure_kb_suggestions"
 
     # ------------------------------------------------------------------
-    # LEVEL 1: SYNC SYSTEM
+    # LEVEL 1: SESSION & CONTEXT SYNCHRONIZATION
     # ------------------------------------------------------------------
     CONTEXT_LOADED = "context_loaded"
     CONTEXT_PERCENTAGE = "context_percentage"
@@ -63,14 +99,16 @@ class StepKeys:
     SESSION_PRUNING_ERRORS = "session_pruning_errors"
     PATTERNS_DETECTED = "patterns_detected"
     PREFERENCES_DATA = "preferences_data"
-    # v1.15.2: TOON_SAVED removed (TOON compression removed in v1.15.0)
     COMPLEXITY_SCORE = "complexity_score"
     GRAPH_COMPLEXITY_SCORE = "graph_complexity_score"
     COMBINED_COMPLEXITY_SCORE = "combined_complexity_score"
     LEVEL1_STATUS = "level1_status"
 
     # ------------------------------------------------------------------
-    # LEVEL 2: STANDARDS
+    # STANDARDS (always-on, loaded from disk -- not a numbered pipeline
+    # level; the old "Level 2: Standards" had zero pipeline nodes and is
+    # retired from the level count. These fields are still populated by
+    # Level 1's context loader.)
     # ------------------------------------------------------------------
     STANDARDS_LOADED = "standards_loaded"
     STANDARDS_COUNT = "standards_count"
@@ -80,23 +118,18 @@ class StepKeys:
     TOOL_OPTIMIZATION_LOADED = "tool_optimization_loaded"
     DETECTED_FRAMEWORK = "detected_framework"
     MCP_DISCOVERED_COUNT = "mcp_discovered_count"
-    LEVEL2_STATUS = "level2_status"
 
     # ------------------------------------------------------------------
-    # STEP 0.0: PRE-FLIGHT - PROJECT CONTEXT
+    # STEP 0: PRE-ANALYSIS & CALLGRAPH SCAN
     # ------------------------------------------------------------------
-    STEP0_0_PROJECT_CONTEXT = "step0_0_project_context"
-    STEP0_0_FILES_READ = "step0_0_files_read"
-    STEP0_0_ERROR = "step0_0_error"
-    STEP0_0_EXECUTION_TIME_MS = "step0_0_execution_time_ms"
-
-    # ------------------------------------------------------------------
-    # STEP 0.1: PRE-FLIGHT - INITIAL CALLGRAPH
-    # ------------------------------------------------------------------
-    STEP0_1_INITIAL_CALLGRAPH = "step0_1_initial_callgraph"
-    STEP0_1_CALLGRAPH_AVAILABLE = "step0_1_callgraph_available"
-    STEP0_1_ERROR = "step0_1_error"
-    STEP0_1_EXECUTION_TIME_MS = "step0_1_execution_time_ms"
+    STEP0_PROJECT_CONTEXT = "step0_project_context"
+    STEP0_FILES_READ = "step0_files_read"
+    STEP0_PROJECT_CONTEXT_ERROR = "step0_project_context_error"
+    STEP0_PROJECT_CONTEXT_TIME_MS = "step0_project_context_time_ms"
+    STEP0_CALLGRAPH_SNAPSHOT = "step0_callgraph_snapshot"
+    STEP0_CALLGRAPH_AVAILABLE = "step0_callgraph_available"
+    STEP0_CALLGRAPH_ERROR = "step0_callgraph_error"
+    STEP0_CALLGRAPH_TIME_MS = "step0_callgraph_time_ms"
 
     # ------------------------------------------------------------------
     # USER PREFERENCES CONTEXT
@@ -104,127 +137,64 @@ class StepKeys:
     USER_PREFERENCES_CONTEXT = "user_preferences_context"
 
     # ------------------------------------------------------------------
-    # STEP 0: TASK ANALYSIS
+    # STEP 1: TASK ORCHESTRATION & PLANNING
     # ------------------------------------------------------------------
-    TASK_TYPE = "step0_task_type"
-    COMPLEXITY = "step0_complexity"
-    REASONING = "step0_reasoning"
-    TASKS = "step0_tasks"
-    TASK_COUNT = "step0_task_count"
-    STEP0_DOCS_FOUND = "step0_docs_found"
-    STEP0_TARGET_FILES = "step0_target_files"
-    STEP0_ERROR = "step0_error"
+    TASK_TYPE = "step1_task_type"
+    COMPLEXITY = "step1_complexity"
+    REASONING = "step1_reasoning"
+    TASKS = "step1_tasks"
+    TASK_COUNT = "step1_task_count"
+    STEP1_DOCS_FOUND = "step1_docs_found"
+    STEP1_TARGET_FILES = "step1_target_files"
+    STEP1_ERROR = "step1_error"
     ORCHESTRATION_PROMPT = "orchestration_prompt"
     ROUTING = "routing"
     ORCHESTRATOR_RESULT = "orchestrator_result"
-
-    # ------------------------------------------------------------------
-    # STEP 1: PLAN MODE DECISION
-    # ------------------------------------------------------------------
     PLAN_REQUIRED = "step1_plan_required"
-    STEP1_REASONING = "step1_reasoning"
-    STEP1_ERROR = "step1_error"
+    PLAN_EXECUTION = "step1_plan_execution"
+    TASKS_VALIDATED = "step1_tasks_validated"
+    SELECTED_MODEL = "step1_model"
+    SKILL = "step1_skill"
+    AGENT = "step1_agent"
+    SKILLS = "step1_skills"
+    AGENTS = "step1_agents"
+    SKILL_DEFINITION = "step1_skill_definition"
+    AGENT_DEFINITION = "step1_agent_definition"
 
     # ------------------------------------------------------------------
-    # STEP 2: PLAN EXECUTION
+    # STEP 2: ISSUE TRACKING (GITHUB / JIRA)
     # ------------------------------------------------------------------
-    PLAN_EXECUTION = "step2_plan_execution"
-    PLAN_STATUS = "step2_plan_status"
+    ISSUE_STATUS = "step2_status"
+    ISSUE_URL = "step2_issue_url"
     STEP2_ERROR = "step2_error"
-    STEP2_IMPACT_ANALYSIS = "step2_impact_analysis"
-    STEP2_GRAPH_RISK_LEVEL = "step2_graph_risk_level"
-    STEP2_AFFECTED_METHODS = "step2_affected_methods"
 
     # ------------------------------------------------------------------
-    # STEP 3: TASK BREAKDOWN VALIDATION
+    # STEP 3: BRANCH & WORKSPACE SETUP
     # ------------------------------------------------------------------
-    TASKS_VALIDATED = "step3_tasks_validated"
-    STEP3_TASK_COUNT = "step3_task_count"
-    STEP3_VALIDATION_STATUS = "step3_validation_status"
+    BRANCH_NAME = "step3_branch_name"
+    BRANCH_STATUS = "step3_status"
     STEP3_ERROR = "step3_error"
-    STEP3_PHASE_FILE_MAP = "step3_phase_file_map"
-    STEP3_GRAPH_SNAPSHOT = "step3_graph_snapshot"
 
     # ------------------------------------------------------------------
-    # STEP 4: TOON REFINEMENT
+    # STEP 4: IMPLEMENTATION & CODE GENERATION
     # ------------------------------------------------------------------
-    SELECTED_MODEL = "step4_model"
-    STEP4_REFINEMENT_STATUS = "step4_refinement_status"
-    STEP4_COMPLEXITY_ADJUSTED = "step4_complexity_adjusted"
+    IMPLEMENTATION_STATUS = "step4_implementation_status"
     STEP4_ERROR = "step4_error"
-    STEP4_PHASE_CONTEXTS = "step4_phase_contexts"
-    STEP4_PHASE_SCOPE_FILES = "step4_phase_scope_files"
-    STEP4_OLD_CONTEXT_CLEARED = "step4_old_context_cleared"
+    STEP4_CALL_CONTEXT = "step4_call_context"
+    STEP4_PRE_CHANGE_GRAPH = "step4_pre_change_graph"
+    STEP4_SUGGESTED_TEST_SCOPE = "step4_suggested_test_scope"
 
     # ------------------------------------------------------------------
-    # STEP 5: SKILL & AGENT SELECTION
+    # STEP 5: PULL REQUEST & AUTOMATED REVIEW
     # ------------------------------------------------------------------
-    SKILL = "step5_skill"
-    AGENT = "step5_agent"
-    SKILLS = "step5_skills"
-    AGENTS = "step5_agents"
-    SKILL_DEFINITION = "step5_skill_definition"
-    AGENT_DEFINITION = "step5_agent_definition"
-    STEP5_REASONING = "step5_reasoning"
+    REVIEW_PASSED = "step5_review_passed"
+    RETRY_COUNT = "step5_retry_count"
+    PR_URL = "step5_pr_url"
+    STEP5_STATUS = "step5_status"
     STEP5_ERROR = "step5_error"
-
-    # ------------------------------------------------------------------
-    # STEP 6: SKILL VALIDATION
-    # ------------------------------------------------------------------
-    STEP6_VALIDATION_STATUS = "step6_validation_status"
-    SKILL_READY = "step6_skill_ready"
-    AGENT_READY = "step6_agent_ready"
-    STEP6_ERROR = "step6_error"
-
-    # ------------------------------------------------------------------
-    # STEP 7: FINAL PROMPT GENERATION
-    # ------------------------------------------------------------------
-    PROMPT_SAVED = "step7_prompt_saved"
-    PROMPT_FILE = "step7_prompt_file"
-    PROMPT_SIZE = "step7_prompt_size"
-    STEP7_ERROR = "step7_error"
-
-    # ------------------------------------------------------------------
-    # STEP 8: GITHUB ISSUE CREATION
-    # ------------------------------------------------------------------
-    ISSUE_STATUS = "step8_status"
-    ISSUE_URL = "step8_issue_url"
-    STEP8_ERROR = "step8_error"
-
-    # ------------------------------------------------------------------
-    # STEP 9: BRANCH CREATION
-    # ------------------------------------------------------------------
-    BRANCH_NAME = "step9_branch_name"
-    BRANCH_STATUS = "step9_status"
-    STEP9_ERROR = "step9_error"
-
-    # ------------------------------------------------------------------
-    # STEP 10: IMPLEMENTATION EXECUTION
-    # ------------------------------------------------------------------
-    IMPLEMENTATION_STATUS = "step10_implementation_status"
-    STEP10_ERROR = "step10_error"
-    STEP10_CALL_CONTEXT = "step10_call_context"
-    STEP10_PRE_CHANGE_GRAPH = "step10_pre_change_graph"
-    STEP10_SUGGESTED_TEST_SCOPE = "step10_suggested_test_scope"
-
-    # ------------------------------------------------------------------
-    # STEP 11: PR & CODE REVIEW
-    # ------------------------------------------------------------------
-    REVIEW_PASSED = "step11_review_passed"
-    RETRY_COUNT = "step11_retry_count"
-    PR_URL = "step11_pr_url"
-    STEP11_STATUS = "step11_status"
-    STEP11_ERROR = "step11_error"
-    STEP11_IMPACT_REVIEW = "step11_impact_review"
-    STEP11_BREAKING_CHANGES = "step11_breaking_changes"
-    STEP11_RISK_ASSESSMENT = "step11_risk_assessment"
-
-    # ------------------------------------------------------------------
-    # STEP 12: ISSUE CLOSURE
-    # ------------------------------------------------------------------
-    ISSUE_CLOSED = "step12_issue_closed"
-    STEP12_STATUS = "step12_status"
-    STEP12_ERROR = "step12_error"
+    STEP5_IMPACT_REVIEW = "step5_impact_review"
+    STEP5_BREAKING_CHANGES = "step5_breaking_changes"
+    STEP5_RISK_ASSESSMENT = "step5_risk_assessment"
 
     # ------------------------------------------------------------------
     # JIRA INTEGRATION
@@ -247,20 +217,27 @@ class StepKeys:
     FIGMA_ERROR = "figma_error"
 
     # ------------------------------------------------------------------
-    # STEP 13: DOCUMENTATION
+    # STEP 6: ISSUE & TICKET CLOSURE
     # ------------------------------------------------------------------
-    DOCUMENTATION_STATUS = "step13_documentation_status"
-    UPDATE_COUNT = "step13_update_count"
-    STEP13_DOCS_CREATED = "step13_docs_created"
-    STEP13_ERROR = "step13_error"
+    ISSUE_CLOSED = "step6_issue_closed"
+    STEP6_STATUS = "step6_status"
+    STEP6_ERROR = "step6_error"
 
     # ------------------------------------------------------------------
-    # STEP 14: FINAL SUMMARY
+    # STEP 7: DOCUMENTATION & UML GENERATION
     # ------------------------------------------------------------------
-    SUMMARY_SAVED = "step14_summary_saved"
-    STEP14_STATUS = "step14_status"
-    VOICE_SENT = "step14_voice_sent"
-    STEP14_ERROR = "step14_error"
+    DOCUMENTATION_STATUS = "step7_documentation_status"
+    UPDATE_COUNT = "step7_update_count"
+    STEP7_DOCS_CREATED = "step7_docs_created"
+    STEP7_ERROR = "step7_error"
+
+    # ------------------------------------------------------------------
+    # STEP 8: FINAL TELEMETRY & SUMMARY REPORT
+    # ------------------------------------------------------------------
+    SUMMARY_SAVED = "step8_summary_saved"
+    STEP8_STATUS = "step8_status"
+    VOICE_SENT = "step8_voice_sent"
+    STEP8_ERROR = "step8_error"
 
     # ------------------------------------------------------------------
     # WORKFLOW MEMORY & OPTIMIZATION

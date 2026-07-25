@@ -1,7 +1,7 @@
 """
 Jira integration adapter.
 
-Wraps Level3JiraWorkflow (level3_steps8to12_jira.py) behind the
+Wraps Level3JiraWorkflow (jira_lifecycle.py) behind the
 AbstractIntegration lifecycle interface.
 
 Only active when ENABLE_JIRA=1 and JIRA_URL/JIRA_USER/JIRA_API_TOKEN are set.
@@ -57,7 +57,7 @@ class JiraIntegration(AbstractIntegration):
         """
         if self._workflow is None:
             try:
-                from ..level3_execution.steps8to12_jira import Level3JiraWorkflow  # type: ignore[import]
+                from ..sdlc_pipeline.jira_lifecycle import Level3JiraWorkflow  # type: ignore[import]
 
                 self._workflow = Level3JiraWorkflow()
                 logger.debug("[JiraIntegration] Level3JiraWorkflow loaded")
@@ -72,7 +72,7 @@ class JiraIntegration(AbstractIntegration):
     def create(self, context: Dict[str, Any]) -> Dict[str, Any]:
         """Step 8: Create Jira issue and cross-link to GitHub issue.
 
-        Delegates to Level3JiraWorkflow.step8_create_jira_issue.
+        Delegates to Level3JiraWorkflow.step2_create_jira_issue.
 
         Args:
             context: Pipeline state.  Expected keys:
@@ -95,7 +95,7 @@ class JiraIntegration(AbstractIntegration):
             return {"success": False, "reason": "Level3JiraWorkflow unavailable"}
 
         try:
-            result = workflow.step8_create_jira_issue(
+            result = workflow.step2_create_jira_issue(
                 title=context.get("title", context.get("issue_title", "")),
                 description=context.get("description", context.get("issue_description", "")),
                 label=context.get(
@@ -119,7 +119,7 @@ class JiraIntegration(AbstractIntegration):
     def on_branch(self, branch_name: str, context: Dict[str, Any]) -> Dict[str, Any]:
         """Step 9: Return a Jira-keyed branch name.
 
-        Delegates to Level3JiraWorkflow.step9_get_branch_name to build a
+        Delegates to Level3JiraWorkflow.step3_get_branch_name to build a
         branch name in the format label/JIRA-KEY (e.g. feature/PROJ-123).
 
         Args:
@@ -142,7 +142,7 @@ class JiraIntegration(AbstractIntegration):
             return {"success": False, "reason": "Level3JiraWorkflow unavailable"}
 
         try:
-            jira_branch = workflow.step9_get_branch_name(
+            jira_branch = workflow.step3_get_branch_name(
                 jira_issue_key=self._artifact_id,
                 label=context.get(
                     "label",
@@ -162,7 +162,7 @@ class JiraIntegration(AbstractIntegration):
     def update(self, context: Dict[str, Any]) -> Dict[str, Any]:
         """Step 10: Transition Jira issue to 'In Progress'.
 
-        Delegates to Level3JiraWorkflow.step10_start_progress.
+        Delegates to Level3JiraWorkflow.step4_start_progress.
 
         Args:
             context: Pipeline state.  Uses 'jira_issue_key' key or falls
@@ -185,7 +185,7 @@ class JiraIntegration(AbstractIntegration):
             return {"success": False, "reason": "Level3JiraWorkflow unavailable"}
 
         try:
-            result = workflow.step10_start_progress(jira_issue_key=issue_key)
+            result = workflow.step4_start_progress(jira_issue_key=issue_key)
             if result.get("success"):
                 self._state = IntegrationState.IN_PROGRESS
             return result
@@ -197,7 +197,7 @@ class JiraIntegration(AbstractIntegration):
     def on_review(self, pr_data: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
         """Step 11: Link PR to Jira issue and transition to 'In Review'.
 
-        Delegates to Level3JiraWorkflow.step11_link_pr_and_transition.
+        Delegates to Level3JiraWorkflow.step5_link_pr_and_transition.
 
         Args:
             pr_data: Dict with pr_url (str), pr_number (int).
@@ -220,7 +220,7 @@ class JiraIntegration(AbstractIntegration):
             return {"success": False, "reason": "Level3JiraWorkflow unavailable"}
 
         try:
-            result = workflow.step11_link_pr_and_transition(
+            result = workflow.step5_link_pr_and_transition(
                 jira_issue_key=issue_key,
                 pr_url=pr_data.get("pr_url", ""),
                 pr_number=int(pr_data.get("pr_number", 0)),
@@ -236,7 +236,7 @@ class JiraIntegration(AbstractIntegration):
     def close(self, context: Dict[str, Any]) -> Dict[str, Any]:
         """Step 12: Transition Jira issue to 'Done' with closing summary.
 
-        Delegates to Level3JiraWorkflow.step12_close_jira_issue.
+        Delegates to Level3JiraWorkflow.step6_close_jira_issue.
 
         Args:
             context: Pipeline state.  Expected keys:
@@ -262,7 +262,7 @@ class JiraIntegration(AbstractIntegration):
             return {"success": False, "reason": "Level3JiraWorkflow unavailable"}
 
         try:
-            result = workflow.step12_close_jira_issue(
+            result = workflow.step6_close_jira_issue(
                 jira_issue_key=issue_key,
                 pr_number=int(context.get("pr_number", 0)),
                 files_modified=context.get("files_modified", []),

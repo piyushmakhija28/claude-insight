@@ -100,8 +100,8 @@ class WorkflowContextOptimizer:
         optimized = {}
 
         # Level -1 outcome (minimal)
-        optimized["level_minus1"] = {
-            "status": state.get("level_minus1_status", "UNKNOWN"),
+        optimized["preflight_guard"] = {
+            "status": state.get("preflight_status", "UNKNOWN"),
             "auto_fixes_applied": len(state.get("auto_fix_applied", [])),
         }
 
@@ -118,27 +118,19 @@ class WorkflowContextOptimizer:
                 ),
             }
 
-        # Level 2 outcome (summary only)
-        if state.get("level2_status"):
-            optimized["level2"] = {
-                "status": state.get("level2_status"),
-                "standards_active": state.get("standards_count", 0),
-                "is_java": state.get("is_java_project", False),
-            }
-
-        # Level 3 step context (only what's needed for next step)
-        current_step = WorkflowContextOptimizer._find_current_level3_step(state)
+        # Level 2 (SDLC Execution Core) step context (only what's needed for next step)
+        current_step = WorkflowContextOptimizer._find_current_sdlc_step(state)
         if current_step:
             optimized["current_step"] = {"name": current_step.get("name"), "step_number": current_step.get("order")}
 
         return optimized
 
     @staticmethod
-    def _find_current_level3_step(state: "FlowState") -> Optional[Dict]:
-        """Find the last completed Level 3 step."""
+    def _find_current_sdlc_step(state: "FlowState") -> Optional[Dict]:
+        """Find the last completed Level 2 (SDLC Execution Core) step."""
         pipeline = state.get("pipeline", [])
-        level3_steps = [s for s in pipeline if s.get("level") == 3]
-        return level3_steps[-1] if level3_steps else None
+        sdlc_steps = [s for s in pipeline if s.get("level") == 2]
+        return sdlc_steps[-1] if sdlc_steps else None
 
     @staticmethod
     def store_step_output(state: "FlowState", step_name: str, output: Dict) -> "FlowState":

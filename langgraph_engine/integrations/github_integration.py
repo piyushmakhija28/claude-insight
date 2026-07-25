@@ -1,7 +1,7 @@
 """
 GitHub integration adapter.
 
-Wraps Level3GitHubWorkflow (level3_steps8to12_github.py) behind the
+Wraps Level3GitHubWorkflow (github_lifecycle.py) behind the
 AbstractIntegration lifecycle interface.
 
 GitHub CI is enabled when ENABLE_CI=true/1 in the environment.
@@ -62,7 +62,7 @@ class GitHubIntegration(AbstractIntegration):
         """
         if self._workflow is None:
             try:
-                from ..level3_execution.steps8to12_github import Level3GitHubWorkflow  # type: ignore[import]
+                from ..sdlc_pipeline.github_lifecycle import Level3GitHubWorkflow  # type: ignore[import]
 
                 session_dir = self._config.get("session_dir", ".")
                 repo_path = self._config.get("repo_path", ".")
@@ -82,7 +82,7 @@ class GitHubIntegration(AbstractIntegration):
     def create(self, context: Dict[str, Any]) -> Dict[str, Any]:
         """Step 8: Create GitHub issue.
 
-        Delegates to Level3GitHubWorkflow.step8_create_issue or equivalent
+        Delegates to Level3GitHubWorkflow.step2_create_issue or equivalent
         orchestration in the workflow class.
 
         Args:
@@ -105,7 +105,7 @@ class GitHubIntegration(AbstractIntegration):
             description = context.get("issue_description", context.get("description", ""))
             label = context.get("label", os.environ.get("GITHUB_DEFAULT_LABEL", "feature"))
 
-            result = workflow.step8_create_github_issue(
+            result = workflow.step2_create_github_issue(
                 title=title,
                 description=description,
                 label=label,
@@ -141,7 +141,7 @@ class GitHubIntegration(AbstractIntegration):
             return {"success": False, "reason": "Level3GitHubWorkflow unavailable"}
 
         try:
-            result = workflow.step9_create_branch(branch_name=branch_name)
+            result = workflow.step3_create_branch(branch_name=branch_name)
             return result
         except Exception as exc:
             logger.error("[GitHubIntegration] on_branch() failed: %s", exc)
@@ -185,7 +185,7 @@ class GitHubIntegration(AbstractIntegration):
             return {"success": False, "reason": "Level3GitHubWorkflow unavailable"}
 
         try:
-            result = workflow.step11_create_and_review_pr(
+            result = workflow.step5_create_and_review_pr(
                 pr_title=pr_data.get("pr_title", context.get("pr_title", "")),
                 pr_body=pr_data.get("pr_body", context.get("pr_body", "")),
                 branch_name=pr_data.get("branch_name", context.get("branch_name", "")),
@@ -219,7 +219,7 @@ class GitHubIntegration(AbstractIntegration):
 
         try:
             issue_number = int(self._artifact_id or context.get("issue_number", 0))
-            result = workflow.step12_close_issue(
+            result = workflow.step6_close_issue(
                 issue_number=issue_number,
                 pr_number=context.get("pr_number", 0),
             )
