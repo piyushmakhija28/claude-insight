@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.20.3] - 2026-07-25
+
+### Changed
+
+- **`agent_persona.py` PreToolUse gate message clarified** -- the `[GENERIC-OK]` escape hatch already accepted any generic subagent spawn, but its message only described "genuinely generic one-off tasks". Documented that it also covers recurring content-authoring tasks where no persona exists to inject because the persona/skill itself is what the task produces (e.g. authoring a new `SKILL.md`/`agent.md` for a library domain that doesn't have that persona yet). No logic change.
+
+---
+
 ## [1.20.2] - 2026-07-22
 
 ### Fixed
