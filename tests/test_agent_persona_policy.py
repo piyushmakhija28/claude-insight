@@ -109,3 +109,46 @@ class TestCheckAgentPersona:
         blocked, msg = agent_persona.check_agent_persona("Agent", "not-a-dict")
         assert blocked is False
         assert msg == ""
+
+    def test_allows_skill_md_authoring_without_marker(self):
+        blocked, msg = agent_persona.check_agent_persona(
+            "Agent",
+            {
+                "subagent_type": "general-purpose",
+                "prompt": "Write the file `skills/r-statistical-computing-core/SKILL.md` for claude-global-library.",
+            },
+        )
+        assert blocked is False
+        assert msg == ""
+
+    def test_allows_agent_md_authoring_without_marker(self):
+        blocked, msg = agent_persona.check_agent_persona(
+            "Agent",
+            {
+                "subagent_type": "general-purpose",
+                "description": "Author agents/zig-mathematics-expert/agent.md for Domain 67.",
+            },
+        )
+        assert blocked is False
+        assert msg == ""
+
+    def test_allows_skill_md_authoring_with_backslash_path(self):
+        blocked, msg = agent_persona.check_agent_persona(
+            "Agent",
+            {
+                "subagent_type": "general-purpose",
+                "prompt": r"Write skills\r-advanced-modeling-core\SKILL.md now.",
+            },
+        )
+        assert blocked is False
+        assert msg == ""
+
+    def test_still_blocks_unrelated_generic_prompt_mentioning_skills_word(self):
+        blocked, msg = agent_persona.check_agent_persona(
+            "Agent",
+            {
+                "subagent_type": "general-purpose",
+                "prompt": "Review our skills and agents directory structure and summarize it.",
+            },
+        )
+        assert blocked is True

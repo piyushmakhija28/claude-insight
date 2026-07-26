@@ -2,9 +2,25 @@
 # PreToolUse policy: block general-purpose subagent spawns lacking a library persona.
 # Windows-safe: ASCII only, no Unicode characters.
 
+import re
+
 _GENERIC_TYPES = ("general-purpose", "claude", "")
 _PERSONA_MARKER = "---persona---"
 _ESCAPE_HATCH = "[GENERIC-OK]"
+
+# Auto-exempt pattern: dispatches whose prompt targets writing a brand-new
+# skills/{name}/SKILL.md or agents/{name}/agent.md file. There is never a
+# persona to inject for these -- the file being authored IS the persona/skill,
+# and it does not exist yet. This is the single most common recurring
+# generic-dispatch case in this library's domain-creation workflow (7-Phase
+# Protocol Phase 2 "Skill Creation" / Phase 5 "Agent Creation"), so it is
+# auto-exempted permanently instead of requiring a manual [GENERIC-OK] marker
+# on every call. Scoped narrowly to this one path shape so it cannot be used
+# to silently bypass the persona requirement for unrelated generic work.
+_SKILL_OR_AGENT_AUTHOR_PATTERN = re.compile(
+    r"skills[/\\][a-z0-9][a-z0-9\-]*[/\\]SKILL\.md|agents[/\\][a-z0-9][a-z0-9\-]*[/\\]agent\.md",
+    re.IGNORECASE,
+)
 
 _BLOCK_MSG = (
     "[PRE-TOOL BLOCKED] Generic subagent spawned without a library persona!\n"
@@ -35,10 +51,11 @@ def check_agent_persona(tool_name, tool_input):
     prompt, per the Subagent Dispatch Contract. Named built-in subagent
     types (e.g. Explore, Plan) are never gated. An explicit '[GENERIC-OK]'
     marker in the prompt/description is an escape hatch for genuinely
-    generic one-off tasks, and also for recurring tasks with no persona
-    to inject because the persona/skill itself is what the task produces
-    (e.g. authoring a new SKILL.md/agent.md for a library domain that
-    doesn't have that persona yet).
+    generic one-off tasks. Dispatches that target writing a new
+    skills/{name}/SKILL.md or agents/{name}/agent.md file are auto-exempt
+    permanently (no marker needed) via _SKILL_OR_AGENT_AUTHOR_PATTERN,
+    since there is never a persona to inject there -- the file being
+    authored IS the persona/skill and does not exist yet.
 
     Args:
         tool_name (str): Name of the tool (must be 'Agent' or 'Task' to trigger).
@@ -61,6 +78,9 @@ def check_agent_persona(tool_name, tool_input):
 
     prompt = str(tool_input.get("prompt") or tool_input.get("description") or "")
     if _PERSONA_MARKER in prompt or _ESCAPE_HATCH in prompt:
+        return False, ""
+
+    if _SKILL_OR_AGENT_AUTHOR_PATTERN.search(prompt):
         return False, ""
 
     return True, _BLOCK_MSG
