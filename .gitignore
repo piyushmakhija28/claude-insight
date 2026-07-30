@@ -52,6 +52,14 @@ logs/
 .env.*
 !.env.example
 
+# Runtime data tree. PathResolver falls back to LOCAL mode when ~/.claude/memory
+# is absent (fresh machine, or CLAUDE_HOME pointed elsewhere) and creates
+# data/{config,logs,sessions,anomalies,forecasts,performance} inside the repo via
+# _ensure_local_structure(). All of it is generated runtime state, never source.
+# Only data/users.json and data/sessions/ were ignored before, so the rest showed
+# up as untracked and could be committed by accident.
+/data/
+
 # User database (contains password hashes - NEVER COMMIT)
 data/users.json
 
