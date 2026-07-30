@@ -191,6 +191,35 @@ def find_push_target(command):
     return None
 
 
+def command_settles_state_before_push(command):
+    """Return True when the command itself changes git state before its push.
+
+    Both rules ask about repository state, but a PreToolUse hook can only see the
+    state *before* the command runs. A chained ``git commit && git push`` therefore
+    looks dirty and version-less at gate time even though the push that eventually
+    happens is clean and bumped. Asking about a state the command is about to
+    replace produces a block that the user cannot act on: committing first is
+    exactly what they already wrote.
+
+    Args:
+        command: Raw command string.
+
+    Returns:
+        bool: True when a state-changing git subcommand precedes the push.
+    """
+    settling = {"commit", "stash", "merge", "rebase", "cherry-pick", "revert", "am", "apply"}
+    for segment in _split_segments(command):
+        tokens = _tokenize(segment)
+        if not tokens:
+            continue
+        subcommand, _ = _git_subcommand(tokens)
+        if subcommand == "push":
+            return False
+        if subcommand in settling:
+            return True
+    return False
+
+
 def _git(args, cwd):
     """Run a git command and return its stdout, or None on any failure.
 
@@ -339,6 +368,8 @@ def check_push_version(tool_name, tool_input):
     target = find_push_target(command)
     if target is None:
         return False, ""
+    if command_settles_state_before_push(command):
+        return False, ""
 
     repo = _repo_root(target)
     if repo is None:
@@ -383,6 +414,8 @@ def check_push_clean_tree(tool_name, tool_input):
     command = (tool_input or {}).get("command", "") or ""
     target = find_push_target(command)
     if target is None:
+        return False, ""
+    if command_settles_state_before_push(command):
         return False, ""
 
     repo = _repo_root(target)

@@ -116,6 +116,51 @@ class TestPushDetection:
         assert gate.find_push_target(command) == expected, command
 
 
+class TestCommandSettlesStateBeforePush:
+    """A command that commits before pushing must not be judged on its pre-state.
+
+    PreToolUse can only see the repository as it is before the command runs, so a
+    chained ``git commit && git push`` looks dirty and version-less at gate time
+    even though the push that eventually happens is clean and bumped. Blocking
+    there is unactionable: committing first is exactly what the user already wrote.
+    """
+
+    @pytest.mark.parametrize(
+        "command",
+        [
+            "git add . && git commit -m x && git push",
+            "git commit -qam x && git push",
+            "git stash && git push",
+            "git fetch && git rebase origin/main && git push",
+            "git checkout -b b && git add f && git commit -m m && git push -u origin b",
+        ],
+    )
+    def test_self_committing_commands_are_exempt(self, command):
+        assert gate.command_settles_state_before_push(command) is True, command
+
+    @pytest.mark.parametrize(
+        "command",
+        [
+            "git push",
+            "git status && git push",
+            "git push && git commit -m after",
+        ],
+    )
+    def test_plain_pushes_are_still_judged(self, command):
+        assert gate.command_settles_state_before_push(command) is False, command
+
+    def test_dirty_tree_does_not_block_a_self_committing_command(self, repo):
+        (repo / "app.py").write_text("dirty\n", encoding="utf-8")
+        command = "git -C {0} add . && git -C {0} commit -m x && git -C {0} push".format(repo)
+        assert gate.check_push_clean_tree("Bash", {"command": command})[0] is False
+
+    def test_version_rule_also_skipped_for_a_self_committing_command(self, repo):
+        _git(["checkout", "-q", "-b", "feature"], repo)
+        (repo / "app.py").write_text("x = 2\n", encoding="utf-8")
+        command = "git -C {0} commit -qam change && git -C {0} push".format(repo)
+        assert gate.check_push_version("Bash", {"command": command})[0] is False
+
+
 class TestVersionGate:
     """The VERSION question must be asked of the branch, not of one push."""
 
