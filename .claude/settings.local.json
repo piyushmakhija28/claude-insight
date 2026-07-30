@@ -7,7 +7,8 @@
       "Bash(git status:*)",
       "Bash(rm ~/.claude/*.txt ~/.claude/*.bak ~/.claude/*.orig ~/.claude/EXAMPLE_TEMPLATE.md ~/.claude/ORCHESTRATION_TEMPLATE.md)",
       "Bash(rm -rf ~/.claude/scripts/)",
-      "Read(//c/Users/techd/.claude/**)"
+      "Read(//c/Users/techd/.claude/**)",
+      "Bash(xargs grep -liE \"level[ _-]?\\(-?1|2|3|minus\\)|step[ _-]?\\(0|8|9|1[0-4]\\)\")"
     ]
   },
   "prefersReducedMotion": true

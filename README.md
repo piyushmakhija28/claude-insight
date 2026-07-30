@@ -843,4 +843,4 @@ Key rules:
 
 ---
 
-**Version:** 1.20.3 | **Last Updated:** 2026-07-22
+**Version:** 1.21.0 | **Last Updated:** 2026-07-22

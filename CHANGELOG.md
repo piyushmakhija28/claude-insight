@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
-## [UNRELEASED]
+## [1.21.0] - 2026-07-30
 
 ### Fixed
 
@@ -21,6 +21,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - **Warm PreToolUse daemon leaked session state across requests** -- the long-lived daemon reused `loaders._flow_trace_cache` from whichever session first populated it. Each request now binds its own session and resets session-scoped caches.
 
 - **CI went red on every branch when `mcp` 2.0.0 was released** -- unrelated to the session work, surfaced by it. `requirements.txt` carried an unbounded `mcp>=1.0.0`; mcp 2.0.0 renamed `FastMCP` to `MCPServer` and moved `mcp.server.fastmcp.*` to `mcp.server.mcpserver.*`, so `src/mcp/session_mcp_server.py`'s `from mcp.server.fastmcp import FastMCP` fails with `ModuleNotFoundError` and collection aborts. Confirmed as dependency drift rather than a code regression by re-running main's last green run (commit `66bd654`, green 2026-07-26) with a fresh install: it now fails identically. Bounded to `mcp>=1.0.0,<2.0.0`; the 2.x migration spans this repo plus the 13 `mcp-*` server repos and is tracked separately.
+
+- **`mcp` 2.x support; the `<2.0.0` bound from earlier in this release is removed** -- mcp 2.0.0 renamed `FastMCP` to `MCPServer` and moved `mcp.server.fastmcp.*` to `mcp.server.mcpserver.*`, with the v1 path gone and no alias. All 22 server files across this repo and the `mcp-*` fleet now use a two-line version probe that prefers the v2 name and falls back to v1, so each repo runs under either major version and can be upgraded independently -- a hard cut would have broken every repo not migrated in the same breath, since they all share one installed `mcp` package. Nothing else needed changing: `MCPServer(name, instructions=...)`, `@mcp.tool()` and `mcp.run(transport="stdio")` are identical in both versions. Verified by loading all 22 servers (292 tools registered, counts unchanged) and resolving the probe under both mcp 1.26.0 and 2.0.0.
 
 ### Added
 
