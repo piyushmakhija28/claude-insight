@@ -136,8 +136,8 @@ If validation fails, log the error with `level=ERROR` and skip the update — do
 ## 7. What This Rule Replaces
 
 This rule replaces hardcoded logic in:
-- `langgraph_engine/level3_execution/documentation_manager.py` → `_update_srs()` method
-- `langgraph_engine/level3_execution/documentation_generator.py` → SRS template section
+- `langgraph_engine/sdlc_pipeline/documentation_manager.py` → `_update_srs()` method
+- `langgraph_engine/sdlc_pipeline/documentation_generator.py` → SRS template section
 - `scripts/tools/post-merge-version-updater.py` → SRS update logic
 
 Scripts read this rule to decide WHAT to write. Scripts decide HOW to write it.

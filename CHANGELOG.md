@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.21.4] - 2026-07-30
+
+### Fixed
+
+- **`rules/44`, `rules/45` and `rules/46` all named a package that no longer exists** -- each claims to drive a specific module ("this rule replaces hardcoded logic in ..."), and all three pointed at `langgraph_engine/level3_execution/`, renamed to `sdlc_pipeline` in v1.20. `rules/46` also routed Step 13 through `level3_execution/routing.py`, now `routing/sdlc_pipeline_routes.py`. A rule naming a module nobody can find is indistinguishable from a rule nobody implements, which is exactly how the SRS divergence in #252 went unnoticed. Every method name the three rules cite was checked and is correct; only the package path had drifted. Corrected in both copies -- the repo's `docs/` and the global `~/.claude/rules/` -- which were byte-identical before and remain so. A test now scans every rule copy for `langgraph_engine/...` references and fails when one names a path that does not exist.
+
+---
+
 ## [1.21.3] - 2026-07-30
 
 ### Fixed

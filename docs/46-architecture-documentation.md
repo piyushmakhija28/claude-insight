@@ -153,15 +153,15 @@ Architecture docs stale: {file}:{section} missing {element}. Updating now.
 | WHICH sections to update | This rule (§3, §4) | `documentation_manager.py` reads it |
 | HOW to parse and write Markdown | `documentation_manager.py` | Script logic |
 | HOW to detect new directories | `documentation_generator.py` | Script logic |
-| WHEN Step 13 runs | Pipeline routing | `level3_execution/routing.py` |
+| WHEN Step 13 runs | Pipeline routing | `routing/sdlc_pipeline_routes.py` |
 
 ---
 
 ## 8. What This Rule Replaces
 
 This rule replaces hardcoded logic in:
-- `langgraph_engine/level3_execution/documentation_manager.py` → `update_existing_docs()` and `_update_claude_md()` methods
-- `langgraph_engine/level3_execution/documentation_generator.py` → CLAUDE.md template architecture section
+- `langgraph_engine/sdlc_pipeline/documentation_manager.py` → `update_existing_docs()` and `_update_claude_md()` methods
+- `langgraph_engine/sdlc_pipeline/documentation_generator.py` → CLAUDE.md template architecture section
 - `scripts/tools/post-merge-version-updater.py` → architecture section update logic
 
 ---

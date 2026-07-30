@@ -147,7 +147,7 @@ Diagram generation failures MUST NOT block the SDLC pipeline. Log and continue.
 
 This rule replaces hardcoded logic in:
 - `langgraph_engine/diagrams/legacy_generator.py` → diagram type list and trigger logic
-- `langgraph_engine/level3_execution/documentation_manager.py` → `_generate_drawio_diagrams()`
+- `langgraph_engine/sdlc_pipeline/documentation_manager.py` → `_generate_drawio_diagrams()`
 - `langgraph_engine/uml_generators.py` → which types to generate
 
 Scripts read this rule to decide WHICH diagrams to generate and WHEN. Scripts decide HOW to generate them.
