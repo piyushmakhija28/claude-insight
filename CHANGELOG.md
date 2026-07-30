@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [UNRELEASED]
+
+### Fixed
+
+- **`scripts/tools/sync-version.py` never propagated anything, and any argument became the project version** (#248) -- three defects, all silent. `PROJECT_ROOT` was `Path(__file__).resolve().parent.parent`, which resolves to `scripts/` rather than the repo root, so `VERSION_FILE` pointed at a non-existent `scripts/VERSION` and every markdown target reported `[SKIP] not found` while the run still exited 0. `argv[1]` was written straight into VERSION with no validation, so `sync-version.py --help` set the version to the literal string `--help` and left a stray `scripts/VERSION` behind. Targets were rewritten with `Path.write_text`, which on Windows converts the committed LF files to CRLF and turns a two-line bump into a whole-file diff. Now: root resolved three parents up, real `argparse` with semver validation that rejects before touching any file, byte-preserving writes, a missing target fails the run instead of being skipped, and the stale `docs/SYSTEM_REQUIREMENTS_SPECIFICATION.md` target replaced with the root `SRS.md` that actually exists.
+- **`scripts/tools/release.py` had the identical `parent.parent` root bug**, so it read a non-existent `scripts/VERSION` (reporting the current version as `0.0.0`) and looked for `scripts/CHANGELOG.md`.
+- **`locked_json_update` raced instead of skipping when its lock was unavailable** -- `FileLock` fails open after a 5-second timeout so a lock problem can never break a tool call, but the read-modify-write then proceeded unlocked, which is exactly what produced the original `flow-trace.corrupt-*` archives. Surfaced as a flaky assertion in the new concurrency test: it passed in isolation (180/180 updates, lock acquired every time) and failed only under full-suite load. The read-modify-write is now skipped and reported as failure when the lock cannot be taken; the durable record is the append-only `flow-trace.jsonl` stream, which a single `O_APPEND` write cannot interleave. `record_policy_execution` accordingly reports success on that append rather than on the best-effort aggregate. A full-file replace under `atomic_write_text` keeps the opposite behavior deliberately -- an unlocked replace can lose an update but can never corrupt the file.
+- **Version drift the broken sync had been hiding** -- `langgraph_engine/__init__.py` still declared `__version__ = "1.19.1"` and `SRS.md` said `1.20.0`. Both now match `VERSION`; a test asserts every hand-written reference agrees.
+
+### Removed
+
+- **`scripts/tools/bump-version.sh`** -- dead foreign code. It invoked `bump-version.py` and `update-docs.py` (neither exists in this repo) and staged `src/app.py` and `templates/base.html` (leftovers from an unrelated Flask project), on top of carrying the same off-by-one `PROJECT_ROOT`. `release.py` is the working release path.
+
+---
+
 ## [1.21.0] - 2026-07-30
 
 ### Fixed

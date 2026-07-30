@@ -119,7 +119,10 @@ def record_policy_execution(
         sub_operations (list, optional): List of sub-operations
 
     Returns:
-        bool: True if recorded successfully, False otherwise
+        bool: True when the record reached the durable append-only
+            ``flow-trace.jsonl`` stream. The ``flow-trace.json`` aggregate is
+            updated on a best-effort basis and is skipped rather than raced when
+            its lock is contended, so it is not what success is measured on.
 
     Example:
         >>> record_policy_execution(
@@ -152,7 +155,11 @@ def record_policy_execution(
         if sub_operations:
             policy_record["sub_operations"] = sub_operations
 
-        append_jsonl(session_dir / "flow-trace.jsonl", policy_record)
+        # The JSONL stream is the durable record: a single O_APPEND write cannot
+        # interleave, whereas the aggregate below is a read-modify-write that is
+        # deliberately skipped when the lock is contended. Success is therefore
+        # reported on the append, not on the aggregate.
+        appended = append_jsonl(session_dir / "flow-trace.jsonl", policy_record)
 
         def _apply(flow_trace):
             """Merge one policy record into the flow-trace aggregate.
@@ -180,13 +187,13 @@ def record_policy_execution(
 
             return flow_trace
 
-        result = locked_json_update(
+        locked_json_update(
             flow_trace_file,
             _apply,
             default=_create_empty_flow_trace(session_id),
         )
 
-        return result is not None
+        return appended
 
     except Exception as e:
         print(f"[ERROR] Failed to record policy execution: {e}")

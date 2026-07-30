@@ -417,6 +417,13 @@ class FileLock:
 def locked_json_update(path, mutator, default=None):
     """Read, mutate and rewrite a JSON file under a cross-process lock.
 
+    A read-modify-write is only safe while the lock is held, so if the lock could
+    not be acquired this skips the update and reports failure rather than racing.
+    Proceeding unlocked is what produced the original interleaved rewrites, and a
+    caller that also appends to a JSONL stream still has the durable record. This
+    is the opposite choice from a full-file replace under ``atomic_write_text``,
+    where an unlocked write can lose an update but can never corrupt the file.
+
     Args:
         path: JSON file to update.
         mutator: Callable taking the loaded object and returning the object to
@@ -424,10 +431,13 @@ def locked_json_update(path, mutator, default=None):
         default: Value to start from when the file is missing or corrupt.
 
     Returns:
-        The object that was written, or None when the update failed.
+        The object that was written, or None when the update was skipped or
+        failed. A non-None return means the write is durable.
     """
     target = Path(path)
-    with FileLock(target):
+    with FileLock(target) as lock:
+        if not lock.acquired:
+            return None
         try:
             current = default if default is not None else {}
             if target.exists():
