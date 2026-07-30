@@ -30,6 +30,25 @@ _CONNECT_TIMEOUT_S = float(os.environ.get("WORKFLOW_DAEMON_CONNECT_TIMEOUT", "0.
 _LOCK_FILE = Path.home() / ".claude" / "memory" / ".pre-tool-daemon.lock"
 
 
+def _reset_session_scoped_caches(core):
+    """Drop per-invocation caches that a long-lived daemon would otherwise reuse.
+
+    The direct path gets a fresh process per tool call, so ``loaders``' module
+    level caches are naturally per-invocation. In the daemon they would survive
+    across requests and across sessions, serving one session's flow-trace
+    context to another. Called after each request binds its own session.
+
+    Args:
+        core: The loaded ``pre_tool_enforcer.core`` module.
+    """
+    try:
+        loaders = getattr(core, "_loaders_mod", None)
+        if loaders is not None:
+            loaders._flow_trace_cache = None
+    except Exception:
+        pass
+
+
 def _send_framed(sock, obj):
     """Write one length-prefixed JSON message to a socket."""
     payload = json.dumps(obj).encode("utf-8")
@@ -180,6 +199,8 @@ def run_daemon(port=None, idle_timeout_s=1800):
                     request = _recv_framed(conn, timeout_s=5)
                     raw = request.get("stdin", "")
                     data = json.loads(raw) if raw and raw.strip() else {}
+                    core.bind_session(data)
+                    _reset_session_scoped_caches(core)
                     tool_name = data.get("tool_name", "")
                     tool_input = data.get("tool_input", {})
                     if not isinstance(tool_input, dict):

@@ -14,20 +14,26 @@ Windows-safe: ASCII only, no Unicode characters.
 # ruff: noqa: F401
 
 import subprocess
+import sys as _sys
 import time as _time_mod  # noqa: F401 -- used by node modules via import
 from datetime import datetime  # noqa: F401 -- used by node modules via import
 from pathlib import Path
 
+# The session root must match what the hooks read. The old ImportError fallback
+# pointed at ~/.claude/logs/sessions while the hooks used
+# ~/.claude/memory/logs/sessions, so a failed src/ import silently split session
+# data across two trees. session_context is the single authority for that path.
+_sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent / "hooks"))
+from session_context import get_sessions_root as _get_sessions_root  # noqa: E402
+
+_LEVEL1_SESSION_LOGS_DIR = _get_sessions_root()
+
 try:
-    import sys as _sys
-
     _sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent / "src"))
-    from utils.path_resolver import get_session_logs_dir, get_telemetry_dir
+    from utils.path_resolver import get_telemetry_dir
 
-    _LEVEL1_SESSION_LOGS_DIR = get_session_logs_dir()
     _LEVEL1_TELEMETRY_DIR = get_telemetry_dir()
 except ImportError:
-    _LEVEL1_SESSION_LOGS_DIR = Path.home() / ".claude" / "logs" / "sessions"
     _LEVEL1_TELEMETRY_DIR = Path.home() / ".claude" / "logs" / "telemetry"
 
 try:

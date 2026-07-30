@@ -10,62 +10,47 @@ import os
 import sys
 from pathlib import Path
 
+_pt_dir = os.path.dirname(os.path.abspath(__file__))
+_hooks_dir = str(Path(_pt_dir).parent)
+if _hooks_dir not in sys.path:
+    sys.path.insert(0, _hooks_dir)
+
+from session_context import get_sessions_root  # noqa: E402
+from session_context import normalize_session_id as _normalize_session_id  # noqa: E402
+from session_context import resolve_session_id as _resolve_session_id  # noqa: E402
+
 # ---------------------------------------------------------------------------
 # Session ID helper (shared dependency - defined here, imported by other mods)
 # ---------------------------------------------------------------------------
 
 
 def _get_session_id_from_progress(session_state_file=None, flag_dir=None):
-    """Get the current session ID with multiple fallback sources.
+    """Get the current session ID.
 
-    Checks in order:
-    1. Per-project session file (multi-window isolation)
-    2. Legacy global .current-session.json (backward compat)
-    3. session-progress.json (may be stale or have session_broken=true)
+    Delegates to :func:`session_context.resolve_session_id`, which prefers the
+    session bound from this hook's stdin payload over any file on disk. The
+    ``session_state_file`` argument is still honored as a last resort for
+    sessions whose progress file predates per-session scoping.
 
     Args:
-        session_state_file: Path to SESSION_STATE_FILE (injected to avoid circular import).
-        flag_dir: Path to FLAG_DIR (not used directly here, kept for signature compat).
+        session_state_file: Path to a progress file used as a final fallback.
+        flag_dir: Unused, kept for signature compatibility.
 
     Returns:
         str: Active session ID (e.g. "SESSION-20260307-115241-GQQQ"), or
              empty string when no valid session ID can be found.
     """
-    # Primary: use project_session helper (per-project + legacy fallback)
-    try:
-        _pt_dir = os.path.dirname(os.path.abspath(__file__))
-        hooks_dir = str(Path(_pt_dir).parent)
-        if hooks_dir not in sys.path:
-            sys.path.insert(0, hooks_dir)
-        from project_session import read_session_id
+    sid = _resolve_session_id()
+    if sid:
+        return sid
 
-        sid = read_session_id()
-        if sid:
-            return sid
-    except ImportError:
-        # Fallback if project_session not available: read legacy global file
-        try:
-            legacy = Path.home() / ".claude" / "memory" / ".current-session.json"
-            if legacy.exists():
-                with open(legacy, "r", encoding="utf-8") as f:
-                    data = json.load(f)
-                sid = data.get("current_session_id", "")
-                if sid and sid.startswith("SESSION-"):
-                    return sid
-        except Exception:
-            pass
-    except Exception:
-        pass
-    # Final fallback: session-progress.json
     if session_state_file is not None:
         try:
             sf = Path(session_state_file)
             if sf.exists():
                 with open(sf, "r", encoding="utf-8") as f:
                     data = json.load(f)
-                sid = data.get("session_id", "")
-                if sid and sid.startswith("SESSION-"):
-                    return sid
+                return _normalize_session_id(data.get("session_id", ""))
         except Exception:
             pass
     return ""
@@ -106,8 +91,7 @@ def _load_flow_trace_context(session_state_file=None):
         if not session_id:
             return _flow_trace_cache
 
-        memory_base = Path.home() / ".claude" / "memory"
-        trace_file = memory_base / "logs" / "sessions" / session_id / "flow-trace.json"
+        trace_file = get_sessions_root() / session_id / "flow-trace.json"
         if trace_file.exists():
             with open(trace_file, "r", encoding="utf-8") as f:
                 raw = json.load(f)
@@ -147,8 +131,7 @@ def _load_raw_flow_trace(session_state_file=None):
         session_id = _get_session_id_from_progress(session_state_file)
         if not session_id:
             return {}
-        memory_base = Path.home() / ".claude" / "memory"
-        trace_file = memory_base / "logs" / "sessions" / session_id / "flow-trace.json"
+        trace_file = get_sessions_root() / session_id / "flow-trace.json"
         if not trace_file.exists():
             return {}
         with open(trace_file, "r", encoding="utf-8") as f:

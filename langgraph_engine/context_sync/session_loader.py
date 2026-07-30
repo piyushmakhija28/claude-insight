@@ -5,6 +5,7 @@ Windows-safe: ASCII only, no Unicode characters.
 """
 
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -26,23 +27,81 @@ from .helpers import (
 logger = get_logger(__name__)
 
 
+def _session_context():
+    """Import the shared session-identity module from hooks/.
+
+    Returns:
+        module: The ``session_context`` module.
+    """
+    hooks_dir = str(Path(__file__).resolve().parent.parent.parent / "hooks")
+    if hooks_dir not in sys.path:
+        sys.path.insert(0, hooks_dir)
+    import session_context
+
+    return session_context
+
+
+def _resolve_pipeline_session_id(state):
+    """Return the session ID this pipeline run belongs to.
+
+    This node used to mint its own ``session-<timestamp>-<hex>`` identifier and
+    overwrite the one already in state, producing two IDs per run in two
+    different formats. Every hook validates the ``SESSION-`` prefix, so the
+    engine's ID was rejected by all of them and the two sides wrote to separate
+    folders. The caller's ID now wins, and a new one is minted only when there
+    is genuinely nothing to inherit.
+
+    Args:
+        state: Current FlowState (or dict) for this run.
+
+    Returns:
+        str: Canonical session ID.
+    """
+    import uuid
+
+    ctx = None
+    try:
+        ctx = _session_context()
+    except Exception:
+        ctx = None
+
+    for candidate in (state.get("session_id", ""), os.environ.get("CLAUDE_SESSION_ID", "")):
+        if not candidate:
+            continue
+        if ctx is None:
+            return candidate
+        normalized = ctx.normalize_session_id(candidate)
+        if normalized:
+            return normalized
+
+    if ctx is not None:
+        resolved = ctx.resolve_session_id()
+        if resolved:
+            return resolved
+
+    generated = "SESSION-{}-{}".format(datetime.now().strftime("%Y%m%d-%H%M%S"), uuid.uuid4().hex[:8])
+    if ctx is not None:
+        try:
+            ctx.bind_session(generated)
+            ctx.write_session_pointer(generated, project=str(state.get("project_root", "")))
+        except Exception:
+            pass
+    return generated
+
+
 def node_session_loader(state):
     """Create and load session in ~/.claude/logs/sessions/{session_id}/.
 
     This MUST run first - creates the session container for this execution.
     """
-    import uuid
-
     _step_start = _time_mod.time()
     try:
         # Debug: Check project_root before doing anything (ASCII-safe for Windows cp1252 terminals)
         _root_repr = str(state.get("project_root", "MISSING")).encode("ascii", errors="replace").decode("ascii")
         print("[LEVEL 1 SESSION_LOADER] state['project_root'] at entry: '{}'".format(_root_repr), file=sys.stderr)
 
-        # Generate unique session ID
-        session_id = "session-{}-{}".format(datetime.now().strftime("%Y%m%d-%H%M%S"), uuid.uuid4().hex[:8])
+        session_id = _resolve_pipeline_session_id(state)
 
-        # Create session folder: ~/.claude/logs/sessions/{session_id}/
         session_path = _LEVEL1_SESSION_LOGS_DIR / session_id
         session_path.mkdir(parents=True, exist_ok=True)
 

@@ -22,6 +22,7 @@ CHANGE LOG (v1.15.0):
 
 import importlib
 import json
+import os
 import sys
 import tempfile
 import types
@@ -152,11 +153,11 @@ class TestNodeSessionLoader(unittest.TestCase):
                     return node_session_loader(state)
 
     def test_returns_session_id(self):
-        """node_session_loader must return a session_id string."""
+        """node_session_loader must return a canonical session_id string."""
         result = self._run()
         self.assertIn("session_id", result)
         self.assertIsInstance(result["session_id"], str)
-        self.assertTrue(result["session_id"].startswith("session-"))
+        self.assertTrue(result["session_id"].startswith("SESSION-"))
 
     def test_session_loaded_true_on_success(self):
         """session_loaded must be True on a successful run."""
@@ -169,11 +170,32 @@ class TestNodeSessionLoader(unittest.TestCase):
         result = self._run(state=state)
         self.assertIsInstance(result, dict)
 
-    def test_session_id_format(self):
-        """session_id must follow 'session-YYYYMMDD-HHMMSS-<hex8>' format."""
-        result = self._run()
-        pattern = r"^session-\d{8}-\d{6}-[0-9a-f]{8}$"
+    def test_session_id_format_when_generated(self):
+        """A synthesized session_id must use the canonical SESSION- format.
+
+        The node no longer mints its own lowercase 'session-<ts>-<hex>' ID; that
+        second format was rejected by every hook, which validates the SESSION-
+        prefix. A fresh ID is only generated when there is nothing to inherit.
+        """
+        with patch.dict(os.environ, {"CLAUDE_SESSION_ID": ""}, clear=False):
+            result = self._run(state=_minimal_state(session_id=""))
+        pattern = r"^SESSION-[A-Za-z0-9._-]+$"
         self.assertRegex(result["session_id"], pattern)
+
+    def test_inherits_session_id_from_state(self):
+        """The caller's session_id must win over generating a new one.
+
+        Regression guard: this node used to overwrite state['session_id'] with a
+        freshly minted ID, so one pipeline run produced two different session
+        identities and the hooks wrote to a different folder than the engine.
+        """
+        result = self._run(state=_minimal_state(session_id="SESSION-inherit-me-0001"))
+        self.assertEqual(result["session_id"], "SESSION-inherit-me-0001")
+
+    def test_normalizes_inherited_claude_session_id(self):
+        """A raw Claude Code payload UUID must be normalized, not replaced."""
+        result = self._run(state=_minimal_state(session_id="f3d8ebe2-37ab-45e3-bf17-69ebacbe5fde"))
+        self.assertEqual(result["session_id"], "SESSION-f3d8ebe2-37ab-45e3-bf17-69ebacbe5fde")
 
 
 # ===========================================================================

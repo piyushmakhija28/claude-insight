@@ -16,6 +16,7 @@ Windows-Safe: ASCII only (cp1252 compatible)
 """
 
 import json
+import os
 import shutil
 import time
 from datetime import datetime
@@ -128,8 +129,7 @@ class AtomicJsonStore:
         )
         temp.replace(self._path)
 
-    def modify(self, fn: Callable[[dict], Any],
-               default: Optional[dict] = None) -> dict:
+    def modify(self, fn: Callable[[dict], Any], default: Optional[dict] = None) -> dict:
         """Atomic read-modify-write cycle.
 
         Loads the current data, applies the modification function,
@@ -177,8 +177,7 @@ class AtomicJsonStore:
             data = json.loads(path.read_text(encoding="utf-8"))
             if isinstance(data, dict):
                 return data
-        except (json.JSONDecodeError, FileNotFoundError, IOError,
-                ValueError, OSError):
+        except (json.JSONDecodeError, FileNotFoundError, IOError, ValueError, OSError):
             pass
         return None
 
@@ -363,6 +362,12 @@ class SessionIdResolver:
         """
         now = time.time()
 
+        env_sid = os.environ.get("CLAUDE_SESSION_ID", "").strip()
+        if env_sid:
+            self._cached_id = env_sid
+            self._cache_time = now
+            return env_sid
+
         if not force_refresh and self._cached_id:
             if (now - self._cache_time) < self._CACHE_TTL:
                 return self._cached_id
@@ -378,20 +383,26 @@ class SessionIdResolver:
         self._cache_time = 0.0
 
     def _resolve(self) -> str:
-        """Resolve session ID by checking file sources in priority order.
+        """Resolve session ID by checking sources in priority order.
+
+        ``CLAUDE_SESSION_ID`` is checked first: it is published by the hook that
+        received Claude Code's payload, so it is the only source guaranteed to
+        name the session the caller is actually in. The files below it can lag
+        behind or, before per-session scoping, describe a different session
+        entirely.
 
         Returns:
             Valid session ID or empty string.
         """
-        sid = self._read_session_id(
-            self.current_session_file, "current_session_id"
-        )
+        env_sid = os.environ.get("CLAUDE_SESSION_ID", "").strip()
+        if env_sid:
+            return env_sid
+
+        sid = self._read_session_id(self.current_session_file, "current_session_id")
         if sid:
             return sid
 
-        sid = self._read_session_id(
-            self.progress_file, "session_id"
-        )
+        sid = self._read_session_id(self.progress_file, "session_id")
         if sid:
             return sid
 

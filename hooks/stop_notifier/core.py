@@ -7,8 +7,15 @@ import os
 import sys
 import time
 from datetime import datetime
+from pathlib import Path
 
-from .helpers import (
+_hooks_dir = str(Path(os.path.abspath(__file__)).parent.parent)
+if _hooks_dir not in sys.path:
+    sys.path.insert(0, _hooks_dir)
+
+from session_context import bind_session  # noqa: E402
+
+from .helpers import (  # noqa: E402
     _HOOK_START,
     FLAG_DIR,
     MEMORY_BASE,
@@ -22,8 +29,8 @@ from .helpers import (
     log_s,
     read_hook_stdin,
 )
-from .post_impl import _create_pr_from_pipeline_data, _run_post_implementation_steps
-from .voice import (
+from .post_impl import _create_pr_from_pipeline_data, _run_post_implementation_steps  # noqa: E402
+from .voice import (  # noqa: E402
     _get_session_issues_file,
     get_current_session_id,
     get_session_start_default,
@@ -52,6 +59,11 @@ def main():
     Always exits 0.  Errors in any phase are caught and logged to
     stop-notifier.log without disrupting subsequent phases.
     """
+    # Bind the session before anything else runs: the maintenance subprocesses
+    # spawned below inherit CLAUDE_SESSION_ID from this process, so they must
+    # not start until the payload's session is published.
+    bind_session(read_hook_stdin())
+
     # INTEGRATION: Load git commit policies from scripts/architecture/
     # Retry up to 3 times per policy script. Warn on failure (Stop hook
     # should not hard-break; it runs AFTER the response is sent).
@@ -82,8 +94,6 @@ def main():
                 log_s("[POLICY-WARN] auto-commit-enforcer failed after 3 retries")
     except Exception:
         pass
-
-    read_hook_stdin()
 
     # =========================================================================
     # SESSION END MAINTENANCE (non-blocking, before voice)
