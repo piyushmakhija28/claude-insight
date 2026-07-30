@@ -175,6 +175,7 @@ _pol_fkb = _load_submodule(os.path.join("policies", "failure_kb.py"), "policies"
 _pol_sc = _load_submodule(os.path.join("policies", "skill_context.py"), "policies")
 _pol_we = _load_submodule(os.path.join("policies", "write_edit.py"), "policies")
 _pol_ap = _load_submodule(os.path.join("policies", "agent_persona.py"), "policies")
+_pol_pg = _load_submodule(os.path.join("policies", "push_gate.py"), "policies")
 
 # Re-export constants that tests expect on the module
 FILE_EXT_SKILL_MAP = getattr(_pol_sc, "FILE_EXT_SKILL_MAP", {})
@@ -195,6 +196,8 @@ _new_check_failure_kb_hints = _pol_fkb.check_failure_kb_hints
 _new_check_dynamic_skill_context = _pol_sc.check_dynamic_skill_context
 _new_check_write_edit = _pol_we.check_write_edit
 _new_check_agent_persona = _pol_ap.check_agent_persona
+_new_check_push_version = _pol_pg.check_push_version
+_new_check_push_clean_tree = _pol_pg.check_push_clean_tree
 
 # -----------------------------------------------------------------------
 # Backward-compat wrappers with ORIGINAL signatures and return types
@@ -455,6 +458,11 @@ _BLOCKING_POLICIES = [
     ("context_sync", check_level1_sync_complete),
     ("python_unicode", check_python_unicode),
     ("bash_commands", check_bash_commands),
+    # Push gates live here, not in the PostToolUse tracker: PostToolUse runs after
+    # the tool finishes, so the old L3.10/L3.11 blocks fired once the push had
+    # already reached the remote and could never prevent one.
+    ("push_clean_tree", _new_check_push_clean_tree),
+    ("push_version", _new_check_push_version),
     ("grep_opt", check_grep_opt),
     ("read_opt", check_read_opt),
     ("agent_persona", _new_check_agent_persona),

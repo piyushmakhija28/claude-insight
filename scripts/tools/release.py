@@ -24,7 +24,10 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
+# scripts/tools/release.py -> scripts/tools -> scripts -> repo root. Was
+# parent.parent, which resolved to scripts/ and made VERSION_FILE and
+# CHANGELOG_FILE point at files that do not exist there.
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 VERSION_FILE = PROJECT_ROOT / "VERSION"
 CHANGELOG_FILE = PROJECT_ROOT / "CHANGELOG.md"
 SYNC_SCRIPT = Path(__file__).resolve().parent / "sync-version.py"

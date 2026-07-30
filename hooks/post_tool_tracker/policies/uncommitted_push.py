@@ -1,6 +1,13 @@
 """
 post_tool_tracker/policies/uncommitted_push.py - Level 3.11 policy.
 
+SUPERSEDED: the PostToolUse hook no longer calls this. Blocking from PostToolUse
+cannot work -- it runs after the tool finishes, so the push has already reached the
+remote. The live gate is hooks/pre_tool_enforcer/policies/push_gate.py, which also
+scopes the question to the repository being pushed and ignores untracked files.
+This module is retained only because tests/test_post_tool_tracker.py exercises it
+through the legacy re-export; do not wire it back into the hook.
+
 Blocks git push when uncommitted changes exist in the repository.
 Policy: git-workflow-policy.md
 """

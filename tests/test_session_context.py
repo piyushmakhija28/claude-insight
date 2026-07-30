@@ -158,22 +158,32 @@ class TestAtomicAndLockedWrites:
         assert json.loads(target.read_text(encoding="utf-8")) == {"ok": True}
         assert list(isolated_memory.glob("atomic.json.tmp-*")) == []
 
-    def test_concurrent_updates_keep_file_parseable_and_lose_nothing(self, isolated_memory):
-        """This is the regression test for the flow-trace.corrupt-* archives."""
+    def test_concurrent_updates_never_corrupt_and_never_lose_a_reported_write(self, isolated_memory):
+        """This is the regression test for the flow-trace.corrupt-* archives.
+
+        The contract is not "every attempt lands" -- under enough contention the
+        lock times out and the update is deliberately skipped rather than raced,
+        which the caller sees as a None return. What must hold is that the file
+        stays parseable and contains exactly the writes that reported success,
+        with no duplication.
+        """
         target = isolated_memory / "flow-trace.json"
         writers = 12
         per_writer = 15
+        reported = []
+        reported_lock = threading.Lock()
 
         def worker(worker_id):
             for index in range(per_writer):
-                sc.locked_json_update(
+                record = "{}-{}".format(worker_id, index)
+                result = sc.locked_json_update(
                     target,
-                    lambda data, wid=worker_id, idx=index: {
-                        **data,
-                        "records": data.get("records", []) + ["{}-{}".format(wid, idx)],
-                    },
+                    lambda data, value=record: {**data, "records": data.get("records", []) + [value]},
                     default={"records": []},
                 )
+                if result is not None:
+                    with reported_lock:
+                        reported.append(record)
 
         threads = [threading.Thread(target=worker, args=(i,)) for i in range(writers)]
         for thread in threads:
@@ -182,8 +192,32 @@ class TestAtomicAndLockedWrites:
             thread.join()
 
         data = json.loads(target.read_text(encoding="utf-8"))
-        assert len(data["records"]) == writers * per_writer
-        assert len(set(data["records"])) == writers * per_writer
+        assert sorted(data["records"]) == sorted(reported), "file disagrees with what was reported durable"
+        assert len(set(data["records"])) == len(data["records"]), "records duplicated"
+
+    def test_update_is_skipped_rather_than_raced_when_the_lock_is_unavailable(self, isolated_memory):
+        """An unlocked read-modify-write is what corrupted the file originally."""
+        target = isolated_memory / "flow-trace.json"
+        sc.locked_json_update(target, lambda data: {"records": ["first"]}, default={"records": []})
+
+        def never_acquires(self):
+            """Stand in for a lock that timed out, without waiting for the timeout."""
+            self.acquired = False
+            return self
+
+        original_enter = sc.FileLock.__enter__
+        sc.FileLock.__enter__ = never_acquires
+        try:
+            result = sc.locked_json_update(
+                target,
+                lambda data: {**data, "records": data.get("records", []) + ["second"]},
+                default={"records": []},
+            )
+        finally:
+            sc.FileLock.__enter__ = original_enter
+
+        assert result is None, "must report failure instead of writing unlocked"
+        assert json.loads(target.read_text(encoding="utf-8")) == {"records": ["first"]}
 
     def test_corrupt_file_recovers_to_default(self, isolated_memory):
         target = isolated_memory / "broken.json"
