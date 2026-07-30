@@ -140,11 +140,70 @@ def _setup_graceful_shutdown():
         signal.signal(signal.SIGINT, _handle_signal)
 
 
+def _session_context():
+    """Import the shared session-identity module from hooks/.
+
+    Returns:
+        module: The ``session_context`` module.
+    """
+    hooks_dir = str(Path(__file__).resolve().parent.parent / "hooks")
+    if hooks_dir not in sys.path:
+        sys.path.insert(0, hooks_dir)
+    import session_context
+
+    return session_context
+
+
+def _bind_hook_session(event: dict) -> str:
+    """Bind this process to the session named in the UserPromptSubmit payload.
+
+    Claude Code's ``session_id`` is stable for the whole conversation, so it is
+    the identity the pipeline and every hook must share. The pointer file is
+    also refreshed here because hook processes that receive no payload (and
+    subprocesses spawned later) can only discover the session through it.
+
+    Args:
+        event: Parsed hook event JSON.
+
+    Returns:
+        str: Bound canonical session ID, or "" when the payload had none.
+    """
+    try:
+        ctx = _session_context()
+        session_id = ctx.bind_session(event)
+        if session_id:
+            ctx.write_session_pointer(session_id, project=event.get("cwd", ""))
+        return session_id
+    except Exception:
+        return ""
+
+
 def _generate_session_id() -> str:
-    """Generate a unique session ID."""
+    """Return the session ID for this run.
+
+    Prefers the session bound from the hook payload so the pipeline writes into
+    the same session folder the hooks read from. Only synthesizes an ID when
+    invoked outside a hook (e.g. a manual CLI run), and publishes that ID to the
+    pointer file so the hooks can follow it.
+    """
     import uuid
 
-    return f"SESSION-{datetime.now().strftime('%Y%m%d-%H%M%S')}-{uuid.uuid4().hex[:4].upper()}"
+    try:
+        ctx = _session_context()
+        bound = ctx.resolve_session_id()
+        if bound:
+            return bound
+    except Exception:
+        pass
+
+    generated = f"SESSION-{datetime.now().strftime('%Y%m%d-%H%M%S')}-{uuid.uuid4().hex[:4].upper()}"
+    try:
+        ctx = _session_context()
+        ctx.bind_session(generated)
+        ctx.write_session_pointer(generated)
+    except Exception:
+        pass
+    return generated
 
 
 def _get_project_root() -> str:
@@ -166,8 +225,11 @@ def _get_project_root() -> str:
 def _capture_user_message() -> str:
     """Capture user message from stdin hook event.
 
-    Hook passes JSON event via stdin: {"prompt":"...", "cwd":"...", ...}
-    We extract the actual user prompt and set cwd for project detection.
+    Hook passes JSON event via stdin: {"prompt":"...", "cwd":"...",
+    "session_id":"...", ...}. The prompt is returned, while cwd and session_id
+    are published to the environment: session_id is the only identifier that is
+    stable across every hook in one conversation, so binding it here makes the
+    pipeline and all hooks agree on one session.
     """
     import sys
 
@@ -187,6 +249,7 @@ def _capture_user_message() -> str:
                     cwd = event.get("cwd", "").strip()
                     if cwd:
                         os.environ["CLAUDE_CWD"] = cwd
+                    _bind_hook_session(event)
                     if user_message:
                         return user_message
                 except (json.JSONDecodeError, TypeError):
@@ -254,13 +317,17 @@ def run_langgraph_engine(session_id: str = "", project_root: str = "", user_mess
             "Install with: pip install langgraph>=0.2.0 langchain-core>=0.3.0"
         )
 
-    # Initialize
-    if not session_id:
+    # Initialize. The message is captured first because reading the hook event
+    # is what binds the payload's session_id; resolving the session before that
+    # would synthesize a fresh ID and diverge from what the hooks see.
+    if not user_message:
+        user_message = _capture_user_message()
+    if session_id:
+        session_id = _bind_hook_session({"session_id": session_id}) or session_id
+    else:
         session_id = _generate_session_id()
     if not project_root:
         project_root = _get_project_root()
-    if not user_message:
-        user_message = _capture_user_message()
 
     if DEBUG:
         print(f"[DEBUG] LangGraph Engine v{VERSION}")

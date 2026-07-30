@@ -65,6 +65,35 @@ def _neutralize_llm_provider_chain(monkeypatch):
 
 
 @pytest.fixture(autouse=True)
+def _isolate_session_identity(monkeypatch):
+    """Stop one test's session identity from leaking into the next.
+
+    ``session_context.bind_session()`` publishes the active session into the
+    ``CLAUDE_SESSION_ID`` process environment variable, which is exactly what lets a
+    hook share its identity with child processes. Inside a single pytest process that
+    same mechanism is contagious: any test that drives a code path reaching
+    ``bind_session`` -- most notably ``node_session_loader`` synthesizing an ID when it
+    has nothing to inherit -- sets the variable for every test that runs after it.
+    Because the variable has top priority in ``resolve_session_id()``, later tests that
+    stage a pointer file or expect no session at all silently read the leaked ID.
+
+    This is invisible on a developer machine that already has a valid pointer file,
+    because the synthesizing branch never runs there. On CI, where ``$HOME/.claude`` is
+    empty, it fails a dozen unrelated assertions.
+
+    The session-root overrides are cleared for the same reason. ``get_memory_base()``
+    honors them ahead of ``Path.home()``, so a developer who exports ``CLAUDE_HOME``
+    would see every test that patches ``Path.home()`` read the wrong tree. Clearing
+    them here makes the suite depend only on what each test stages. Tests that want a
+    specific root still set it themselves and are unaffected, since this runs first.
+    """
+    monkeypatch.delenv("CLAUDE_SESSION_ID", raising=False)
+    monkeypatch.delenv("CLAUDE_HOME", raising=False)
+    monkeypatch.delenv("CLAUDE_IDE_DATA_DIR", raising=False)
+    monkeypatch.delenv("CLAUDE_IDE_INSTALL_DIR", raising=False)
+
+
+@pytest.fixture(autouse=True)
 def _repair_langgraph_engine_attrs():
     """Re-attach cached ``langgraph_engine.*`` submodules to their parent packages.
 

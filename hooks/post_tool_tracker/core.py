@@ -93,6 +93,8 @@ else:
     # collision when tests register the shim script under that module name.
     import importlib.util as _pkg_ilu
 
+    from session_context import bind_session, get_session_progress_file
+
     def _load_submodule(name, filename):
         """Load a post_tool_tracker submodule by file path."""
         _sub_path = Path(__file__).resolve().parent / filename
@@ -290,6 +292,10 @@ else:
             sys.stderr.write("[L3.9] Post-tool tracking complete (read error: " + str(e)[:30] + ")\n")
             sys.stderr.flush()
             sys.exit(0)
+
+        global SESSION_STATE_FILE
+        bind_session(data)
+        SESSION_STATE_FILE = get_session_progress_file()
 
         tool_name = data.get("tool_name", "")
         tool_input = data.get("tool_input", {})

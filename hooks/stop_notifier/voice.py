@@ -3,44 +3,37 @@ Windows-safe: ASCII only.
 """
 
 import json
+import os
 import subprocess
 import sys
 from datetime import datetime
 
 from .helpers import MEMORY_BASE, VOICE_ENABLED, VOICE_SCRIPT, delete_flag, log_s, read_flag_message
 
+_hooks_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if _hooks_dir not in sys.path:
+    sys.path.insert(0, _hooks_dir)
+
+from session_context import get_sessions_root  # noqa: E402
+from session_context import resolve_session_id as _resolve_session_id  # noqa: E402
+
 
 def get_current_session_id():
-    """Read the active session ID from per-project or legacy session file.
+    """Read the active session ID.
+
+    Delegates to :func:`session_context.resolve_session_id` so the Stop hook
+    finalizes the same session the pre-tool and post-tool hooks were writing to.
 
     Returns:
         str or None: Session ID string (e.g. 'SESSION-20260305-123456-ABCD'),
-                     or None when no session file is found or unreadable.
+                     or None when no session can be resolved.
     """
-    try:
-        from project_session import read_session_id
-
-        sid = read_session_id()
-        return sid if sid else None
-    except ImportError:
-        pass
-    # Legacy fallback
-    current_session_file = MEMORY_BASE / ".current-session.json"
-    if not current_session_file.exists():
-        return None
-    try:
-        with open(current_session_file, "r", encoding="utf-8") as f:
-            data = json.load(f)
-        return data.get("current_session_id")
-    except Exception:
-        return None
+    sid = _resolve_session_id()
+    return sid if sid else None
 
 
 def _get_session_issues_file():
     """Resolve the path to github-issues.json for the active session.
-
-    Tries to read the session ID from .current-session.json first; falls back
-    to reading session-progress.json when that file is unavailable.
 
     Returns:
         Path or None: Path to the github-issues.json file if the session ID
@@ -48,19 +41,29 @@ def _get_session_issues_file():
     """
     try:
         session_id = get_current_session_id()
-        if not session_id:
-            # Fallback: read from session-progress.json
-            progress_file = MEMORY_BASE / "logs" / "session-progress.json"
-            if progress_file.exists():
-                with open(progress_file, "r", encoding="utf-8") as f:
-                    data = json.load(f)
-                session_id = data.get("session_id", "")
         if session_id:
-            issues_file = MEMORY_BASE / "logs" / "sessions" / session_id / "github-issues.json"
-            return issues_file
+            return get_sessions_root() / session_id / "github-issues.json"
     except Exception:
         pass
     return None
+
+
+def _session_progress_file(session_id):
+    """Return the progress file for a session, preferring the per-session copy.
+
+    Progress counters are scoped per session now; the old global file is only
+    consulted when a session predates that change.
+
+    Args:
+        session_id: Session identifier.
+
+    Returns:
+        Path: Existing per-session progress file, else the legacy global file.
+    """
+    per_session = get_sessions_root() / session_id / "progress.json"
+    if per_session.exists():
+        return per_session
+    return MEMORY_BASE / "logs" / "session-progress.json"
 
 
 def get_session_summary_for_voice():
@@ -74,7 +77,7 @@ def get_session_summary_for_voice():
         return ""
 
     # Try reading the summary JSON
-    summary_file = MEMORY_BASE / "logs" / "sessions" / session_id / "session-summary.json"
+    summary_file = get_sessions_root() / session_id / "session-summary.json"
     if summary_file.exists():
         try:
             with open(summary_file, "r", encoding="utf-8") as f:
@@ -115,7 +118,7 @@ def get_session_summary_for_voice():
             log_s(f"[summary] Error loading summary for voice: {e}")
 
     # Fallback: try session progress
-    progress_file = MEMORY_BASE / "logs" / "session-progress.json"
+    progress_file = _session_progress_file(session_id)
     if progress_file.exists():
         try:
             with open(progress_file, "r", encoding="utf-8") as f:

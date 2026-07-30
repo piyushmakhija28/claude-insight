@@ -252,6 +252,13 @@ def _run_via_daemon_or_fallback():
     except Exception:
         raw_stdin = ""
 
+    try:
+        import json as _json
+
+        _core_mod.bind_session(_json.loads(raw_stdin) if raw_stdin.strip() else {})
+    except Exception:
+        pass
+
     daemon_mod = None
     try:
         import importlib.util as _dilu

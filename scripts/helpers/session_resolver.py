@@ -1,56 +1,31 @@
 """helpers/session_resolver.py - Shared session ID resolution.
 
-Common logic for resolving the current Claude Code session ID,
-used by pre_tool_enforcer, post_tool_tracker, and github_operations.
+Thin wrapper over ``hooks/session_context.py``, which owns session identity for
+the whole system. Kept because github_operations and other scripts import this
+module by name.
 
-Session resolution order:
-  1. Per-project session file (multi-window isolation)
-  2. Legacy global .current-session.json (backward compat)
-  3. session-progress.json (may be stale)
+Resolution order is defined by :func:`session_context.resolve_session_id`:
+the session bound from the current hook payload, then the pointer file, then the
+legacy progress file.
 
 Windows-safe: ASCII only, no Unicode characters.
 """
 
-import json
-import os
+import sys
 from pathlib import Path
+
+_HOOKS_DIR = str(Path(__file__).resolve().parent.parent.parent / "hooks")
+if _HOOKS_DIR not in sys.path:
+    sys.path.insert(0, _HOOKS_DIR)
+
+from session_context import resolve_session_id as _resolve_session_id  # noqa: E402
 
 
 def get_current_session_id():
-    """Get the current session ID with multiple fallback sources.
+    """Get the current session ID.
 
     Returns:
-        str or None: Session ID string, or None if unavailable.
+        str or None: Session ID string, or None when unavailable.
     """
-    # Method 1: Per-project session file
-    try:
-        from project_session import get_project_session_file
-
-        proj_file = get_project_session_file()
-        if proj_file and Path(proj_file).exists():
-            with open(proj_file, "r", encoding="utf-8") as f:
-                data = json.load(f)
-            sid = data.get("session_id", "")
-            if sid:
-                return sid
-    except Exception:
-        pass
-
-    # Method 2: Legacy global session file
-    try:
-        legacy_file = Path.home() / ".claude" / "memory" / ".current-session.json"
-        if legacy_file.exists():
-            with open(legacy_file, "r", encoding="utf-8") as f:
-                data = json.load(f)
-            sid = data.get("session_id", "")
-            if sid:
-                return sid
-    except Exception:
-        pass
-
-    # Method 3: CLAUDE_SESSION_ID env var
-    sid = os.environ.get("CLAUDE_SESSION_ID", "")
-    if sid:
-        return sid
-
-    return None
+    sid = _resolve_session_id()
+    return sid if sid else None

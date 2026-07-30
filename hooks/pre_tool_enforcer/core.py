@@ -83,17 +83,13 @@ except Exception:
 # Path constants (from ide_paths or fallback)
 # ---------------------------------------------------------------------------
 try:
-    from ide_paths import CURRENT_SESSION_FILE, FLAG_DIR
+    from ide_paths import FLAG_DIR
 except ImportError:
     FLAG_DIR = Path.home() / ".claude"
-    CURRENT_SESSION_FILE = Path.home() / ".claude" / "memory" / ".current-session.json"
 
-try:
-    from project_session import get_project_session_file
+from session_context import bind_session, get_pointer_file  # noqa: E402
 
-    CURRENT_SESSION_FILE = get_project_session_file()
-except Exception:
-    pass
+CURRENT_SESSION_FILE = get_pointer_file()
 
 # Track hook start time for total duration
 _HOOK_START = datetime.now()
@@ -574,7 +570,20 @@ def main(_pre_read_raw=None):
     """
     _track_start_time = datetime.now()
 
-    # Load flow-trace context from 3-level-flow (cached per invocation)
+    # Read tool info from stdin (or use the pre-read text, see docstring).
+    # This must precede any session-scoped load: bind_session() below publishes
+    # the payload's session_id, and _load_flow_trace_context() caches whatever
+    # session was active when it first ran.
+    try:
+        raw = _pre_read_raw if _pre_read_raw is not None else sys.stdin.read()
+        if not raw or not raw.strip():
+            sys.exit(0)
+        data = json.loads(raw)
+    except Exception:
+        sys.exit(0)
+
+    bind_session(data)
+
     flow_ctx = _load_flow_trace_context()
 
     # Warm up token-optimizer MCP module (non-blocking)
@@ -587,15 +596,6 @@ def main(_pre_read_raw=None):
         context_budget_status()
     except Exception:
         pass
-
-    # Read tool info from stdin (or use the pre-read text, see docstring)
-    try:
-        raw = _pre_read_raw if _pre_read_raw is not None else sys.stdin.read()
-        if not raw or not raw.strip():
-            sys.exit(0)
-        data = json.loads(raw)
-    except Exception:
-        sys.exit(0)
 
     tool_name = data.get("tool_name", "")
     tool_input = data.get("tool_input", {})

@@ -306,11 +306,28 @@ class TestProjectSession:
             sid = self.ps.read_session_id()
         assert sid == ""
 
-    def test_read_session_id_returns_empty_for_non_session_prefix(self, tmp_path):
-        """read_session_id returns empty for IDs not starting with SESSION-."""
+    def test_read_session_id_normalizes_id_without_session_prefix(self, tmp_path):
+        """An ID lacking the SESSION- prefix is normalized, not discarded.
+
+        Rejecting unprefixed IDs is what broke session identity: Claude Code's
+        own payload session_id is a bare UUID with no prefix, so every resolver
+        threw it away and fell back to a stale pointer file.
+        """
         session_file = tmp_path / ".claude" / "memory" / ".current-session.json"
         session_file.parent.mkdir(parents=True, exist_ok=True)
         _write_json(session_file, {"current_session_id": "TASK-20260101-080000-WXYZ"})
+        with patch("pathlib.Path.home", return_value=tmp_path):
+            import importlib
+
+            importlib.reload(self.ps)
+            sid = self.ps.read_session_id()
+        assert sid == "SESSION-TASK-20260101-080000-WXYZ"
+
+    def test_read_session_id_returns_empty_for_unusable_id(self, tmp_path):
+        """An ID that cannot be a directory name is still rejected."""
+        session_file = tmp_path / ".claude" / "memory" / ".current-session.json"
+        session_file.parent.mkdir(parents=True, exist_ok=True)
+        _write_json(session_file, {"current_session_id": "../escape/attempt"})
         with patch("pathlib.Path.home", return_value=tmp_path):
             import importlib
 

@@ -11,20 +11,20 @@ from pathlib import Path
 # ---------------------------------------------------------------------------
 # Path resolution for ide_paths / project_session
 # ---------------------------------------------------------------------------
+_pe_dir = os.path.dirname(os.path.abspath(__file__))
+_hooks_dir = os.path.dirname(_pe_dir)
+if _hooks_dir not in sys.path:
+    sys.path.insert(0, _hooks_dir)
+
+from session_context import get_pointer_file, get_sessions_root  # noqa: E402
+from session_context import resolve_session_id as _resolve_session_id  # noqa: E402
+
 try:
-    from ide_paths import CURRENT_SESSION_FILE, FLAG_DIR
+    from ide_paths import FLAG_DIR
 except ImportError:
     FLAG_DIR = Path.home() / ".claude"
-    try:
-        _pe_dir = os.path.dirname(os.path.abspath(__file__))
-        _hooks_dir = os.path.dirname(_pe_dir)
-        if _hooks_dir not in sys.path:
-            sys.path.insert(0, _hooks_dir)
-        from project_session import get_project_session_file
 
-        CURRENT_SESSION_FILE = get_project_session_file()
-    except ImportError:
-        CURRENT_SESSION_FILE = Path.home() / ".claude" / "memory" / ".current-session.json"
+CURRENT_SESSION_FILE = get_pointer_file()
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -41,33 +41,17 @@ _failure_kb_cache = None
 
 
 def get_current_session_id():
-    """Read the active session ID from .current-session.json or session-progress.json.
+    """Read the active session ID.
 
-    Falls back to session-progress.json if .current-session.json is missing
-    (which happens after /clear or fresh sessions).
-    Returns empty string if not available (fail open - don't block on missing data).
+    Delegates to :func:`session_context.resolve_session_id`: the session bound
+    from this hook's stdin payload wins, then the pointer file, then the legacy
+    progress file. Returns an empty string when nothing resolves so callers
+    fail open rather than blocking a tool call on missing data.
+
+    Returns:
+        str: Canonical session ID, or "" when unresolvable.
     """
-    try:
-        if CURRENT_SESSION_FILE.exists():
-            with open(CURRENT_SESSION_FILE, "r", encoding="utf-8") as f:
-                data = json.load(f)
-            sid = data.get("current_session_id", "")
-            if sid:
-                return sid
-    except Exception:
-        pass
-    # Fallback: read from session-progress.json (written by 3-level-flow.py)
-    try:
-        progress_file = Path.home() / ".claude" / "memory" / "logs" / "session-progress.json"
-        if progress_file.exists():
-            with open(progress_file, "r", encoding="utf-8") as f:
-                data = json.load(f)
-            sid = data.get("session_id", "")
-            if sid and sid.startswith("SESSION-"):
-                return sid
-    except Exception:
-        pass
-    return ""
+    return _resolve_session_id()
 
 
 def _load_flow_trace_context():
@@ -87,8 +71,7 @@ def _load_flow_trace_context():
         if not session_id:
             return _flow_trace_cache
 
-        memory_base = Path.home() / ".claude" / "memory"
-        trace_file = memory_base / "logs" / "sessions" / session_id / "flow-trace.json"
+        trace_file = get_sessions_root() / session_id / "flow-trace.json"
         if trace_file.exists():
             with open(trace_file, "r", encoding="utf-8") as f:
                 raw = json.load(f)
@@ -127,8 +110,7 @@ def _load_raw_flow_trace():
         session_id = get_current_session_id()
         if not session_id:
             return None
-        memory_base = Path.home() / ".claude" / "memory"
-        trace_file = memory_base / "logs" / "sessions" / session_id / "flow-trace.json"
+        trace_file = get_sessions_root() / session_id / "flow-trace.json"
         if not trace_file.exists():
             return None
         with open(trace_file, "r", encoding="utf-8") as f:
@@ -194,8 +176,7 @@ def find_session_flag(pattern_prefix, current_session_id):
     """
     # v4.4.0: Check session folder first (new location)
     flag_name = pattern_prefix.lstrip(".") + ".json"
-    memory_base = Path.home() / ".claude" / "memory"
-    session_flag_path = memory_base / "logs" / "sessions" / current_session_id / "flags" / flag_name
+    session_flag_path = get_sessions_root() / current_session_id / "flags" / flag_name
 
     if session_flag_path.exists():
         try:

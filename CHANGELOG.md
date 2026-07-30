@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [UNRELEASED]
+
+### Fixed
+
+- **Hooks were not session-aware and fought each other over shared files** -- Claude Code passes a `session_id` in every hook stdin payload and no hook read it. Seven independent resolvers (`project_session.py`, `policy_tracking_helper.py`, `pre_tool_enforcer/loaders.py`, `post_tool_tracker/loaders.py`, `stop_notifier/voice.py`, `src/mcp/base/persistence.py`, `scripts/helpers/session_resolver.py`) each guessed the session from `.current-session.json`, a pointer file only the `session_create` MCP tool ever wrote -- so it had been frozen since 2026-03-17 while hooks kept appending to that 4-month-old session folder. Two of those resolvers were dead code: `scripts/helpers/session_resolver.py` read a `session_id` key the pointer file never had, and every resolver rejected IDs lacking a `SESSION-` prefix, which is exactly the shape of Claude's own payload UUID.
+- **New `hooks/session_context.py` owns session identity** -- resolution order is bound payload `session_id` -> `CLAUDE_SESSION_ID` env -> pointer file -> legacy progress file. Each hook calls `bind_session(payload)` immediately after parsing stdin, which publishes the identity process-wide (and to child processes) so no call signature had to change. All seven resolvers now delegate to it.
+- **Two incompatible session ID generators produced two folders per run** -- `context_sync/session_loader.py` minted `session-<ts>-<hex8>` and overwrote the `SESSION-<ts>-<suffix>` ID that `3-level-flow.py` had already set. Hooks validate the `SESSION-` prefix, so the engine's ID was rejected by all of them. The node now inherits the caller's ID and normalizes it; generation is a last-resort fallback only.
+- **Two session roots (split brain)** -- hooks hardcoded `{memory}/logs/sessions` while `context_sync/helpers.py` fell back to `~/.claude/logs/sessions` on a failed `src/` import, leaving 569 session directories in a tree nothing read. Both sides now resolve the root through `session_context.get_sessions_root()`.
+- **`flow-trace.json` corruption from concurrent read-modify-write** -- `record_policy_execution()` read, mutated and rewrote the file with no lock, from pre-tool, post-tool and stop hooks firing concurrently; one session folder held 44 `flow-trace.corrupt-*` archives (three within the same minute). Writes now run under a cross-process `FileLock` with atomic `os.replace`, plus an append-only `flow-trace.jsonl` companion stream written with a single `O_APPEND` `os.write`.
+- **`session-progress.json` was one global file shared by every session and project** -- observed carrying `modified_files_since_commit` entries from `claude-global-library` while the active session was `claude-workflow-engine`. Progress is now per-session at `sessions/{SESSION_ID}/progress.json`, stamped with its `session_id`; the global file remains read-only as a fallback for pre-existing sessions. `save_session_progress()` also no longer truncates the target with mode `"w"` before taking its lock.
+- **Unresolved sessions fabricated a `sessions/unknown/` folder** -- `policy_tracking_helper.get_session_id()` defaulted to the literal string `"unknown"`, so every failed resolution appended into one directory that looked like a real session. Those records now route to `sessions/_unresolved/`.
+- **Warm PreToolUse daemon leaked session state across requests** -- the long-lived daemon reused `loaders._flow_trace_cache` from whichever session first populated it. Each request now binds its own session and resets session-scoped caches.
+
+- **CI went red on every branch when `mcp` 2.0.0 was released** -- unrelated to the session work, surfaced by it. `requirements.txt` carried an unbounded `mcp>=1.0.0`; mcp 2.0.0 renamed `FastMCP` to `MCPServer` and moved `mcp.server.fastmcp.*` to `mcp.server.mcpserver.*`, so `src/mcp/session_mcp_server.py`'s `from mcp.server.fastmcp import FastMCP` fails with `ModuleNotFoundError` and collection aborts. Confirmed as dependency drift rather than a code regression by re-running main's last green run (commit `66bd654`, green 2026-07-26) with a fresh install: it now fails identically. Bounded to `mcp>=1.0.0,<2.0.0`; the 2.x migration spans this repo plus the 13 `mcp-*` server repos and is tracked separately.
+
+### Added
+
+- **`scripts/tools/migrate_session_dirs.py`** -- consolidates historical session directories onto one root and one ID format. Move-only, never deletes; anything not cleanly normalizable goes to a timestamped `sessions/_archive/` folder. Dry run by default, `--apply` to execute. Applied: 1264 directories case-normalized, 148 renamed, 2032 files merged, orphan root drained, `unknown/` archived, 0 failures, 0 empty directories left behind.
+- **`tests/test_session_context.py`** -- 34 tests covering normalization of all three ID forms, resolution precedence, per-session scoping, path-traversal rejection, IDE-mode roots, and concurrency regression tests that assert 180 threaded updates leave the aggregate parseable with no lost records and 200 concurrent JSONL appends produce exactly 200 valid lines.
+
+---
+
 ## [1.20.3] - 2026-07-25
 
 ### Changed

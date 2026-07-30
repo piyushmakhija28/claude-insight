@@ -13,8 +13,17 @@ Handles:
 """
 
 import json
+import os
+import sys
 from datetime import datetime
 from pathlib import Path
+
+_hooks_dir = str(Path(os.path.abspath(__file__)).parent.parent)
+if _hooks_dir not in sys.path:
+    sys.path.insert(0, _hooks_dir)
+
+from session_context import FileLock, atomic_write_text  # noqa: E402
+from session_context import resolve_session_id as _resolve_session_id  # noqa: E402
 
 # ---------------------------------------------------------------------------
 # Progress delta per tool call (approximate % contribution)
@@ -109,23 +118,27 @@ def load_session_progress(session_state_file):
 
 
 def save_session_progress(state, session_state_file):
-    """Persist the session progress dict to SESSION_STATE_FILE with file locking.
+    """Persist the session progress dict atomically under a cross-process lock.
 
-    Creates parent directories if they do not exist.  Uses _lock_file/_unlock_file
-    to prevent data corruption from concurrent PostToolUse hook invocations.
-    Errors are silently swallowed so this function never disrupts the hook flow.
+    Opening the target with mode "w" truncates it before any lock can be taken,
+    so a concurrent reader could see an empty file. The write now goes to a temp
+    file that is renamed into place while holding a sidecar lock, which makes
+    the swap atomic for readers. The active session ID is stamped into the state
+    so the legacy session-resolution fallback has something to read.
 
     Args:
         state (dict): Progress state to persist (must be JSON-serialisable).
-        session_state_file: Path-like pointing to session-progress.json.
+        session_state_file: Path-like pointing to the progress file.
     """
     try:
-        sf = Path(session_state_file)
-        sf.parent.mkdir(parents=True, exist_ok=True)
-        with open(sf, "w", encoding="utf-8") as f:
-            _lock_file(f)
-            json.dump(state, f, indent=2)
-            _unlock_file(f)
+        if isinstance(state, dict) and "session_id" not in state:
+            resolved = _resolve_session_id()
+            if resolved:
+                state["session_id"] = resolved
+
+        target = Path(session_state_file)
+        with FileLock(target):
+            atomic_write_text(target, json.dumps(state, indent=2))
     except Exception:
         pass
 
