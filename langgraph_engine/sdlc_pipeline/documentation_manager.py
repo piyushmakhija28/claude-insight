@@ -9,6 +9,7 @@ Delegates to DocumentationGenerator for full doc creation on fresh projects.
 """
 
 import logging
+import re
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -443,25 +444,121 @@ class Level3DocumentationManager:
         except Exception as e:
             logger.warning("Could not update CHANGELOG.md: %s", e)
 
+    def _next_fr_number(self, existing: str) -> int:
+        """Return the next unused FR number in an SRS document.
+
+        rules/44 section 6 requires that a new entry never reuse an existing
+        ``FR-{n}``. Every entry used to be written as the literal ``FR-NEW``, so
+        repeated runs produced a document full of indistinguishable entries.
+
+        Args:
+            existing: Current SRS content.
+
+        Returns:
+            int: One past the highest FR number present, or 1 when there are none.
+        """
+        numbers = [int(n) for n in re.findall(r"FR-(\d+)\b", existing)]
+        return max(numbers) + 1 if numbers else 1
+
+    def _find_section(self, existing: str, *headings: str) -> int:
+        """Return the offset of the first heading present, or -1.
+
+        Several spellings are accepted so a document written before the rules/11
+        and rules/44 numbering was adopted is still located correctly.
+
+        Args:
+            existing: Document text.
+            *headings: Candidate heading lines, most preferred first.
+
+        Returns:
+            int: Character offset of the heading, or -1 when none is present.
+        """
+        for heading in headings:
+            pos = existing.find(heading)
+            if pos >= 0:
+                return pos
+        return -1
+
+    def _read_version(self) -> str:
+        """Return the project version, or a placeholder when unavailable.
+
+        Returns:
+            str: Version string.
+        """
+        try:
+            version_file = Path(self.project_root) / "VERSION"
+            if version_file.is_file():
+                return version_file.read_text(encoding="utf-8").strip()
+        except Exception:
+            pass
+        return "0.0.0"
+
+    def _append_srs_change_log(self, content: str, state: Dict, date_str: str) -> str:
+        """Append one row to the SRS Change Log table.
+
+        rules/44 section 4.3 requires a row on every update, and section 5 says to
+        create the table when it is missing rather than skip the update.
+
+        Args:
+            content: SRS content after the requirement entry was inserted.
+            state: Pipeline state, used for the task title and version.
+            date_str: Date for the row.
+
+        Returns:
+            str: Content with the row appended.
+        """
+        task = str(state.get("task_title") or state.get("user_message") or "Pipeline run")[:80]
+        version = state.get("version") or self._read_version()
+        row = "| %s | %s | %s | %s | Done |\n" % (date_str, version, task, "SRS updated by pipeline")
+
+        header = "## 6. Change Log"
+        pos = content.find(header)
+        if pos < 0:
+            table = "| Date | Version | Task | Change Summary | Status |\n"
+            table += "|------|---------|------|----------------|--------|\n"
+            return content.rstrip() + "\n\n---\n\n" + header + "\n\n" + table + row
+
+        lines = content[pos:].splitlines(keepends=True)
+        last_row = 0
+        for index, line in enumerate(lines):
+            if line.startswith("|"):
+                last_row = index
+        if last_row == 0:
+            return content
+        insert_at = pos + sum(len(line) for line in lines[: last_row + 1])
+        return content[:insert_at] + row + content[insert_at:]
+
     def _update_srs(self, path: Path, state: Dict, date_str: str):
-        """Add feature entry to SRS document."""
+        """Append a requirement entry and a Change Log row to the SRS.
+
+        Follows rules/44 section 4: the SRS is append-only, a functional
+        requirement is added as ``**FR-{n}:**`` with Priority/Source/Added, and
+        every update also appends one row to the Change Log table.
+        """
         try:
             existing = path.read_text(encoding="utf-8", errors="replace")
             user_message = state.get("user_message", "")
             feature_desc = user_message[:120] if user_message else "New feature"
 
-            entry = "\n### FR-NEW: %s\n\n" % feature_desc
-            entry += "- **Added**: %s\n" % date_str
-            entry += "- **Priority**: Normal\n"
-            entry += "- **Status**: Implemented\n"
+            number = self._next_fr_number(existing)
+            entry = "\n**FR-%d:** The system SHALL %s\n" % (number, feature_desc)
+            entry += "- Priority: Medium\n"
+            entry += "- Source: %s\n" % (state.get("github_issue_url") or "Pipeline run")
+            entry += "- Added: %s\n" % date_str
 
-            # Append before the non-functional requirements section if found
-            nfr_pos = existing.find("## Non-Functional Requirements")
+            # Insert before the non-functional block, whichever spelling the
+            # document uses: rules/44 numbering first, pre-numbering heading second.
+            nfr_pos = self._find_section(
+                existing,
+                "### 3.2 Non-Functional Requirements",
+                "## Non-Functional Requirements",
+            )
             if nfr_pos >= 0:
                 new_content = existing[:nfr_pos] + entry + "\n" + existing[nfr_pos:]
             else:
                 new_content = existing + entry
 
+            new_content = self._append_srs_change_log(new_content, state, date_str)
             path.write_text(new_content, encoding="utf-8")
 
         except Exception as e:

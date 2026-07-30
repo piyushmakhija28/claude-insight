@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.21.3] - 2026-07-30
+
+### Fixed
+
+- **`rules/11`, `rules/44` and the SRS implementation described three different documents** (#252) -- both rules mandate the same numbered structure (`## 1. Purpose` ... `## 6. Change Log`) and `rules/11` states its checks block at the pre-tool gate, but **zero of those eight sections existed** in `SRS.md`. The code emitted and consumed `## Functional Requirements` / `### FR-N` instead, and `documentation_manager` located its insertion point with `existing.find("## Non-Functional Requirements")` -- matching the generator, not the rule. Since the two rules agree with each other and only the code diverged, the rules win: `SRS.md` is restructured to the mandated layout, the generator template emits it so fresh projects comply from birth, and the manager finds either spelling so pre-numbering documents still work.
+- **`_update_srs` wrote every entry as the literal `FR-NEW` and never touched the Change Log** -- `rules/44` section 4 requires a numbered `**FR-{n}:**` entry with Priority/Source/Added plus one Change Log row per update. Repeated runs previously produced a document full of indistinguishable `FR-NEW` blocks. It now computes the next unused number, inserts into section 3.1, and appends the row, creating the table if absent per section 5.
+- **Three claims in `SRS.md` that the working tree contradicted** -- "Session management with TOON compression" (the `toons`/`toon_schema` modules were deleted in v1.15.2; every remaining mention in the code is a removal note), `**Key Module:** pipeline_builder.py` with a `PipelineBuilder().add_level_minus1()` sample (the file is gone and no such symbol exists; `orchestrator.create_flow_graph` is the single factory), and hook entry points listed under `scripts/` (they live in `hooks/`). The restructure preserved every other line: a diff of body content shows exactly these five lines removed and all 15 FR/NFR headings intact.
+
+---
+
 ## [1.21.2] - 2026-07-30
 
 ### Fixed

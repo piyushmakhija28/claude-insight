@@ -1,7 +1,7 @@
 # System Requirements Analysis
 
 **Project:** Claude Workflow Engine
-**Version:** 1.21.2
+**Version:** 1.21.3
 **Date:** 2026-07-30
 **Author:** Claude Workflow Engine Team
 
@@ -9,14 +9,12 @@
 
 ## Executive Summary
 
+
 Claude Workflow Engine is a LangGraph-based 3-level pipeline that automates the full Software Development Life Cycle (SDLC) — from task analysis to merged PR closure — using LLM inference, template-driven orchestration, AST-based call graph analysis, and 13 MCP servers (295 tools). It is the only AI tool that automates all 8 active SDLC steps including GitHub Issues, branch creation, code review, PR merge, Jira tracking, Figma design-to-code, Jenkins CI/CD, SonarQube scanning, UML generation, and documentation updates.
 
 ---
 
-## Project Overview
-
-### 1. Purpose and Objectives
-
+## 1. Purpose
 Claude Workflow Engine automates software development lifecycle tasks that normally require human coordination across multiple tools (GitHub, Jira, Figma, Jenkins, SonarQube, LLM APIs). A developer provides a natural language task description; the engine handles everything from analysis to delivery.
 
 The system aims to:
@@ -26,10 +24,11 @@ The system aims to:
 - Support multi-project, multi-language codebases (20+ languages, 15+ frameworks)
 - Provide pluggable, extensible architecture so individual steps/levels can be added or removed
 
-### 2. Scope
+---
 
-#### Included
+## 2. Scope
 
+### Included
 - Python 3.8+ pipeline execution on Windows/Linux/macOS
 - LangGraph StateGraph orchestration (Level 0 through Level 2)
 - 13 FastMCP servers (295 tools) for GitHub, Jira, Figma, Jenkins, Git, LLM, etc.
@@ -38,34 +37,22 @@ The system aims to:
 - AST-based call graph analysis (Python/Java/TypeScript/Kotlin)
 - 13 UML diagram types (Mermaid + PlantUML + Kroki.io rendering)
 - Hook system (UserPromptSubmit, PreToolUse, PostToolUse, Stop)
-- Session management with TOON compression
-
-#### Excluded
-
-- Web UI / GUI (CLI-only)
-- Direct database writes (all DB access via MCP tools)
-- Custom LLM training or fine-tuning
-- Real-time collaboration between multiple users simultaneously
-
-### 3. Project Context
-
-- **Domain:** Software Development Automation / DevOps
-- **Target Users:** Solo developers, engineering teams using Claude Code CLI
-- **Deployment:** Local machine, triggered by Claude Code hooks on every user prompt
-- **Integration Points:** GitHub, Jira (Cloud+Server), Figma, Jenkins, SonarQube, Anthropic API
 
 ---
 
-## Functional Requirements
+## 3. Requirements
 
-### FR-1: 3-Level Pipeline Execution
+### 3.1 Functional Requirements
+
+
+#### FR-1: 3-Level Pipeline Execution
 
 **Description:** Pipeline must execute 3 levels in order: Level 0 (Pre-Flight Sanity Guard), Level 1 (Session & Context Synchronization), Level 2 (SDLC Execution Core). Each level must be independently removable or bypassable. Standards loading (project type/framework detection, policy loading) is an always-on, disk-loaded mechanism -- not a numbered pipeline level; it has never had pipeline nodes of its own.
 **Priority:** Critical
 **Status:** Implemented
 **Key Module:** `orchestrator.py`
 
-### FR-2: 9-Step SDLC Automation (Level 2)
+#### FR-2: 9-Step SDLC Automation (Level 2)
 
 **Description:** Level 2 (SDLC Execution Core) must execute 9 active steps (Steps 0-8) with optional Hook Mode (Steps 0-3 only) via `CLAUDE_HOOK_MODE` env var.
 
@@ -85,14 +72,14 @@ The system aims to:
 **Status:** Implemented
 **Key Module:** `sdlc_pipeline/subgraph.py`
 
-### FR-3: AST-Based Call Graph Analysis
+#### FR-3: AST-Based Call Graph Analysis
 
 **Description:** Full class-level call graph supporting Python (AST), Java, TypeScript, Kotlin (regex). Used at Steps 0, 1, 4, and 5 for impact analysis, implementation context, and PR review.
 **Priority:** High
 **Status:** Implemented
 **Key Modules:** `parsers/` (Abstract Factory), `call_graph_builder.py`, `call_graph_analyzer.py`
 
-### FR-4: Integration Lifecycle Management
+#### FR-4: Integration Lifecycle Management
 
 **Description:** All integrations follow Create → Update → Close lifecycle. Jira and Figma are toggled via env flags. Operations are non-blocking (failure of one integration does not stop others).
 
@@ -107,54 +94,53 @@ The system aims to:
 **Status:** Implemented
 **Key Module:** `integrations/` (Abstract Factory + Template Method)
 
-### FR-5: Modular Pipeline Construction
+#### FR-5: Modular Pipeline Construction
 
 **Description:** Pipeline must be constructable via `PipelineBuilder` chainable API. Individual levels must be addable/removable without modifying orchestrator.
 **Priority:** High
 **Status:** Implemented
-**Key Module:** `pipeline_builder.py`
+**Key Module:** `orchestrator.py` (`create_flow_graph`)
 
 ```python
-# Add/remove any level:
-create_flow_graph(hook_mode=True)  # default: all 4 levels
-
-# Custom build:
-PipelineBuilder().add_level_minus1().add_level1().add_level3().build()
+# Levels are wired in the single canonical factory:
+create_flow_graph(hook_mode=True)   # Level 0 + Level 1 + Level 2 (Steps 0-3)
+create_flow_graph(hook_mode=False)  # full run (Steps 0-8)
 ```
 
-### FR-6: 13 MCP Servers (295 Tools)
+#### FR-6: 13 MCP Servers (295 Tools)
 
 **Description:** All external service operations (GitHub, Jira, Figma, Jenkins, Git, LLM, etc.) must be accessible as MCP tools registered in `~/.claude/settings.json`.
 **Priority:** High
 **Status:** Implemented
 **Key Location:** `src/mcp/`
 
-### FR-7: Multi-Project Standards Enforcement
+#### FR-7: Multi-Project Standards Enforcement
 
 **Description:** The always-on, non-numbered Standards mechanism must auto-detect project type (language, framework) and load appropriate coding standards from 63 policy files, read directly from `policies/` on disk (no pipeline nodes involved).
 **Priority:** High
 **Status:** Implemented
 **Key Module:** `langgraph_engine/standards/`
 
-### FR-8: Hybrid LLM Inference
+#### FR-8: Hybrid LLM Inference
 
 **Description:** LLM calls must follow fallback chain: Claude CLI → Anthropic API. Model selection must be complexity-based.
 **Priority:** High
 **Status:** Implemented
 **Key Module:** `langgraph_engine/llm_call.py`
 
-### FR-9: Hook System
+#### FR-9: Hook System
 
 **Description:** Pipeline must integrate with Claude Code's 4 hook types (UserPromptSubmit, PreToolUse, PostToolUse, Stop) for automated trigger and enforcement.
 **Priority:** High
 **Status:** Implemented
-**Key Scripts:** `scripts/pre-tool-enforcer.py`, `scripts/post-tool-tracker.py`, `scripts/stop-notifier.py`
+**Key Scripts:** `hooks/pre-tool-enforcer.py`, `hooks/post-tool-tracker.py`, `hooks/stop-notifier.py`, `scripts/3-level-flow.py` (UserPromptSubmit)
 
 ---
 
-## Non-Functional Requirements
+### 3.2 Non-Functional Requirements
 
-### NFR-1: Performance
+
+#### NFR-1: Performance
 
 - **Hook Mode target:** Steps 0-3 complete in < 60 seconds
 - **Full Mode target:** All 9 active steps complete in < 170 seconds
@@ -162,7 +148,7 @@ PipelineBuilder().add_level_minus1().add_level1().add_level3().build()
 - **Token savings:** 60-85% reduction via AST navigation + dedup
 - **Status:** Implemented
 
-### NFR-2: Extensibility
+#### NFR-2: Extensibility
 
 - Adding a new pipeline level: implement subgraph, call `PipelineBuilder().add_my_level()`
 - Adding a new routing rule: add function to `routing/` package, register in orchestrator
@@ -171,7 +157,7 @@ PipelineBuilder().add_level_minus1().add_level1().add_level3().build()
 - Adding a new language parser: extend `AbstractLanguageParser` in `parsers/`
 - **Status:** Implemented via 9 modular packages (v1.5.0)
 
-### NFR-3: Reliability
+#### NFR-3: Reliability
 
 - Checkpoint recovery: pipeline can resume from any step after crash
 - Signal handling: Ctrl+C triggers graceful recovery with checkpoint save
@@ -179,7 +165,7 @@ PipelineBuilder().add_level_minus1().add_level1().add_level3().build()
 - Error propagation: `node_error_handler` decorator standardizes all node failures
 - **Status:** Implemented
 
-### NFR-4: Backward Compatibility
+#### NFR-4: Backward Compatibility
 
 - All existing imports continue to work unchanged:
   - `from langgraph_engine.flow_state import FlowState` (shim re-exports from `state/`)
@@ -187,14 +173,14 @@ PipelineBuilder().add_level_minus1().add_level1().add_level3().build()
   - `from langgraph_engine.call_graph_builder import CallGraphBuilder` (shim re-exports from `parsers/`)
 - **Status:** Implemented
 
-### NFR-5: Platform Compatibility
+#### NFR-5: Platform Compatibility
 
 - Python 3.8+ on Windows (cp1252-safe ASCII-only source files), Linux, macOS
 - Cross-platform paths via `path_resolver.py`
 - UTF-8 encoding throughout; no non-ASCII characters in `.py` files
 - **Status:** Implemented
 
-### NFR-6: Security
+#### NFR-6: Security
 
 - API keys read from `.env` file, never hardcoded
 - Input sanitization before LLM calls
@@ -203,7 +189,52 @@ PipelineBuilder().add_level_minus1().add_level1().add_level3().build()
 
 ---
 
+## 4. Acceptance Criteria
+
+One criterion per functional requirement, per rules/44 section 2.
+
+| Requirement | Acceptance Criterion |
+|---|---|
+| FR-1 | `create_flow_graph()` builds Level 0, Level 1 and Level 2 in order, and a run with any single level removed still reaches a terminal node. |
+| FR-2 | A full-mode run executes Steps 0-8 in order; with `CLAUDE_HOOK_MODE=1` it stops after Step 3 and reports the remaining steps as skipped. |
+| FR-3 | The call graph resolves classes and methods for Python, Java, TypeScript and Kotlin sources, and Steps 0 and 5 read impact data from it rather than rebuilding it. |
+| FR-4 | With an integration flag unset its steps are skipped without error; with it set the Create -> Update -> Close transitions all fire, and a failure in one integration does not abort the others. |
+| FR-5 | Levels can be added or removed by editing `create_flow_graph` alone, with no change to any node module. |
+| FR-6 | Every registered MCP server starts over stdio and reports its documented tool count. |
+| FR-7 | Project type and framework are detected from the working tree, and the matching policy files are loaded from `policies/` before any code change is written. |
+| FR-8 | An LLM call falls through Claude CLI to the Anthropic API, and returns None rather than raising when no provider is available. |
+| FR-9 | All four hook events fire, and a blocking policy returns exit code 2 from the PreToolUse hook so the tool call does not proceed. |
+
+---
+
+## 5. Out of Scope
+
+Explicitly excluded, to prevent scope creep:
+- Web UI / GUI (CLI-only)
+- Direct database writes (all DB access via MCP tools)
+- Custom LLM training or fine-tuning
+- Real-time collaboration between multiple users simultaneously
+
+---
+
+## 6. Change Log
+
+| Date | Version | Task | Change Summary | Status |
+|------|---------|------|----------------|--------|
+| 2026-07-30 | 1.21.2 | Restructure SRS to rules/11 + rules/44 | Numbered sections adopted; Acceptance Criteria, Out of Scope and this Change Log added; three claims corrected against the working tree (TOON removed in v1.15.2, `pipeline_builder.py` deleted in favour of `create_flow_graph`, hook entry points live in `hooks/`). | Done |
+
+---
+
+## Project Context
+- **Domain:** Software Development Automation / DevOps
+- **Target Users:** Solo developers, engineering teams using Claude Code CLI
+- **Deployment:** Local machine, triggered by Claude Code hooks on every user prompt
+- **Integration Points:** GitHub, Jira (Cloud+Server), Figma, Jenkins, SonarQube, Anthropic API
+
+---
+
 ## Architecture & Design
+
 
 ### System Architecture
 
@@ -259,6 +290,7 @@ User Prompt
 
 ## Implementation Status
 
+
 ### Completed Features (v1.15.1)
 
 - [x] 4-Level pipeline (Level -1, 1, 2, 3)
@@ -297,6 +329,7 @@ User Prompt
 
 ## Testing Strategy
 
+
 ### Unit Testing
 
 - Framework: pytest
@@ -318,6 +351,7 @@ User Prompt
 
 ## Deployment & Operations
 
+
 ### Deployment Process
 
 1. Developer runs `git clone` and `pip install -r requirements.txt`
@@ -336,6 +370,7 @@ User Prompt
 
 ## Risks & Mitigation
 
+
 | Risk | Impact | Probability | Mitigation |
 |------|--------|-------------|-----------|
 | All LLM providers fail | High | Low | 4-provider fallback chain; pipeline halts gracefully |
@@ -347,3 +382,5 @@ User Prompt
 
 **Last Updated:** 2026-07-30
 **Next Review:** 2026-06-21
+
+---

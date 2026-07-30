@@ -1,7 +1,7 @@
 # Claude Workflow Engine - Project Context
 
 **Project:** Claude Workflow Engine
-**Version:** 1.21.2
+**Version:** 1.21.3
 **Type:** LangGraph Orchestration Pipeline with Call Graph Intelligence + Template Fast-Path
 **Last Updated:** 2026-07-30
 
