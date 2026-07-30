@@ -345,7 +345,12 @@ class DocumentationGenerator:
         docs_to_update = [
             ("README.md", self.update_or_create_readme),
             ("CLAUDE.md", self.update_or_create_claude_md),
-            ("docs/SYSTEM_REQUIREMENTS_SPECIFICATION.md", self.update_or_create_sra),
+            # Root SRS.md, not docs/SYSTEM_REQUIREMENTS_SPECIFICATION.md: rules 11 and 44
+            # both put the SRS at the project root, documentation_manager reads root
+            # SRS.md, and that is the file this repo actually has. Writing to docs/ created
+            # a second SRS that nothing read, while the one the manager later appended
+            # requirements to was never generated.
+            ("SRS.md", self.update_or_create_sra),
             ("CHANGELOG.md", self.update_or_create_changelog),
             ("VERSION", self.update_or_create_version),
         ]
@@ -640,7 +645,7 @@ See environment variables in `.env.example`:
         self.logger.info(f"{'Created' if not file_path.exists() else 'Updated'} {file_path.name}")
 
     def update_or_create_sra(self, file_path: Path, context: ProjectContext, files_modified: List[str]):
-        """Update or create SYSTEM_REQUIREMENTS_SPECIFICATION.md"""
+        """Update or create the project-root SRS.md."""
         implemented_features = ["Project initialization", "Configuration management", "Error handling", "Logging"]
 
         content = f"""# System Requirements Analysis

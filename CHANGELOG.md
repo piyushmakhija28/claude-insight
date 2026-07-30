@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [UNRELEASED]
+
+### Fixed
+
+- **The SRS was generated somewhere nothing reads it** -- `DocumentationGenerator` created the SRS at `docs/SYSTEM_REQUIREMENTS_SPECIFICATION.md`, a path that exists nowhere in this repo, while `documentation_manager` reads the project-root `SRS.md` and both `rules/11` (permitted root documentation files) and `rules/44` (SRS lifecycle: "Create `SRS.md` at project root") place it at the root. Since the generator creates the file when absent, a fresh project got one SRS written into `docs/` that nothing ever read, while the root `SRS.md` the manager later appends FR entries and Change Log rows to was never generated at all -- two half-documents instead of one. The generator now targets root `SRS.md`, and a test asserts it stays in step with the first entry of the manager's `_SRS_ALTERNATES`.
+
+---
+
 ## [1.21.1] - 2026-07-30
 
 ### Fixed
