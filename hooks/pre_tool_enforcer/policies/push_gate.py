@@ -265,6 +265,24 @@ def _branch_files(repo):
     return [line for line in out.splitlines() if line.strip()]
 
 
+def _repo_tracks_a_version_file(repo):
+    """Return True when the repo participates in the version-release policy.
+
+    Only a repo that actually tracks a VERSION file can satisfy a "bump VERSION"
+    rule. Of the repos in this workspace only a handful do, so without this check
+    the gate would block every push in the rest of them permanently, with no way
+    to comply short of inventing a file the project never had.
+
+    Args:
+        repo: Repository root.
+
+    Returns:
+        bool: True when a VERSION file is tracked at the repo root.
+    """
+    out = _git(["ls-files", "--", "VERSION", "version.txt"], repo)
+    return bool(out)
+
+
 def _has_version_change(paths):
     """Return True when a VERSION file appears among the given paths.
 
@@ -324,6 +342,8 @@ def check_push_version(tool_name, tool_input):
 
     repo = _repo_root(target)
     if repo is None:
+        return False, ""
+    if not _repo_tracks_a_version_file(repo):
         return False, ""
 
     paths = _branch_files(repo)

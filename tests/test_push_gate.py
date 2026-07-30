@@ -147,6 +147,27 @@ class TestVersionGate:
         blocked, _ = gate.check_push_version("Bash", {"command": "git -C {} push".format(repo)})
         assert blocked is False, "a follow-up commit must not re-report a satisfied branch"
 
+    def test_repo_without_a_version_file_is_never_blocked(self, tmp_path):
+        """Only 4 of the 25 repos in this workspace track a VERSION file.
+
+        Blocking the rest would be unsatisfiable: there is no file to bump, so the
+        gate must recognize that the repo does not participate in the policy.
+        """
+        root = tmp_path / "no-version-repo"
+        root.mkdir()
+        _git(["init", "-q", "-b", "main"], root)
+        _git(["config", "user.email", "t@t"], root)
+        _git(["config", "user.name", "t"], root)
+        (root / "server.py").write_text("x = 1\n", encoding="utf-8")
+        _git(["add", "."], root)
+        _git(["commit", "-q", "-m", "initial"], root)
+        _git(["checkout", "-q", "-b", "feature"], root)
+        (root / "server.py").write_text("x = 2\n", encoding="utf-8")
+        _git(["commit", "-qam", "change"], root)
+
+        blocked, _ = gate.check_push_version("Bash", {"command": "git -C {} push".format(root)})
+        assert blocked is False, "a repo with no VERSION file must not be blocked"
+
     def test_non_push_command_never_blocks(self, repo):
         blocked, _ = gate.check_push_version("Bash", {"command": 'grep -n "git push" x.py'})
         assert blocked is False
