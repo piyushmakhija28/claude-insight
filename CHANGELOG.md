@@ -7,10 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
-## [UNRELEASED]
+## [1.21.2] - 2026-07-30
 
 ### Fixed
 
+- **`git commit && git push` bypassed the VERSION rule entirely** -- a hole in the gate added earlier today, spotted when one of my own pushes sailed through a branch that changed no VERSION. Self-committing commands are exempt from the gates because a PreToolUse hook can only see the state before the command runs, but applying that exemption to the version rule meant the most common push shape never had to satisfy it. The clean-tree rule still stands down (the command is about to make the tree clean); the version rule instead widens its view to the branch's commits *plus* the changes the pending commit will carry, so a staged VERSION bump satisfies it and a branch that bumps nothing is still refused.
 - **The SRS was generated somewhere nothing reads it** -- `DocumentationGenerator` created the SRS at `docs/SYSTEM_REQUIREMENTS_SPECIFICATION.md`, a path that exists nowhere in this repo, while `documentation_manager` reads the project-root `SRS.md` and both `rules/11` (permitted root documentation files) and `rules/44` (SRS lifecycle: "Create `SRS.md` at project root") place it at the root. Since the generator creates the file when absent, a fresh project got one SRS written into `docs/` that nothing ever read, while the root `SRS.md` the manager later appends FR entries and Change Log rows to was never generated at all -- two half-documents instead of one. The generator now targets root `SRS.md`, and a test asserts it stays in step with the first entry of the manager's `_SRS_ALTERNATES`.
 
 ---

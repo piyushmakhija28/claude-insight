@@ -368,8 +368,6 @@ def check_push_version(tool_name, tool_input):
     target = find_push_target(command)
     if target is None:
         return False, ""
-    if command_settles_state_before_push(command):
-        return False, ""
 
     repo = _repo_root(target)
     if repo is None:
@@ -377,8 +375,17 @@ def check_push_version(tool_name, tool_input):
     if not _repo_tracks_a_version_file(repo):
         return False, ""
 
+    # What this push can publish is the branch's own commits plus anything the
+    # command is about to commit. Exempting self-committing commands outright --
+    # as the clean-tree rule must -- would let the most common shape,
+    # `git commit && git push`, bypass the version rule entirely.
     paths = _branch_files(repo)
-    if paths is None or not paths:
+    if paths is None:
+        return False, ""
+    pending = _modified_tracked_files(repo) or []
+    paths = list(paths) + list(pending)
+
+    if not paths:
         return False, ""
     if _has_version_change(paths):
         return False, ""

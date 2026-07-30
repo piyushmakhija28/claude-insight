@@ -154,10 +154,24 @@ class TestCommandSettlesStateBeforePush:
         command = "git -C {0} add . && git -C {0} commit -m x && git -C {0} push".format(repo)
         assert gate.check_push_clean_tree("Bash", {"command": command})[0] is False
 
-    def test_version_rule_also_skipped_for_a_self_committing_command(self, repo):
+    def test_version_rule_still_applies_to_a_self_committing_command(self, repo):
+        """`git commit && git push` must not be a blanket bypass of the version rule.
+
+        The clean-tree rule has to stand down for a self-committing command, but if
+        the version rule did too then the most common push shape would skip it
+        entirely. Instead it looks at what the pending commit will contain.
+        """
         _git(["checkout", "-q", "-b", "feature"], repo)
         (repo / "app.py").write_text("x = 2\n", encoding="utf-8")
         command = "git -C {0} commit -qam change && git -C {0} push".format(repo)
+        assert gate.check_push_version("Bash", {"command": command})[0] is True
+
+    def test_pending_version_bump_satisfies_the_rule_before_it_is_committed(self, repo):
+        """A VERSION edit waiting to be committed counts as the bump."""
+        _git(["checkout", "-q", "-b", "feature"], repo)
+        (repo / "app.py").write_text("x = 2\n", encoding="utf-8")
+        (repo / "VERSION").write_text("1.0.1\n", encoding="utf-8")
+        command = "git -C {0} add . && git -C {0} commit -m bump && git -C {0} push".format(repo)
         assert gate.check_push_version("Bash", {"command": command})[0] is False
 
 
