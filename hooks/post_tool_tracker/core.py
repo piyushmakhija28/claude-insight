@@ -165,48 +165,12 @@ else:
         )
         return True, msg
 
-    def check_level_3_10_version_release(tool_name, tool_input, state):
-        """Level 3.10: BLOCK git push when VERSION file was not modified."""
-        if tool_name != "Bash":
-            return False, ""
-        cmd = (tool_input or {}).get("command", "").lower()
-        if "git push" not in cmd or "--dry-run" in cmd or "--delete" in cmd:
-            return False, ""
-        import subprocess as _sp
-
-        try:
-            _diff_result = _sp.run(
-                ["git", "diff", "--name-only", "HEAD~1", "HEAD"], capture_output=True, text=True, timeout=5
-            )
-            committed_files = _diff_result.stdout.strip().split("\n") if _diff_result.returncode == 0 else []
-            version_in_commit = any(
-                f.strip().lower().endswith("version") or f.strip().lower().endswith("version.txt")
-                for f in committed_files
-                if f.strip()
-            )
-            if version_in_commit:
-                return False, ""
-            if not committed_files or committed_files == [""]:
-                return False, ""
-        except Exception:
-            pass
-
-        modified = state.get("modified_files_since_commit", [])
-        version_modified = any(f.lower().endswith("version") or f.lower().endswith("version.txt") for f in modified)
-        if version_modified:
-            return False, ""
-        if not modified:
-            return False, ""
-        msg = (
-            "[BLOCKED L3.10] git push blocked - VERSION file not updated!\n"
-            "  Modified files : " + ", ".join(modified[-5:]) + ("" if len(modified) <= 5 else " ...") + "\n"
-            "  VERSION file   : NOT in modified list\n"
-            "  Policy         : version-release-policy.md\n"
-            "  Rule           : Every push MUST include a VERSION file update.\n"
-            "  Action         : Update the VERSION file, then push again.\n"
-            '  Example        : echo "0.X.Y" > VERSION && git add VERSION'
-        )
-        return True, msg
+    # check_level_3_10_version_release used to live here. It detected a push with
+    # `"git push" in command`, so any command merely containing that text tripped
+    # it, and it answered the VERSION question from a session-wide list of edited
+    # files that spanned repos. Replaced by
+    # hooks/pre_tool_enforcer/policies/push_gate.py, which parses the command and
+    # asks git about the specific repository being pushed.
 
     # ------------------------------------------------------------------
     # Hook start time (measured once at import to cover full hook wall time)
@@ -797,10 +761,11 @@ else:
                 _block, _msg = check_level_3_8_phase_requirement(tool_name, flow_ctx, state)
                 if not _block:
                     _block, _msg = check_level_3_9_build_validation(tool_name, tool_input, is_error, state)
-                if not _block:
-                    _block, _msg = check_level_3_10_version_release(tool_name, tool_input, state)
-                if not _block:
-                    _block, _msg = check_uncommitted_before_push(tool_name, tool_input)
+                # The push gates that used to run here (L3.10 version, L3.11 clean
+                # tree) moved to PreToolUse: this hook fires after the tool has
+                # finished, so blocking here reported a prevented push that had
+                # already reached the remote. See
+                # hooks/pre_tool_enforcer/policies/push_gate.py.
                 if _block:
                     _BLOCKING_RESULT = (2, _msg)
                 # Level 3.12: non-blocking GitHub issue close (runs regardless)
