@@ -1,7 +1,7 @@
 # System Requirements Analysis
 
 **Project:** Claude Workflow Engine
-**Version:** 1.21.0
+**Version:** 1.21.1
 **Date:** 2026-07-30
 **Author:** Claude Workflow Engine Team
 
