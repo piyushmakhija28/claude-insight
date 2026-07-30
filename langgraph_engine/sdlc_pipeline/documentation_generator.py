@@ -665,7 +665,7 @@ See environment variables in `.env.example`:
 
 ## Project Overview
 
-### 1. Purpose and Objectives
+## 1. Purpose
 
 {context.description}
 
@@ -675,7 +675,9 @@ The system aims to:
 - Enable efficient automation and monitoring
 - Support multiple deployment environments
 
-### 2. Scope
+---
+
+## 2. Scope
 
 #### Included
 
@@ -687,7 +689,9 @@ The system aims to:
 - Legacy system migration
 - Custom protocol implementations
 
-### 3. Project Context
+---
+
+## 7. Project Context
 
 - **Domain:** {', '.join(context.frameworks) or 'Software Development'}
 - **Target Users:** Development teams, DevOps engineers, System administrators
@@ -696,23 +700,25 @@ The system aims to:
 
 ---
 
-## Functional Requirements
+## 3. Requirements
 
-### FR-1: Code Organization
+### 3.1 Functional Requirements
+
+#### FR-1: Code Organization
 
 **Description:** System should maintain clear, organized code structure
 **Priority:** Critical
 **Status:** [OK] Implemented
 **Related Components:** All
 
-### FR-2: Testing Framework
+#### FR-2: Testing Framework
 
 **Description:** Comprehensive testing setup with automated test execution
 **Priority:** High
 **Status:** {'[OK] Implemented' if context.has_tests else '[wait] Planned'}
 **Related Components:** tests/
 
-### FR-3: Documentation
+#### FR-3: Documentation
 
 **Description:** Complete project documentation
 **Priority:** High
@@ -721,31 +727,60 @@ The system aims to:
 
 ---
 
-## Non-Functional Requirements
+### 3.2 Non-Functional Requirements
 
-### NFR-1: Performance
+#### NFR-1: Performance
 
 - **Target:** Sub-second response times
 - **Measurement:** Response time monitoring
 - **Status:** [OK] Implemented
 
-### NFR-2: Scalability
+#### NFR-2: Scalability
 
 - **Target:** Support 100+ concurrent operations
 - **Current Capacity:** 10+ concurrent operations
 - **Status:** [OK] Verified
 
-### NFR-3: Availability
+#### NFR-3: Availability
 
 - **Target Uptime:** 99.5%
 - **Monitoring:** Real-time dashboards
 - **Status:** [OK] Implemented
 
-### NFR-4: Security
+#### NFR-4: Security
 
 - **Target:** Enterprise security standards
 - **Implementation:** Input validation, secure defaults
 - **Status:** [OK] Implemented
+
+---
+
+---
+
+## 4. Acceptance Criteria
+
+| Requirement | Acceptance Criterion |
+|---|---|
+| FR-1 | Source is organized into the documented package layout and imports resolve from a clean checkout. |
+| FR-2 | The test suite runs from the repository root and reports pass/fail per module. |
+| FR-3 | README.md, CLAUDE.md and this document exist at the project root and name the current version. |
+
+---
+
+## 5. Out of Scope
+
+Explicitly excluded, to prevent scope creep:
+
+- Anything not listed under section 2
+- Behaviour changes introduced without a matching requirement entry in section 3
+
+---
+
+## 6. Change Log
+
+| Date | Version | Task | Change Summary | Status |
+|------|---------|------|----------------|--------|
+| {datetime.now().strftime('%Y-%m-%d')} | {context.version} | Initial generation | Document created by Claude Workflow Engine | Done |
 
 ---
 
