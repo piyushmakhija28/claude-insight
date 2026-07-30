@@ -183,11 +183,34 @@ class TestManagerAppend:
         assert text.find("**FR-2:**") < text.find("## Non-Functional Requirements")
 
 
-def test_rule_files_do_not_name_the_renamed_package():
-    """rules/45 and rules/46 still point at langgraph_engine/level3_execution.
+class TestRuleFilePaths:
+    """Every engine path a rule names must exist.
 
-    That package was renamed to sdlc_pipeline in v1.20. This asserts the current
-    tree so the drift is visible; see issue #252.
+    rules/44, /45 and /46 each claim to drive a specific module, and all three
+    pointed at `langgraph_engine/level3_execution/`, a package renamed to
+    `sdlc_pipeline` in v1.20. A rule that names a module nobody can find is
+    indistinguishable from a rule nobody implements.
     """
-    assert not (REPO_ROOT / "langgraph_engine" / "level3_execution").exists()
-    assert (REPO_ROOT / "langgraph_engine" / "sdlc_pipeline").exists()
+
+    RULE_COPIES = sorted((REPO_ROOT / "docs").glob("4[0-6]-*.md"))
+
+    def test_rule_copies_are_present(self):
+        assert self.RULE_COPIES, "no rule copies found under docs/"
+
+    def test_no_rule_names_a_missing_engine_path(self):
+        pattern = re.compile(r"`(langgraph_engine/[A-Za-z0-9_./-]+\.py)`")
+        missing = []
+        for rule in self.RULE_COPIES:
+            for ref in set(pattern.findall(rule.read_text(encoding="utf-8"))):
+                if not (REPO_ROOT / ref).exists():
+                    missing.append("{}: {}".format(rule.name, ref))
+        assert missing == [], "rules naming paths that do not exist: {}".format(missing)
+
+    def test_the_renamed_package_is_gone_from_the_rules(self):
+        for rule in self.RULE_COPIES:
+            text = rule.read_text(encoding="utf-8")
+            assert "level3_execution" not in text, "{} still names the pre-v1.20 package".format(rule.name)
+
+    def test_the_rename_actually_happened(self):
+        assert not (REPO_ROOT / "langgraph_engine" / "level3_execution").exists()
+        assert (REPO_ROOT / "langgraph_engine" / "sdlc_pipeline").exists()
