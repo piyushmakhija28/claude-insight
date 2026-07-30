@@ -143,14 +143,21 @@ class TestNodeSessionLoader(unittest.TestCase):
     """Tests for node_session_loader."""
 
     def _run(self, state=None):
+        """Drive node_session_loader against a throwaway session root.
+
+        CLAUDE_HOME is redirected too: when the node has no session ID to inherit it
+        synthesizes one and publishes it to the pointer file, which would otherwise be
+        the developer's real ~/.claude/memory/.current-session.json.
+        """
         if state is None:
             state = _minimal_state()
         with tempfile.TemporaryDirectory() as tmpdir:
             _l1_session._LEVEL1_SESSION_LOGS_DIR = Path(tmpdir) / "sessions"
             _l1_session._LEVEL1_TELEMETRY_DIR = Path(tmpdir) / "telemetry"
-            with patch.object(_l1_session, "write_level_log", MagicMock()):
-                with patch.object(_l1_session, "_load_architecture_script", return_value=None):
-                    return node_session_loader(state)
+            with patch.dict(os.environ, {"CLAUDE_HOME": tmpdir}, clear=False):
+                with patch.object(_l1_session, "write_level_log", MagicMock()):
+                    with patch.object(_l1_session, "_load_architecture_script", return_value=None):
+                        return node_session_loader(state)
 
     def test_returns_session_id(self):
         """node_session_loader must return a canonical session_id string."""
