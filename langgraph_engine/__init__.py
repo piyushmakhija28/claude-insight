@@ -14,7 +14,7 @@ Key features:
 All existing policy scripts continue to work unchanged via PolicyNodeAdapter.
 """
 
-__version__ = "1.19.1"
+__version__ = "1.21.0"
 
 from .backup_manager import BackupManager, create_backup_manager
 from .checkpoint_manager import CheckpointManager, create_checkpoint_manager
