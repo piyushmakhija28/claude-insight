@@ -20,7 +20,7 @@ Thank you for your interest in contributing! This document explains how to get s
 
 ## Before You Start
 
-- Check [open issues](../../issues) — your idea may already be tracked.
+- Check [open issues](https://github.com/techdeveloper-org/claude-workflow-engine/issues) — your idea may already be tracked.
 - For significant changes, **open an issue first** to align on approach before writing code.
 - For bug fixes, feel free to go straight to a PR.
 
@@ -117,7 +117,7 @@ The CI runs both. PRs must pass clean with zero ruff errors.
 
 ### No `# ruff: noqa: F821`
 
-**Do not add file-level `# ruff: noqa: F821` suppressors.** This has caused multiple production bugs in this repo (see [Known Issues](README.md#known-issues-and-cleanup-history)). If ruff reports F821 on a line that is a genuine false positive (e.g., try/except import pattern), use a targeted inline suppressor on that specific line only:
+**Do not add file-level `# ruff: noqa: F821` suppressors.** This has caused multiple production bugs in this repo (see [Known Issues](../../README.md#known-issues-and-cleanup-history)). If ruff reports F821 on a line that is a genuine false positive (e.g., try/except import pattern), use a targeted inline suppressor on that specific line only:
 
 ```python
 FlowState = dict  # noqa: F821 -- fallback when langgraph_engine not on path
@@ -214,4 +214,4 @@ To keep the scope focused, we are **not accepting** PRs that:
 
 ## Questions?
 
-Open a [Discussion](../../discussions) or file an issue with the `question` label.
+Open a [Discussion](https://github.com/techdeveloper-org/claude-workflow-engine/discussions) or file an issue with the `question` label.

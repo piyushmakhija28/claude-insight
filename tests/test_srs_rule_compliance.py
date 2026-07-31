@@ -192,7 +192,7 @@ class TestRuleFilePaths:
     indistinguishable from a rule nobody implements.
     """
 
-    RULE_COPIES = sorted((REPO_ROOT / "docs").glob("4[0-6]-*.md"))
+    RULE_COPIES = sorted((REPO_ROOT / "docs" / "standards").glob("4[0-6]-*.md"))
 
     def test_rule_copies_are_present(self):
         assert self.RULE_COPIES, "no rule copies found under docs/"

@@ -1,6 +1,6 @@
 # noqa Audit — TODO List
 
-**Master Issue:** [#217](../../issues/217)
+**Master Issue:** [#217](https://github.com/techdeveloper-org/claude-workflow-engine/issues/217)
 **Goal:** Remove all `# ruff: noqa: F821` file-level suppressors from the codebase.
 
 ---
@@ -8,14 +8,14 @@
 ## Why This Matters
 
 Four production bugs were found during the v1.16.x cleanup sprint — all hidden by `# ruff: noqa: F821` file-level suppressors.
-See [CONTRIBUTING.md](../CONTRIBUTING.md) and the [Known Issues section in README](../README.md#known-issues--cleanup-history) for full history.
+See [CONTRIBUTING.md](../contributing/CONTRIBUTING.md) and the [Known Issues section in README](../README.md#known-issues--cleanup-history) for full history.
 
 ---
 
 ## Task List
 
 ### Task 1 — hooks/stop_notifier (30 real errors)
-**Issue:** [#212](../../issues/212) | **Difficulty:** Medium | **Files:** 4
+**Issue:** [#212](https://github.com/techdeveloper-org/claude-workflow-engine/issues/212) | **Difficulty:** Medium | **Files:** 4
 
 | File | Errors | Fix |
 |------|--------|-----|
@@ -36,7 +36,7 @@ python -m ruff check hooks/stop_notifier/ --select F821 --ignore-noqa
 ---
 
 ### Task 2 — level3_execution/nodes (17 real errors)
-**Issue:** [#213](../../issues/213) | **Difficulty:** Medium | **Files:** 5
+**Issue:** [#213](https://github.com/techdeveloper-org/claude-workflow-engine/issues/213) | **Difficulty:** Medium | **Files:** 5
 
 | File | Errors | Fix |
 |------|--------|-----|
@@ -63,7 +63,7 @@ python -m ruff check langgraph_engine/level3_execution/nodes/ --select F821 --ig
 ---
 
 ### Task 3 — diagrams/drawio/converter.py (~80 errors, 57 unique names)
-**Issue:** [#214](../../issues/214) | **Difficulty:** Easy (import fix) | **Files:** 2
+**Issue:** [#214](https://github.com/techdeveloper-org/claude-workflow-engine/issues/214) | **Difficulty:** Easy (import fix) | **Files:** 2
 
 | File | Errors | Fix |
 |------|--------|-----|
@@ -101,7 +101,7 @@ pytest tests/test_uml_generators.py -v
 ---
 
 ### Task 4 — scripts/github_pr_workflow (12 errors, 1 false positive)
-**Issue:** [#215](../../issues/215) | **Difficulty:** Easy | **Files:** 3
+**Issue:** [#215](https://github.com/techdeveloper-org/claude-workflow-engine/issues/215) | **Difficulty:** Easy | **Files:** 3
 
 | File | Errors | Fix |
 |------|--------|-----|
@@ -133,7 +133,7 @@ python -m ruff check scripts/github_pr_workflow/ --select F821 --ignore-noqa
 ---
 
 ### Task 5 — Remove suppressors from 5 clean files (TRIVIAL — good first issue)
-**Issue:** [#216](../../issues/216) | **Difficulty:** Trivial | **Files:** 5
+**Issue:** [#216](https://github.com/techdeveloper-org/claude-workflow-engine/issues/216) | **Difficulty:** Trivial | **Files:** 5
 
 All 5 files have **zero actual F821 errors**. Just delete the `# ruff: noqa: F821` line from each.
 

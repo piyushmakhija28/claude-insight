@@ -24,7 +24,7 @@ You MUST use these exact names. No variants, no substitutions:
 
 ### ✅ Enforcement APPLIES (All 3 Files Present)
 - Project has `README.md` ✅
-- Project has `SYSTEM_REQUIREMENTS_SPECIFICATION.md` ✅  
+- Project has `SYSTEM_REQUIREMENTS_SPECIFICATION.md` ✅
 - Project has `CLAUDE.md` ✅
 
 → **Result:** `is_new_project = False` → Enforcement ACTIVE
@@ -53,7 +53,7 @@ You MUST use these exact names. No variants, no substitutions:
    ├─ If ALL 3 exist: reads them, sets is_new_project=False
    ├─ If any missing: is_new_project=True
    └─ Creates flag: ~/.claude/memory/flags/.context-read-{SESSION}-{PID}.json
-   
+
 4. Before tool call → PreToolUse hook fires
    ↓
 5. pre-tool-enforcer.py checks flag

@@ -3,7 +3,7 @@
 **Project:** Claude Workflow Engine
 **Version:** 1.21.4
 **Type:** LangGraph Orchestration Pipeline with Call Graph Intelligence + Template Fast-Path
-**Last Updated:** 2026-07-30
+**Last Updated:** 2026-07-31
 
 ---
 
@@ -146,9 +146,16 @@ Level 2: SDLC Execution Core (9 active steps: Steps 0-8)
 +-- src/mcp/                          # In-engine copy of session-mgr + bridge (session_hooks, base/)
 +-- k8s/                              # Kubernetes manifests (deployment, service, hpa, configmap, secret)
 +-- tests/                            # 45 test files (37 unit, 4 integration, 3 e2e, 1 load)
-+-- docs/                             # 57 documentation files
++-- docs/                             # ALL documentation, segregated by kind -- see docs/README.md for the index
+|   +-- standards/ (52)               # numbered rules 01-46 + per-language standards; mirrors ~/.claude/rules/ (that copy is what Standards loads)
+|   +-- policies/ (46)                # one file per pipeline policy; mirrors ~/.claude/policies/ (that copy is what get_policies_dir() reads)
+|   +-- architecture/ (17)            # ADRs, pipeline/level design, flow diagrams, orchestration prompt
+|   +-- guides/ (14)                  # getting started, deployment, testing, troubleshooting, runbooks
+|   +-- reports/ (20)                 # point-in-time investigations, audits, migration notes
+|   +-- releases/ (6)                 # per-version design briefs and review notes
+|   +-- contributing/ (5)             # issue/PR templates, CONTRIBUTING, CODE_OF_CONDUCT (here, not root -- rules/11 caps the root at 5 files)
+|   +-- api/ (1)  phase-1-architecture/ (2)   # OpenAPI spec; original phase-1 HLD + feasibility
 +-- uml/  drawio/                     # Auto-generated UML + draw.io diagrams (13 types each)
-+-- rules/                            # 46 coding standard definitions (incl. doc governance + docstrings-only + microservices patterns)
 ```
 
 ### Key Components
@@ -425,7 +432,7 @@ See environment variables in `.env.example`:
 
 ---
 
-**Last Updated:** 2026-07-30
+**Last Updated:** 2026-07-31
 
 
 <!-- execution-insight- -->

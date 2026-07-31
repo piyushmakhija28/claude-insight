@@ -369,9 +369,9 @@ def print_next_steps():
     print('    4. Full mode:         cwe run --mode full "add user profile"')
     print('    5. Debug mode:        cwe run --debug "investigate crash"')
     print("\n  Documentation:")
-    print("    - Getting started:    docs/00_START_HERE.md")
+    print("    - Getting started:    docs/guides/00_START_HERE.md")
     print("    - Full README:        README.md")
-    print("    - Architecture:       docs/ARCHITECTURE_REVIEW.md")
+    print("    - Architecture:       docs/architecture/ARCHITECTURE_REVIEW.md")
     print()
 
 

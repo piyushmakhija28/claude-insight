@@ -471,7 +471,7 @@ done
 ## Support
 
 For issues or questions:
-1. Check the [CODE_QUALITY_REPORT.md](CODE_QUALITY_REPORT.md)
+1. Check the [CODE_QUALITY_REPORT.md](../reports/TESTING_SUMMARY.md)
 2. Review existing test examples
 3. Create an issue in the repository
 

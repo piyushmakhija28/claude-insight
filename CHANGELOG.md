@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.21.5] - 2026-07-31
+
+### Changed
+
+- **`docs/` was 160 files in one flat directory, so nothing indicated what any document was.** Standards, pipeline policies, ADRs, runbooks, one-off audit reports, per-release design notes and the GitHub community files all sat side by side at `docs/*.md`. They are now segregated into nine folders -- `standards/` (52), `policies/` (46), `architecture/` (17), `reports/` (20), `guides/` (14), `releases/` (6), `contributing/` (5), plus the pre-existing `api/` and `phase-1-architecture/`. Classification used an objective signal wherever one existed rather than name-guessing: a file whose name also appears in `~/.claude/rules/` is a standard and one that appears in `~/.claude/policies/` is a policy, which covered 98 of the 160. Every move went through `git mv`, so history follows the files. `docs/README.md` is a new index naming what each folder holds and why.
+
+### Fixed
+
+- **`load_framework_standards()` and `load_language_standards()` would have stopped resolving any bundled standard.** Both build their path as `<repo>/docs/<filename>` at runtime, so the segregation above silently emptied the framework tier (flask, django, spring-boot) and the entire language tier (all six languages `detect_project_type()` recognises). Runtime-assembled paths are invisible to a grep for `docs/<file>.md`, which is how the first reference sweep missed them. Both now read `docs/standards/`, verified by loading all nine bundled documents.
+- **`_bump_version_and_changelog()` wrote to `docs/CHANGELOG-SYSTEM.md`, a file that has never existed in this repo.** The function exists to enforce the version-release-policy rule that every code push updates VERSION and CHANGELOG; instead it took the `else` branch on every run and logged "No CHANGELOG file found - skipping changelog update", so the enforcement had never once fired. It now targets the root `CHANGELOG.md` that rules/11 designates as canonical, emits a proper `## [X.Y.Z] - DATE` / `### Changed` section instead of a bare bullet, and stages the file it actually writes.
+- **Four intra-`docs/` cross-links were already broken before this change** and are repaired now that link paths were being touched anyway: `TESTING_GUIDE.md` and `TESTING_SUMMARY.md` both pointed at a `CODE_QUALITY_REPORT.md` that does not exist, `TESTING_SUMMARY.md` linked `docs/TESTING_GUIDE.md` from inside `docs/` (resolving to `docs/docs/`), and `noqa-audit-todo.md` linked `../CONTRIBUTING.md` at the root when that file lives under `docs/`.
+- **Nine GitHub-relative links (`../../issues`, `../../discussions`, `../../issues/212`-`217`) broke further when their files moved one level deeper.** They now use absolute repository URLs, which no directory depth can invalidate.
+- **`CLAUDE.md` documented a root `rules/` directory holding "46 coding standard definitions".** No such directory exists in this repository -- zero files tracked, nothing on disk. The rules live in `~/.claude/rules/`, and the repo's readable copies are what now sits in `docs/standards/`. The Directory Layout section describes the real `docs/` tree instead.
+- `README.md`'s 15 documentation links and `scripts/setup/setup_wizard.py`'s two references were repointed to the new locations. A full audit of every relative link in all 165 tracked Markdown files now reports zero unresolved targets.
+
 ## [1.21.4] - 2026-07-30
 
 ### Fixed
