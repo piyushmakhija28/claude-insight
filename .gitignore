@@ -86,3 +86,10 @@ context.toon.json
 # Rule 45 SS 2 -- auto-generated diagrams, never committed
 /uml/
 /drawio/
+
+# Regenerable call-graph analysis output (each >500 KB, blocked by the
+# check-added-large-files pre-commit gate). Rebuild from source per
+# docs/phase-5-uml/callgraph_coverage_probe.md.
+docs/phase-0-reverse-engineering/ast_call_graph.json
+docs/phase-0-reverse-engineering/codebase_kg/edges.json
+docs/phase-0-reverse-engineering/codebase_kg/nodes.json

@@ -1,0 +1,735 @@
+{
+  "generated": "2026-08-01",
+  "methodology_note": "V(G) is computed exactly for all 2,218 live-scope nodes (source: ast_call_graph.json node.cyclomatic_complexity, McCabe 1976, per-node AST decision-point count + 1). Halstead and LCOM3/CBO were computed by this pass (not pre-supplied) via direct tokenize/ast analysis of the 20 highest-WMC modules only (WMC = sum of per-node V(G) within a module), because full system-wide Halstead/LCOM3/CBO computation across 335 files exceeded this task's budget. This is a REDUCED-COVERAGE result for those three metrics, stated explicitly per task instructions: Halstead and LCOM3/CBO cover the top-20-by-WMC modules/classes only, not all 335 live-scope files.",
+  "system_wide_cyclomatic_complexity": {
+    "node_count": 2218,
+    "mean_vg": 5.78,
+    "median_vg": 4,
+    "max_vg": 140,
+    "distribution": {
+      "1-10_simple": 1913,
+      "11-20_moderate": 215,
+      "21-50_complex": 83,
+      ">50_untestable": 7
+    }
+  },
+  "top_20_functions_by_vg": [
+    {
+      "id": "hooks.post_tool_tracker.core.main",
+      "vg": 140,
+      "file": "hooks/post_tool_tracker/core.py",
+      "line": 197,
+      "reachable_cha": true
+    },
+    {
+      "id": "hooks.stop_notifier.core.main",
+      "vg": 121,
+      "file": "hooks/stop_notifier/core.py",
+      "line": 44,
+      "reachable_cha": true
+    },
+    {
+      "id": "langgraph_engine.context_sync.context_loader.node_context_loader",
+      "vg": 67,
+      "file": "langgraph_engine/context_sync/context_loader.py",
+      "line": 167,
+      "reachable_cha": true
+    },
+    {
+      "id": "langgraph_engine.sdlc_pipeline.subgraph._run_step",
+      "vg": 66,
+      "file": "langgraph_engine/sdlc_pipeline/subgraph.py",
+      "line": 231,
+      "reachable_cha": false
+    },
+    {
+      "id": "scripts.github_operations.issue_manager.create_github_issue",
+      "vg": 61,
+      "file": "scripts/github_operations/issue_manager.py",
+      "line": 591,
+      "reachable_cha": false
+    },
+    {
+      "id": "langgraph_engine.sdlc_pipeline.figma_workflow.Level3FigmaWorkflow.step1_extract_design_tokens",
+      "vg": 58,
+      "file": "langgraph_engine/sdlc_pipeline/figma_workflow.py",
+      "line": 177,
+      "reachable_cha": false
+    },
+    {
+      "id": "scripts.github_operations.issue_manager._build_close_comment",
+      "vg": 53,
+      "file": "scripts/github_operations/issue_manager.py",
+      "line": 361,
+      "reachable_cha": false
+    },
+    {
+      "id": "langgraph_engine.sdlc_pipeline.nodes.implementation_and_review_wrapper.step4_implementation_note",
+      "vg": 49,
+      "file": "langgraph_engine/sdlc_pipeline/nodes/implementation_and_review_wrapper.py",
+      "line": 84,
+      "reachable_cha": true
+    },
+    {
+      "id": "langgraph_engine.preflight_guard.recovery.fix_preflight_guard_issues",
+      "vg": 45,
+      "file": "langgraph_engine/preflight_guard/recovery.py",
+      "line": 234,
+      "reachable_cha": true
+    },
+    {
+      "id": "hooks.pre_tool_enforcer.policies.skill_context.check_dynamic_skill_context",
+      "vg": 44,
+      "file": "hooks/pre_tool_enforcer/policies/skill_context.py",
+      "line": 161,
+      "reachable_cha": false
+    },
+    {
+      "id": "langgraph_engine.sdlc_pipeline.sonarqube.api_client.run_sonar_scan",
+      "vg": 40,
+      "file": "langgraph_engine/sdlc_pipeline/sonarqube/api_client.py",
+      "line": 562,
+      "reachable_cha": true
+    },
+    {
+      "id": "langgraph_engine.parsers.call_graph_builder_legacy.CallGraphBuilder._analyze_typescript",
+      "vg": 39,
+      "file": "langgraph_engine/parsers/call_graph_builder_legacy.py",
+      "line": 305,
+      "reachable_cha": true
+    },
+    {
+      "id": "langgraph_engine.build_dependency_resolver.parsers._read_pyproject_deps",
+      "vg": 38,
+      "file": "langgraph_engine/build_dependency_resolver/parsers.py",
+      "line": 110,
+      "reachable_cha": true
+    },
+    {
+      "id": "langgraph_engine.sdlc_pipeline.nodes.implementation_and_review_wrapper.step5_pull_request_node",
+      "vg": 38,
+      "file": "langgraph_engine/sdlc_pipeline/nodes/implementation_and_review_wrapper.py",
+      "line": 339,
+      "reachable_cha": true
+    },
+    {
+      "id": "langgraph_engine.sdlc_pipeline.nodes.task_orchestration.step1_task_analysis_node",
+      "vg": 38,
+      "file": "langgraph_engine/sdlc_pipeline/nodes/task_orchestration.py",
+      "line": 44,
+      "reachable_cha": true
+    },
+    {
+      "id": "langgraph_engine.diagrams.ast_analyzer.UMLAstAnalyzer.extract_classes",
+      "vg": 37,
+      "file": "langgraph_engine/diagrams/ast_analyzer.py",
+      "line": 62,
+      "reachable_cha": false
+    },
+    {
+      "id": "langgraph_engine.sdlc_pipeline.call_graph_analyzer.review_change_impact",
+      "vg": 37,
+      "file": "langgraph_engine/sdlc_pipeline/call_graph_analyzer.py",
+      "line": 527,
+      "reachable_cha": true
+    },
+    {
+      "id": "hooks.pre_tool_enforcer.core._evaluate_tool_call",
+      "vg": 36,
+      "file": "hooks/pre_tool_enforcer/core.py",
+      "line": 472,
+      "reachable_cha": true
+    },
+    {
+      "id": "langgraph_engine.context_sync.session_loader.node_session_loader",
+      "vg": 36,
+      "file": "langgraph_engine/context_sync/session_loader.py",
+      "line": 92,
+      "reachable_cha": true
+    },
+    {
+      "id": "scripts.github_operations.issue_manager._get_tool_activity_for_task",
+      "vg": 36,
+      "file": "scripts/github_operations/issue_manager.py",
+      "line": 121,
+      "reachable_cha": false
+    }
+  ],
+  "top_20_modules_by_wmc": [
+    {
+      "module": "langgraph_engine.diagrams.legacy_generator",
+      "wmc": 373,
+      "method_count": 47,
+      "avg_vg": 7.94,
+      "file": "langgraph_engine/diagrams/legacy_generator.py"
+    },
+    {
+      "module": "langgraph_engine.build_dependency_resolver.parsers",
+      "wmc": 285,
+      "method_count": 20,
+      "avg_vg": 14.25,
+      "file": "langgraph_engine/build_dependency_resolver/parsers.py"
+    },
+    {
+      "module": "langgraph_engine.diagrams.drawio.converter",
+      "wmc": 241,
+      "method_count": 14,
+      "avg_vg": 17.21,
+      "file": "langgraph_engine/diagrams/drawio/converter.py"
+    },
+    {
+      "module": "langgraph_engine.sdlc_pipeline.call_graph_analyzer",
+      "wmc": 228,
+      "method_count": 19,
+      "avg_vg": 12.0,
+      "file": "langgraph_engine/sdlc_pipeline/call_graph_analyzer.py"
+    },
+    {
+      "module": "scripts.github_operations.issue_manager",
+      "wmc": 224,
+      "method_count": 10,
+      "avg_vg": 22.4,
+      "file": "scripts/github_operations/issue_manager.py"
+    },
+    {
+      "module": "langgraph_engine.sdlc_pipeline.test_generator",
+      "wmc": 203,
+      "method_count": 20,
+      "avg_vg": 10.15,
+      "file": "langgraph_engine/sdlc_pipeline/test_generator.py"
+    },
+    {
+      "module": "langgraph_engine.sdlc_pipeline.quality_gate",
+      "wmc": 182,
+      "method_count": 14,
+      "avg_vg": 13.0,
+      "file": "langgraph_engine/sdlc_pipeline/quality_gate.py"
+    },
+    {
+      "module": "hooks.post_tool_tracker.core",
+      "wmc": 163,
+      "method_count": 11,
+      "avg_vg": 14.82,
+      "file": "hooks/post_tool_tracker/core.py"
+    },
+    {
+      "module": "src.mcp.session_mcp_server",
+      "wmc": 163,
+      "method_count": 18,
+      "avg_vg": 9.06,
+      "file": "src/mcp/session_mcp_server.py"
+    },
+    {
+      "module": "langgraph_engine.analysis.coverage_analyzer",
+      "wmc": 150,
+      "method_count": 15,
+      "avg_vg": 10.0,
+      "file": "langgraph_engine/analysis/coverage_analyzer.py"
+    },
+    {
+      "module": "langgraph_engine.sdlc_pipeline.architecture.00-code-graph-analysis.code_graph_analyzer",
+      "wmc": 147,
+      "method_count": 25,
+      "avg_vg": 5.88,
+      "file": "langgraph_engine/sdlc_pipeline/architecture/00-code-graph-analysis/code_graph_analyzer.py"
+    },
+    {
+      "module": "scripts.architecture.03-execution-system.00-code-graph-analysis.code-graph-analyzer",
+      "wmc": 147,
+      "method_count": 25,
+      "avg_vg": 5.88,
+      "file": "scripts/architecture/03-execution-system/00-code-graph-analysis/code-graph-analyzer.py"
+    },
+    {
+      "module": "langgraph_engine.metrics.aggregator",
+      "wmc": 137,
+      "method_count": 11,
+      "avg_vg": 12.45,
+      "file": "langgraph_engine/metrics/aggregator.py"
+    },
+    {
+      "module": "langgraph_engine.sdlc_pipeline.figma_workflow",
+      "wmc": 134,
+      "method_count": 12,
+      "avg_vg": 11.17,
+      "file": "langgraph_engine/sdlc_pipeline/figma_workflow.py"
+    },
+    {
+      "module": "langgraph_engine.parsers.call_graph_builder_legacy",
+      "wmc": 133,
+      "method_count": 16,
+      "avg_vg": 8.31,
+      "file": "langgraph_engine/parsers/call_graph_builder_legacy.py"
+    },
+    {
+      "module": "langgraph_engine.sdlc_pipeline.sonarqube.api_client",
+      "wmc": 129,
+      "method_count": 13,
+      "avg_vg": 9.92,
+      "file": "langgraph_engine/sdlc_pipeline/sonarqube/api_client.py"
+    },
+    {
+      "module": "hooks.pre_tool_enforcer.core",
+      "wmc": 127,
+      "method_count": 23,
+      "avg_vg": 5.52,
+      "file": "hooks/pre_tool_enforcer/core.py"
+    },
+    {
+      "module": "hooks.stop_notifier.core",
+      "wmc": 125,
+      "method_count": 3,
+      "avg_vg": 41.67,
+      "file": "hooks/stop_notifier/core.py"
+    },
+    {
+      "module": "langgraph_engine.patterns",
+      "wmc": 124,
+      "method_count": 29,
+      "avg_vg": 4.28,
+      "file": "langgraph_engine/patterns.py"
+    },
+    {
+      "module": "langgraph_engine.standards.selector",
+      "wmc": 122,
+      "method_count": 15,
+      "avg_vg": 8.13,
+      "file": "langgraph_engine/standards/selector.py"
+    }
+  ],
+  "halstead_by_module_top20": {
+    "langgraph_engine.diagrams.legacy_generator": {
+      "eta1": 43,
+      "eta2": 757,
+      "N1": 4420,
+      "N2": 3206,
+      "n": 800,
+      "N": 7626,
+      "V": 73544.0,
+      "D": 91.06,
+      "E": 6696588.7,
+      "T_sec": 372032.7,
+      "B_bugs": 24.515
+    },
+    "langgraph_engine.build_dependency_resolver.parsers": {
+      "eta1": 46,
+      "eta2": 429,
+      "N1": 2825,
+      "N2": 1955,
+      "n": 475,
+      "N": 4780,
+      "V": 42502.7,
+      "D": 104.81,
+      "E": 4454860.3,
+      "T_sec": 247492.2,
+      "B_bugs": 14.168
+    },
+    "langgraph_engine.diagrams.drawio.converter": {
+      "eta1": 41,
+      "eta2": 636,
+      "N1": 4483,
+      "N2": 3335,
+      "n": 677,
+      "N": 7818,
+      "V": 73512.7,
+      "D": 107.5,
+      "E": 7902331.4,
+      "T_sec": 439018.4,
+      "B_bugs": 24.504
+    },
+    "langgraph_engine.sdlc_pipeline.call_graph_analyzer": {
+      "eta1": 46,
+      "eta2": 414,
+      "N1": 3106,
+      "N2": 2051,
+      "n": 460,
+      "N": 5157,
+      "V": 45616.2,
+      "D": 113.94,
+      "E": 5197711.7,
+      "T_sec": 288761.8,
+      "B_bugs": 15.205
+    },
+    "scripts.github_operations.issue_manager": {
+      "eta1": 44,
+      "eta2": 495,
+      "N1": 2761,
+      "N2": 1997,
+      "n": 539,
+      "N": 4758,
+      "V": 43174.8,
+      "D": 88.76,
+      "E": 3832000.3,
+      "T_sec": 212888.9,
+      "B_bugs": 14.392
+    },
+    "langgraph_engine.sdlc_pipeline.test_generator": {
+      "eta1": 38,
+      "eta2": 396,
+      "N1": 2219,
+      "N2": 1661,
+      "n": 434,
+      "N": 3880,
+      "V": 33994.8,
+      "D": 79.69,
+      "E": 2709198.2,
+      "T_sec": 150511.0,
+      "B_bugs": 11.332
+    },
+    "langgraph_engine.sdlc_pipeline.quality_gate": {
+      "eta1": 42,
+      "eta2": 405,
+      "N1": 2633,
+      "N2": 1762,
+      "n": 447,
+      "N": 4395,
+      "V": 38694.2,
+      "D": 91.36,
+      "E": 3535212.7,
+      "T_sec": 196400.7,
+      "B_bugs": 12.898
+    },
+    "hooks.post_tool_tracker.core": {
+      "eta1": 44,
+      "eta2": 517,
+      "N1": 2443,
+      "N2": 1796,
+      "n": 561,
+      "N": 4239,
+      "V": 38709.9,
+      "D": 76.43,
+      "E": 2958427.9,
+      "T_sec": 164357.1,
+      "B_bugs": 12.903
+    },
+    "src.mcp.session_mcp_server": {
+      "eta1": 48,
+      "eta2": 498,
+      "N1": 3400,
+      "N2": 2231,
+      "n": 546,
+      "N": 5631,
+      "V": 51201.3,
+      "D": 107.52,
+      "E": 5505066.7,
+      "T_sec": 305837.0,
+      "B_bugs": 17.067
+    },
+    "langgraph_engine.analysis.coverage_analyzer": {
+      "eta1": 42,
+      "eta2": 286,
+      "N1": 1552,
+      "N2": 1073,
+      "n": 328,
+      "N": 2625,
+      "V": 21938.6,
+      "D": 78.79,
+      "E": 1728468.1,
+      "T_sec": 96026.0,
+      "B_bugs": 7.313
+    },
+    "langgraph_engine.sdlc_pipeline.architecture.00-code-graph-analysis.code_graph_analyzer": {
+      "eta1": 41,
+      "eta2": 374,
+      "N1": 1839,
+      "N2": 1345,
+      "n": 415,
+      "N": 3184,
+      "V": 27691.1,
+      "D": 73.72,
+      "E": 2041481.5,
+      "T_sec": 113415.6,
+      "B_bugs": 9.23
+    },
+    "scripts.architecture.03-execution-system.00-code-graph-analysis.code-graph-analyzer": {
+      "eta1": 42,
+      "eta2": 367,
+      "N1": 1828,
+      "N2": 1330,
+      "n": 409,
+      "N": 3158,
+      "V": 27398.7,
+      "D": 76.1,
+      "E": 2085136.0,
+      "T_sec": 115840.9,
+      "B_bugs": 9.133
+    },
+    "langgraph_engine.metrics.aggregator": {
+      "eta1": 42,
+      "eta2": 388,
+      "N1": 2020,
+      "N2": 1414,
+      "n": 430,
+      "N": 3434,
+      "V": 30041.3,
+      "D": 76.53,
+      "E": 2299088.1,
+      "T_sec": 127727.1,
+      "B_bugs": 10.014
+    },
+    "langgraph_engine.sdlc_pipeline.figma_workflow": {
+      "eta1": 36,
+      "eta2": 283,
+      "N1": 1796,
+      "N2": 1233,
+      "n": 319,
+      "N": 3029,
+      "V": 25193.4,
+      "D": 78.42,
+      "E": 1975771.3,
+      "T_sec": 109765.1,
+      "B_bugs": 8.398
+    },
+    "langgraph_engine.parsers.call_graph_builder_legacy": {
+      "eta1": 39,
+      "eta2": 302,
+      "N1": 1830,
+      "N2": 1346,
+      "n": 341,
+      "N": 3176,
+      "V": 26721.7,
+      "D": 86.91,
+      "E": 2322397.3,
+      "T_sec": 129022.1,
+      "B_bugs": 8.907
+    },
+    "langgraph_engine.sdlc_pipeline.sonarqube.api_client": {
+      "eta1": 39,
+      "eta2": 315,
+      "N1": 1912,
+      "N2": 1320,
+      "n": 354,
+      "N": 3232,
+      "V": 27367.3,
+      "D": 81.71,
+      "E": 2236299.5,
+      "T_sec": 124238.9,
+      "B_bugs": 9.122
+    },
+    "hooks.pre_tool_enforcer.core": {
+      "eta1": 38,
+      "eta2": 354,
+      "N1": 1633,
+      "N2": 1066,
+      "n": 392,
+      "N": 2699,
+      "V": 23251.1,
+      "D": 57.21,
+      "E": 1330304.6,
+      "T_sec": 73905.8,
+      "B_bugs": 7.75
+    },
+    "hooks.stop_notifier.core": {
+      "eta1": 38,
+      "eta2": 238,
+      "N1": 1258,
+      "N2": 824,
+      "n": 276,
+      "N": 2082,
+      "V": 16881.9,
+      "D": 65.78,
+      "E": 1110520.1,
+      "T_sec": 61695.6,
+      "B_bugs": 5.627
+    },
+    "langgraph_engine.patterns": {
+      "eta1": 50,
+      "eta2": 244,
+      "N1": 1060,
+      "N2": 774,
+      "n": 294,
+      "N": 1834,
+      "V": 15038.2,
+      "D": 79.3,
+      "E": 1192578.5,
+      "T_sec": 66254.4,
+      "B_bugs": 5.013
+    },
+    "langgraph_engine.standards.selector": {
+      "eta1": 36,
+      "eta2": 334,
+      "N1": 1663,
+      "N2": 1153,
+      "n": 370,
+      "N": 2816,
+      "V": 24024.4,
+      "D": 62.14,
+      "E": 1492819.7,
+      "T_sec": 82934.4,
+      "B_bugs": 8.008
+    }
+  },
+  "halstead_caveat": "V/D/E/T/B computed at MODULE granularity (whole-file token stream), not per-function as the skill's canonical usage intends. T_sec (Stroud-number-derived 'time to understand') and B_bugs values at this granularity are directional/comparative across these 20 modules only, not literal per-engineer time or defect-count predictions -- reported per the software-complexity-metrics skill's own guidance to never use T/E without this context.",
+  "lcom3_by_class_top20_modules": {
+    "langgraph_engine.diagrams.drawio.converter.DrawioConverter": {
+      "num_methods": 14,
+      "num_attrs": 13,
+      "mean_methods_per_attr": 1.0,
+      "LCOM3": 1.0
+    },
+    "langgraph_engine.diagrams.legacy_generator.UMLDiagramGenerator": {
+      "num_methods": 26,
+      "num_attrs": 25,
+      "mean_methods_per_attr": 2.84,
+      "LCOM3": 0.926
+    },
+    "langgraph_engine.parsers.call_graph_builder_legacy.CallGraphBuilder": {
+      "num_methods": 8,
+      "num_attrs": 8,
+      "mean_methods_per_attr": 1.75,
+      "LCOM3": 0.893
+    },
+    "langgraph_engine.sdlc_pipeline.architecture.00-code-graph-analysis.code_graph_analyzer.CodeGraphAnalyzer": {
+      "num_methods": 4,
+      "num_attrs": 11,
+      "mean_methods_per_attr": 3.0,
+      "LCOM3": 0.333
+    },
+    "langgraph_engine.sdlc_pipeline.figma_workflow.Level3FigmaWorkflow": {
+      "num_methods": 8,
+      "num_attrs": 2,
+      "mean_methods_per_attr": 3.5,
+      "LCOM3": 0.643
+    },
+    "scripts.architecture.03-execution-system.00-code-graph-analysis.code-graph-analyzer.CodeGraphAnalyzer": {
+      "num_methods": 4,
+      "num_attrs": 11,
+      "mean_methods_per_attr": 3.0,
+      "LCOM3": 0.333
+    }
+  },
+  "lcom3_caveat": "Computed only for classes (>=3 methods) inside the 20 highest-WMC modules -- 6 classes qualified. Not a system-wide LCOM3 average.",
+  "cbo_by_class_top20_modules": {
+    "langgraph_engine.diagrams.drawio.converter.DrawioConverter": 8,
+    "langgraph_engine.diagrams.legacy_generator.UMLDiagramGenerator": 20,
+    "langgraph_engine.parsers.call_graph_builder_legacy.CallGraphBuilder": 11,
+    "langgraph_engine.patterns.SkillRegistry": 17,
+    "langgraph_engine.sdlc_pipeline.architecture.00-code-graph-analysis.code_graph_analyzer.CodeGraphAnalyzer": 10,
+    "langgraph_engine.sdlc_pipeline.figma_workflow.Level3FigmaWorkflow": 9,
+    "scripts.architecture.03-execution-system.00-code-graph-analysis.code-graph-analyzer.CodeGraphAnalyzer": 10
+  },
+  "cbo_caveat": "Computed only for classes inside the 20 highest-WMC modules via ast_call_graph.json edges' (module,class) pairs. 7 of those classes show CBO>0; classes with 0 recorded cross-class edges in this reduced scope are omitted, not confirmed CBO=0.",
+  "documentation_debt_proxy_top20_modules": {
+    "langgraph_engine.diagrams.legacy_generator": {
+      "doc_coverage": 1.0,
+      "public_defs": 18,
+      "documented": 18,
+      "comment_density": 0.096
+    },
+    "langgraph_engine.build_dependency_resolver.parsers": {
+      "doc_coverage": null,
+      "public_defs": 0,
+      "documented": 0,
+      "comment_density": 0.086
+    },
+    "langgraph_engine.diagrams.drawio.converter": {
+      "doc_coverage": 1.0,
+      "public_defs": 2,
+      "documented": 2,
+      "comment_density": 0.108
+    },
+    "langgraph_engine.sdlc_pipeline.call_graph_analyzer": {
+      "doc_coverage": 1.0,
+      "public_defs": 8,
+      "documented": 8,
+      "comment_density": 0.085
+    },
+    "scripts.github_operations.issue_manager": {
+      "doc_coverage": 1.0,
+      "public_defs": 3,
+      "documented": 3,
+      "comment_density": 0.089
+    },
+    "langgraph_engine.sdlc_pipeline.test_generator": {
+      "doc_coverage": 1.0,
+      "public_defs": 7,
+      "documented": 7,
+      "comment_density": 0.073
+    },
+    "langgraph_engine.sdlc_pipeline.quality_gate": {
+      "doc_coverage": 1.0,
+      "public_defs": 5,
+      "documented": 5,
+      "comment_density": 0.064
+    },
+    "hooks.post_tool_tracker.core": {
+      "doc_coverage": 0.9,
+      "public_defs": 10,
+      "documented": 9,
+      "comment_density": 0.113
+    },
+    "src.mcp.session_mcp_server": {
+      "doc_coverage": 1.0,
+      "public_defs": 15,
+      "documented": 15,
+      "comment_density": 0.053
+    },
+    "langgraph_engine.analysis.coverage_analyzer": {
+      "doc_coverage": 1.0,
+      "public_defs": 5,
+      "documented": 5,
+      "comment_density": 0.025
+    },
+    "langgraph_engine.sdlc_pipeline.architecture.00-code-graph-analysis.code_graph_analyzer": {
+      "doc_coverage": 1.0,
+      "public_defs": 11,
+      "documented": 11,
+      "comment_density": 0.091
+    },
+    "scripts.architecture.03-execution-system.00-code-graph-analysis.code-graph-analyzer": {
+      "doc_coverage": 1.0,
+      "public_defs": 11,
+      "documented": 11,
+      "comment_density": 0.093
+    },
+    "langgraph_engine.metrics.aggregator": {
+      "doc_coverage": 1.0,
+      "public_defs": 7,
+      "documented": 7,
+      "comment_density": 0.04
+    },
+    "langgraph_engine.sdlc_pipeline.figma_workflow": {
+      "doc_coverage": 1.0,
+      "public_defs": 7,
+      "documented": 7,
+      "comment_density": 0.078
+    },
+    "langgraph_engine.parsers.call_graph_builder_legacy": {
+      "doc_coverage": 1.0,
+      "public_defs": 5,
+      "documented": 5,
+      "comment_density": 0.101
+    },
+    "langgraph_engine.sdlc_pipeline.sonarqube.api_client": {
+      "doc_coverage": 1.0,
+      "public_defs": 8,
+      "documented": 8,
+      "comment_density": 0.055
+    },
+    "hooks.pre_tool_enforcer.core": {
+      "doc_coverage": 0.294,
+      "public_defs": 17,
+      "documented": 5,
+      "comment_density": 0.178
+    },
+    "hooks.stop_notifier.core": {
+      "doc_coverage": 1.0,
+      "public_defs": 1,
+      "documented": 1,
+      "comment_density": 0.132
+    },
+    "langgraph_engine.patterns": {
+      "doc_coverage": 1.0,
+      "public_defs": 28,
+      "documented": 28,
+      "comment_density": 0.109
+    },
+    "langgraph_engine.standards.selector": {
+      "doc_coverage": 1.0,
+      "public_defs": 10,
+      "documented": 10,
+      "comment_density": 0.007
+    }
+  },
+  "documentation_debt_caveat": "DocCoverage (public function/class docstring presence, computed via ast.get_docstring) is a faithful metric. CommentDensity (comment_lines / (comment+code) lines) is INCLUDED for transparency but is a MISLEADING debt signal for this specific codebase: docs/rules/12-docstrings-only.md is an active project rule that explicitly BANS narrative inline comments and mandates docstrings instead, so low CommentDensity here reflects compliance with a project standard, not documentation debt. TestCoverage (the third DDI factor) was NOT AVAILABLE -- no coverage report was generated in this pass, so the classic 3-factor DDI = 1-(DocCoverage*TestCoverage*CommentDensity)^(1/3) formula could not be computed honestly; see lhs.json for how this gap was handled (DocCoverage-only proxy, explicitly flagged, not a fabricated TestCoverage figure)."
+}

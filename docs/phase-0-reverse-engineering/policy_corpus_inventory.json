@@ -1,0 +1,527 @@
+{
+  "generated": "2026-08-01",
+  "part": "C.2-A (code-independent)",
+  "scope_note": "Markdown and JSON policy/standards documents only. No Python source was read or analysed. Enforcement status is NOT determined here -- that is Part B, after the call graph exists.",
+  "policies": [
+    {
+      "file": "docs/policies/anti-hallucination-enforcement.md",
+      "intent": "The system SHALL require Claude to think first, search/read before answering, and verify findings before generating output, to prevent hallucinated file paths, APIs, or patterns.",
+      "claimed_mechanism": "Integrated with Step 0 (prompt generation); no specific enforcement hook named in the document.",
+      "hook_dependent_by_description": false,
+      "location_coverage": ["docs/policies"]
+    },
+    {
+      "file": "docs/policies/architecture-script-mapping-policy.md",
+      "intent": "The system SHALL document which architecture scripts physically exist in scripts/architecture/ and map each to its pipeline step and purpose.",
+      "claimed_mechanism": "UNSTATED (reference/mapping document, not a runtime-enforced policy).",
+      "hook_dependent_by_description": false,
+      "location_coverage": ["docs/policies"]
+    },
+    {
+      "file": "docs/policies/automatic-task-breakdown-policy.md",
+      "intent": "The system SHALL automatically create at least one Task (TaskCreate) for every coding/implementation request regardless of complexity, dividing into phases when 5+ tasks result.",
+      "claimed_mechanism": "Pipeline Step 1, automatic after Step 0; no specific hook named.",
+      "hook_dependent_by_description": false,
+      "location_coverage": ["docs/policies", "home/.claude/policies (03-execution-system)"]
+    },
+    {
+      "file": "docs/policies/callgraph-analysis-policy.md",
+      "intent": "The system SHALL use an AST-based CallGraph (578+ classes, 3,985+ methods, 4 languages) to drive decisions at pipeline steps 2 (pre-analysis), 10 (implementation), and 11 (review).",
+      "claimed_mechanism": "Pipeline steps 2/10/11 CallGraph integration; not hook-based.",
+      "hook_dependent_by_description": false,
+      "location_coverage": ["docs/policies"]
+    },
+    {
+      "file": "docs/policies/code-graph-analysis-policy.md",
+      "intent": "The system SHALL calculate structural complexity via a NetworkX dependency graph combined with keyword scoring (FINAL = keyword*0.3 + graph*0.7) at Step 3.0.1, a non-blocking pre-flight step.",
+      "claimed_mechanism": "Non-blocking pre-flight pipeline Step 3.0.1; not hook-based.",
+      "hook_dependent_by_description": false,
+      "location_coverage": ["docs/policies", "home/.claude/policies (03-execution-system/00-code-graph-analysis)"]
+    },
+    {
+      "file": "docs/policies/coding-standards-enforcement-policy.md",
+      "intent": "The system SHALL enforce Spring Boot/Java microservices coding standards (Level 2.2) before execution, conditionally active only when Spring Boot is detected in the project.",
+      "claimed_mechanism": "Level 2.2 standards loading, conditional on Spring Boot detection; specific enforcement mechanism not stated in the read portion.",
+      "hook_dependent_by_description": false,
+      "location_coverage": ["docs/policies", "home/.claude/policies (02-standards-system)"]
+    },
+    {
+      "file": "docs/policies/common-failures-prevention.md",
+      "intent": "The system SHALL maintain a self-learning failure-prevention knowledge base, checked before executing any command/tool, that prevents repeating a failure once it has been logged once.",
+      "claimed_mechanism": "\"Before executing any command/tool: Check if pattern matches known failure\" -- pre-execution check; document does not name a specific PreToolUse/PostToolUse hook.",
+      "hook_dependent_by_description": false,
+      "location_coverage": ["docs/policies", "home/.claude/policies (03-execution-system/failure-prevention)"]
+    },
+    {
+      "file": "docs/policies/common-standards-policy.md",
+      "intent": "The system SHALL enforce universal, language-agnostic coding standards (naming, error handling, logging, security, API design, DB, testing, docs) at Level 2.1, always active regardless of tech stack.",
+      "claimed_mechanism": "Level 2.1 standards loading, always active; no specific hook named.",
+      "hook_dependent_by_description": false,
+      "location_coverage": ["docs/policies", "home/.claude/policies (02-standards-system)"]
+    },
+    {
+      "file": "docs/policies/EXECUTION-SYSTEM-FIXES-SUMMARY.md",
+      "intent": "This document records fixes applied on 2026-02-17 to correct UI/Dashboard/Frontend task misclassification (wrong agent, task type, model) in the execution system scripts.",
+      "claimed_mechanism": "UNSTATED (historical changelog record, not an enforceable policy).",
+      "hook_dependent_by_description": false,
+      "location_coverage": ["docs/policies", "home/.claude/policies (03-execution-system)"]
+    },
+    {
+      "file": "docs/policies/INTELLIGENT-PROMPT-GENERATION-UPGRADE.md",
+      "intent": "This document records the 2026-02-17 upgrade of prompt-generator.py from simple substring keyword matching to a synonym- and Hinglish-aware keyword extraction system.",
+      "claimed_mechanism": "UNSTATED (historical changelog record, not an enforceable policy).",
+      "hook_dependent_by_description": false,
+      "location_coverage": ["docs/policies", "home/.claude/policies (03-execution-system)"]
+    },
+    {
+      "file": "docs/policies/context-management-policy.md",
+      "intent": "The system SHALL monitor, estimate, and optimize context-window token usage in real time (Level 1), alerting at 80/90/95% thresholds and auto-pruning/archiving old sessions.",
+      "claimed_mechanism": "Level 1 sync-system component; Implementation script path named, no Claude Code hook named.",
+      "hook_dependent_by_description": false,
+      "location_coverage": ["docs/policies", "home/.claude/policies (01-sync-system/context-management)"]
+    },
+    {
+      "file": "docs/policies/context-reading-policy.md",
+      "intent": "The system SHALL automatically read project context files (README.md, CHANGELOG.md, VERSION, SRS.md, CLAUDE.md) before any prompt generation or execution, at pre-flight Step 3.0.0.",
+      "claimed_mechanism": "Mandatory pre-flight pipeline Step 3.0.0; no hook named.",
+      "hook_dependent_by_description": false,
+      "location_coverage": ["docs/policies"]
+    },
+    {
+      "file": "docs/policies/cross-project-patterns-policy.md",
+      "intent": "The system SHALL detect implicit technology/pattern preferences (languages, frameworks, DBs, auth methods, testing approach) across ALL of the user's projects, not just explicit choices.",
+      "claimed_mechanism": "Auto-Active: PERIODIC; no specific hook named.",
+      "hook_dependent_by_description": false,
+      "location_coverage": ["docs/policies", "home/.claude/policies (01-sync-system/pattern-detection)"]
+    },
+    {
+      "file": "docs/policies/documentation-update-policy.md",
+      "intent": "The system SHALL update project documentation (session execution-docs.md and project CLAUDE.md execution-insight append) with technologies detected, task type, and patterns, at Step 13.",
+      "claimed_mechanism": "Pipeline Step 13; names a \"Standards Hook: apply_integration_step13\" (a pipeline-internal standards hook, not explicitly a Claude Code PreToolUse/PostToolUse hook).",
+      "hook_dependent_by_description": false,
+      "location_coverage": ["docs/policies (no match found in home/.claude/policies or repo policies/)"]
+    },
+    {
+      "file": "docs/policies/encoding-validation-policy.md",
+      "intent": "The system SHALL scan up to 500 .py files on Windows for non-ASCII content (via ascii-decode attempt) and report the first 3 offending files; auto-fix is explicitly not possible for this check.",
+      "claimed_mechanism": "Detection scan, Windows-only scope; described as part of the Level -1 pre-flight check family (see recovery-policy.md); not hook-named.",
+      "hook_dependent_by_description": false,
+      "location_coverage": ["docs/policies (no match found in home/.claude/policies or repo policies/)"]
+    },
+    {
+      "file": "docs/policies/error-recovery-policy.md",
+      "intent": "The system SHALL classify errors by severity (FATAL/RECOVERABLE/WARNING/INFO) and source (LLM/MCP/filesystem/git/user-input/internal-logic) and apply differentiated recovery strategies across all pipeline levels.",
+      "claimed_mechanism": "\"All pipeline levels\" -- scope stated, no specific step/hook named.",
+      "hook_dependent_by_description": false,
+      "location_coverage": ["docs/policies (no match found in home/.claude/policies or repo policies/)"]
+    },
+    {
+      "file": "docs/policies/file-management-policy.md",
+      "intent": "The system SHALL protect session-memory, policy files, user settings, and logs directories from ALL cleanup/auto-delete operations, permanently.",
+      "claimed_mechanism": "UNSTATED (\"ALWAYS ACTIVE\", \"permanent rule\"; no step, hook, or script named).",
+      "hook_dependent_by_description": false,
+      "location_coverage": ["docs/policies"]
+    },
+    {
+      "file": "docs/policies/final-summary-policy.md",
+      "intent": "The system SHALL generate a comprehensive execution summary at the terminal Step 14, always run (never skipped), saved to the session folder with an optional voice notification.",
+      "claimed_mechanism": "Pipeline Step 14 (terminal), routes to output_node -> END; not hook-based.",
+      "hook_dependent_by_description": false,
+      "location_coverage": ["docs/policies (no match found in home/.claude/policies or repo policies/)"]
+    },
+    {
+      "file": "docs/policies/git-auto-commit-policy.md",
+      "intent": "The system SHALL automatically commit and push changes on phase completion, TaskUpdate-to-completed, and every 3-5 file changes as a periodic checkpoint.",
+      "claimed_mechanism": "\"ALWAYS ACTIVE\", \"permanent rule\", triggered by named events; no specific PreToolUse/PostToolUse/Stop hook named in the document text.",
+      "hook_dependent_by_description": false,
+      "location_coverage": ["docs/policies", "home/.claude/policies (03-execution-system/09-git-commit)"]
+    },
+    {
+      "file": "docs/policies/github-issues-integration-policy.md",
+      "intent": "The system SHALL create ONE GitHub issue per problem statement (aggregating related tasks, not one issue per task), with semantic branch naming and labels, and a rich closing narrative.",
+      "claimed_mechanism": "Automatic triggers: task creation via TaskCreate (Step 3.2) and task completion/commit (Step 3.11); not explicitly named as a PreToolUse/PostToolUse hook.",
+      "hook_dependent_by_description": false,
+      "location_coverage": ["docs/policies", "home/.claude/policies (03-execution-system)"]
+    },
+    {
+      "file": "docs/policies/hook-system-policy.md",
+      "intent": "The system SHALL define how the PreToolUse and PostToolUse hooks enforce policies, track progress, and optimize tool usage as the runtime bridge between pipeline policies and actual Claude Code tool calls.",
+      "claimed_mechanism": "EXPLICIT: \"[PreToolUse Hook] --> pre-tool-enforcer.py\" (ALLOW-with-hints or BLOCK-with-reason) and \"[PostToolUse Hook] --> script-chain-executor.py --> post-tool-tracker.py\".",
+      "hook_dependent_by_description": true,
+      "location_coverage": ["docs/policies (no match found in home/.claude/policies or repo policies/)"]
+    },
+    {
+      "file": "docs/policies/implementation-execution-policy.md",
+      "intent": "The system SHALL execute the actual implementation at Step 10 using the Step 7 system prompt; in Hook Mode, Step 10 is NOT run by the pipeline -- Claude Code itself implements, and completion auto-triggers Steps 11-14.",
+      "claimed_mechanism": "EXPLICIT: \"Stop hook auto-triggers Steps 11-14\" in Hook Mode (CLAUDE_HOOK_MODE=1, the default).",
+      "hook_dependent_by_description": true,
+      "location_coverage": ["docs/policies (no match found in home/.claude/policies or repo policies/)"]
+    },
+    {
+      "file": "docs/policies/intelligent-decision-engine-policy.md",
+      "intent": "The system SHALL replace 4 separate keyword-based decision systems (task type, complexity, model selection, skill/agent selection) with a single mandatory OpenRouter LLM call at Step 3.3A, with no fallback to keyword-based logic.",
+      "claimed_mechanism": "Pipeline Step 3.3A, overrides Steps 3.4/3.5; not hook-based.",
+      "hook_dependent_by_description": false,
+      "location_coverage": ["docs/policies (no match found in home/.claude/policies or repo policies/)"]
+    },
+    {
+      "file": "docs/policies/intelligent-model-selection-policy.md",
+      "intent": "The system SHALL select the LLM model at Step 3 based on complexity score (Step 1), task type (Step 0), plan-mode decision (Step 2), phase type, and token-efficiency cost optimization.",
+      "claimed_mechanism": "Pipeline Step 3; not hook-based.",
+      "hook_dependent_by_description": false,
+      "location_coverage": ["docs/policies", "home/.claude/policies (03-execution-system/04-model-selection)"]
+    },
+    {
+      "file": "docs/policies/issue-closure-policy.md",
+      "intent": "The system SHALL close the GitHub issue created at Step 8 after Step 10 implementation and Step 11 PR review complete, adding a closing comment with summary, PR link, verification status, and performing post-merge cleanup.",
+      "claimed_mechanism": "Pipeline Step 12; not hook-based.",
+      "hook_dependent_by_description": false,
+      "location_coverage": ["docs/policies (no match found in home/.claude/policies or repo policies/)"]
+    },
+    {
+      "file": "docs/policies/mcp-plugin-discovery-policy.md",
+      "intent": "The system SHALL discover and load MCP servers/plugins from ~/.claude/mcp/plugins/ and ~/.claude/settings.json, checking availability of critical MCPs (e.g. filesystem, which enables AUTO-ROUTE mode in pre-tool-enforcer).",
+      "claimed_mechanism": "Discovery process described (Load Plugin Registry -> Scan Locations -> Check Critical MCPs); not itself hook-enforced, though it names pre-tool-enforcer as a downstream consumer.",
+      "hook_dependent_by_description": false,
+      "location_coverage": ["docs/policies (no match found in home/.claude/policies or repo policies/)"]
+    },
+    {
+      "file": "docs/policies/metrics-monitoring-policy.md",
+      "intent": "The system SHALL collect per-step metrics (duration, status, tokens, model, error) after each of the 15 steps (0-14) and per-session metrics aggregated at session completion.",
+      "claimed_mechanism": "EXPLICIT: per-session metrics \"aggregated at session completion (Step 14 or Stop hook)\".",
+      "hook_dependent_by_description": true,
+      "location_coverage": ["docs/policies (no match found in home/.claude/policies or repo policies/)"]
+    },
+    {
+      "file": "docs/policies/parallel-execution-policy.md",
+      "intent": "The system SHALL maximize execution efficiency by running independent tasks in parallel via multiple subagents, creating temporary skills/agents as needed, and merging results, active at Step 7.",
+      "claimed_mechanism": "\"STEP 7 in Execution Flow\"; not hook-based.",
+      "hook_dependent_by_description": false,
+      "location_coverage": ["docs/policies", "home/.claude/policies (03-execution-system)"]
+    },
+    {
+      "file": "docs/policies/pr-code-review-policy.md",
+      "intent": "The system SHALL automate Issue -> Branch -> Work -> Commit -> Push -> PR -> Auto-Review -> Smart Code Review -> Merge, with semantic branch naming (label/issueId) derived from issue type.",
+      "claimed_mechanism": "UNSTATED explicit hook in the read portion; depends on github-issues-integration-policy.md, context-management-policy.md, recommendations-policy.md.",
+      "hook_dependent_by_description": false,
+      "location_coverage": ["docs/policies (as pr-code-review-policy.md); home/.claude/policies (03-execution-system/github-branch-pr-policy.md -- SAME content, DIFFERENT filename)"]
+    },
+    {
+      "file": "docs/policies/proactive-consultation-policy.md",
+      "intent": "DEPRECATED (2026-03-17). Formerly: the system SHALL consult the user via AskUserQuestion for medium-complexity (4-6) decisions. Now: complexity-based routing and standards-integration hooks at Steps 10 and 13 replace user consultation, because AskUserQuestion cannot be used inside the LangGraph pipeline subprocess.",
+      "claimed_mechanism": "Explicitly DEPRECATED; replacement mechanism cited as \"Standards integration hooks at Steps 10, 13\" (pipeline-internal standards hooks, not named as Claude Code PreToolUse/PostToolUse hooks).",
+      "hook_dependent_by_description": false,
+      "location_coverage": ["docs/policies (no match found in home/.claude/policies or repo policies/)"]
+    },
+    {
+      "file": "docs/policies/prompt-generation-policy.md",
+      "intent": "The system SHALL convert the user's natural-language input into a structured system prompt (Input/Output definitions, conditions, examples, architecture alignment, success criteria) before executing any task, at mandatory Step 0.",
+      "claimed_mechanism": "Pipeline Step 0, mandatory first step; not hook-based.",
+      "hook_dependent_by_description": false,
+      "location_coverage": ["docs/policies", "home/.claude/policies (03-execution-system/00-prompt-generation)"]
+    },
+    {
+      "file": "docs/policies/quality-gate-policy.md",
+      "intent": "The system SHALL enforce a 4-gate merge validation (SonarQube scan, coverage check, CallGraph-diff breaking-change detection, test suite) producing a quality score before a PR is marked safe to merge, at Step 11.",
+      "claimed_mechanism": "Pipeline Step 11 gate framework; not hook-based.",
+      "hook_dependent_by_description": false,
+      "location_coverage": ["docs/policies (no match found in home/.claude/policies or repo policies/)"]
+    },
+    {
+      "file": "docs/policies/recovery-policy.md",
+      "intent": "The system SHALL offer an interactive \"auto-fix\" vs \"skip\" recovery choice when one or more Level -1 pre-flight checks fail, defaulting automatically to auto-fix in non-TTY/hook-mode contexts.",
+      "claimed_mechanism": "Level -1 pre-flight checks; interactive prompt in TTY mode, auto-fix default in non-TTY/hook mode; not a named Claude Code hook.",
+      "hook_dependent_by_description": false,
+      "location_coverage": ["docs/policies (no match found in home/.claude/policies or repo policies/)"]
+    },
+    {
+      "file": "docs/policies/session-chaining-policy.md",
+      "intent": "The system SHALL chain sessions (parent/child/related) via shared tags and cumulative summaries, updated on every request and finalized on /clear, to give Claude context continuity across /clear boundaries.",
+      "claimed_mechanism": "\"On Every Request (3-level-flow.py)\" and \"On /clear (clear-session-handler.py)\" -- named scripts, not a Claude Code hook.",
+      "hook_dependent_by_description": false,
+      "location_coverage": ["docs/policies", "home/.claude/policies (01-sync-system/session-management)"]
+    },
+    {
+      "file": "docs/policies/session-memory-policy.md",
+      "intent": "The system SHALL persist session summaries as local markdown files (~/.claude/memory/sessions/{project}/) loaded at session start and updated at session end/phase-complete, for 100% local/private continuity without external APIs.",
+      "claimed_mechanism": "Session start / session end / phase complete trigger points; no specific hook named.",
+      "hook_dependent_by_description": false,
+      "location_coverage": ["docs/policies", "home/.claude/policies (01-sync-system/session-management)"]
+    },
+    {
+      "file": "docs/policies/session-pruning-policy.md",
+      "intent": "The system SHALL always keep the last 10 sessions active regardless of age, archive sessions older than 30 days (except the last 10), and never archive project-summary.md.",
+      "claimed_mechanism": "\"Auto-Active: PERIODIC\"; no specific hook named.",
+      "hook_dependent_by_description": false,
+      "location_coverage": ["docs/policies", "home/.claude/policies (01-sync-system/session-management)"]
+    },
+    {
+      "file": "docs/policies/task-phase-enforcement-policy.md",
+      "intent": "The system SHALL block execution unless proper task/phase breakdown exists -- every coding/implementation request requires at minimum 1 TaskCreate; this is stated as a BLOCKING enforcement level.",
+      "claimed_mechanism": "\"Enforcement Level: BLOCKING (Cannot proceed without compliance)\" is asserted, but the specific enforcing hook/gate is not named in the read portion.",
+      "hook_dependent_by_description": false,
+      "location_coverage": ["docs/policies", "home/.claude/policies (03-execution-system/08-progress-tracking)"]
+    },
+    {
+      "file": "docs/policies/task-progress-tracking-policy.md",
+      "intent": "The system SHALL update task status frequently throughout work (at task start, after each sub-step, before context-heavy operations) via TaskUpdate calls, for session resumability.",
+      "claimed_mechanism": "TaskUpdate tool calls at named checkpoints; no hook named.",
+      "hook_dependent_by_description": false,
+      "location_coverage": ["docs/policies", "home/.claude/policies (03-execution-system/08-progress-tracking)"]
+    },
+    {
+      "file": "docs/policies/test-case-policy.md",
+      "intent": "The system SHALL treat basic compile/run success and manual feature testing as MANDATORY (cannot skip), while unit and integration tests are OPTIONAL and require asking the user.",
+      "claimed_mechanism": "UNSTATED (\"permanent rule\"; no step, hook, or script named).",
+      "hook_dependent_by_description": false,
+      "location_coverage": ["docs/policies", "home/.claude/policies (testing/) -- content of first 15 lines is IDENTICAL"]
+    },
+    {
+      "file": "docs/policies/test-generation-policy.md",
+      "intent": "The system SHALL auto-generate unit tests (per-language templates) at Step 11 Quality Gate 2 when a new public method is added, coverage falls below threshold, or CallGraph flags a risk-prioritized untested gap.",
+      "claimed_mechanism": "Pipeline Step 11, Quality Gate 2; not hook-based.",
+      "hook_dependent_by_description": false,
+      "location_coverage": ["docs/policies (no match found in home/.claude/policies or repo policies/; home has the narrower test-case-policy.md instead)"]
+    },
+    {
+      "file": "docs/policies/tool-optimization-policy.md",
+      "intent": "The system SHALL define concrete tool-usage limits (read_max_lines=500, read_max_bytes=51200, cache_after_n_reads=3, grep_max_matches=50, grep_max_results=100, search_max_results=10) to minimize token consumption.",
+      "claimed_mechanism": "EXPLICIT: \"loaded by Level 2 (node_tool_optimization_standards) and enforced by the PreToolUse hook.\"",
+      "hook_dependent_by_description": true,
+      "location_coverage": ["docs/policies ONLY -- no equivalently-named file in home/.claude/policies or repo policies/; overlaps in subject with tool-usage-optimization-policy.md (see contradictions)"]
+    },
+    {
+      "file": "docs/policies/tool-usage-optimization-policy.md",
+      "intent": "The system SHALL apply token optimizations before EVERY tool call (analyze -> optimize -> validate -> execute -> minimize output) at Step 5, consolidating prior ADVANCED-TOKEN-OPTIMIZATION.md / TOKEN-OPTIMIZATION-COMPLETE.md / CLAUDE.md guidance with \"NO DUPLICATION\".",
+      "claimed_mechanism": "\"STEP 5 (Before Every Tool Call)\"; document explicitly claims to consolidate prior sources without duplication, but does not name the PreToolUse hook explicitly in the read portion.",
+      "hook_dependent_by_description": false,
+      "location_coverage": ["docs/policies, home/.claude/policies (03-execution-system/06-tool-optimization) -- overlaps in subject with tool-optimization-policy.md, which IS in docs/policies but has no home-claude counterpart (see contradictions)"]
+    },
+    {
+      "file": "docs/policies/unicode-fix-policy.md",
+      "intent": "The system SHALL auto-fix stdout/stderr encoding to UTF-8 on Windows (sys.stdout.reconfigure(), or TextIOWrapper fallback for older Python) to prevent UnicodeEncodeError from emoji/non-Latin output.",
+      "claimed_mechanism": "Detection + auto-fix strategy described (Level -1 style check per recovery-policy.md context); no hook named in this document.",
+      "hook_dependent_by_description": false,
+      "location_coverage": ["docs/policies (no match found in home/.claude/policies or repo policies/)"]
+    },
+    {
+      "file": "docs/policies/user-preferences-policy.md",
+      "intent": "The system SHALL learn a user's repeated choices (3+ times across sessions, covering tech/language/workflow preferences) and auto-apply them without asking again.",
+      "claimed_mechanism": "UNSTATED (\"Auto-Active: YES\"; no step, hook, or script named).",
+      "hook_dependent_by_description": false,
+      "location_coverage": ["docs/policies", "home/.claude/policies (01-sync-system/user-preferences)"]
+    },
+    {
+      "file": "docs/policies/version-release-policy.md",
+      "intent": "The system SHALL bump VERSION files and synchronize README.md/CLAUDE.md version headers across all 3 ecosystem repositories after every code push that is committed.",
+      "claimed_mechanism": "\"ALWAYS ACTIVE\", \"permanent rule\", triggered \"After ANY code commit is pushed\"; no hook named by type.",
+      "hook_dependent_by_description": false,
+      "location_coverage": ["docs/policies", "home/.claude/policies (03-execution-system/09-git-commit)"]
+    },
+    {
+      "file": "docs/policies/windows-path-policy.md",
+      "intent": "The system SHALL scan up to 500 .py files on Windows for hardcoded Windows-style paths (patterns containing both \"\\\\\" and \":\\\\\") and flag them as a cross-platform code smell.",
+      "claimed_mechanism": "Detection scan, Windows-only scope; part of the Level -1 pre-flight check family; no hook named in this document.",
+      "hook_dependent_by_description": false,
+      "location_coverage": ["docs/policies (no match found in home/.claude/policies or repo policies/)"]
+    }
+  ],
+  "standards": [
+    {"file": "docs/standards/01-common-standards.md", "rule_number": "01", "intent": "Universal coding standards (naming, error handling, logging, security, API design, DB, performance, i18n) enforced at Level 2.1, always active."},
+    {"file": "docs/standards/02-backend-standards.md", "rule_number": "02", "intent": "Level 2.1 backend development standards for Python/Flask microservices (feature-based structure, service layer, validation, error handling, logging, caching)."},
+    {"file": "docs/standards/03-microservices-standards.md", "rule_number": "03", "intent": "Level 2.2 Spring Boot microservices standards (Java)."},
+    {"file": "docs/standards/04-frontend-standards.md", "rule_number": "04", "intent": "Level 2.1 frontend development standards for React, TypeScript, and Angular."},
+    {"file": "docs/standards/05-security-standards.md", "rule_number": "05", "intent": "Level 2.1 security standards covering authentication, encryption, and secrets management."},
+    {"file": "docs/standards/06-typescript-standards.md", "rule_number": "06", "intent": "TypeScript coding standards: strict mode, no any, interface vs type, generics, null handling, async/await, Result types, ESLint rules, import organization, React patterns, exhaustive checks."},
+    {"file": "docs/standards/07-go-standards.md", "rule_number": "07", "intent": "Go coding standards: error wrapping with %w, sentinel errors, goroutine lifecycle/WaitGroup/semaphores, channel ownership, panic/recover discipline, small consumer-defined interfaces, context.Context propagation."},
+    {"file": "docs/standards/08-rust-standards.md", "rule_number": "08", "intent": "Rust coding standards: borrow-over-clone, minimal unsafe with SAFETY comments, no unwrap/expect in production, Result/? propagation, thiserror/anyhow, focused traits, Tokio async discipline."},
+    {"file": "docs/standards/09-swift-standards.md", "rule_number": "09", "intent": "Swift coding standards: guard let over nested if let, no force-unwrap, protocol-oriented design, value types by default, SwiftUI view decomposition, weak/unowned ARC discipline, async/await."},
+    {"file": "docs/standards/10-kotlin-standards.md", "rule_number": "10", "intent": "Kotlin coding standards: no !! non-null assertion, launch vs async discipline, sealed classes for exhaustive state, data classes for DTOs, scope-function usage, StateFlow over LiveData, Compose unidirectional data flow."},
+    {"file": "docs/standards/11-documentation-files.md", "rule_number": "11", "intent": "Documentation file governance -- only SRS.md, README.md, CLAUDE.md, VERSION, CHANGELOG.md permitted at repo root; all else in docs/ or gitignored."},
+    {"file": "docs/standards/12-docstrings-only.md", "rule_number": "12", "intent": "All explanatory text belongs in docstrings/Javadoc/JSDoc/KDoc at function/class/module level; inline comments that narrate WHAT a line does are banned (WHY-only comments, TODO/FIXME, lint suppressions permitted)."},
+    {"file": "docs/standards/13-spring-cloud-infrastructure.md", "rule_number": "13", "intent": "Level 2.2 Spring Cloud infrastructure standards: config server, service discovery, API gateway, retry/failover."},
+    {"file": "docs/standards/14-entity-design-patterns.md", "rule_number": "14", "intent": "Level 2.2 JPA entity structure standards: ID generation, audit fields, optimistic locking, Hibernate annotations."},
+    {"file": "docs/standards/15-dto-form-separation.md", "rule_number": "15", "intent": "Level 2.2 standard requiring separate request objects (Form) and response objects (Dto), with serialization and immutability rules."},
+    {"file": "docs/standards/16-validation-sequence-pattern.md", "rule_number": "16", "intent": "Level 2.2 standard for ordered validation groups (ValidationSequence) with constant-driven messages."},
+    {"file": "docs/standards/17-api-response-wrapper.md", "rule_number": "17", "intent": "Level 2.2 standard mandating a unified response envelope, status propagation, and error response format."},
+    {"file": "docs/standards/18-service-layer-conventions.md", "rule_number": "18", "intent": "Level 2.2 standard for Interface+Impl service pattern, transaction boundaries, Helper pattern, and return types."},
+    {"file": "docs/standards/19-exception-handling-hierarchy.md", "rule_number": "19", "intent": "Level 2.2 standard for custom exception hierarchy, GlobalExceptionHandler, and HTTP status mapping."},
+    {"file": "docs/standards/20-inter-service-communication.md", "rule_number": "20", "intent": "Level 2.2 standard for OpenFeign-via-gateway client configuration and circuit breaking."},
+    {"file": "docs/standards/21-caching-strategy.md", "rule_number": "21", "intent": "Level 2.2 standard for an L1+L2 hybrid cache with TTL tiers, financial-data exceptions, and serialization rules."},
+    {"file": "docs/standards/22-common-library-design.md", "rule_number": "22", "intent": "Level 2.2 standard for shared library structure, dependency scoping, and what belongs in a common-lib."},
+    {"file": "docs/standards/23-enum-as-domain-model.md", "rule_number": "23", "intent": "Level 2.2 standard for state machines expressed as enums with business-logic methods, display names, and persistence rules."},
+    {"file": "docs/standards/24-constants-organization.md", "rule_number": "24", "intent": "Level 2.2 standard for organizing message, validation, and API constants and their usage pattern."},
+    {"file": "docs/standards/25-jpa-auditing-pattern.md", "rule_number": "25", "intent": "Level 2.2 standard for AuditorAware, user-context resolution, and audit-field lifecycle."},
+    {"file": "docs/standards/26-openapi-documentation.md", "rule_number": "26", "intent": "Level 2.2 standard for controller-level OpenAPI tags, operation annotations, response schemas, and gateway aggregation."},
+    {"file": "docs/standards/27-centralized-logging.md", "rule_number": "27", "intent": "Level 2.2 standard for Logback HTTP appender, async batching, MDC tracing, and log-level governance."},
+    {"file": "docs/standards/28-test-coverage-enforcement.md", "rule_number": "28", "intent": "Level 2.2 standard requiring JaCoCo per-package 100% coverage and JUnit 5 test patterns, including application-class testing."},
+    {"file": "docs/standards/29-container-deployment.md", "rule_number": "29", "intent": "Level 2.2 standard for Dockerfile template, non-root user, JVM container flags, and health checks."},
+    {"file": "docs/standards/30-maven-build-conventions.md", "rule_number": "30", "intent": "Level 2.2 standard for parent POM, plugin stack, library packaging, and dependency management."},
+    {"file": "docs/standards/31-security-authentication.md", "rule_number": "31", "intent": "Level 2.2 standard for stateless Spring Security config, JWT filter chain, CORS, and public-endpoint definition."},
+    {"file": "docs/standards/32-repository-conventions.md", "rule_number": "32", "intent": "Level 2.2 standard for JpaRepository typing, query-method naming, preferring JPQL over native queries, and Sort/Pageable usage."},
+    {"file": "docs/standards/33-test-case-roadmap.md", "rule_number": "33", "intent": "Level 2.2 universal test-scenario roadmap: layer-by-layer checklist applicable to any application."},
+    {"file": "docs/standards/34-frontend-package-structure.md", "rule_number": "34", "intent": "Level 2.1 standard for frontend package structure, folder taxonomy, and code patterns across Angular/React/Node.js."},
+    {"file": "docs/standards/35-positive-testing-standards.md", "rule_number": "35", "intent": "Level 2.3 standard for positive (happy-path) test scenarios across every Spring Boot layer, including security/path-params/error-structure."},
+    {"file": "docs/standards/36-negative-testing-standards.md", "rule_number": "36", "intent": "Level 2.3 standard for negative (error-path) test scenarios across every Spring Boot layer, including security/path-params/error-structure."},
+    {"file": "docs/standards/37-edge-case-testing-standards.md", "rule_number": "37", "intent": "Level 2.3 standard for edge-case test scenarios covering boundary values, nulls, and combined failures."},
+    {"file": "docs/standards/38-test-mocking-strategy.md", "rule_number": "38", "intent": "Level 2.3 standard for per-layer test isolation strategies using MockedStatic, verify(), and argThat() patterns."},
+    {"file": "docs/standards/39-cross-cutting-test-patterns.md", "rule_number": "39", "intent": "Level 2.3 standard for cross-layer test contracts: response wrapper, idempotent delete, case-insensitive duplication, sort, cache events."},
+    {"file": "docs/standards/40-universal-test-patterns-abstract.md", "rule_number": "40", "intent": "Level 2.3 language-agnostic universal test-pattern catalogue for REST microservices (122 scenarios across 8 layers)."},
+    {"file": "docs/standards/41-testing-standards-python-fastapi.md", "rule_number": "41", "intent": "Level 2.3 Python/FastAPI testing standards: 122 scenarios across 11 layers (positive/negative/edge)."},
+    {"file": "docs/standards/42-testing-standards-nodejs-express.md", "rule_number": "42", "intent": "Level 2.3 Node.js/TypeScript/Express testing standards: 122 scenarios across 11 layers, including security/path-params/error-structure."},
+    {"file": "docs/standards/43-testing-standards-go.md", "rule_number": "43", "intent": "Level 2.3 Go testing standards: 122 scenarios across 8 layers plus security/path/error-structure extensions."},
+    {"file": "docs/standards/44-srs-lifecycle.md", "rule_number": "44", "intent": "Defines SRS.md creation trigger, required sections (Purpose/Scope/Requirements/Acceptance Criteria/Out of Scope/Change Log), append-only update rules, and which task types (feat/fix/enhance/docs/security) update it, at Step 13."},
+    {"file": "docs/standards/45-uml-diagram-lifecycle.md", "rule_number": "45", "intent": "Defines the 13 standard UML diagram types, their uml/ and drawio/ output locations at project root, full-vs-selective regeneration triggers, format rules, and CallGraph-first data-source priority, at Step 13."},
+    {"file": "docs/standards/46-architecture-documentation.md", "rule_number": "46", "intent": "Defines what counts as an architectural change and requires CLAUDE.md (Architecture & Structure section) and README.md (Architecture section) updates at Step 13 when structural/data-flow changes occur."},
+    {"file": "docs/standards/csharp-standards.md", "rule_number": null, "intent": "C# coding standards, auto-loaded by the Level 2 Standards System."},
+    {"file": "docs/standards/django-standards.md", "rule_number": null, "intent": "Django framework standards, auto-loaded by the Level 2 Standards System."},
+    {"file": "docs/standards/flask-standards.md", "rule_number": null, "intent": "Flask framework standards, auto-loaded by the Level 2 Standards System."},
+    {"file": "docs/standards/java-standards.md", "rule_number": null, "intent": "Java coding standards, auto-loaded by the Level 2 Standards System."},
+    {"file": "docs/standards/spring-boot-standards.md", "rule_number": null, "intent": "Spring Boot framework standards, auto-loaded by the Level 2 Standards System."},
+    {"file": "docs/standards/TOOL-OPTIMIZATION-LEVEL2-STANDARD.md", "rule_number": null, "intent": "Documents tool optimization being formalized as a Level 2 Standard (status: COMPLETE, 2026-03-11, v1.0) -- a third, standards-side document on the same tool-optimization subject as docs/policies/tool-optimization-policy.md and tool-usage-optimization-policy.md."}
+  ],
+  "three_location_reconciliation": [
+    {
+      "concept": "Context Management (Level 1 token-budget monitoring)",
+      "in_docs_policies": "context-management-policy.md v3.0.0, Implementation: context-monitor.py",
+      "in_home_claude": "01-sync-system/context-management/context-management-policy.md v3.0.0, Implementation: context-monitor-v2.py",
+      "in_repo_policies": "absent",
+      "status": "DIVERGE",
+      "divergence_note": "Same version number and near-identical text, but the named implementation script differs: docs/policies cites context-monitor.py while home-claude cites context-monitor-v2.py. One copy was updated (script renamed with a -v2 suffix) without updating the other."
+    },
+    {
+      "concept": "Git Auto Commit (phase/todo/checkpoint triggers)",
+      "in_docs_policies": "git-auto-commit-policy.md",
+      "in_home_claude": "03-execution-system/09-git-commit/git-auto-commit-policy.md",
+      "in_repo_policies": "absent",
+      "status": "AGREE",
+      "divergence_note": "First 15 lines are byte-identical between the two copies."
+    },
+    {
+      "concept": "Prompt Generation & Structuring (Step 0)",
+      "in_docs_policies": "prompt-generation-policy.md v1.0.0",
+      "in_home_claude": "03-execution-system/00-prompt-generation/prompt-generation-policy.md v1.0.0",
+      "in_repo_policies": "absent",
+      "status": "AGREE",
+      "divergence_note": "First 15 lines are identical."
+    },
+    {
+      "concept": "GitHub Issues Integration (problem-centric, v3.0.0)",
+      "in_docs_policies": "github-issues-integration-policy.md v3.0.0",
+      "in_home_claude": "03-execution-system/github-issues-integration-policy.md v3.0.0",
+      "in_repo_policies": "absent",
+      "status": "AGREE",
+      "divergence_note": "First 15 lines are identical."
+    },
+    {
+      "concept": "Test Case Policy (mandatory manual vs optional automated testing)",
+      "in_docs_policies": "test-case-policy.md",
+      "in_home_claude": "testing/test-case-policy.md",
+      "in_repo_policies": "absent",
+      "status": "AGREE",
+      "divergence_note": "First 15 lines are identical."
+    },
+    {
+      "concept": "Common Failures Prevention (self-learning KB)",
+      "in_docs_policies": "common-failures-prevention.md v1.0.0",
+      "in_home_claude": "03-execution-system/failure-prevention/common-failures-prevention.md v1.0.0",
+      "in_repo_policies": "absent (repo policies/ only has the failure-kb.json DATA file, not this policy document)",
+      "status": "AGREE (policy text); PARTIAL (repo policies/ carries only the runtime KB data, not the policy narrative)",
+      "divergence_note": "First 15 lines identical between docs/policies and home-claude. The repository's own policies/ tree carries only failure-kb.json (the KB data itself), consistent with CLAUDE.md's statement that 'the historical 00-auto-fix/01-sync/02-standards/testing subtrees do not exist on disk' under repo policies/."
+    },
+    {
+      "concept": "GitHub Branch + PR Workflow",
+      "in_docs_policies": "pr-code-review-policy.md v3.0.0",
+      "in_home_claude": "03-execution-system/github-branch-pr-policy.md v3.0.0",
+      "in_repo_policies": "absent",
+      "status": "AGREE (content) / DIVERGE (filename)",
+      "divergence_note": "Identical version, date, and body text (\"Issue -> Branch -> Work -> Commit -> Push -> PR -> Auto-Review -> Smart Code Review -> Merge\"), but the two locations use DIFFERENT filenames for the same policy: pr-code-review-policy.md in docs/policies vs github-branch-pr-policy.md in home-claude. Any tooling that reconciles by filename alone would incorrectly treat this as two unrelated concepts (one present-only-in-docs, one present-only-in-home)."
+    },
+    {
+      "concept": "Failure-prevention KB data (failure-kb.json)",
+      "in_docs_policies": "absent (docs/policies has the narrative common-failures-prevention.md but not the raw KB JSON)",
+      "in_home_claude": "03-execution-system/failure-prevention/failure-kb.json",
+      "in_repo_policies": "03-execution-system/failure-prevention/failure-kb.json",
+      "status": "present in 2 of 3 (home-claude and repo policies/); absent from docs/policies",
+      "divergence_note": "This is the only artifact confirmed present in the repository's own policies/ tree. Its content was not diffed against the home-claude copy (byte-for-byte JSON diff is out of scope for this Part A pass; flagged for Part B)."
+    },
+    {
+      "concept": "Auto Plan-Mode Suggestion",
+      "in_docs_policies": "absent",
+      "in_home_claude": "03-execution-system/02-plan-mode/auto-plan-mode-suggestion-policy.md",
+      "in_repo_policies": "absent",
+      "status": "present in home-claude ONLY",
+      "divergence_note": "No corresponding file exists in docs/policies (the declared canonical source per ADR-009) or in repo policies/. This policy topic is invisible to anyone reading only the canonical docs/policies corpus."
+    },
+    {
+      "concept": "Skill/Agent Selection (adaptive registry, auto-selection, core-skills mandate)",
+      "in_docs_policies": "absent",
+      "in_home_claude": "03-execution-system/05-skill-agent-selection/adaptive-skill-registry.md, auto-skill-agent-selection-policy.md, core-skills-mandate.md (3 files)",
+      "in_repo_policies": "absent",
+      "status": "present in home-claude ONLY",
+      "divergence_note": "An entire 3-file policy subtree (skill/agent selection) that governs a documented pipeline concern (referenced by pr-code-review-policy.md's 'Related To' header) exists only in home-claude and has no docs/policies or repo-policies counterpart at all."
+    },
+    {
+      "concept": "Recommendations",
+      "in_docs_policies": "absent",
+      "in_home_claude": "03-execution-system/07-recommendations/recommendations-policy.md",
+      "in_repo_policies": "absent",
+      "status": "present in home-claude ONLY",
+      "divergence_note": "pr-code-review-policy.md (docs/policies) lists 'recommendations-policy.md' as a direct dependency ('Depends On:'), yet that dependency file does not exist anywhere in docs/policies -- it exists only in home-claude. A reader of the canonical docs/policies corpus alone cannot resolve this dependency."
+    },
+    {
+      "concept": "Documentation Update, Encoding Validation, Error Recovery, Final Summary, Hook System, Implementation Execution, Intelligent Decision Engine, Issue Closure, MCP Plugin Discovery, Metrics Monitoring, Quality Gate, Recovery (Level -1), Test Generation, Tool Optimization (limits table), Unicode Fix, Windows Path Validation",
+      "in_docs_policies": "present (14 individual files, listed above in policies[])",
+      "in_home_claude": "absent (no filename match found for any of these 14 files under any of the 5 home-claude subdirectories)",
+      "in_repo_policies": "absent",
+      "status": "present in docs/policies ONLY",
+      "divergence_note": "14 of the 46 canonical docs/policies files (roughly 30% of the corpus) have NO counterpart anywhere in home-claude, which per CLAUDE.md is what the running code's get_policies_dir() actually reads at runtime. If that CLAUDE.md claim is accurate, these 14 policies are effectively undiscoverable to the runtime policy loader today -- but confirming that is explicitly Part B's job (requires reading get_policies_dir() in code), not this pass."
+    },
+    {
+      "concept": "Tool Optimization (subject area, not filename)",
+      "in_docs_policies": "TWO files: tool-optimization-policy.md (limits table, claims PreToolUse hook enforcement) AND tool-usage-optimization-policy.md (v2.0.0, Step 5, claims to consolidate all prior token-optimization sources with 'NO DUPLICATION')",
+      "in_home_claude": "ONE file: 03-execution-system/06-tool-optimization/tool-usage-optimization-policy.md (name matches the second docs/policies file only)",
+      "in_repo_policies": "absent",
+      "status": "DIVERGE",
+      "divergence_note": "docs/policies has split tool-call optimization guidance into two documents; home-claude has only one of the two. See internal_contradictions rank 2 for the substantive conflict this creates. A third, standards-side document (docs/standards/TOOL-OPTIMIZATION-LEVEL2-STANDARD.md) also covers this subject, making three overlapping documents on the same topic across two corpora."
+    }
+  ],
+  "internal_contradictions": [
+    {
+      "rank": 1,
+      "policy_a": "Nearly all 46 docs/policies files (e.g. documentation-update-policy.md 'Level 3: Execution System (15 Steps: 0-14)', final-summary-policy.md 'Step 14', issue-closure-policy.md 'Step 12', implementation-execution-policy.md 'Step 10', recovery-policy.md 'Level -1', all docs/standards/*.md 'Level 2 Standards System')",
+      "policy_b": "Project root CLAUDE.md (2026-07-31, the file this task's own instructions treat as authoritative context): Level 0 (Pre-Flight Sanity Guard), Level 1 (Session & Context Synchronization), Level 2 (SDLC Execution Core, 9 active Steps 0-8 only), with the old 'Level 2: Standards' explicitly retired from the numbered-level count",
+      "incompatibility": "The entire canonical docs/policies corpus (and docs/standards corpus) is written against a superseded pipeline topology: Level -1/1/2/3 with 15 steps (0-14), including Steps 9-14 (Branch Setup, Implementation, PR Review, Issue Closure, Documentation, Final Summary) that do not exist under those numbers in the current architecture, which has only 9 active steps (0-8) under a renamed Level 0/1/2 scheme. Nearly every policy's own stated 'claimed_mechanism' (a Step or Level number) is stale.",
+      "downstream_risk": "CRITICAL -- Part B's entire premise (correlate each policy's claim against the live call graph) requires knowing which current pipeline node corresponds to e.g. 'Step 13' or 'Step 14'. Without an explicit old-to-new step-number translation table, Part B will either silently mis-map policies to the wrong nodes or be forced to treat most of the corpus as unmappable."
+    },
+    {
+      "rank": 2,
+      "policy_a": "docs/policies/tool-optimization-policy.md -- states specific numeric limits (read_max_lines=500, grep_max_matches=50, grep_max_results=100) and claims these are 'enforced by the PreToolUse hook'",
+      "policy_b": "docs/policies/tool-usage-optimization-policy.md (v2.0.0, 'CONSOLIDATED') -- claims it consolidates 'ADVANCED-TOKEN-OPTIMIZATION.md', 'TOKEN-OPTIMIZATION-COMPLETE.md', and 'CLAUDE.md token optimization section' with explicit 'NO DUPLICATION -- References existing work, adds enforcement', describing a 'Step 5 (Before Every Tool Call)' pipeline mechanism instead of naming the PreToolUse hook",
+      "incompatibility": "Two separate, currently-existing docs/policies files cover the identical subject (tool-call token optimization) with different specific limits, different version numbers, and different claimed enforcement mechanisms (named PreToolUse hook vs. unnamed Step 5 pipeline stage) -- while the second explicitly and incorrectly asserts 'NO DUPLICATION'. A third file, docs/standards/TOOL-OPTIMIZATION-LEVEL2-STANDARD.md, adds a further standards-side treatment of the same subject.",
+      "downstream_risk": "HIGH -- Part B must determine which of the two (or three) documents actually governs the live PreToolUse hook's behavior; picking the wrong one, or averaging both, will misreport enforcement status for a policy area (token/tool optimization) that is one of the most frequently-invoked in the entire pipeline."
+    },
+    {
+      "rank": 3,
+      "policy_a": "docs/policies/proactive-consultation-policy.md (DEPRECATED, 2026-03-17) -- states interactive user consultation via AskUserQuestion 'cannot be used within LangGraph pipeline execution context' because 'the LangGraph orchestrator runs as a Python subprocess during hook execution, where interactive user consultation is not possible'",
+      "policy_b": "docs/policies/recovery-policy.md ('Level -1 Recovery Policy') -- describes a live 'Step 2: User Choice' flow offering 'auto-fix' or 'skip' as an interactive choice, only falling back to automatic auto-fix 'In hook mode (non-interactive / no TTY)', implying an interactive TTY mode exists where the choice is genuinely presented to the user",
+      "incompatibility": "The two documents make opposite architectural claims about whether the pipeline can interactively prompt the user mid-execution: proactive-consultation-policy.md says this is categorically impossible in the (implied universal) LangGraph subprocess context, while recovery-policy.md describes a real interactive branch that is only bypassed under the specific non-TTY/hook-mode condition -- implying interactive prompting IS possible outside hook mode.",
+      "downstream_risk": "MEDIUM-HIGH -- determines whether recovery-policy.md's 'Step 2: User Choice' is a reachable code path or dead/vestigial logic; Part B needs to resolve this before characterizing the Level -1/Level 0 recovery flow as interactive-capable or auto-fix-only."
+    },
+    {
+      "rank": 4,
+      "policy_a": "docs/policies/automatic-task-breakdown-policy.md (v2.0.0) -- 'Task creation is NO LONGER complexity-based. Tasks are created on EVERY implementation request regardless of size', minimum 1 TaskCreate per request",
+      "policy_b": "docs/policies/github-issues-integration-policy.md (v3.0.0) -- 'this policy now creates ONE issue per problem statement (not per task)', explicitly contrasting the old '1 problem -> 3 tasks -> 3 issues' with the new '1 problem -> 3 tasks -> 1 issue'",
+      "incompatibility": "Neither document defines the mapping rule between the (now-unconditional, per-request) task cardinality and the (problem-centric) issue cardinality. If every request -- even trivial ones -- creates >=1 Task per automatic-task-breakdown-policy.md v2.0.0, but issues are created only per 'problem statement' per github-issues-integration-policy.md v3.0.0, the corpus never states how many 'problem statements' a session may contain relative to its tasks, leaving the task-to-issue ratio ambiguous by omission rather than explicit rule.",
+      "downstream_risk": "MEDIUM -- affects Part B's ability to verify whether every TaskCreate call is expected to correlate with a GitHub issue, or whether issue-less tasks are an expected/compliant outcome."
+    },
+    {
+      "rank": 5,
+      "policy_a": "docs/policies/context-management-policy.md -- 'Implementation: scripts/architecture/01-sync-system/context-management/context-monitor.py'",
+      "policy_b": "home/.claude/policies/01-sync-system/context-management/context-management-policy.md (identical v3.0.0, identical text elsewhere) -- 'Implementation: scripts/architecture/01-sync-system/context-management/context-monitor-v2.py'",
+      "incompatibility": "The two copies of what is otherwise an identical, same-version policy document disagree on the filename of the script that implements it (context-monitor.py vs context-monitor-v2.py). One copy was updated when the implementation script was renamed/versioned and the other copy of the 'canonical' document was not, or vice versa.",
+      "downstream_risk": "MEDIUM -- a low-severity but concrete example of copy drift between the declared-canonical docs/policies and the actually-read-at-runtime home-claude location; Part B should verify which script (if either) actually exists on disk before trusting either copy's claimed implementation path."
+    }
+  ],
+  "unstated_mechanism_count": 6
+}

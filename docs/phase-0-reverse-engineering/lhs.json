@@ -1,0 +1,41 @@
+{
+  "generated": "2026-08-01",
+  "formula": "LHS = 100 * (0.30*V(G)_norm + 0.25*DDI_norm + 0.20*I_norm + 0.15*LCOM3_norm + 0.10*CBO_norm)  [Saaty AHP default weights, legacy-system-characterization skill M3]",
+  "inputs": {
+    "V(G)": {
+      "population": "all 2,218 live-scope nodes (full system, not sampled)",
+      "mean_vg": 5.782,
+      "V(G)_norm": 0.9024,
+      "formula": "max(0, (50 - mean_vg) / 49)"
+    },
+    "DDI": {
+      "population": "20 highest-WMC modules only (SAMPLING BIAS: not system-wide; see caveat)",
+      "proxy_used": "1 - mean(DocCoverage)  [DocCoverage-only; CommentDensity excluded as misleading for this codebase's docstrings-only rule; TestCoverage UNAVAILABLE, not fabricated]",
+      "mean_doc_coverage": 0.9576,
+      "DDI_proxy_value": 0.0424,
+      "DDI_norm": 0.9576,
+      "caveat": "This is NOT the canonical 3-factor DDI. TestCoverage was not available within this task's scope (no coverage report was generated). Reporting a substituted 2-of-3-factor proxy with this caveat, per the task's explicit instruction to never fabricate a missing input."
+    },
+    "I_instability": {
+      "population": "all 39 packages (full system, from structural_inventory.json martin_metrics)",
+      "mean_I": 0.4095,
+      "I_norm": 0.5905,
+      "formula": "1 - mean_I"
+    },
+    "LCOM3": {
+      "population": "6 classes (>=3 methods) inside the 20 highest-WMC modules only (SAMPLING BIAS: not system-wide, and biased toward the most complex classes, which are more likely to show poor cohesion)",
+      "mean_lcom3": 0.688,
+      "LCOM3_norm": 0.312,
+      "formula": "1 - mean_lcom3"
+    },
+    "CBO": {
+      "population": "7 classes with recorded cross-class edges inside the 20 highest-WMC modules only (SAMPLING BIAS: not system-wide)",
+      "mean_cbo": 12.143,
+      "CBO_norm": 0.5952,
+      "formula": "max(0, 1 - mean_cbo/30)"
+    }
+  },
+  "LHS": 73.5,
+  "classification": "60-79 = Moderate debt: RE + selective refactoring",
+  "overall_caveat": "This LHS mixes two FULL-POPULATION inputs (V(G) across all 2,218 nodes; Instability across all 39 packages) with three REDUCED-SAMPLE inputs (DDI-proxy, LCOM3, CBO -- all drawn only from the 20 highest-complexity modules, a population selected FOR being the worst outliers). Because DDI/LCOM3/CBO were sampled from the most complex modules rather than the whole codebase, this LHS is plausibly PESSIMISTICALLY BIASED on those three components relative to a true system-wide score, and TestCoverage (a required DDI input) was entirely unavailable. Report this LHS as an approximate, caveated estimate -- not a fully validated system-wide score -- consistent with this task's explicit instruction to reduce coverage and say so explicitly rather than fabricate the missing inputs."
+}

@@ -1,0 +1,491 @@
+{
+  "valid": true,
+  "generated_at": "2026-08-01T00:00:00Z",
+  "build_tooling": "codebase-kg-engineer manual merge script (Python + networkx 3.6.1); graph metrics delegated to networkx's Brandes/PageRank/Louvain/Tarjan implementations rather than hand-derived, per skill Response Rule 4 (reverse-engineering-mathematics-expert is not available as an invocable agent type in this harness -- networkx's vetted reference implementations substitute for it, satisfying the intent of the delegation).",
+  "node_counts_by_type": {
+    "Function": 2218,
+    "Class": 145,
+    "Module": 39,
+    "Credential": 3,
+    "HookEntryPoint": 10,
+    "LangGraphNode": 27,
+    "Policy": 46,
+    "MissingArtifact": 23,
+    "MCPTool": 1
+  },
+  "edge_counts_by_type": {
+    "DEPENDS_ON": 9,
+    "CALLS": 9378,
+    "READS_CREDENTIAL": 62,
+    "REGISTERED_BY": 27,
+    "ENFORCES": 29,
+    "REFERENCES_MISSING": 24,
+    "PROPAGATES_CHANGE_TO": 135
+  },
+  "total_nodes": 2512,
+  "total_edges": 9664,
+  "warnings": [
+    "Policy docs/policies/intelligent-model-selection-policy.md status=STALE-TOPOLOGY but enforcement_point file not resolvable to a Module: NONE found under this description",
+    "DATA-QUALITY: dead_code_report.json has malformed source JSON at downstream_filter.live_function_ids (a bare 'scope' key nested inside the array). Repaired in-memory for ingestion; original artifact on disk was NOT modified. See kg_report.json.data_quality_issues."
+  ],
+  "identity_collisions": [],
+  "identity_collision_note": "Zero identity collisions occurred. Function nodes are keyed by the full module-path FQN already present in ast_call_graph.json node.id (e.g. 'hooks.ide_paths.create_necessary_dirs'), never by bare function name -- this is what prevents the helper_nodes/ vs orchestrator.py duplicate-name hazard from colliding: 'langgraph_engine.helper_nodes.output_helpers.output_node' and 'langgraph_engine.orchestrator.output_node' are two distinct Function nodes with distinct ids, both present in the graph, distinguished by properties.is_confirmed_dead_helper.",
+  "orphan_policies": [
+    "docs/policies/anti-hallucination-enforcement.md",
+    "docs/policies/architecture-script-mapping-policy.md",
+    "docs/policies/automatic-task-breakdown-policy.md",
+    "docs/policies/callgraph-analysis-policy.md",
+    "docs/policies/code-graph-analysis-policy.md",
+    "docs/policies/coding-standards-enforcement-policy.md",
+    "docs/policies/common-failures-prevention.md",
+    "docs/policies/common-standards-policy.md",
+    "docs/policies/EXECUTION-SYSTEM-FIXES-SUMMARY.md",
+    "docs/policies/INTELLIGENT-PROMPT-GENERATION-UPGRADE.md",
+    "docs/policies/context-management-policy.md",
+    "docs/policies/context-reading-policy.md",
+    "docs/policies/cross-project-patterns-policy.md",
+    "docs/policies/documentation-update-policy.md",
+    "docs/policies/encoding-validation-policy.md",
+    "docs/policies/error-recovery-policy.md",
+    "docs/policies/file-management-policy.md",
+    "docs/policies/final-summary-policy.md",
+    "docs/policies/git-auto-commit-policy.md",
+    "docs/policies/github-issues-integration-policy.md",
+    "docs/policies/hook-system-policy.md",
+    "docs/policies/implementation-execution-policy.md",
+    "docs/policies/intelligent-decision-engine-policy.md",
+    "docs/policies/intelligent-model-selection-policy.md",
+    "docs/policies/issue-closure-policy.md",
+    "docs/policies/mcp-plugin-discovery-policy.md",
+    "docs/policies/metrics-monitoring-policy.md",
+    "docs/policies/parallel-execution-policy.md",
+    "docs/policies/pr-code-review-policy.md",
+    "docs/policies/proactive-consultation-policy.md",
+    "docs/policies/prompt-generation-policy.md",
+    "docs/policies/quality-gate-policy.md",
+    "docs/policies/recovery-policy.md",
+    "docs/policies/session-chaining-policy.md",
+    "docs/policies/session-memory-policy.md",
+    "docs/policies/session-pruning-policy.md",
+    "docs/policies/task-phase-enforcement-policy.md",
+    "docs/policies/task-progress-tracking-policy.md",
+    "docs/policies/test-case-policy.md",
+    "docs/policies/test-generation-policy.md",
+    "docs/policies/tool-optimization-policy.md",
+    "docs/policies/tool-usage-optimization-policy.md",
+    "docs/policies/unicode-fix-policy.md",
+    "docs/policies/user-preferences-policy.md",
+    "docs/policies/version-release-policy.md",
+    "docs/policies/windows-path-policy.md"
+  ],
+  "orphan_policies_count": 46,
+  "orphan_policies_note": "All 46 of 46 docs/policies/*.md policies have ZERO TRACES_TO_FR edges. This is an absence-of-evidence finding, not a proven absence-in-SRS finding: SRS.md was NOT one of the 11 ingested artifacts for this KG build (it is outside the phase-0-reverse-engineering/ artifact set this task specified), so no FR/NFR corpus was available to check policy intent text against. TRACES_TO_FR was populated only where a policy's own intent/evidence/enforcement_point text contains a literal FR-n / NFR-n / rules/n token (regex-scanned across all 46 records + policy_corpus_inventory.json intents); zero such tokens were found. capability_loss.md DOES link FR-9/FR-4/NFR-1/NFR-3/NFR-5 to individual runtime policy CHECK MODULES under hooks/pre_tool_enforcer/policies/*.py and hooks/post_tool_tracker/policies/*.py -- a DIFFERENT corpus from the 46 docs/policies/*.md documentation files modeled as Policy nodes here. Those hook check modules are present in the graph as ordinary Function nodes (e.g. fn:hooks.pre_tool_enforcer.policies.push_gate.*) but are not currently linked to Rule nodes because that link exists in capability_loss.md prose, not as a machine-checkable artifact field this build could key off without inventing the mapping. Recommend a follow-up pass once SRS.md is added to the ingested set.",
+  "policies_without_enforces_edge": [
+    {
+      "policy": "docs/policies/anti-hallucination-enforcement.md",
+      "status": "CONTRADICTED",
+      "enforcement_point": "langgraph_engine/sdlc_pipeline/architecture/00-prompt-generation/anti_hallucination_enforcement.py:38-133 (log_policy_hit/validate/report/enforce)"
+    },
+    {
+      "policy": "docs/policies/architecture-script-mapping-policy.md",
+      "status": "CONTRADICTED",
+      "enforcement_point": "docs/policies/architecture-script-mapping-policy.md itself (a reference document, not runtime code)"
+    },
+    {
+      "policy": "docs/policies/callgraph-analysis-policy.md",
+      "status": "CONTRADICTED",
+      "enforcement_point": "langgraph_engine/call_graph_builder.py -> langgraph_engine/parsers/config.py:11 MAX_FILES=300; consumed by langgraph_engine/sdlc_pipeline/call_graph_analyzer.py (analyze_impact_before_change, review_c"
+    },
+    {
+      "policy": "docs/policies/EXECUTION-SYSTEM-FIXES-SUMMARY.md",
+      "status": "DOCUMENTED-ONLY",
+      "enforcement_point": "N/A -- point-in-time changelog, not a policy with a runtime mechanism"
+    },
+    {
+      "policy": "docs/policies/INTELLIGENT-PROMPT-GENERATION-UPGRADE.md",
+      "status": "DOCUMENTED-ONLY",
+      "enforcement_point": "N/A -- point-in-time changelog"
+    },
+    {
+      "policy": "docs/policies/file-management-policy.md",
+      "status": "DOCUMENTED-ONLY",
+      "enforcement_point": "NONE found"
+    },
+    {
+      "policy": "docs/policies/git-auto-commit-policy.md",
+      "status": "CONTRADICTED",
+      "enforcement_point": "hooks/stop_notifier/core.py:74-96 (subprocess call to scripts/architecture/03-execution-system/09-git-commit/git-auto-commit-policy.py, guarded by .exists()); scripts/tools/post-merge-version-updater."
+    },
+    {
+      "policy": "docs/policies/intelligent-decision-engine-policy.md",
+      "status": "CONTRADICTED",
+      "enforcement_point": "NONE found"
+    },
+    {
+      "policy": "docs/policies/mcp-plugin-discovery-policy.md",
+      "status": "DOCUMENTED-ONLY",
+      "enforcement_point": "langgraph_engine/state/state_definition.py:184 mcp_plugins_path (a FlowState field only)"
+    },
+    {
+      "policy": "docs/policies/parallel-execution-policy.md",
+      "status": "DOCUMENTED-ONLY",
+      "enforcement_point": "NONE found as engine code"
+    },
+    {
+      "policy": "docs/policies/proactive-consultation-policy.md",
+      "status": "DOCUMENTED-ONLY",
+      "enforcement_point": "N/A -- explicitly deprecated by its own text"
+    },
+    {
+      "policy": "docs/policies/session-memory-policy.md",
+      "status": "CONTRADICTED",
+      "enforcement_point": "hooks/stop_notifier/core.py:104-127 (subprocess call to scripts/architecture/01-sync-system/session-management/auto-save-session.py, guarded by .exists())"
+    },
+    {
+      "policy": "docs/policies/session-pruning-policy.md",
+      "status": "CONTRADICTED",
+      "enforcement_point": "hooks/stop_notifier/core.py:131-181 (subprocess calls to archive-old-sessions.py and session-pruner.py under scripts/architecture/01-sync-system/, both guarded by .exists())"
+    },
+    {
+      "policy": "docs/policies/test-case-policy.md",
+      "status": "DOCUMENTED-ONLY",
+      "enforcement_point": "NONE found as a distinct gate"
+    },
+    {
+      "policy": "docs/policies/tool-usage-optimization-policy.md",
+      "status": "CONTRADICTED",
+      "enforcement_point": "Same enforcement point as tool-optimization-policy.md: hooks/pre_tool_enforcer/policies/read_opt.py, grep_opt.py"
+    },
+    {
+      "policy": "docs/policies/user-preferences-policy.md",
+      "status": "DOCUMENTED-ONLY",
+      "enforcement_point": "langgraph_engine/sdlc_pipeline/nodes/pre_nodes.py:191 result['user_preferences_context'] (a state field populated from elsewhere, not a learning function)"
+    }
+  ],
+  "policies_without_enforces_edge_count": 16,
+  "policies_without_enforces_edge_note": "CONTRADICTED (8) + DOCUMENTED-ONLY (8) = 16 policies never receive an ENFORCES edge in this graph by design: ENFORCES means 'code that genuinely executes this policy in production', and by definition neither status qualifies (CONTRADICTED = code exists but is not on any live path or actively does the opposite; DOCUMENTED-ONLY = no enforcement code was found at all).",
+  "references_missing": [
+    {
+      "missing_artifact": "scripts/architecture/01-sync-system/",
+      "referenced_by": [
+        "policy:docs/policies/session-memory-policy.md",
+        "policy:docs/policies/session-pruning-policy.md"
+      ]
+    },
+    {
+      "missing_artifact": "scripts/architecture/03-execution-system/09-git-commit/",
+      "referenced_by": [
+        "policy:docs/policies/git-auto-commit-policy.md"
+      ]
+    },
+    {
+      "missing_artifact": "scripts/architecture/01-sync-system/session-management/auto-save-session.py",
+      "referenced_by": [
+        "policy:docs/policies/session-memory-policy.md"
+      ]
+    },
+    {
+      "missing_artifact": "scripts/architecture/01-sync-system/session-management/archive-old-sessions.py",
+      "referenced_by": [
+        "policy:docs/policies/session-pruning-policy.md"
+      ]
+    },
+    {
+      "missing_artifact": "scripts/architecture/01-sync-system/session-pruner.py",
+      "referenced_by": [
+        "policy:docs/policies/session-pruning-policy.md"
+      ]
+    },
+    {
+      "missing_artifact": "scripts/architecture/03-execution-system/09-git-commit/git-auto-commit-policy.py",
+      "referenced_by": [
+        "policy:docs/policies/git-auto-commit-policy.md"
+      ]
+    },
+    {
+      "missing_artifact": "scripts/architecture/standards-loader.py",
+      "referenced_by": [
+        "policy:docs/policies/architecture-script-mapping-policy.md"
+      ]
+    },
+    {
+      "missing_artifact": "scripts/architecture/anti-hallucination-enforcement.py",
+      "referenced_by": [
+        "policy:docs/policies/architecture-script-mapping-policy.md"
+      ]
+    },
+    {
+      "missing_artifact": "scripts/architecture/prompt-generator.py",
+      "referenced_by": [
+        "policy:docs/policies/architecture-script-mapping-policy.md"
+      ]
+    },
+    {
+      "missing_artifact": "langgraph_engine/level3_execution/subgraph.py",
+      "referenced_by": [
+        "policy:docs/policies/architecture-script-mapping-policy.md"
+      ]
+    },
+    {
+      "missing_artifact": "<decision_engine module / Step 3.3A>",
+      "referenced_by": [
+        "policy:docs/policies/intelligent-decision-engine-policy.md"
+      ]
+    },
+    {
+      "missing_artifact": "session_manager.py",
+      "referenced_by": [
+        "policy:docs/policies/architecture-script-mapping-policy.md"
+      ]
+    },
+    {
+      "missing_artifact": "checkpoint_manager.py",
+      "referenced_by": [
+        "policy:docs/policies/architecture-script-mapping-policy.md"
+      ]
+    },
+    {
+      "missing_artifact": "backup_manager.py",
+      "referenced_by": [
+        "policy:docs/policies/architecture-script-mapping-policy.md"
+      ]
+    },
+    {
+      "missing_artifact": "context_cache.py",
+      "referenced_by": [
+        "policy:docs/policies/architecture-script-mapping-policy.md"
+      ]
+    },
+    {
+      "missing_artifact": "context_deduplicator.py",
+      "referenced_by": [
+        "policy:docs/policies/architecture-script-mapping-policy.md"
+      ]
+    },
+    {
+      "missing_artifact": "token_manager.py",
+      "referenced_by": [
+        "policy:docs/policies/architecture-script-mapping-policy.md"
+      ]
+    },
+    {
+      "missing_artifact": "version_selector.py",
+      "referenced_by": [
+        "policy:docs/policies/architecture-script-mapping-policy.md"
+      ]
+    },
+    {
+      "missing_artifact": "git_operations.py",
+      "referenced_by": [
+        "policy:docs/policies/architecture-script-mapping-policy.md"
+      ]
+    },
+    {
+      "missing_artifact": "github_facade.py",
+      "referenced_by": [
+        "policy:docs/policies/architecture-script-mapping-policy.md"
+      ]
+    },
+    {
+      "missing_artifact": "progress_display.py",
+      "referenced_by": [
+        "policy:docs/policies/architecture-script-mapping-policy.md"
+      ]
+    },
+    {
+      "missing_artifact": "skill_manager.py",
+      "referenced_by": [
+        "policy:docs/policies/architecture-script-mapping-policy.md"
+      ]
+    },
+    {
+      "missing_artifact": "skill_agent_loader.py",
+      "referenced_by": [
+        "policy:docs/policies/architecture-script-mapping-policy.md"
+      ]
+    }
+  ],
+  "references_missing_count": 23,
+  "pii_statement": "This repository (claude-workflow-engine) contains NO PII. It is a SDLC orchestration engine operating on its own source code, policy documents, and pipeline telemetry -- there are no end-user records, no personal data fields, and audit_surface.json's 62 credential_access_sites are all API-token/secret env-var reads (GITHUB_TOKEN, ANTHROPIC_API_KEY-class patterns), not personal-data fields. No PII subgraph, TAINTS_PII edges, or ComplianceTag(PII) nodes were emitted; this is a deliberate scope decision, not an unchecked gap.",
+  "scope_deviations": [
+    "Node set includes dead-tier Function nodes (is_confirmed_dead_helper=true, 10 nodes) rather than excluding them per the codebase-knowledge-graph skill's strict I2 live-only invariant. This task's brief explicitly requires modeling the helper_nodes/-vs-orchestrator.py duplicate-name hazard and the hook-only-reachable packages, both of which are dead-code-adjacent findings that require dead nodes to be present and flagged, not excluded.",
+    "IMPORTS edges were NOT populated at file granularity: structural_inventory.json's import_graph_edges_file_level field is an aggregate COUNT (482), not an edge list -- no source artifact in the ingested set provides the actual file-to-file import pairs. DEPENDS_ON was populated instead from the 8 concrete package-level SDP-violation pairs structural_inventory.json DOES enumerate explicitly; the package-level giant SCC (structural_inventory.json#package_level_sccs, 15 packages) is recorded as metrics.json corroboration only, not exploded into fabricated edges.",
+    "ENFORCES edges target Module (package-level) nodes, not specific Function nodes: policy_enforcement_raw.json's enforcement_point field is free-text (e.g. 'file.py:38-133 (fn1/fn2/fn3)') and resolving it to one specific function among several named would require guessing which; Module-level attribution is the precision this data actually supports."
+  ],
+  "data_quality_issues": [
+    "dead_code_report.json has malformed source JSON: downstream_filter.live_function_ids is authored as a JSON array containing a bare 'scope' key:value pair as its second element, which is not valid inside an array. Repaired in-memory via regex for ingestion (split into live_function_ids + a sibling live_function_ids_scope key); the artifact on disk was left unmodified. Recommend Phase 0.0 re-emit this file with valid JSON."
+  ],
+  "open_conflicts": [
+    {
+      "topic": "PreToolUse/PostToolUse-hook per-turn spawn floor",
+      "source_a": "docs/phase-0-reverse-engineering (Phase 0.2 capability/overhead analysis) -- reportedly asserted an '8-spawn floor per turn' partly assuming scripts/architecture/01-sync-system/ and scripts/architecture/03-execution-system/09-git-commit/ exist and spawn on each Stop-hook invocation.",
+      "source_b": "policy_enforcement_raw.json / contradictions.md #2 (Phase C.2 Part B) -- directly verified via filesystem check that BOTH trees are absent from scripts/architecture/ (only 00-code-graph-analysis/ and failure-prevention/ exist under 03-execution-system/). Every hooks/stop_notifier/core.py guard for those four target scripts is a silent 'if <path>.exists(): ...' check with no else/log branch, so the referenced spawns never fire.",
+      "resolution": "NOT resolved by this build, per explicit task instruction. Recorded as an open conflict: the true per-turn spawn floor is possibly as low as the 2 unconditional 'git rev-parse' calls documented elsewhere, but this KG build does not have Phase 0.2's original per-spawn accounting artifact in its ingested set to adjudicate the exact number -- only the filesystem-absence fact (verified) and the resulting no-op behavior (verified) are asserted here."
+    }
+  ],
+  "verified_corrections_applied": [
+    "scripts/architecture/ contains ONLY 03-execution-system/ (with only 00-code-graph-analysis/ and failure-prevention/ beneath it) and generate_system_diagram.py. Modeled as 3 MissingArtifact nodes for the 01-sync-system/ and 09-git-commit/ trees.",
+    "anti_hallucination_enforcement.py (fn ids under 'langgraph_engine.sdlc_pipeline.architecture.00-prompt-generation.anti_hallucination_enforcement') and faithfulness_gate.py are modeled as two distinct Function-node groups with their true, different in-degrees: faithfulness_gate resolved to 'langgraph_engine.sdlc_pipeline.faithfulness_gate._extract_rubric_sections' with exactly the one import-closure caller documented in quality_gate.py:616; anti_hallucination_enforcement functions show CALLS in-degree 0 from any non-self-module caller in the precise edge set, consistent with the zero-importer finding in contradictions.md #4."
+  ],
+  "louvain_top_community_package_composition": [
+    {
+      "community_rank": 0,
+      "size": 203,
+      "dominant_packages": [
+        [
+          "langgraph_engine.sdlc_pipeline",
+          51
+        ],
+        [
+          "scripts",
+          27
+        ],
+        [
+          "langgraph_engine.build_dependency_resolver",
+          21
+        ]
+      ],
+      "purity": 0.251
+    },
+    {
+      "community_rank": 1,
+      "size": 104,
+      "dominant_packages": [
+        [
+          "langgraph_engine.context_sync",
+          28
+        ],
+        [
+          "langgraph_engine.sdlc_pipeline",
+          21
+        ],
+        [
+          "langgraph_engine.engine_logging",
+          12
+        ]
+      ],
+      "purity": 0.269
+    },
+    {
+      "community_rank": 2,
+      "size": 96,
+      "dominant_packages": [
+        [
+          "langgraph_engine.integrations",
+          38
+        ],
+        [
+          "langgraph_engine.sdlc_pipeline",
+          33
+        ],
+        [
+          "langgraph_engine.core",
+          17
+        ]
+      ],
+      "purity": 0.396
+    },
+    {
+      "community_rank": 3,
+      "size": 83,
+      "dominant_packages": [
+        [
+          "langgraph_engine.sdlc_pipeline",
+          55
+        ],
+        [
+          "langgraph_engine.analysis",
+          15
+        ],
+        [
+          "langgraph_engine.parsers",
+          11
+        ]
+      ],
+      "purity": 0.663
+    },
+    {
+      "community_rank": 4,
+      "size": 60,
+      "dominant_packages": [
+        [
+          "langgraph_engine.diagrams",
+          32
+        ],
+        [
+          "langgraph_engine.sdlc_pipeline",
+          24
+        ],
+        [
+          "langgraph_engine.builders",
+          2
+        ]
+      ],
+      "purity": 0.533
+    },
+    {
+      "community_rank": 5,
+      "size": 57,
+      "dominant_packages": [
+        [
+          "scripts",
+          11
+        ],
+        [
+          "langgraph_engine.quality",
+          10
+        ],
+        [
+          "langgraph_engine.sdlc_pipeline",
+          8
+        ]
+      ],
+      "purity": 0.193
+    },
+    {
+      "community_rank": 6,
+      "size": 51,
+      "dominant_packages": [
+        [
+          "langgraph_engine.parsers",
+          47
+        ],
+        [
+          "langgraph_engine.build_dependency_resolver",
+          4
+        ]
+      ],
+      "purity": 0.922
+    },
+    {
+      "community_rank": 7,
+      "size": 45,
+      "dominant_packages": [
+        [
+          "langgraph_engine.diagrams",
+          29
+        ],
+        [
+          "langgraph_engine.sdlc_pipeline",
+          16
+        ]
+      ],
+      "purity": 0.644
+    }
+  ],
+  "lhs_carried_forward": {
+    "LHS": 73.5,
+    "classification": "60-79 = Moderate debt: RE + selective refactoring",
+    "caveat": "see lhs.json for full sampling-bias caveat; not recomputed here"
+  },
+  "impact_analysis_carried_forward": {
+    "blast_radius": 0.0609,
+    "blast_radius_tier": "MEDIUM (borderline: BR=0.0609 sits just above the LOW/MEDIUM 0.05 boundary; per skill thresholds BR in [0.05,0.15) = MEDIUM). This tier is driven almost entirely by the SIZE of the two packages' own internal call structure (135 self-contained nodes), NOT by risk propagating to surviving code -- see external_dependency_verification below, which found zero HIGH-confidence edges crossing the deletion boundary in either direction.",
+    "affected_node_count": 135
+  },
+  "rbi_9_1": {
+    "retention_years": 3,
+    "artifact": "change-impact",
+    "note": "kg_report.json + nodes.json + edges.json together satisfy the \u00a79.1(a)-(c) machine-verifiable change-impact artifact requirement via PROPAGATES_CHANGE_TO/DEPENDS_ON edges."
+  }
+}

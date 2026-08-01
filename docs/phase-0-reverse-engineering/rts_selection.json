@@ -1,0 +1,69 @@
+{
+  "metadata": {
+    "generated_by": "impact-analysis-agent Phase 0.2",
+    "change_set": "Deletion of hooks/pre-tool-enforcer.py, hooks/pre_tool_enforcer/, hooks/post-tool-tracker.py, hooks/post_tool_tracker/ (and the resulting orphaning of hooks/policy_tracking_helper.py)",
+    "rts_method": "APPROXIMATE",
+    "rts_method_note": "No Jacoco/coverage.py/.coverage database was available for this repo at analysis time; selection is by static import-and-symbol name-match between test files and the affected node set (import statements and _load_module()-style dynamic loads), verified by direct source read of each candidate test file rather than by grep alone.",
+    "total_test_files_in_repo": 61,
+    "selected_test_files_count": 7,
+    "generated_at": "2026-08-01"
+  },
+  "rts_set": [
+    {
+      "file": "tests/test_pre_tool_enforcer.py",
+      "justification": "Imports/mocks policy_tracking_helper and project_session directly and exercises hooks/pre-tool-enforcer.py policy checks; primary coverage for the pre_tool_enforcer_pkg deletion group.",
+      "priority": 1
+    },
+    {
+      "file": "tests/test_post_tool_tracker.py",
+      "justification": "Imports/mocks policy_tracking_helper and exercises hooks/post-tool-tracker.py / hooks/post_tool_tracker/; primary coverage for the post_tool_tracker_pkg deletion group.",
+      "priority": 1
+    },
+    {
+      "file": "tests/test_new_components.py",
+      "justification": "_load_pre_tool_enforcer() dynamically loads hooks/pre-tool-enforcer.py as a module and calls check_level1_sync_complete() -- direct coverage of the shim entry point, distinct from test_pre_tool_enforcer.py's coverage path.",
+      "priority": 1
+    },
+    {
+      "file": "tests/test_agent_persona_policy.py",
+      "justification": "Dedicated test file for hooks/pre_tool_enforcer/policies/agent_persona.py (one of the 14 PreToolUse policy checks going dead).",
+      "priority": 1
+    },
+    {
+      "file": "tests/test_push_gate.py",
+      "justification": "Dedicated test file for hooks/pre_tool_enforcer/policies/push_gate.py -- the highest-value single policy in the deletion set (VERSION-bump-before-push and clean-tree gates; the CII risk-tier=LOW but process-criticality is high given this repo's own commit history includes 'close a bypass in the version push rule').",
+      "priority": 1
+    },
+    {
+      "file": "tests/test_root_scripts.py",
+      "justification": "Contains TestPolicyTrackingHelper (policy_tracking_helper.py record/read functions) and TestProjectSession (project_session.py get/read functions) -- covers the policy_tracking_helper.py orphaning finding directly, and re-confirms project_session.py's own contract (though project_session.py itself is not deleted).",
+      "priority": 2
+    },
+    {
+      "file": "tests/test_session_context.py",
+      "justification": "Imports both policy_tracking_helper and project_session in its own test bodies (lines ~110-122) in addition to testing session_context.py itself; run to confirm session_context.py (a survivor, per the resolved open question) is unaffected by the deletion.",
+      "priority": 2
+    }
+  ],
+  "excluded_but_name_matched": [
+    {
+      "file": "tests/test_integration_all_mcp.py",
+      "reason": "test_post_tool_tracker_imports (line 110-111) loads src/mcp/post_tool_tracker_mcp_server.py -- a different component (the separate mcp-post-tool-tracker MCP server's in-repo module), not hooks/post_tool_tracker/. Excluded as a false positive from name-match; verified by reading the test body."
+    }
+  ],
+  "coverage_gap_methods": [
+    {
+      "id": "hooks.pre_tool_enforcer.daemon.run_daemon",
+      "id_also": ["hooks.pre_tool_enforcer.daemon.ensure_daemon_running", "hooks.pre_tool_enforcer.daemon.try_daemon_fast_path"],
+      "file": "hooks/pre_tool_enforcer/daemon.py",
+      "reason": "No test file in tests/ references 'daemon' together with pre_tool_enforcer (grep for 'daemon' across tests/ only matches tests/integration/test_runtime_verification_integration.py and tests/test_integration.py, neither of which is the pre-tool-enforcer test suite). The warm-daemon fast path (CII risk_tier=MEDIUM, cyclomatic_complexity=18, the 8th-highest-risk affected node) has zero unit coverage.",
+      "risk": "MEDIUM -- untested code in the deletion set is not itself a regression risk once deleted, but flags that the daemon fast-path was already an under-tested capability before this change set was proposed."
+    },
+    {
+      "id": "hooks.stop_notifier.*",
+      "file": "hooks/stop_notifier/",
+      "reason": "No tests/test_stop_notifier.py exists anywhere in the 61-file test suite, despite the Stop hook being retained and carrying 17 subprocess spawn sites (see stop_hook_overhead.md). Not part of RTS(delta) for this delete change (stop_notifier is not being deleted), but noted here because it is directly relevant to the FR-8a overhead sub-analysis this task also covers.",
+      "risk": "Out of scope for this deletion's RTS, flagged for visibility only."
+    }
+  ]
+}

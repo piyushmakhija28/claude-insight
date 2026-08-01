@@ -1,0 +1,970 @@
+{
+  "metadata": {
+    "generated_by": "ast-graph-engineer Phase 0.1",
+    "scope": "live scope, static AST scan"
+  },
+  "credential_access_sites": [
+    {
+      "file": "langgraph_engine/core/config_loader.py",
+      "line": 30,
+      "pattern": "GITHUB_TOKEN"
+    },
+    {
+      "file": "langgraph_engine/core/config_loader.py",
+      "line": 48,
+      "pattern": "FIGMA_ACCESS_TOKEN"
+    },
+    {
+      "file": "langgraph_engine/core/config_loader.py",
+      "line": 51,
+      "pattern": "ANTHROPIC_API_KEY"
+    },
+    {
+      "file": "langgraph_engine/error_messages.py",
+      "line": 676,
+      "pattern": "ANTHROPIC_API_KEY"
+    },
+    {
+      "file": "langgraph_engine/error_messages.py",
+      "line": 676,
+      "pattern": "GITHUB_TOKEN"
+    },
+    {
+      "file": "langgraph_engine/error_messages.py",
+      "line": 699,
+      "pattern": "ANTHROPIC_API_KEY"
+    },
+    {
+      "file": "langgraph_engine/error_messages.py",
+      "line": 721,
+      "pattern": "GITHUB_TOKEN"
+    },
+    {
+      "file": "langgraph_engine/error_messages.py",
+      "line": 173,
+      "pattern": "ANTHROPIC_API_KEY"
+    },
+    {
+      "file": "langgraph_engine/error_messages.py",
+      "line": 180,
+      "pattern": "ANTHROPIC_API_KEY"
+    },
+    {
+      "file": "langgraph_engine/error_messages.py",
+      "line": 221,
+      "pattern": "ANTHROPIC_API_KEY"
+    },
+    {
+      "file": "langgraph_engine/error_messages.py",
+      "line": 241,
+      "pattern": "GITHUB_TOKEN"
+    },
+    {
+      "file": "langgraph_engine/error_messages.py",
+      "line": 244,
+      "pattern": "GITHUB_TOKEN"
+    },
+    {
+      "file": "langgraph_engine/error_messages.py",
+      "line": 254,
+      "pattern": "GITHUB_TOKEN"
+    },
+    {
+      "file": "langgraph_engine/exceptions.py",
+      "line": 140,
+      "pattern": "GITHUB_TOKEN"
+    },
+    {
+      "file": "langgraph_engine/github/facade.py",
+      "line": 109,
+      "pattern": "GITHUB_TOKEN"
+    },
+    {
+      "file": "langgraph_engine/github/facade.py",
+      "line": 117,
+      "pattern": "GITHUB_TOKEN"
+    },
+    {
+      "file": "langgraph_engine/github/integration.py",
+      "line": 1,
+      "pattern": "GITHUB_TOKEN"
+    },
+    {
+      "file": "langgraph_engine/github/mcp.py",
+      "line": 33,
+      "pattern": "GITHUB_TOKEN"
+    },
+    {
+      "file": "langgraph_engine/github/mcp.py",
+      "line": 49,
+      "pattern": "GITHUB_TOKEN"
+    },
+    {
+      "file": "langgraph_engine/github/mcp.py",
+      "line": 54,
+      "pattern": "GITHUB_TOKEN"
+    },
+    {
+      "file": "langgraph_engine/github/operation_router.py",
+      "line": 42,
+      "pattern": "GITHUB_TOKEN"
+    },
+    {
+      "file": "langgraph_engine/github/operation_router.py",
+      "line": 53,
+      "pattern": "GITHUB_TOKEN"
+    },
+    {
+      "file": "langgraph_engine/integrations/figma_integration.py",
+      "line": 1,
+      "pattern": "FIGMA_ACCESS_TOKEN"
+    },
+    {
+      "file": "langgraph_engine/llm_call.py",
+      "line": 1,
+      "pattern": "ANTHROPIC_API_KEY"
+    },
+    {
+      "file": "langgraph_engine/llm_call.py",
+      "line": 178,
+      "pattern": "ANTHROPIC_API_KEY"
+    },
+    {
+      "file": "langgraph_engine/llm_call.py",
+      "line": 228,
+      "pattern": "ANTHROPIC_API_KEY"
+    },
+    {
+      "file": "langgraph_engine/llm_call.py",
+      "line": 198,
+      "pattern": "ANTHROPIC_API_KEY"
+    },
+    {
+      "file": "langgraph_engine/sdlc_pipeline/figma_workflow.py",
+      "line": 1,
+      "pattern": "FIGMA_ACCESS_TOKEN"
+    },
+    {
+      "file": "langgraph_engine/sdlc_pipeline/figma_workflow.py",
+      "line": 46,
+      "pattern": "FIGMA_ACCESS_TOKEN"
+    },
+    {
+      "file": "langgraph_engine/sdlc_pipeline/figma_workflow.py",
+      "line": 130,
+      "pattern": "FIGMA_ACCESS_TOKEN"
+    },
+    {
+      "file": "langgraph_engine/sdlc_pipeline/figma_workflow.py",
+      "line": 131,
+      "pattern": "FIGMA_ACCESS_TOKEN"
+    },
+    {
+      "file": "langgraph_engine/sdlc_pipeline/figma_workflow.py",
+      "line": 198,
+      "pattern": "FIGMA_ACCESS_TOKEN"
+    },
+    {
+      "file": "langgraph_engine/sdlc_pipeline/figma_workflow.py",
+      "line": 199,
+      "pattern": "FIGMA_ACCESS_TOKEN"
+    },
+    {
+      "file": "langgraph_engine/sdlc_pipeline/figma_workflow.py",
+      "line": 355,
+      "pattern": "FIGMA_ACCESS_TOKEN"
+    },
+    {
+      "file": "langgraph_engine/sdlc_pipeline/figma_workflow.py",
+      "line": 356,
+      "pattern": "FIGMA_ACCESS_TOKEN"
+    },
+    {
+      "file": "langgraph_engine/sdlc_pipeline/figma_workflow.py",
+      "line": 37,
+      "pattern": "FIGMA_ACCESS_TOKEN"
+    },
+    {
+      "file": "langgraph_engine/security/secrets_manager.py",
+      "line": 19,
+      "pattern": "ANTHROPIC_API_KEY"
+    },
+    {
+      "file": "langgraph_engine/security/secrets_manager.py",
+      "line": 19,
+      "pattern": "GITHUB_TOKEN"
+    },
+    {
+      "file": "langgraph_engine/security/secrets_manager.py",
+      "line": 79,
+      "pattern": "ANTHROPIC_API_KEY"
+    },
+    {
+      "file": "langgraph_engine/security/secrets_manager.py",
+      "line": 104,
+      "pattern": "ANTHROPIC_API_KEY"
+    },
+    {
+      "file": "langgraph_engine/security/secrets_manager.py",
+      "line": 110,
+      "pattern": "ANTHROPIC_API_KEY"
+    },
+    {
+      "file": "scripts/agents/computer-use-agent.py",
+      "line": 46,
+      "pattern": "ANTHROPIC_API_KEY"
+    },
+    {
+      "file": "scripts/agents/computer-use-agent.py",
+      "line": 51,
+      "pattern": "ANTHROPIC_API_KEY"
+    },
+    {
+      "file": "scripts/agents/computer-use-agent.py",
+      "line": 53,
+      "pattern": "ANTHROPIC_API_KEY"
+    },
+    {
+      "file": "scripts/cli.py",
+      "line": 162,
+      "pattern": "GITHUB_TOKEN"
+    },
+    {
+      "file": "scripts/cli.py",
+      "line": 163,
+      "pattern": "ANTHROPIC_API_KEY"
+    },
+    {
+      "file": "scripts/cli.py",
+      "line": 287,
+      "pattern": "ANTHROPIC_API_KEY"
+    },
+    {
+      "file": "scripts/cli.py",
+      "line": 287,
+      "pattern": "GITHUB_TOKEN"
+    },
+    {
+      "file": "scripts/health_server.py",
+      "line": 1,
+      "pattern": "ANTHROPIC_API_KEY"
+    },
+    {
+      "file": "scripts/health_server.py",
+      "line": 38,
+      "pattern": "ANTHROPIC_API_KEY"
+    },
+    {
+      "file": "scripts/health_server.py",
+      "line": 39,
+      "pattern": "ANTHROPIC_API_KEY"
+    },
+    {
+      "file": "scripts/secrets_check.py",
+      "line": 30,
+      "pattern": "ANTHROPIC_API_KEY"
+    },
+    {
+      "file": "scripts/secrets_check.py",
+      "line": 31,
+      "pattern": "ANTHROPIC_API_KEY"
+    },
+    {
+      "file": "scripts/setup/setup_wizard.py",
+      "line": 176,
+      "pattern": "ANTHROPIC_API_KEY"
+    },
+    {
+      "file": "scripts/setup/setup_wizard.py",
+      "line": 182,
+      "pattern": "GITHUB_TOKEN"
+    },
+    {
+      "file": "scripts/tools/create_mcp_repos.py",
+      "line": 129,
+      "pattern": "FIGMA_ACCESS_TOKEN"
+    },
+    {
+      "file": "scripts/tools/create_mcp_repos.py",
+      "line": 224,
+      "pattern": "GITHUB_TOKEN"
+    },
+    {
+      "file": "scripts/tools/create_mcp_repos.py",
+      "line": 377,
+      "pattern": "ANTHROPIC_API_KEY"
+    },
+    {
+      "file": "src/mcp/base/clients.py",
+      "line": 294,
+      "pattern": "GITHUB_TOKEN"
+    },
+    {
+      "file": "src/mcp/base/clients.py",
+      "line": 329,
+      "pattern": "GITHUB_TOKEN"
+    },
+    {
+      "file": "src/mcp/base/clients.py",
+      "line": 337,
+      "pattern": "GITHUB_TOKEN"
+    },
+    {
+      "file": "src/mcp/base/clients.py",
+      "line": 323,
+      "pattern": "GITHUB_TOKEN"
+    }
+  ],
+  "credential_access_sites_count": 62,
+  "settings_json_touch_sites": [
+    {
+      "file": "scripts/architecture/generate_system_diagram.py",
+      "line": 229,
+      "literal": "14 MCP Servers  (295 tools)\nAll registered in settings.json"
+    },
+    {
+      "file": "scripts/cli.py",
+      "line": 221,
+      "literal": "settings.json"
+    },
+    {
+      "file": "scripts/cli.py",
+      "line": 235,
+      "literal": "~/.claude/settings.json not found. Run 'cwe setup'."
+    },
+    {
+      "file": "scripts/cli.py",
+      "line": 289,
+      "literal": "  4. Register MCP servers in ~/.claude/settings.json"
+    },
+    {
+      "file": "scripts/cli.py",
+      "line": 233,
+      "literal": "Cannot read settings.json: "
+    },
+    {
+      "file": "scripts/setup/setup_wizard.py",
+      "line": 230,
+      "literal": "Step 4: Register MCP servers in ~/.claude/settings.json."
+    },
+    {
+      "file": "scripts/setup/setup_wizard.py",
+      "line": 237,
+      "literal": "settings.json"
+    },
+    {
+      "file": "scripts/setup/setup_wizard.py",
+      "line": 233,
+      "literal": "  Register MCP servers in ~/.claude/settings.json?"
+    },
+    {
+      "file": "scripts/setup/setup_wizard.py",
+      "line": 288,
+      "literal": "  [!!] Could not write settings.json: {0}"
+    },
+    {
+      "file": "scripts/setup/setup_wizard.py",
+      "line": 259,
+      "literal": "  [!!] Could not read settings.json: {0}"
+    },
+    {
+      "file": "scripts/tools/create_mcp_repos.py",
+      "line": 525,
+      "literal": "\n\n---\n\n## Usage in Claude Code\n\nAdd to your `~/.claude/settings.json`:\n\n```json\n{\n  \"mcpServers\": {\n    \""
+    },
+    {
+      "file": "scripts/tools/create_mcp_repos.py",
+      "line": 1035,
+      "literal": "\n--- settings.json paths to update ---"
+    },
+    {
+      "file": "scripts/tools/create_mcp_repos.py",
+      "line": 161,
+      "literal": "Path to MCP config JSON (default: ~/.claude/settings.json)"
+    },
+    {
+      "file": "src/utils/path_resolver.py",
+      "line": 1,
+      "literal": "\nPath Resolver for Claude Workflow Engine.\n\nSingle source of truth for ALL path resolution across the project.\nNo file should ever hardcode absolute paths - everything goes through here.\n\nPath Standard:\n    All paths are resolved via environment variable overrides with\n    cross-platform defaults using Path.home(). Never hardcode usernames.\n\n    | Path Type     | Env Override            | Default (all OS)            |\n    |---------------|-------------------------|-----------------------------|\n    | Claude Home   | CLAUDE_HOME             | ~/.claude/                  |\n    | Scripts       | CLAUDE_SCRIPTS_DIR      | {CLAUDE_HOME}/scripts/      |\n    | Policies      | CLAUDE_POLICIES_DIR     | {CLAUDE_HOME}/policies/     |\n    | Settings      | CLAUDE_SETTINGS_FILE    | {CLAUDE_HOME}/settings.json |\n    | Data/Memory   | CLAUDE_WORKFLOW_ENGINE_DATA_DIR | {CLAUDE_HOME}/memory/       |\n    | Logs Root     | CLAUDE_LOGS_DIR         | {CLAUDE_HOME}/logs/         |\n    | Telemetry     | (auto)                  | {LOGS}/telemetry/           |\n    | Level Logs    | (auto)                  | {LOGS}/level/               |\n    | Cache         | (auto)                  | {LOGS}/cache/               |\n    | Error Logs    | (auto)                  | {LOGS}/errors/              |\n    | Flow Traces   | (auto)                  | {LOGS}/flow-traces/         |\n    | Benchmarks    | (auto)                  | {LOGS}/benchmarks/          |\n    | Tool Opt Log  | (auto)                  | {LOGS}/tool-optimization.jsonl |\n    | Skills        | CLAUDE_SKILLS_DIR       | {CLAUDE_HOME}/skills/       |\n    | Agents        | CLAUDE_AGENTS_DIR       | {CLAUDE_HOME}/agents/       |\n\nPriority chain for data directory:\n    0. CLAUDE_WORKFLOW_ENGINE_DATA_DIR environment variable (set by IDE launcher)\n    1. ~/.claude/memory/ (present when Claude Memory System is installed)\n    2. ./data/ within the project root (portable/standalone mode)\n\nModule-level singletons:\n    path_resolver (PathResolver): Global shared instance.\n\nConvenience functions (all delegate to path_resolver):\n    get_sessions_dir() -> Path\n    get_logs_dir() -> Path\n    get_config_dir() -> Path\n    get_data_dir(subdir=None) -> Path\n    get_file(*parts) -> Path\n    is_global_mode() -> bool\n    is_local_mode() -> bool\n    get_mode_info() -> dict\n    get_scripts_dir() -> Path\n    get_policies_dir() -> Path\n    get_session_logs_dir() -> Path\n    get_claude_home() -> Path\n    get_settings_file() -> Path\n    get_telemetry_dir() -> Path\n    get_level_logs_dir() -> Path\n    get_cache_logs_dir() -> Path\n    get_error_logs_dir() -> Path\n    get_flow_traces_dir() -> Path\n    get_benchmarks_dir() -> Path\n    get_tool_opt_log() -> Path\n    get_skills_dir() -> Path\n    get_agents_dir() -> Path\n\nClasses:\n    PathResolver: Data directory resolver with three-tier priority fallback.\n"
+    },
+    {
+      "file": "src/utils/path_resolver.py",
+      "line": 417,
+      "literal": "Return the settings.json file path.\n\n    Returns:\n        Path: Absolute path to settings.json.\n    "
+    },
+    {
+      "file": "src/utils/path_resolver.py",
+      "line": 264,
+      "literal": "Get settings.json file path.\n\n        Override: CLAUDE_SETTINGS_FILE env var.\n        Default: {CLAUDE_HOME}/settings.json\n        "
+    },
+    {
+      "file": "src/utils/path_resolver.py",
+      "line": 269,
+      "literal": "settings.json"
+    }
+  ],
+  "settings_json_touch_sites_count": 17,
+  "subprocess_spawn_sites": [
+    {
+      "file": "hooks/pre_tool_enforcer/daemon.py",
+      "line": 134,
+      "call": "subprocess.Popen"
+    },
+    {
+      "file": "hooks/pre_tool_enforcer/policies/push_gate.py",
+      "line": 234,
+      "call": "subprocess.run"
+    },
+    {
+      "file": "hooks/stop_notifier/core.py",
+      "line": 222,
+      "call": "subprocess.run"
+    },
+    {
+      "file": "hooks/stop_notifier/core.py",
+      "line": 349,
+      "call": "subprocess.run"
+    },
+    {
+      "file": "hooks/stop_notifier/core.py",
+      "line": 377,
+      "call": "subprocess.run"
+    },
+    {
+      "file": "hooks/stop_notifier/core.py",
+      "line": 82,
+      "call": "subprocess.run"
+    },
+    {
+      "file": "hooks/stop_notifier/core.py",
+      "line": 111,
+      "call": "subprocess.run"
+    },
+    {
+      "file": "hooks/stop_notifier/core.py",
+      "line": 139,
+      "call": "subprocess.run"
+    },
+    {
+      "file": "hooks/stop_notifier/core.py",
+      "line": 163,
+      "call": "subprocess.run"
+    },
+    {
+      "file": "hooks/stop_notifier/core.py",
+      "line": 197,
+      "call": "subprocess.run"
+    },
+    {
+      "file": "hooks/stop_notifier/core.py",
+      "line": 243,
+      "call": "subprocess.run"
+    },
+    {
+      "file": "hooks/stop_notifier/core.py",
+      "line": 422,
+      "call": "subprocess.run"
+    },
+    {
+      "file": "hooks/stop_notifier/core.py",
+      "line": 432,
+      "call": "subprocess.run"
+    },
+    {
+      "file": "hooks/stop_notifier/post_impl.py",
+      "line": 55,
+      "call": "subprocess.run"
+    },
+    {
+      "file": "hooks/stop_notifier/post_impl.py",
+      "line": 64,
+      "call": "subprocess.run"
+    },
+    {
+      "file": "hooks/stop_notifier/post_impl.py",
+      "line": 208,
+      "call": "subprocess.run"
+    },
+    {
+      "file": "hooks/stop_notifier/post_impl.py",
+      "line": 216,
+      "call": "subprocess.run"
+    },
+    {
+      "file": "hooks/stop_notifier/post_impl.py",
+      "line": 286,
+      "call": "subprocess.run"
+    },
+    {
+      "file": "hooks/stop_notifier/voice.py",
+      "line": 164,
+      "call": "subprocess.Popen"
+    },
+    {
+      "file": "langgraph_engine/conflict_resolver.py",
+      "line": 590,
+      "call": "subprocess.run"
+    },
+    {
+      "file": "langgraph_engine/context_sync/complexity_calculator.py",
+      "line": 118,
+      "call": "subprocess.run"
+    },
+    {
+      "file": "langgraph_engine/git_operations.py",
+      "line": 53,
+      "call": "subprocess.run"
+    },
+    {
+      "file": "langgraph_engine/git_operations.py",
+      "line": 75,
+      "call": "subprocess.run"
+    },
+    {
+      "file": "langgraph_engine/github/integration.py",
+      "line": 36,
+      "call": "subprocess.run"
+    },
+    {
+      "file": "langgraph_engine/github/integration.py",
+      "line": 51,
+      "call": "subprocess.run"
+    },
+    {
+      "file": "langgraph_engine/github/integration.py",
+      "line": 131,
+      "call": "subprocess.run"
+    },
+    {
+      "file": "langgraph_engine/github/integration.py",
+      "line": 190,
+      "call": "subprocess.run"
+    },
+    {
+      "file": "langgraph_engine/github/integration.py",
+      "line": 234,
+      "call": "subprocess.run"
+    },
+    {
+      "file": "langgraph_engine/github/integration.py",
+      "line": 300,
+      "call": "subprocess.run"
+    },
+    {
+      "file": "langgraph_engine/github/integration.py",
+      "line": 365,
+      "call": "subprocess.run"
+    },
+    {
+      "file": "langgraph_engine/github/integration.py",
+      "line": 399,
+      "call": "subprocess.run"
+    },
+    {
+      "file": "langgraph_engine/github/mcp.py",
+      "line": 90,
+      "call": "subprocess.run"
+    },
+    {
+      "file": "langgraph_engine/github/mcp.py",
+      "line": 108,
+      "call": "subprocess.run"
+    },
+    {
+      "file": "langgraph_engine/llm_call.py",
+      "line": 420,
+      "call": "subprocess.run"
+    },
+    {
+      "file": "langgraph_engine/llm_call.py",
+      "line": 425,
+      "call": "subprocess.run"
+    },
+    {
+      "file": "langgraph_engine/llm_call.py",
+      "line": 156,
+      "call": "subprocess.run"
+    },
+    {
+      "file": "langgraph_engine/policy_node_adapter.py",
+      "line": 158,
+      "call": "subprocess.run"
+    },
+    {
+      "file": "langgraph_engine/sdlc_pipeline/architecture/orchestrator_agent_caller.py",
+      "line": 131,
+      "call": "subprocess.run"
+    },
+    {
+      "file": "langgraph_engine/sdlc_pipeline/architecture/prompt_gen_expert_caller.py",
+      "line": 223,
+      "call": "subprocess.run"
+    },
+    {
+      "file": "langgraph_engine/sdlc_pipeline/architecture/todo_decomposer.py",
+      "line": 142,
+      "call": "subprocess.run"
+    },
+    {
+      "file": "langgraph_engine/sdlc_pipeline/architecture/todo_executor.py",
+      "line": 110,
+      "call": "subprocess.run"
+    },
+    {
+      "file": "langgraph_engine/sdlc_pipeline/faithfulness_gate.py",
+      "line": 253,
+      "call": "subprocess.run"
+    },
+    {
+      "file": "langgraph_engine/sdlc_pipeline/helpers.py",
+      "line": 96,
+      "call": "subprocess.run"
+    },
+    {
+      "file": "langgraph_engine/sdlc_pipeline/helpers.py",
+      "line": 180,
+      "call": "subprocess.run"
+    },
+    {
+      "file": "langgraph_engine/sdlc_pipeline/nodes/closure_docs_summary_implementation.py",
+      "line": 364,
+      "call": "subprocess.run"
+    },
+    {
+      "file": "langgraph_engine/sdlc_pipeline/sonarqube/api_client.py",
+      "line": 238,
+      "call": "subprocess.run"
+    },
+    {
+      "file": "langgraph_engine/sdlc_pipeline/sonarqube/api_client.py",
+      "line": 640,
+      "call": "subprocess.run"
+    },
+    {
+      "file": "langgraph_engine/sdlc_pipeline/sonarqube/orchestrator.py",
+      "line": 164,
+      "call": "subprocess.run"
+    },
+    {
+      "file": "langgraph_engine/sdlc_pipeline/sonarqube/orchestrator.py",
+      "line": 186,
+      "call": "subprocess.run"
+    },
+    {
+      "file": "scripts/agents/verify-computer-use-prerequisites.py",
+      "line": 146,
+      "call": "subprocess.run"
+    },
+    {
+      "file": "scripts/agents/verify-computer-use-prerequisites.py",
+      "line": 166,
+      "call": "subprocess.run"
+    },
+    {
+      "file": "scripts/auto_build_validator.py",
+      "line": 60,
+      "call": "subprocess.run"
+    },
+    {
+      "file": "scripts/auto_build_validator.py",
+      "line": 218,
+      "call": "subprocess.run"
+    },
+    {
+      "file": "scripts/auto_build_validator.py",
+      "line": 328,
+      "call": "subprocess.run"
+    },
+    {
+      "file": "scripts/cli.py",
+      "line": 66,
+      "call": "subprocess.run"
+    },
+    {
+      "file": "scripts/cli.py",
+      "line": 140,
+      "call": "subprocess.run"
+    },
+    {
+      "file": "scripts/cli.py",
+      "line": 283,
+      "call": "subprocess.run"
+    },
+    {
+      "file": "scripts/github_operations/branch_manager.py",
+      "line": 24,
+      "call": "subprocess.run"
+    },
+    {
+      "file": "scripts/github_operations/branch_manager.py",
+      "line": 89,
+      "call": "subprocess.run"
+    },
+    {
+      "file": "scripts/github_operations/branch_manager.py",
+      "line": 122,
+      "call": "subprocess.run"
+    },
+    {
+      "file": "scripts/github_operations/branch_manager.py",
+      "line": 277,
+      "call": "subprocess.run"
+    },
+    {
+      "file": "scripts/github_operations/branch_manager.py",
+      "line": 130,
+      "call": "subprocess.run"
+    },
+    {
+      "file": "scripts/github_operations/branch_manager.py",
+      "line": 161,
+      "call": "subprocess.run"
+    },
+    {
+      "file": "scripts/github_operations/client.py",
+      "line": 24,
+      "call": "subprocess.run"
+    },
+    {
+      "file": "scripts/github_operations/client.py",
+      "line": 47,
+      "call": "subprocess.run"
+    },
+    {
+      "file": "scripts/github_operations/issue_manager.py",
+      "line": 47,
+      "call": "subprocess.run"
+    },
+    {
+      "file": "scripts/github_operations/issue_manager.py",
+      "line": 994,
+      "call": "subprocess.run"
+    },
+    {
+      "file": "scripts/github_operations/issue_manager.py",
+      "line": 757,
+      "call": "subprocess.run"
+    },
+    {
+      "file": "scripts/github_operations/issue_manager.py",
+      "line": 767,
+      "call": "subprocess.run"
+    },
+    {
+      "file": "scripts/github_operations/issue_manager.py",
+      "line": 820,
+      "call": "subprocess.run"
+    },
+    {
+      "file": "scripts/github_operations/issue_manager.py",
+      "line": 836,
+      "call": "subprocess.run"
+    },
+    {
+      "file": "scripts/github_operations/labels.py",
+      "line": 240,
+      "call": "subprocess.run"
+    },
+    {
+      "file": "scripts/github_operations/labels.py",
+      "line": 276,
+      "call": "subprocess.run"
+    },
+    {
+      "file": "scripts/github_pr_workflow/commit_push.py",
+      "line": 25,
+      "call": "subprocess.run"
+    },
+    {
+      "file": "scripts/github_pr_workflow/commit_push.py",
+      "line": 57,
+      "call": "subprocess.run"
+    },
+    {
+      "file": "scripts/github_pr_workflow/commit_push.py",
+      "line": 67,
+      "call": "subprocess.run"
+    },
+    {
+      "file": "scripts/github_pr_workflow/commit_push.py",
+      "line": 131,
+      "call": "subprocess.run"
+    },
+    {
+      "file": "scripts/github_pr_workflow/commit_push.py",
+      "line": 157,
+      "call": "subprocess.run"
+    },
+    {
+      "file": "scripts/github_pr_workflow/commit_push.py",
+      "line": 249,
+      "call": "subprocess.run"
+    },
+    {
+      "file": "scripts/github_pr_workflow/git_ops.py",
+      "line": 65,
+      "call": "subprocess.run"
+    },
+    {
+      "file": "scripts/github_pr_workflow/git_ops.py",
+      "line": 76,
+      "call": "subprocess.run"
+    },
+    {
+      "file": "scripts/github_pr_workflow/git_ops.py",
+      "line": 177,
+      "call": "subprocess.run"
+    },
+    {
+      "file": "scripts/github_pr_workflow/git_ops.py",
+      "line": 226,
+      "call": "subprocess.run"
+    },
+    {
+      "file": "scripts/github_pr_workflow/review.py",
+      "line": 31,
+      "call": "subprocess.run"
+    },
+    {
+      "file": "scripts/github_pr_workflow/review.py",
+      "line": 329,
+      "call": "subprocess.run"
+    },
+    {
+      "file": "scripts/github_pr_workflow/review.py",
+      "line": 211,
+      "call": "subprocess.run"
+    },
+    {
+      "file": "scripts/github_pr_workflow/versioning.py",
+      "line": 124,
+      "call": "subprocess.run"
+    },
+    {
+      "file": "scripts/github_pr_workflow/versioning.py",
+      "line": 168,
+      "call": "subprocess.run"
+    },
+    {
+      "file": "scripts/github_pr_workflow/versioning.py",
+      "line": 179,
+      "call": "subprocess.run"
+    },
+    {
+      "file": "scripts/github_pr_workflow/versioning.py",
+      "line": 187,
+      "call": "subprocess.run"
+    },
+    {
+      "file": "scripts/github_pr_workflow/versioning.py",
+      "line": 225,
+      "call": "subprocess.run"
+    },
+    {
+      "file": "scripts/github_pr_workflow/versioning.py",
+      "line": 229,
+      "call": "subprocess.run"
+    },
+    {
+      "file": "scripts/github_pr_workflow/versioning.py",
+      "line": 237,
+      "call": "subprocess.run"
+    },
+    {
+      "file": "scripts/github_pr_workflow/versioning.py",
+      "line": 319,
+      "call": "subprocess.run"
+    },
+    {
+      "file": "scripts/pin_requirements.py",
+      "line": 69,
+      "call": "subprocess.run"
+    },
+    {
+      "file": "scripts/setup/setup_wizard.py",
+      "line": 91,
+      "call": "subprocess.run"
+    },
+    {
+      "file": "scripts/setup/setup_wizard.py",
+      "line": 99,
+      "call": "subprocess.run"
+    },
+    {
+      "file": "scripts/setup/setup_wizard.py",
+      "line": 107,
+      "call": "subprocess.run"
+    },
+    {
+      "file": "scripts/setup/setup_wizard.py",
+      "line": 132,
+      "call": "subprocess.run"
+    },
+    {
+      "file": "scripts/setup/setup_wizard.py",
+      "line": 311,
+      "call": "subprocess.run"
+    },
+    {
+      "file": "scripts/tools/create_mcp_repos.py",
+      "line": 723,
+      "call": "subprocess.run"
+    },
+    {
+      "file": "scripts/tools/post-merge-version-updater.py",
+      "line": 49,
+      "call": "subprocess.run"
+    },
+    {
+      "file": "scripts/tools/post-merge-version-updater.py",
+      "line": 108,
+      "call": "subprocess.run"
+    },
+    {
+      "file": "scripts/tools/release.py",
+      "line": 102,
+      "call": "subprocess.run"
+    },
+    {
+      "file": "scripts/tools/voice-notifier.py",
+      "line": 388,
+      "call": "subprocess.run"
+    },
+    {
+      "file": "scripts/tools/voice-notifier.py",
+      "line": 436,
+      "call": "subprocess.run"
+    },
+    {
+      "file": "scripts/tools/voice-notifier.py",
+      "line": 108,
+      "call": "subprocess.run"
+    },
+    {
+      "file": "scripts/tools/voice-notifier.py",
+      "line": 395,
+      "call": "subprocess.run"
+    },
+    {
+      "file": "scripts/tools/voice-notifier.py",
+      "line": 88,
+      "call": "subprocess.run"
+    },
+    {
+      "file": "scripts/tools/voice-notifier.py",
+      "line": 199,
+      "call": "subprocess.run"
+    },
+    {
+      "file": "scripts/tools/voice-notifier.py",
+      "line": 219,
+      "call": "subprocess.Popen"
+    },
+    {
+      "file": "src/mcp/base/clients.py",
+      "line": 344,
+      "call": "subprocess.run"
+    }
+  ],
+  "subprocess_spawn_sites_count": 112
+}
