@@ -1,0 +1,156 @@
+{
+  "detection_methods": {
+    "nli": "cross-encoder-class entailment scoring, claim vs. cited ground-truth passage, per hallucination-detection-core SS2",
+    "factscore": "atomic-claim precision (fraction of decomposed claims with verifiable file:line/quote support), per SS5",
+    "self_check_consistency": "approximated via cross-document consistency (same claim checked against >=2 independent ground-truth artifacts where available) -- true SelfCheckGPT stochastic resampling does not apply to a static authored document with no sibling generations to sample; this is a declared method substitution, not a fabricated score",
+    "semantic_entropy": "approximated via internal-repetition-consistency of the same fact restated across sections of the same artifact (e.g. FR count summaries repeated in SS2, SS4, SS14) -- not literal multi-sample SE(q); reported in nats-equivalent scale for comparability only"
+  },
+  "coverage_note": "Full FR/NFR reconciliation tables (FR-1..FR-23, NFR-1..NFR-5), the five-policy merge section, the Kano/WSJF/MVP/critical-path sections, and all numeric claims (counts, percentages, WSJF arithmetic) were checked. Not independently re-verified against the raw JSON: policy_enforcement_raw.json's full 46-row content and contradictions.md's full text (their summary figures were cross-checked instead, via orchestration_prompt.md SS3.3's restatement of the audit result of record, which both source documents feed). The remaining ~4,100 lines of orchestration_prompt.md outside SS3.3/SS5/SS0-330 were not read by this gate either, matching the scope prd-v2.md itself declares in its own SS12 Coverage Statement.",
+  "per_artifact": [
+    {
+      "artifact": "docs/phase-0-requirements/prd-v2.md",
+      "nli_score": 1.0,
+      "factscore": 1.0,
+      "self_check_consistency": 1.0,
+      "semantic_entropy": 0.0,
+      "re_verification_2026-08-01": {
+        "trigger": "Orchestrator applied a direct 2-line framing fix (not a business-analyst-agent regen) to the FR-8a row (Section 4) and the FR-8 row (Section 2), both of which carried the stale unqualified '8-spawn floor' figure.",
+        "second_occurrence_check": "CONFIRMED as a genuine second instance of the same defect, not an over-correction. The original FR-8 row (Section 2, line 58) independently asserted 'a measured 8-spawn floor (16 with retries)' with the same missing forward-pointer to Section 10 as the FR-8a row -- this was missed in the initial pass, which only sampled Section 4 closely.",
+        "overconfidence_check": "The new 'TRUE floor is ~2' wording was checked for swapping one overconfident number for another. Not flagged: both edits use the approximate '~2' (never an unqualified '2'), both show the inference chain ('7 of 9 verified ABSENT -> guards fail -> never spawn') rather than asserting a bare conclusion, and the confidence level matches orchestration_prompt.md's Resolution 2 (line 595: 'True per-turn spawn floor is ~2... CLOSED by this measurement'), which is the later, user-approved, authoritative source per prd-v2.md's own stated hierarchy. Noted but not flaggable: '~2' is a static .exists()-guard inference, not the 20-invocation runtime instrumentation FR-8/FR-8a's own Measurable AC specifies -- but this looseness ('this measurement') originates in the cited source itself, not in prd-v2.md's restatement of it.",
+        "residual_grep_check": "Full-file grep for '8 spawn|8-spawn|floor is 8|8/turn|spawn floor' confirms no third unqualified occurrence remains outside the two now-annotated rows and the already-correct Section 10 / FR-21 text.",
+        "result": "MEDIUM finding RESOLVED. Scores updated from 0.99/0.99 to 1.00/1.00."
+      },
+      "claims": [
+        {
+          "claim": "as-built-prd.md's own summary line says '4 partial' while the parenthetical lists FR-1, FR-2, FR-3, FR-15, FR-17 and appends '-- 5 partial'; prd-v2.md resolves this by treating 5 as authoritative.",
+          "evidence": "as-built-prd.md:432 verbatim: '4 partial (FR-1, FR-2, FR-3, FR-15, FR-17 -- 5 partial)'. The enumerated list has 5 named FRs.",
+          "entailment": 1.0,
+          "severity": "LOW",
+          "verdict": "SUPPORTED -- quote is verbatim-accurate and the resolution (5 is correct) is the only defensible reading of the source's own list."
+        },
+        {
+          "claim": "FR-4a blast radius: 135 of 2,218 nodes (6.09%) go dark, zero surviving cross-boundary edges.",
+          "evidence": "orchestration_prompt.md:145: '135 of 2,218 nodes disappear -- 6.09% -- entirely'; as-built-prd.md:312/500 independently confirms the 2,218-node full population figure.",
+          "entailment": 1.0,
+          "severity": "LOW",
+          "verdict": "SUPPORTED -- exact figures and arithmetic (135/2218=6.086%~=6.09%) verified."
+        },
+        {
+          "claim": "FR-9a: entire Level-2 SDLC core (45/45 files) and 38/45 hook-package files are 100% invisible to the call-graph builder (MAX_FILES=300 against 411 .py files).",
+          "evidence": "as-built-prd.md:133 verbatim match, including the 300/411 figures and the 45/45, 38/45 breakdown.",
+          "entailment": 1.0,
+          "severity": "LOW",
+          "verdict": "SUPPORTED -- verbatim match to ground truth."
+        },
+        {
+          "claim": "FR-15: of 116 total home-directory references, only 13 are live-code defaults needing replacement (the other 103 are comments/docstrings).",
+          "evidence": "as-built-prd.md corroborates the corrected 13-of-many framing (line 150's NFR-5 PARTIAL note cites '13 code-level ~/.claude/... string defaults'); 116 total is consistent with 13+103.",
+          "entailment": 0.97,
+          "severity": "LOW",
+          "verdict": "SUPPORTED -- the 116 total was not independently re-derived from a raw grep in this gate, but 13 (the operative remediation count) is directly grounded and repeated consistently across both artifacts and the ground truth."
+        },
+        {
+          "claim": "FR-17: 19 unencoded open() calls is the accurate current figure, correcting an earlier undercount of 12.",
+          "evidence": "as-built-prd.md:150,332 both state 19, correcting a prior baseline of 12.",
+          "entailment": 1.0,
+          "severity": "LOW",
+          "verdict": "SUPPORTED on the substantive number (19). Flagged for prose clarity only: prd-v2.md's own wording ('corrected upward from Appendix E's already-corrected 19... re-verifies 19') is internally circular/confusing since the final number does not change from Appendix E's 19 -- a wording defect, not a numeric hallucination."
+        },
+        {
+          "claim": "FR-20: exactly 14 genuine policy orphans, named as anti-hallucination-enforcement.md, architecture-script-mapping-policy.md, two point-in-time changelog files, cross-project-patterns-policy.md, file-management-policy.md, git-auto-commit-policy.md, intelligent-decision-engine-policy.md, parallel-execution-policy.md, proactive-consultation-policy.md, session-chaining-policy.md, session-pruning-policy.md, test-case-policy.md, user-preferences-policy.md.",
+          "evidence": "as-built-prd.md:210-229 Section 4.2 table lists exactly these 14 (the 'two point-in-time changelog files' being EXECUTION-SYSTEM-FIXES-SUMMARY.md and INTELLIGENT-PROMPT-GENERATION-UPGRADE.md, correctly paraphrased rather than misnamed).",
+          "entailment": 1.0,
+          "severity": "LOW",
+          "verdict": "SUPPORTED -- full 14-name list matches ground truth exactly; no recurrence of the retracted '46/46 orphan' finding anywhere in the document."
+        },
+        {
+          "claim": "FR-8a (Section 4 row): 'Measured floor is 8 spawns/turn (16 with retries), not the 4+ the docstring implies' -- presented without an in-row caveat pointing to the later correction.",
+          "evidence": "orchestration_prompt.md:194 verbatim: 'an 8-spawn floor per response turn, rising to 16 with retries' -- so the quote itself is accurate to its cited source. However orchestration_prompt.md:594-596 (Resolution 2) and prd-v2.md's own Section 10 (F.1 CLOSED) both state the TRUE current floor is ~2, not 8, because 7 of 9 referenced scripts were verified absent.",
+          "entailment": 1.0,
+          "severity": "RESOLVED (was MEDIUM)",
+          "verdict": "RESOLVED 2026-08-01 -- both this row (Section 4) and the previously-unflagged sibling occurrence in the FR-8 row (Section 2, line 58) now open with explicit SUPERSEDED framing, state the true ~2 floor with its inference chain, and cross-reference FR-21/Section 10. Re-verification confirmed the fix is not overconfident in the opposite direction: '~2' is qualified as approximate and its reasoning is shown, matching orchestration_prompt.md Resolution 2's own confidence level. See re_verification_2026-08-01 block above for full detail."
+        },
+        {
+          "claim": "Section 8 (five-policy merge): recommendations-policy.md PORT, auto-skill-agent-selection-policy.md DELETE, core-skills-mandate.md PARTIAL PORT (advisory), adaptive-skill-registry.md DELETE, auto-plan-mode-suggestion-policy.md DELETE, github-branch-pr-policy.md needs no decision (verified duplicate of pr-code-review-policy.md).",
+          "evidence": "orchestration_prompt.md:747-770 (ADR-009b) confirms the six-file inventory, the five-genuinely-unique-plus-one-duplicate framing, and that the merge decision is user-gated and separate from the D1-D7 chain -- consistent with prd-v2.md's own recommendations, which are BA judgement calls built on stated references (hard dependency for PORT, soft-only references for the DELETEs), not claims of ground-truth fact.",
+          "entailment": 1.0,
+          "severity": "LOW",
+          "verdict": "SUPPORTED as a reasoned recommendation with declared, traceable inputs (dependency type, reference count, corroborating CLAUDE.md version-history citation for the plan-mode DELETE). Scored on input-traceability, not oracle correctness, per the task's own instruction not to flag judgement calls as hallucinations."
+        },
+        {
+          "claim": "Attribution: Resolutions 1-3 and the 2026-08-01 Deliverable-1 approval are presented throughout as USER decisions, not agent-derived or reopened.",
+          "evidence": "orchestration_prompt.md:564-610 (SS3.3) explicitly labels each resolution '(user decision)' or '(user decision, DISAMBIGUATED)'; prd-v2.md SS0 and SS9 mirror this attribution exactly and explicitly state ADRs are 'flagged for awareness, not for re-litigation.'",
+          "entailment": 1.0,
+          "severity": "LOW",
+          "verdict": "SUPPORTED -- no instance found of the artifact presenting a user decision as agent-derived or reopening a settled ADR."
+        }
+      ],
+      "gate_verdict": "PASS (updated 2026-08-01) -- the prior MEDIUM finding (FR-8a stale-floor framing) is resolved; a previously-missed sibling occurrence (FR-8 row, Section 2) was also found and fixed. Re-verification confirms the fix does not introduce a new overconfidence problem. No remaining HIGH or MEDIUM findings."
+    },
+    {
+      "artifact": "docs/phase-0-requirements/product-sequencing-v2.md",
+      "nli_score": 1.0,
+      "factscore": 1.0,
+      "self_check_consistency": 1.0,
+      "semantic_entropy": 0.0,
+      "claims": [
+        {
+          "claim": "SS0: Deliverable 1 (policy audit) is APPROVED as of 2026-08-01, with three binding resolutions; Workstream B is UNBLOCKED subject to Resolution 1 (CallGraph fix in-scope, FR-9a) and Resolution 2 (Stop-hook items become 'repair what it should do', folded into FR-8a).",
+          "evidence": "orchestration_prompt.md:564-596 (SS3.3) verbatim: 'DELIVERABLE 1 -- APPROVED 2026-08-01, WITH THREE BINDING RESOLUTIONS'; 'Workstream B is UNBLOCKED'; Resolution 2's chosen approach is verbatim 'REPAIR WHAT IT SHOULD DO'.",
+          "entailment": 1.0,
+          "severity": "LOW",
+          "verdict": "SUPPORTED -- near-verbatim match including the exact resolution language."
+        },
+        {
+          "claim": "ADR-009b's five-policy merge decision is separate and still open, gating FR-19 only, not the section 9 deliverable chain.",
+          "evidence": "orchestration_prompt.md:568: 'The restriction on ~/.claude/policies/ (ADR-009b) REMAINS -- that is a separate, still-open decision'; prd-v2.md SS8 confirms FR-19 is the only item gated by it.",
+          "entailment": 1.0,
+          "severity": "LOW",
+          "verdict": "SUPPORTED."
+        },
+        {
+          "claim": "New critical path bottleneck is FR-9a -> FR-10, not the audit; the audit is D1, already done/approved.",
+          "evidence": "Consistent with orchestration_prompt.md Resolution 1 (CallGraph fix mandatory, prerequisite for FR-10) and as-built-prd.md's own FR-9a row characterizing it as a blocking prerequisite. No ground-truth source contradicts this sequencing judgement.",
+          "entailment": 1.0,
+          "severity": "LOW",
+          "verdict": "SUPPORTED -- reasoned sequencing conclusion with traceable inputs (Resolution 1's mandatory-prerequisite language)."
+        },
+        {
+          "claim": "WSJF table: 17 rows of CoD=UBV+TC+RROE and WSJF=CoD/size arithmetic, e.g. FR-22 CoD=13/size=1=WSJF 13.00; FR-9a CoD=23/size=5=WSJF 4.60; FR-10..13 CoD=22/size=13=WSJF 1.69.",
+          "evidence": "Independently recomputed all 17 rows' arithmetic from the stated UBV/TC/RROE/Size inputs; every WSJF value matches CoD/size to 2 decimal places, and the 'WSJF top-5' ranking in SS2 matches a full descending sort of the recomputed values.",
+          "entailment": 1.0,
+          "severity": "LOW",
+          "verdict": "SUPPORTED -- this is a computation-correctness check (not a ground-truth-correspondence check, since WSJF inputs are declared judgement scores per the task's item 6); all arithmetic verified correct, zero errors found."
+        },
+        {
+          "claim": "Reference implementation citation: WSJF follows Reinertsen (2009) via claude-global-library/skills/product-management-core/SKILL.md SS M1 (CoD=UBV+TC+RROE, SAFe rubric); Kano follows the same skill's SS M3.",
+          "evidence": "skills/product-management-core/SKILL.md:469 'M1: WSJF Derivation -- Reinertsen (2009) Cost of Delay / Job Size' and :701 'M3: Kano Utility Function' both exist with matching content (CoD=UBV+TC+RROE at line 510, Kano 1984 at line 705).",
+          "entailment": 1.0,
+          "severity": "LOW",
+          "verdict": "SUPPORTED -- citation verified to exist and match; not a fabricated reference."
+        },
+        {
+          "claim": "No functional/dysfunctional Kano survey was run; classifications are reasoned-mapping judgements, declared as a scope reduction per the skill's own KIPI warning, not fabricated survey data.",
+          "evidence": "Consistent with the document's own explicit self-declaration in SS0 and the absence of any survey-data table anywhere in the artifact; skill file SS M3 (lines 785-812) documents KIPI as requiring real survey data, which the artifact correctly does not claim to have collected.",
+          "entailment": 1.0,
+          "severity": "LOW",
+          "verdict": "SUPPORTED -- honest scope declaration, not an unsupported claim; scored on input-traceability per the task's instruction to not flag reasoned judgements."
+        },
+        {
+          "claim": "MVP boundary defers FR-8a full rebuild scope, citing ADR-010 (Stop/Notification hooks not plugin-owned) and NFR-1's PreToolUse/PostToolUse/UserPromptSubmit-only scope.",
+          "evidence": "Consistent with orchestration_prompt.md:568 and ADR-010 references elsewhere in the same file (lines 329, 664+) establishing Stop/Notification as outside plugin ownership; NFR-1's scope is corroborated by as-built-prd.md:425.",
+          "entailment": 1.0,
+          "severity": "LOW",
+          "verdict": "SUPPORTED."
+        }
+      ],
+      "gate_verdict": "PASS -- no HIGH or MEDIUM severity findings in the checked claim set; all arithmetic independently reproduced; all factual (non-judgement) claims traced to file:line evidence; judgement claims (WSJF/Kano) scored on declared-input traceability per task instruction."
+    }
+  ],
+  "overall_verdict": "PASS (updated 2026-08-01, post re-verification)",
+  "flagged_for_fix": [
+    "RESOLVED 2026-08-01: prd-v2.md Section 4 FR-8a row and Section 2 FR-8 row (the latter a previously-unflagged sibling instance of the same defect) both now carry explicit SUPERSEDED framing with the ~2 true floor, its inference chain, and cross-references to FR-21/Section 10. Re-verified as not overcorrecting into false certainty -- see re_verification_2026-08-01 block.",
+    "STILL OPEN (LOW, non-blocking): prd-v2.md Section 2, FR-17 row: reword 'corrected upward from Appendix E's already-corrected 19' -- the phrase is internally circular (the number does not actually change from 19), a clarity defect rather than a numeric error. Not re-checked in this re-verification pass since the coordinator scoped this pass to the stale-floor claim class only."
+  ],
+  "partial_count_resolution": "5 is the correct, authoritative partial-FR count for FR-1/FR-2/FR-3/FR-15/FR-17. Ground truth as-built-prd.md:432 contains a self-contradiction in its own prose ('4 partial (FR-1, FR-2, FR-3, FR-15, FR-17 -- 5 partial)') where the leading numeral says 4 but the parenthetical both enumerates 5 names and appends the correction '-- 5 partial'. The enumerated list is primary evidence and unambiguously contains 5 entries; '4' is a transcription slip in the summary sentence. business-analyst-agent's treatment of 5 as authoritative in prd-v2.md Section 2 is the correct resolution and is stated definitively, not softened."
+}
