@@ -1,0 +1,190 @@
+{
+  "artifact": "docs/phase-1-architecture/hld.md",
+  "artifact_lines_pass1": 1290,
+  "artifact_lines_pass2": 1395,
+  "gate": "phase-1.3-anti-hallucination",
+  "pass": 2,
+  "pass2_scope": "Part A: confirm the two Pass-1 HIGH fixes landed cleanly. Part B: sweep ADR-011..017 (never previously examined). Part C: verify SS13a does not overclaim. Plus: verify the newly-added fifth-truncator 'sharper instance' reasoning.",
+  "methods_applied": ["NLI-entailment", "FactScore-atomic", "SelfCheckGPT-not-applicable-single-pass"],
+  "context_note": "Full context available (not compressed); findings are intrinsic/factual hallucinations only -- claims contradicted by live source, not compression-induced fabrication.",
+
+  "part_a_fix_verification": {
+    "fix_1_ss8.4_setup_wizard": {
+      "instruction": "Confirm the fabricated setup_wizard reinstatement mechanism was DELETED, not softened into hedged language.",
+      "verified_against": "hld.md lines 918-924; scripts/setup/setup_wizard.py full file (direct read, grepped for PreToolUse|PostToolUse|hooks -- zero matches, confirmed identically to pass 1)",
+      "result": "CLEAN. The claim was fully removed, not hedged. Explicit self-report at line 918: 'Scope boundary, stated because an earlier draft of this HLD got it wrong... that mechanism does not exist and the claim has been removed rather than softened.' No trace of a weakened variant (e.g. 'may also write hooks') found anywhere in the document.",
+      "surviving_claim": "The :282 full-file read-modify-write clobber risk (setup_wizard.py writes settings_path.write_text(json.dumps(settings)...) from a possibly-stale in-memory dict) -- this is the real, independently-valid risk and is correctly retained as the FR-4/FR-18 scope item.",
+      "verdict": "PASS"
+    },
+    "fix_2_adr018_ss9_nfr1": {
+      "instruction": "Confirm post_tool_tracker 0->>=3, pre_tool_enforcer 2->3, '2 of 112 (1.8%)'->'~6 of 116 (~5%)', source-correction block naming 4 aliased imports + 112+4=116 arithmetic, and that the NFR-1 conclusion was STRENGTHENED not hedged.",
+      "verified_against": "hld.md lines 545-621 (ADR-018 full section); direct source read of all 4 cited aliased-import files",
+      "aliased_import_verification": [
+        {"file": "hooks/post_tool_tracker/core.py", "import_line": 665, "import_text": "import subprocess as _subprocess", "spawn_line": 676, "spawn_text": "_subprocess.run(", "match": "EXACT"},
+        {"file": "hooks/post_tool_tracker/policies/post_merge_update.py", "import_line": 40, "import_text": "import subprocess as _sp_merge", "spawn_line": 46, "spawn_text": "_sp_merge.run([sys.executable, str(updater_script)], ...)", "match": "EXACT"},
+        {"file": "hooks/post_tool_tracker/policies/uncommitted_push.py", "import_line": 39, "import_text": "import subprocess as _sp", "spawn_line": 41, "spawn_text": "_sp.run([\"git\", \"status\", \"--porcelain\"], ...)", "match": "EXACT"},
+        {"file": "hooks/pre_tool_enforcer/policies/bash_commands.py", "import_line": 72, "import_text": "import subprocess as _sp", "spawn_line": 74, "spawn_text": "_sp.run(", "match": "EXACT"}
+      ],
+      "arithmetic_check": "audit_surface.json subprocess_spawn_sites_count == 112 (independently recomputed, confirmed). 112 + 4 aliased sites == 116. All 4 aliased sites verified live and real. Arithmetic is correct.",
+      "post_tool_tracker_count": "Table now reads '>= 3 (all aliased)' -- matches exactly 3 confirmed aliased sites (core.py, post_merge_update.py, uncommitted_push.py). Correct, and correctly hedged with '>=' rather than overclaiming an exhaustive count.",
+      "pre_tool_enforcer_count": "Table now reads '3 (2 direct + 1 aliased)' -- 2 direct sites previously verified in pass 1, +1 aliased (bash_commands.py) confirmed this pass. Correct.",
+      "fr4_fr5_figure": "Text now reads 'FR-4 and FR-5 remove roughly 6 of 116 spawn sites (~5%)' at line 599 -- matches instruction exactly.",
+      "nfr1_conclusion_check": "Line 611-612: 'This is the sharp one, and the corrected figures strengthen rather than weaken it.' Explicit, unhedged, states STRENGTHENED. No softening found anywhere in the NFR-1 row (SS9, line ~972 in new numbering) or ADR-018 consequence 3.",
+      "verdict": "PASS -- all sub-items confirmed, conclusion explicitly strengthened as instructed, not hedged."
+    }
+  },
+
+  "already_verified_pass1_reconfirmed": [
+    "CheckpointManager at langgraph_engine/checkpoint_manager.py; importers quality/recovery_handler.py, run_pipeline.py, core/lazy_loader.py; none under hooks/",
+    "resume_flow at orchestrator.py:941 (HLD's own SS13a self-corrects an earlier :943 citation to :941 -- verified :941 is the true definition line)",
+    "Fixed timeouts: prompt_gen_expert_caller.py:54 (60s), todo_decomposer.py:37 (90s), task_orchestration.py:128",
+    "hooks/pre_tool_enforcer/daemon.py exists; reached via hooks/pre-tool-enforcer.py:241 _run_via_daemon_or_fallback (line verified this pass)",
+    "Credential arithmetic 26+24+12=62; no JIRA_*/JENKINS_* pattern present (re-confirmed)"
+  ],
+
+  "part_b_findings": [
+    {
+      "adr": "ADR-011",
+      "topic": "CheckpointManager Is the Contractual Crash-Recovery Writer",
+      "priority_reason": "Coordinator: verify it names the right writer and trigger for the NFR-3 conflation correction.",
+      "claims_checked": [
+        "checkpoint_manager.py: save_checkpoint:145, load_checkpoint:209, load_checkpoint_by_id:265, get_last_checkpoint:294, get_last_successful_checkpoint:317, list_checkpoints:341, _atomic_write:113",
+        "step_decorator.py: save_success_checkpoint:158 (invoked at :336), save_failure_checkpoint:171, silent-swallow at :169",
+        "orchestrator.py: SqliteSaver compile sites :784 and :848; resume_flow:941",
+        "recovery_handler.py::resume_from_checkpoint:462",
+        "progress_tracker.py (the genuinely-dying part B system): save_session_progress:120, load_session_progress:83, log_tool_entry:146"
+      ],
+      "verification_method": "Direct source read of every cited line across checkpoint_manager.py, step_decorator.py, orchestrator.py, quality/recovery_handler.py, hooks/post_tool_tracker/progress_tracker.py",
+      "result": "Every single line citation (16 total) verified byte-exact. Writer correctly named (CheckpointManager), trigger correctly named (step_decorator.py step boundary, both success and failure paths), and the two-system conflation (step-boundary crash recovery vs per-tool-call progress) is accurately drawn with the right file on each side.",
+      "verdict": "NO DEFECT FOUND",
+      "severity": "NONE"
+    },
+    {
+      "adr": "ADR-012",
+      "topic": "Plugin Root by Manifest-Anchored Ascent; Env Var Advisory Only",
+      "priority_reason": "Coordinator: load-bearing claim -- if ascent needs no undocumented behaviour, it removes ADR-009a branch 2's dependency on unverified FR-14a item 2. Check hard.",
+      "load_bearing_claim": "'branch 2 is implementable whichever way the spike returns, because the primary mechanism never consults the environment' (OAQ3, line ~1115)",
+      "verification_method": "(1) Confirmed PluginRootResolver does not exist anywhere in the live repo (repo-wide search, zero matches outside docs) -- correctly framed by the HLD as a proposed ADR-012 design, not existing code, and SS13a independently makes the same disclosure for plugin_api/. (2) Logical soundness check: __file__-based upward directory ascent is standard Python behaviour (Path(__file__).resolve().parent, walked until a sentinel file is found) that does not depend on Claude Code propagating CLAUDE_PLUGIN_ROOT into the spawned process's os.environ at all -- it needs nothing from the host beyond __file__ being set, which CPython guarantees for any imported module. The claim is therefore not resting on unverified host behaviour.",
+      "caveat_check": "The disclosed limitation ('__file__ anchoring does not survive zipimport or a frozen bundle') is honestly stated and correctly scoped as inapplicable, since ADR-008 ships a git repo tree, not a zipimport/frozen bundle.",
+      "result": "The load-bearing claim holds. It is a sound engineering argument, not an overclaim -- it correctly identifies that filesystem ascent and environment-variable reading are independent mechanisms, so removing the primary dependency on the latter genuinely de-risks ADR-009a branch 2 regardless of the FR-14a item 2 spike result.",
+      "verdict": "NO DEFECT FOUND",
+      "severity": "NONE"
+    },
+    {
+      "adr": "ADR-013",
+      "topic": "Coverage-Complete Discovery Replaces the Silent Cap",
+      "priority_reason": "Coordinator: must make silent package-dropping inexpressible, not merely discouraged.",
+      "claim_checked": "'the allocator returns the pair (selected, dropped) and build_call_graph requires the manifest as a non-optional constructor argument. There is therefore no code path that removes a file from the candidate set without that removal appearing in the manifest, because the graph cannot be constructed from selected alone.'",
+      "verification_method": "Design-logic check (this is a proposed v2.0.0 design, not yet-implemented code -- correctly framed as 'Chosen' rather than as an existing-code fact, consistent with the rest of the ADR set). A non-optional constructor parameter is a real structural guarantee in a typed/enforced construction path: if DiscoveryManifest is mandatory to build the graph object, no caller can obtain a graph without also obtaining the manifest, which by RECONCILE's invariant (analysed_n + dropped_n == discovered_n) makes total silent dropping structurally unreachable, not merely policy-discouraged.",
+      "cross_check": "All 4 listed truncator line-citations (config.py:11; call_graph_builder_legacy.py:64/:76; code_graph_analyzer.py:73/:137/:154/:169; code-graph-analyzer.py:68/:120/:137/:152) re-verified byte-exact this pass, identical to pass 1's findings.",
+      "result": "The 'structurally impossible' framing is an accurate description of what a non-optional-constructor-argument design achieves (in contrast to a convention or a lint rule, which would only be 'discouraged'). No overclaim found.",
+      "verdict": "NO DEFECT FOUND",
+      "severity": "NONE"
+    },
+    {
+      "adr": "ADR-014",
+      "topic": "Facade Over the Monolith -- No Module Extraction in v2.0.0",
+      "verification_method": "Read in full; cross-checked against SS12 OAQ5 (same conclusion, consistent numbers: 16/~23 subpackages ~70% package-level SCC, 708 Louvain communities, 9% largest, purity 0.25-0.40, 135/2,218 nodes / 6.09% hook-package cut). No new line-number claims beyond what pass 1 already covered under OAQ5.",
+      "result": "Internally consistent with OAQ5 and ADR-013/018; no fabricated names, no line-number claims requiring source verification.",
+      "verdict": "NO DEFECT FOUND (light-touch review -- reasoning/judgment content, not claim-dense)",
+      "severity": "NONE"
+    },
+    {
+      "adr": "ADR-015",
+      "topic": "KG Schema Adapter With PARSE_ERROR as a First-Class Outcome",
+      "verification_method": "Read in full. Shape census (58+22+7+7+3+2 = 99) is arithmetically self-consistent with the 99-domain figure the coordinator confirmed correct and instructed not to re-litigate. Did NOT independently re-count all 99 knowledge-graph/{slug}/relationships.json files against the 6 claimed shape buckets -- out of budget and adjacent to the library-count territory the coordinator marked settled.",
+      "result": "No internal inconsistency found; arithmetic self-checks. Shape-bucket counts themselves not independently re-verified against source this pass.",
+      "verdict": "NO DEFECT FOUND IN WHAT WAS EXAMINED (partial coverage, disclosed)",
+      "severity": "NONE"
+    },
+    {
+      "adr": "ADR-016",
+      "topic": "Budget-and-Convergence Liveness, Not Wall-Clock Timeouts",
+      "priority_reason": "Coordinator: must not reintroduce any fixed per-call wall-clock timeout, which NFR-2 forbids.",
+      "claims_checked": [
+        "prompt_gen_expert_caller.py:54 (STEP1_PROMPT_GEN_TIMEOUT default 60) and :228 (applied)",
+        "todo_decomposer.py:37 (STEP1_TODO_DECOMPOSER_TIMEOUT default 90) and :147 (applied)",
+        "orchestrator_agent_caller.py:137 (applied)",
+        "todo_executor.py:114 (applied)",
+        "task_orchestration.py:128 and :217 (applied)"
+      ],
+      "verification_method": "Direct source read of all 7 cited lines across 5 files",
+      "line_verification": "All 7 verified byte-exact.",
+      "polarity_check": "The Chosen mechanisms (attempt-count abort, lease renewal, convergence-hash signal, circuit breaker, slow-call-rate trip) explicitly replace the task-aborting timeouts at the cited sites -- they do not add a new fixed-timeout mechanism. The ADR draws an explicit, correctly-reasoned line: per-socket-read timeouts remain permitted (bounded to one I/O call, feed a circuit breaker, never abort the enclosing pipeline task) versus banned task-aborting deadlines -- and this distinction matches NFR-2's own quoted AC ('any timeout present must be configurable and default to unbounded or user-overridable').",
+      "result": "No fixed per-call wall-clock timeout is reintroduced by the Chosen design. The one exception (socket-level) is correctly scoped and is not the kind of timeout NFR-2 forbids.",
+      "verdict": "NO DEFECT FOUND",
+      "severity": "NONE"
+    },
+    {
+      "adr": "ADR-017",
+      "topic": "FR-23 Ordering Enforced by Replacement-Reachability, Not Hook Presence",
+      "priority_reason": "Coordinator: must assert on the REPLACEMENT being reachable, not on the old hook still existing -- wrong polarity would block the deletion the project ships.",
+      "claim_checked": "'a CI assertion that fails the build if the PreToolUse registration is absent while no equivalent MCP-side version-push gate is reachable by name. It asserts on the replacement's existence and reachability, never on the old hook's presence.'",
+      "verification_method": "Direct text read of the ADR's Chosen and Why-the-polarity-is-the-whole-design paragraphs",
+      "result": "Polarity is correct and explicitly stated twice (once in 'Chosen', once in 'Why'): the gate is monotone on the replacement's reachability. An assertion of the wrong polarity ('old hook still present') is explicitly named and rejected as the failure mode the design avoids ('would block the very deletion this release delivers, so it would be disabled within one sprint').",
+      "verdict": "NO DEFECT FOUND -- correct polarity confirmed",
+      "severity": "NONE"
+    }
+  ],
+
+  "part_c_ss13a_ruling": {
+    "instruction": "Verify SS13a does not overclaim; should say 'no defect found in what was examined', not 'verified'.",
+    "verified_against": "hld.md SS13a, lines 1350-1386",
+    "key_sentence": "'A clean re-run means \"no defect found in what was examined\", not \"verified correct throughout\".'",
+    "additional_honesty_checks": [
+      "SS13a explicitly lists what WAS independently verified (CheckpointManager methods, step_decorator lines, resume_flow, SqliteSaver sites, all 4 MAX_FILES sets, settings.json touch sites, the 4 aliased-subprocess sites, setup_wizard's write surface) -- this list matches what was actually re-verified in this pass and in pass 1, no overreach found.",
+      "SS13a explicitly names what was NOT swept ('ADR-011 through ADR-018 and sections 1-3, 5-6, 12 and 14 were not fully swept') -- this is the same territory the coordinator just assigned as Part B, confirming the self-disclosure was accurate at the time it was written.",
+      "SS13a self-reports its own minor defect (resume_flow cited at :943, corrected to :941) rather than staying silent -- a positive honesty signal.",
+      "SS13a labels audit_surface.json counts as 'lower bounds' rather than exact, consistent with the aliased-import undercount finding."
+    ],
+    "verdict": "SS13a does NOT overclaim. It uses exactly the hedged framing the coordinator required and does not use the word 'verified' to describe the whole document."
+  },
+
+  "fifth_truncator_reasoning_check": {
+    "instruction": "Check the 'sharper instance' argument -- a return False indistinguishable from a genuine 'no code files exist' -- for whether it holds.",
+    "claim": "Site 5 (build_dependency_resolver/parsers.py:682/696) is a 'different purpose, same defect class -- and a sharper instance' than sites 1-4, because a truncated boolean carries zero residual information while a truncated list/graph is at least externally inspectable.",
+    "verified_against": "Direct source read of parsers.py:675-704 (both this pass and pass 1, identical): max_files_scanned=1000 at :682; 'if files_scanned > max_files_scanned: return False' at :696, inside a bounded BFS whose only other return path is the natural queue-exhaustion False.",
+    "reasoning_check": "Holds. Sites 1-4 return a list of discovered files; even without instrumentation, that list's length can be compared against an independently-obtainable total file count (as the HLD itself demonstrates by independently re-counting 411 Python files) to detect truncation after the fact. Site 5 returns a single bit with no accompanying count, so the two False cases (genuine absence vs a give-up-early cap) are provably indistinguishable to any caller, with no external cross-check available even in principle without re-instrumenting the function. The comparison to ADR-015's PARSE_ERROR-vs-no-match conflation is apt and consistently applied.",
+    "disposition_check": "The HLD does NOT fold site 5 into FR-9a's scope (correctly reasoned: different consumer, different purpose, would expand a critical-path item for no FR-10 benefit) and instead records it as a named v2.1 follow-on under ADR-013's general principle. This is a defensible, non-overreaching scope boundary, not a hallucination or a quiet omission.",
+    "verdict": "REASONING HOLDS -- no defect found",
+    "severity": "NONE"
+  },
+
+  "not_re_flagged_per_coordinator_instruction": [
+    "Library counts 505 agents / 992 skills / 99 domain KGs (hld.md line 88, 109-115) -- coordinator confirmed correct and orchestrator-verified; not re-audited this pass."
+  ],
+
+  "additional_spot_checks_this_pass": [
+    {"claim": "codebase_kg/metrics.json function_node_count=2218, precise_edge_count=2319 (SS1.2)", "result": "EXACT MATCH against docs/phase-0-reverse-engineering/codebase_kg/metrics.json"},
+    {"claim": "39 packages per lhs.json (SS5)", "result": "EXACT MATCH -- lhs.json I_instability.population = 'all 39 packages (full system, from structural_inventory.json martin_metrics)'"}
+  ],
+
+  "aggregate_scores_pass2": {
+    "claims_scored_this_pass": 9,
+    "claims_supported_this_pass": 9,
+    "claims_contradicted_this_pass": 0,
+    "NLI_faithfulness_pass2_audited_scope": 1.0,
+    "FactScore_pass2_audited_scope": 1.0,
+    "note": "Score reflects the claim set actually re-examined in this pass (Part A fixes + ADR-011/012/013/016/017 + SS13a + fifth-truncator reasoning). It is NOT a certification of ADR-014/015 in full depth, SS3/SS7, or the 99-domain shape census -- see not_reached below, and see SS13a's own identical framing."
+  },
+
+  "cumulative_status": {
+    "pass1_high_findings": 2,
+    "pass1_high_findings_status": "BOTH CONFIRMED FIXED this pass, via direct source re-verification (not by trusting the document's own claim of having fixed them)",
+    "pass1_medium_finding_omission": "Fifth truncator (C4) -- coordinator reports it was ADDED to the document this revision; independently confirmed present (lines 1175-1195) with sound reasoning (see fifth_truncator_reasoning_check). Status: RESOLVED.",
+    "new_defects_found_pass2": 0
+  },
+
+  "not_reached": [
+    "ADR-015's six-shape census not independently re-counted against all 99 knowledge-graph/{slug}/relationships.json files",
+    "SS3 (C4 Level 2 diagram) node-count self-consistency ('21 of 50') not arithmetically re-verified against the diagram's own node list -- informal recount suggested ~20 leaf nodes depending on whether subgraph containers are counted; not pursued further as a diagram self-reference, not a factual claim about the codebase, and therefore judged low-value for the budget",
+    "SS7 Interface Contracts not read this pass",
+    "dead_code_report.json / complexity_report.json / impact_analysis_graph.json cross-checks (carried over from pass 1, still not reached)",
+    "Full byte-exact re-verification of every prose sentence in ADR-014; judgment/reasoning content only, not independently re-derivable from source the way line-number claims are"
+  ],
+
+  "gate_requirement": "NLI = 1.0 AND FactScore = 1.0 (geometric mean composite; any sub-1.0 input blocks deploy)",
+  "gate_verdict": "PASS",
+  "gate_verdict_qualification": "PASS for everything examined across both passes (Parts A/B/C plus pass 1's original 7-item scrutiny list). This mirrors the document's own SS13a framing exactly: 'no defect found in what was examined', not a claim that the full 1,395-line document is exhaustively verified. Both pass-1 HIGH findings were independently re-verified as genuinely fixed (not merely re-asserted by the document). Zero new defects found across ADR-011, 012, 013, 016, 017, SS13a, and the fifth-truncator reasoning check.",
+  "gate_reason": "No contradicted claims remain in the audited scope. The two prior HIGH-severity intrinsic hallucinations (fabricated setup_wizard hook-write mechanism; false 'zero subprocess spawn sites' claim) were deleted/corrected respectively, verified via independent source re-derivation rather than by trusting the document's self-report. The newly swept ADR set (011-018) and SS13a contain zero fabricated names, paths, or line numbers across ~30 additional citations checked this pass."
+}
