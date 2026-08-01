@@ -82,3 +82,7 @@ htmlcov/
 # Windows null device (created accidentally by some shells)
 nul
 context.toon.json
+
+# Rule 45 SS 2 -- auto-generated diagrams, never committed
+/uml/
+/drawio/
