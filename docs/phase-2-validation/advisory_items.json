@@ -1,0 +1,150 @@
+{
+  "meta": {
+    "phase": "2.5 consensus iteration 2 (FR-26 field-granularity amendment)",
+    "agent": "solution-architect",
+    "date": "2026-08-01",
+    "purpose": "ADVISORY items packaged for Phase B injection. These are design-relevant findings that are NOT blocking for v2.0.0 and were deliberately not escalated to hard ACs. Each names its trigger condition so it can be promoted if that condition is met.",
+    "source_hld": "docs/phase-1-architecture/hld.md (2.0.0-hld-draft-9)",
+    "count": 12
+  },
+  "items": [
+    {
+      "id": "ADV-001",
+      "title": "Fifth truncator in build_dependency_resolver is a different class of the same defect",
+      "hld_ref": "SS 12 OAQ 4",
+      "detail": "langgraph_engine/build_dependency_resolver/parsers.py:682 sets max_files_scanned = 1000, used at :696 as 'if files_scanned > max_files_scanned: return False'. Truncation produces False, which is indistinguishable from 'no code files exist' -- the ADR-015 conflation in a second component, and arguably a worse shape than sites 1-4 because a truncated boolean is not inspectable.",
+      "disposition": "v2.1 under ADR-013's principle. Deliberately OUT of FR-9a scope: it does not feed the FR-10 selector, so widening FR-9a would expand a critical-path item for no benefit.",
+      "minimum_fix": "Distinguish the two False cases -- a three-way return, or raise ScanTruncated.",
+      "promote_if": "FR-10's selector ever consumes build-dependency data, or a false-negative is observed in dependency resolution."
+    },
+    {
+      "id": "ADV-002",
+      "title": "Package-level import SCC blocks any future extraction",
+      "hld_ref": "ADR-014, SS 12 OAQ 5",
+      "detail": "16 of ~23 langgraph_engine subpackages (~70%) are mutually import-cyclic, above the 20-40% legacy anti-pattern threshold. v2.0.0 works around this with a Facade rather than cutting through it.",
+      "disposition": "v2.1+ standalone refactor. No D1-D7 gate depends on it.",
+      "fitness_function": "Reduce SCC membership from ~70% into the 20-40% band AND demonstrate a candidate boundary with cross_context_calls/total_calls < 0.3 (clean-architecture M4) BEFORE attempting any extraction.",
+      "promote_if": "A genuine need arises to ship the engine separately from the plugin, or to run subpackages as independent services."
+    },
+    {
+      "id": "ADV-003",
+      "title": "audit_surface.json counts are lower bounds, not exact",
+      "hld_ref": "SS 8.2, SS 8.4, ADR-018 source-correction note",
+      "detail": "Its AST scan keys on the attribute pattern subprocess.<call> and missed 4 aliased imports (112 + 4 = 116, matching an independent grep). The same blind spot may affect its 62 credential-access sites and 17 settings.json touch sites. Nobody has checked.",
+      "disposition": "Advisory. Every consuming figure in the HLD is already flagged LOWER BOUND in place, and no design decision depends on the counts being exhaustive.",
+      "promote_if": "Any AC is written that asserts an exact count from this artifact.",
+      "cheap_check": "Re-run the census with an import-alias-aware classifier; roughly one hour."
+    },
+    {
+      "id": "ADV-004",
+      "title": "No Jira or Jenkins credential appears in the live-scope scan",
+      "hld_ref": "SS 8.2",
+      "detail": "The measured credential set is ANTHROPIC_API_KEY (26 sites), GITHUB_TOKEN (24), FIGMA_ACCESS_TOKEN (12) = 62 sites, 3 secrets. Both Jira and Jenkins integrations exist and are flag-gated, yet neither contributes a credential site. Either they authenticate through a path AST cannot resolve, or they are configured but never authenticated in live scope.",
+      "disposition": "Advisory, routed to security-engineer. Does not change any mitigation -- all SS 8.2 controls are chokepoint-based and secret-agnostic.",
+      "promote_if": "ENABLE_JIRA or ENABLE_JENKINS is turned on for a real deployment."
+    },
+    {
+      "id": "ADV-005",
+      "title": "Environment variables as a credential store contradicts cloud-security-core",
+      "hld_ref": "SS 8.2 standing tension",
+      "detail": "cloud-security-core states plainly: do not store secrets in environment variables. The engine reads credentials from the environment. Separately, ADR-007's CLAUDE_PLUGIN_DEV_MODE flag is correctly env-var-only -- it is not a secret, and env-only is precisely what prevents a bundled config from enabling it.",
+      "disposition": "Advisory. Recorded rather than silently decided by an architect. secrets_manager.py already has an AWS Secrets Manager path with caching that the skill's guidance points toward.",
+      "promote_if": "The engine is ever run outside a single-developer local context."
+    },
+    {
+      "id": "ADV-006",
+      "title": "Snapshot must be rescanned for vulnerabilities, not scanned once",
+      "hld_ref": "SS 8.1",
+      "detail": "cloud-security-core requires scanning on push AND continuous rescanning for newly disclosed vulnerabilities. A pinned build-time snapshot (ADR-007) is exactly the artifact that goes stale silently. scripts/pin_requirements.py produces the pin; the recurring rescan does not exist.",
+      "disposition": "Advisory for v2.0.0, but cheap. Also: run scripts/secrets_check.py against the SNAPSHOT ARTIFACT, not only the source tree -- the existing gate scans source only.",
+      "promote_if": "The plugin is published to the marketplace for use on any machine other than the author's."
+    },
+    {
+      "id": "ADV-007",
+      "title": "Prompt-injection via KG content -- field whitelist is the load-bearing control",
+      "hld_ref": "SS 8.3",
+      "detail": "Selector-read persona and skill text flows into the Step 1 orchestration template and then to the claude CLI. 992 skill files and 505 agent personas become model-visible instruction context.",
+      "disposition": "Advisory because the library is first-party, so the realistic threat is accident (prose that reads as an instruction) rather than an attacker. The whitelist mitigation addresses both at the same cost, which is why it is specified despite the low threat level.",
+      "control": "Inject only name, domain, matched skills, edge path, confidence. Never free-form persona bodies. Structurally delimit any quoted content.",
+      "promote_if": "The library ever accepts third-party contributions."
+    },
+    {
+      "id": "ADV-008",
+      "title": "setup_wizard.py full-file read-modify-write can clobber settings.json",
+      "hld_ref": "SS 8.4",
+      "detail": "scripts/setup/setup_wizard.py:282 does settings_path.write_text(json.dumps(settings, indent=2), encoding='utf-8'). If the in-memory settings dict is stale or partial, the write clobbers unrelated keys -- including the retained Stop/Notification hook entries and anything /plugin install wrote (extraKnownMarketplaces, enabledPlugins). NOTE: the wizard writes only settings['mcpServers']; it contains zero hook references. The risk is the clobber, not a hook rewrite.",
+      "disposition": "ESCALATION CANDIDATE, not merely advisory. ADR-019 makes this sharper: the new register-mcp command writes the same file, so the merge-against-fresh-read requirement now applies to two writers rather than one.",
+      "minimum_fix": "Both writers merge against a fresh read taken immediately before writing, never serialise a dict loaded earlier.",
+      "promote_if": "Promote now if ADR-019's register-mcp command is implemented before the wizard is fixed."
+    },
+    {
+      "id": "ADV-009",
+      "title": "FR-15 remains UNSIZED pending AST re-derivation",
+      "hld_ref": "SS 12 OAQ 6",
+      "detail": "116 total home-directory references corroborated; the live-vs-comment split is not. C.1 reports 13 code / 103 comment; an independent line-oriented grep produced ~95 / 23. The grep cannot structurally separate docstring bodies from code so it does not refute C.1 -- but 13 is confirmed by exactly one method and the gap changes remediation scope ~7x.",
+      "disposition": "Advisory to Phase B only in the sense that the classifier must run BEFORE FR-15 is sized. The recommended AC amendment is stated verbatim in the HLD for BA to action.",
+      "promote_if": "Immediately, if FR-15 is scheduled into a sprint with a point estimate."
+    },
+    {
+      "id": "ADV-010",
+      "title": "Secondary spike observation -- plugin MCP servers may activate in already-running sessions",
+      "hld_ref": "plugin_schema_spike.md item 5 parenthetical",
+      "detail": "A third spawn (pid 27968) logged a cwd unrelated to the isolated test session. The most plausible explanation is that a separate already-running Claude Code session sharing the same ~/.claude config picked up the newly-enabled plugin's MCP server without an explicit /reload-plugins, contradicting the docs' claim that mid-session plugin changes require manual reload. The spike explicitly flags this as unconfirmed.",
+      "disposition": "Advisory. ADR-019 makes it largely moot for this design -- with no bundled .mcp.json there is nothing to activate. Retained because it would matter for any future decision to bundle.",
+      "promote_if": "ADR-019 is ever revisited in favour of bundling."
+    },
+    {
+      "id": "ADV-011",
+      "title": "Count-versus-enumeration drift recurs whenever content is added",
+      "hld_ref": "Change Log drafts 6-9",
+      "detail": "Five instances of one defect class were found across four consensus iterations. A sixth was self-inflicted and caught in-session during this Phase 2 pass: adding ADR-019 immediately invalidated SS 4's heading-count basis (13 -> 14). Annotation makes each count checkable but does not prevent the next one from drifting.",
+      "disposition": "PROMOTED to FR candidate (FR-25) at Phase 2.3, per coordinator agreement. Rationale: annotation makes a count checkable; it does not make it self-updating. This should be a requirement someone owns, not an advisory someone reads.",
+      "recommended_control": "A CI check over docs/phase-1-architecture/hld.md that recomputes every annotated counting basis (ADR headings, C4 node counts, OAQ-2 disposition tallies, ADR-016 citation counts) and fails on mismatch. Every such count already carries an explicit basis, which is precisely what makes it machine-checkable.",
+      "promote_if": "The HLD is edited again by any agent.",
+      "promoted_to": "FR-25 (proposed) -- CI check recomputing every annotated counting basis in hld.md and failing on mismatch",
+      "promotion_evidence": "Self-inflicted recurrence during Phase 2.3: adding ADR-019 immediately invalidated SS 4's heading-count basis (13->14, 15->16), the same defect class cleared over four consensus iterations, recurring on the first content addition afterwards.",
+      "owner_needed": true,
+      "SCOPE_WARNING_DO_NOT_BUILD_NARROWER": "FR-25 targets ARITHMETIC drift -- a summary count disagreeing with the enumeration beneath it. A SECOND, DISTINCT defect class has since been identified that FR-25 as scoped would catch NONE of: BACKWARD PROPAGATION FAILURE -- content added late never propagated back into artifacts written earlier. Do not widen FR-25 to cover it; build the companion instead. See companion_requirement below.",
+      "proof_recomputation_is_structurally_blind": "At Phase 2.4 the SS 3 C4 diagram was found to bundle a .mcp.json that ADR-019 forbids 677 lines later. Fixing it replaced MCPJSON with REGCMD and NOHOOKS with NOBUNDLE -- both substitutions one-for-one, so the node count stayed at 20 declared / 21 rendered. A recomputation check would have PASSED both before and after the fix while the diagram was actively contradicting an ADR. This is not a gap in FR-25's implementation; it is outside what recomputation can observe.",
+      "four_instances_of_the_second_class": [
+        "SS 3 C4 Level 2 diagram bundled a .mcp.json after ADR-019 forbade it (hallucination gate HIGH, Phase 2.4)",
+        "sa_defence.json coverage accounting built on a denominator predating BA FIND-09/FIND-10 (hallucination gate HIGH, Phase 2.4)",
+        "SS 10 migration runbook verified a reachability that ADR-019 made unreachable (BA FIND-10)",
+        "SS 4 heading-count basis invalidated the moment ADR-019 was added (self-inflicted, caught in-session at Phase 2.3)"
+      ],
+      "companion_requirement": {
+        "proposed_id": "FR-26 (proposed)",
+        "title": "ADR impact registry with commit-level propagation check",
+        "why_a_companion_rather_than_widening_FR-25": "The two classes need different mechanisms and share no implementation. FR-25 recomputes values and compares numbers. FR-26 checks that a decision and the artifacts it invalidates moved together. Widening FR-25 would produce one vague requirement that does neither well, and would attach a cross-reference obligation to a check whose whole value is that it is cheap and mechanical.",
+        "mechanism": "Every ADR carries an explicit 'Affects' list naming the artifacts that must be re-read when that ADR changes -- and the registry MUST be able to name artifacts BEYOND THE FILE THE ADR LIVES IN. For ADR-019 the list would have been: hld.md SS 3 (C4 L2), SS 10 (runbook), SS 9 (NFR map), SS 1.3 (scope listing), SS 11 (schema) -- AND sa_defence.json's decision record, advisory_items.json's affected entries, prd-v2.md's NFR-1/FR-14 ACs, and product-sequencing-v2.md's WSJF rows. CI then asserts that a commit touching an ADR also touches, or explicitly waives with a recorded reason, each named target. An unrecorded skip is the failure mode; the waiver must be written down.",
+        "why_this_is_feasible_now": "Same enabling precondition as FR-25: the annotation work already done. Every ADR in the HLD already states its consequences and cross-references; an Affects list formalises what the prose already contains.",
+        "known_limitation_stated": "FR-26 catches propagation into artifacts an ADR NAMES. It cannot catch propagation into an artifact nobody thought to list -- which is how most instances of this class arose. It raises the floor; it does not close the class. Claiming otherwise would repeat the DOCUMENTED-ONLY error at a meta level. A partial mitigation: seed each Affects list from the set of files that cite the ADR by name, which is mechanically derivable rather than remembered.",
+        "SCOPE_AMENDMENT_PHASE_2_5": "FR-26 as first scoped was ITSELF too narrow -- the second time in two passes that a proposed remedy turned out narrower than the class it targets. An ADR 'Affects' list naming SECTIONS OF THE HLD would have caught none of the three Phase 2.5 instances, because those stale artifacts are outside hld.md entirely: they are in sa_defence.json, a separate file that nobody treats as capable of going stale because it reads as a historical record.",
+        "cross_file_requirement": "MANDATORY, not optional. A single-file impact registry is demonstrably insufficient: 3 of the 7 known instances of this class are cross-file. Building FR-26 scoped to one document would produce a check that passes while the review artifacts contradict the design they reviewed.",
+        "SCOPE_AMENDMENT_2_FIELD_GRANULARITY": "THIRD narrowing in three passes. An ADR impact registry that names FILES would still not have caught consensus-iteration-2's OPEN-6, because the file WAS updated -- sa_defence.json was edited in that very pass -- just not the right FIELD within it. The PM-CRITICAL-3 entry's 'finding' field was correct while its 'covered' and 'what_changed' fields asserted a CI assertion exists that has never been built. File-level propagation checking is therefore insufficient wherever a file mixes frozen records with live claims. FR-26's registry needs FIELD-LEVEL granularity in such files, which is only tractable if the fields are self-classifying -- see the _field_semantics_contract now embedded in sa_defence.json, whose _now / _record suffix convention exists precisely to make field-level checking mechanical rather than judgemental.",
+        "narrowing_history_record": [
+          "v1: ADR Affects list naming HLD sections. Too narrow -- missed stale artifacts outside hld.md.",
+          "v2: widened to name artifacts in any file. Still too narrow -- missed a stale FIELD inside a file that was itself updated.",
+          "v3 (current): file-level naming PLUS field-level granularity wherever a file mixes records and claims, enabled by a self-classifying field convention."
+        ],
+        "lesson_record": "Each version of this requirement was scoped to the instances known at the time, and each was defeated by the next instance. That pattern is itself the finding: a remedy scoped to observed instances will keep being one instance behind. The convention-plus-validator approach is different in kind because it makes the defect inexpressible rather than detectable."
+      },
+      "stale_review_artifact_subclass": {
+        "note": "Phase 2.5 identified a distinct subclass: not the design document going stale, but the REVIEW ARTIFACTS going stale relative to the document they reviewed. Every fix was applied to hld.md and to nothing else, so the finding records kept asserting the claims their own fixes retracted.",
+        "why_it_hides": "A review artifact reads as a historical record, and historical records are correctly immutable. But sa_defence.json mixes two kinds of content: changelog-style QUOTATIONS of old values, which must never be edited, and current-position ASSERTIONS, which must be updated when superseded. The same file legitimately contains both, so 'do not edit the record' and 'this record is now wrong' are both true of different sentences in it.",
+        "instances_phase_2_5": 4,
+        "cumulative_instances_of_parent_class": 8,
+        "structural_remedy_applied_now": "sa_defence.json now carries _field_semantics_contract with an embedded, runnable validator. Fields are self-classifying: _record / _as_filed are frozen quotations, _now are live claims that must be re-verified each pass. Validator returned 0 violations after catching 5 of its author's own newly-added fields."
+      }
+    },
+    {
+      "id": "ADV-012",
+      "title": "git pre-push hook to restore PREVENTIVE local push-gate protection",
+      "hld_ref": "ADR-017 Phase 2 amendment",
+      "detail": "ADR-019 makes MCP registration opt-in, so a user who never runs register-mcp has no local version-push gate. The ADR-017 CI assertion still fails the build, but only after the push -- the guarantee changes from preventive (blocked at push time) to detective (caught in CI). For a shared repository that is adequate; for a developer's local history it is not equivalent.",
+      "disposition": "NAMED, NOT ADOPTED. New scope belonging to whoever owns FR-23, not to a Phase 2 amendment.",
+      "mechanism": "A git pre-push hook -- NOT a Claude Code hook. ADR-010 governs Claude Code plugin hooks and does not apply. It spawns a process only on an explicit `git push`, so it is compatible with NFR-1, which measures idle sessions.",
+      "promote_if": "The user wants the local bypass closed preventively rather than detectively, OR the engine is used on a repo where a non-compliant local push has consequences before CI runs."
+    }
+  ]
+}

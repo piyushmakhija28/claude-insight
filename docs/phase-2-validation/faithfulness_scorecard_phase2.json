@@ -1,0 +1,107 @@
+{
+  "artifact": "docs/phase-2-validation/hld_v2.md (byte-identical to docs/phase-1-architecture/hld.md, both 1802 lines, per orchestrator -- not re-derived)",
+  "evaluator": "context-faithfulness-engineer",
+  "date": "2026-08-01",
+  "gate": "Phase 2.4",
+  "prior_pass_line_count": 1551,
+  "this_pass_line_count": 1802,
+  "new_content_this_pass": "ADR-019, ADR-020, SS 10 8-step migration runbook rework, ADR-017 PHASE 2 AMENDMENT, ADV-012 (git pre-push hook), FR-25 (proposed CI check, promoted from ADV-011), OAQ 1's expanded CheckpointManager symbol citations",
+  "verification_method": "disk-verified per-claim (Read/Grep/Glob/Bash), not sampled. Numeric scores below are evaluator-estimated, not machine-computed by an NLI classifier -- consistent with every prior pass in this thread.",
+  "scores": {
+    "ragas_faithfulness_F": 0.95,
+    "ragas_answer_relevance_AR": 0.96,
+    "trulens_groundedness_G": 0.94,
+    "summac_zs_mean": 0.96,
+    "summac_zs_min": 0.55,
+    "summac_zs_min_worst_claim": "ADR-020 'Path C is safe... they survive plugin uninstall' -- stated as unhedged fact; the specific mechanism (a register-mcp-written entry surviving THIS plugin's own uninstall) was never measured, only inferred from a related but distinct measurement",
+    "bertscore_BR": 0.97,
+    "factscore_rag": 0.96,
+    "faithfulness_excess_FE": 0.40,
+    "production_thresholds": { "F_min": 0.85, "AR_min": 0.75, "both_met": true },
+    "pipeline_required_factscore": 1.0,
+    "factscore_gate_met": false
+  },
+  "gate_verdict": "RETRY",
+  "gate_reason": "Zero non-existent names presented as existing and zero wrong line numbers were found -- all three proposed commands (register-mcp, unregister-mcp, doctor), the pre-push hook (ADV-012), and the proposed CI check (FR-25) are consistently and correctly framed as design/proposal throughout, matching the ADR-014/plugin_api and ADR-012/PluginRootResolver precedent. However, the Path C safety claim in ADR-020 is presented as a directly-verified fact ('they survive plugin uninstall') when it is actually an inference generalized from a different, measured scenario (pre-existing unrelated mcpServers entries surviving an unrelated plugin's uninstall) -- register-mcp does not exist yet, so no entry it would write has ever been tested against uninstall. This is the same class of defect as pass-1's setup_wizard.py claim and pass-2's ADR-015 census claim: a claim stated with more certainty than the evidence supports, on a load-bearing safety property. Per this thread's established standard, an unsupported-certainty claim on a load-bearing point triggers RETRY even with no fabricated name or line number.",
+  "three_commands_framing_verdict": [
+    {
+      "command": "register-mcp",
+      "verdict": "CORRECTLY FRAMED AS DESIGN throughout",
+      "evidence": "Every occurrence sits under an ADR 'Chosen:' block (ADR-019 line 779: '(`/{plugin-name}:register-mcp`), which the user runs once, by choice'), inside SS 10 (explicitly titled 'Migration Design'), inside conditional/hypothetical phrasing ('for a user who never runs register-mcp', line 670/822), or inside the NFR table describing what the design achieves once built. Section 1.3's Scope paragraph and the SS 10 table both use future/conditional voice, never present-tense-as-fact.",
+      "not_re-derived": "Occurrence count (18) and doc consistency already verified by the orchestrator per the brief; not recounted."
+    },
+    {
+      "command": "unregister-mcp",
+      "verdict": "CORRECTLY FRAMED AS DESIGN, one wording note",
+      "evidence": "All occurrences are inside ADR-019/ADR-020 'Chosen:' blocks or the SS 10 runbook, consistent with the established design-marker convention. ONE line reads with more certainty than ideal: ADR-020's Path B table cell (line 727) says unregister-mcp 'is a plugin-owned command that already reads and writes settings.json (ADR-019)'. The word 'already' is loose -- read literally out of context it could suggest live functionality. In context it is bounded by the '(ADR-019)' citation (the document's own convention for 'as that ADR specifies') and by the whole ADR-020 section analyzing a not-yet-built migration path, so it is not a hard failure, but it is the single weakest sentence found in the framing sweep.",
+      "recommendation": "Reword to 'is a plugin-owned command that, per ADR-019, is designed to read and write settings.json' to remove the ambiguity entirely."
+    },
+    {
+      "command": "doctor",
+      "verdict": "CORRECTLY FRAMED AS DESIGN",
+      "evidence": "Exactly 2 occurrences in the whole document (full-doc case-insensitive grep): line 746, inside ADR-020's 'Chosen -- three layers' block ('A `doctor` command, plus a cheap precondition check...'), and line 1792, the changelog entry describing the ADR-020 addition. Both are unambiguous design/decision framing."
+    },
+    {
+      "command": "git pre-push hook (ADV-012)",
+      "verdict": "CORRECTLY FRAMED -- explicitly NOT adopted",
+      "evidence": "Line 680-681: 'This is named as the option, not adopted here -- it is new scope and belongs to whoever owns FR-23, not to a Phase 2 amendment. Filed as ADV-012.' This is the clearest framing in the whole delta -- it explicitly disclaims adoption, which is stronger than the ADR 'Chosen:' convention used elsewhere."
+    },
+    {
+      "command": "FR-25 (proposed CI check, promoted from ADV-011)",
+      "verdict": "CORRECTLY FRAMED -- and safely absent from the primary artifact",
+      "evidence": "FR-25 does not appear anywhere in hld_v2.md (grep: 0 hits). It exists only in the Phase 2 tracking artifacts -- advisory_items.json ('promoted_to': 'FR-25 (proposed) -- CI check...'), pm_review.json ('ADV-011 promoted to FR-25... not sized here'), sa_defence.json ('proposed_id': 'FR-25') -- and every one of those three occurrences carries an explicit '(proposed)' or equivalent hedge. Since the HLD itself is silent on FR-25, there is no risk of the primary artifact asserting it as existing."
+    }
+  ],
+  "path_c_ruling": {
+    "question": "Is 'user-scope MCP registrations survive /plugin uninstall' (ADR-020's Path C) a direct measurement or an inference, and does the HLD label it correctly?",
+    "what_was_actually_measured": "plugin_schema_spike.md Item 3/4 measured that (a) the spike's OWN plugin used a BUNDLED .mcp.json, whose server was tracked entirely outside settings.json's mcpServers key (item 3, lines 151-155: 'was NOT merged into the top-level mcpServers key in settings.json; it stays scoped to the plugin'); and (b) uninstall's structural diff shows ZERO changes to any key except enabledPlugins and extraKnownMarketplaces -- specifically, 'the 5 hook registrations and 25 pre-existing mcpServers entries are byte-for-byte identical to baseline' (Item 4 / Final Verification). Those 25 entries existed in settings.json BEFORE the spike ran; they were never written by any plugin command.",
+    "what_was_NOT_measured": "Whether an entry ADDED to settings.json's mcpServers key BY a plugin-provided command (the register-mcp pattern ADR-019 proposes) is treated identically to a pre-existing entry when THAT SAME plugin is later uninstalled. register-mcp does not exist, so no such entry has ever been written, let alone tested against uninstall.",
+    "ruling": "INFERENCE, well-grounded but not directly measured. The inference is reasonably strong -- uninstall's structural diff shows it does not read or modify the mcpServers key's contents AT ALL (not 'ignores foreign entries specifically', but 'does not touch that key, period'), which by generalization implies no discrimination by entry provenance. But 'well-grounded inference' and 'measured fact' are different epistemic categories, and this document's own convention elsewhere (ADV-010's explicit 'flagged for awareness, not asserted as fact' hedge on an analogous unconfirmed spike observation) shows the authors know how to mark this distinction when they choose to.",
+    "hld_labeling_verdict": "MISLABELED. ADR-020 states 'Because registrations are written at user scope rather than bundled in a plugin .mcp.json, they survive plugin uninstall' as flat, unhedged present-tense fact, with no qualifier distinguishing 'measured for pre-existing entries, generalized (not directly tested) for register-mcp-written ones'.",
+    "why_load_bearing": "If the generalization is wrong -- e.g. if some future Claude Code version or an as-yet-unobserved uninstall code path DOES attribute mcpServers entries to the plugin that registered them and removes them -- then uninstall silently removes the FR-23 push gate with zero warning, reopening exactly the bypass commit 1bb4303 closed, and ADR-020's own three-layer control scheme (Path A/B/C) has a fourth, unlabeled unsafe path with no detection and no prevention, because the design explicitly treats Path C as needing 'no control' (line 728 table: 'None needed -- see below').",
+    "recommendation": "Reword the Path C claim to state the measured fact and the inference separately: 'The spike measured that /plugin uninstall leaves settings.json's mcpServers key completely untouched (structural diff: zero changed keys) for 25 pre-existing entries. Because register-mcp would write into that same key using the same mechanism, and uninstall demonstrably does not discriminate by entry provenance for any entry it was tested against, registrations are inferred -- not yet directly measured -- to survive uninstall. This should be added as a 6th FR-14a-style spike item once register-mcp exists, given the safety property Path C currently carries alone.'"
+  },
+  "checkpoint_manager_new_citations": [
+    {"name": "CheckpointManager.load_checkpoint_by_id", "claimed_line": 265, "exists": true, "line_correct": true, "source_checked": "checkpoint_manager.py:265 -> def load_checkpoint_by_id(self, checkpoint_id: str)"},
+    {"name": "CheckpointManager.get_last_checkpoint", "claimed_line": 294, "exists": true, "line_correct": true, "source_checked": "checkpoint_manager.py:294 -> def get_last_checkpoint(self)"},
+    {"name": "CheckpointManager.load_checkpoint_metadata (cited as NOT cited elsewhere in the HLD)", "claimed_line": 239, "exists": true, "line_correct": true, "source_checked": "checkpoint_manager.py:239 -> def load_checkpoint_metadata(self, step: int)"},
+    {"name": "CheckpointManager.delete_checkpoint (cited as NOT cited elsewhere in the HLD)", "claimed_line": 366, "exists": true, "line_correct": true, "source_checked": "checkpoint_manager.py:366 -> def delete_checkpoint(self, step: int)"},
+    {"name": "CheckpointManager.clear_all (cited as NOT cited elsewhere in the HLD)", "claimed_line": 386, "exists": true, "line_correct": true, "source_checked": "checkpoint_manager.py:386 -> def clear_all(self)"},
+    {"name": "OAQ 1's '9 public methods plus private helpers' population claim", "kind": "completeness claim", "exists": true, "source_checked": "full method-definition sweep of checkpoint_manager.py found exactly 9 non-dunder public methods (save_checkpoint, load_checkpoint, load_checkpoint_metadata, load_checkpoint_by_id, get_last_checkpoint, get_last_successful_checkpoint, list_checkpoints, delete_checkpoint, clear_all) and exactly 2 underscore-prefixed private helpers (_make_checkpoint_id:109, _atomic_write:113) -- matches '9 public + 2 private' exactly, though the HLD text only individually names 1 of the 2 private helpers (_atomic_write); _make_checkpoint_id is covered only by the plural, uncounted 'private helpers' phrase, which is accurate but not itemized. Not a defect -- the phrasing correctly hedges as plural/uncounted rather than asserting an exact private count it doesn't itemize."}
+  ],
+  "setup_wizard_282_recheck": {
+    "claim": "setup_wizard.py:282 performs a full-file read-modify-write: settings_path.write_text(json.dumps(settings, indent=2), encoding=\"utf-8\")",
+    "still_holds": true,
+    "source_checked": "Read setup_wizard.py:278-285 this pass -- line 282 is exactly settings_path.write_text(json.dumps(settings, indent=2), encoding=\"utf-8\"), unchanged from every prior pass",
+    "merge_against_fresh_read_requirement": "Consistently referenced (line 780 ADR-019, SS 8.4 threat table) as the required fix, correctly framed as a requirement/mitigation, not as already-implemented behavior"
+  },
+  "prd_v2_fr9a_ac_four_sites": {
+    "file": "docs/phase-0-requirements/prd-v2.md",
+    "version_note": "Header line 7 still reads 'Version: 1.1' despite Section 13's Change Log containing a v1.2 row (line 481, 'ADR-019 supersession') -- the document's own header was not bumped to match its latest changelog entry. Minor inconsistency, noted but out of this pass's core scope.",
+    "four_sites_as_transcribed_in_prd_v2_line_136": [
+      {"site": "langgraph_engine/parsers/config.py:11", "value": "MAX_FILES = 300", "use_site": "parsers/__init__.py:22", "matches_previously_verified_source": true},
+      {"site": "langgraph_engine/parsers/call_graph_builder_legacy.py:64", "value": "MAX_FILES = 300", "use_site": ":76", "matches_previously_verified_source": true},
+      {"site": "langgraph_engine/sdlc_pipeline/architecture/00-code-graph-analysis/code_graph_analyzer.py:73", "value": "MAX_FILES = 500", "use_sites": [":137", ":154", ":169"], "matches_previously_verified_source": true},
+      {"site": "scripts/architecture/03-execution-system/00-code-graph-analysis/code-graph-analyzer.py:68", "value": "MAX_FILES = 500", "use_sites": [":120", ":137", ":152"], "matches_previously_verified_source": true}
+    ],
+    "verdict": "All four sites transcribed identically (file, line, constant value, use-site lines) to what was independently verified against the actual source files in an earlier pass of this same audit thread. No re-read of the .py source files was needed since the cited numbers are unchanged from prior byte-exact verification; only prd-v2.md's own transcription was checked against that already-established ground truth."
+  },
+  "plugin_schema_spike_references": {
+    "file_exists": true,
+    "path": "docs/phase-1-architecture/plugin_schema_spike.md",
+    "line_count": 334,
+    "citations_checked": [
+      {"citation": "hld_v2.md:359 'plugin_schema_spike.md item 2, 3 observed spawns'", "resolves": true, "detail": "spike Item 2 states 'CLAUDE_PLUGIN_ROOT was reliably present in every one of the 3 observed spawns in this spike' -- exact match"},
+      {"citation": "hld_v2.md:706 'plugin_schema_spike.md item 5; ... both spawns logged the isolated session's cwd'", "resolves": true, "detail": "spike Item 5: 'two full process spawns... both logging cwd equal to the isolated session's working directory' -- exact match"},
+      {"citation": "advisory_items.json ADV-010 'plugin_schema_spike.md item 5 parenthetical' (pid 27968)", "resolves": true, "detail": "spike Item 5 parenthetical names pid 27968 with an unrelated cwd, described as 'unconfirmed observation... flagged for awareness, not asserted as fact' -- exact match"},
+      {"citation": "hld_v2.md:1345,1368 'docs/phase-1-architecture/plugin_schema_spike.md'", "resolves": true, "detail": "exact path match, file confirmed to exist at that path"}
+    ]
+  },
+  "not_reached_out_of_scope_noticed": [
+    "ADR-012 was reframed between passes (changelog draft-9: 'CLAUDE_PLUGIN_ROOT confirmed in os.environ, so the env var is primary and __file__-ascent is defence-in-depth') -- a reversal of the primary/secondary roles this thread verified as internally consistent in an earlier pass. This reframing IS grounded in real spike data (plugin_schema_spike.md Item 2 states the same conclusion nearly verbatim), so it is very unlikely to be fabricated, but it was NOT in this pass's assigned checklist (only ADR-019/ADR-020/SS10/ADR-017-amendment/CheckpointManager/setup_wizard/prd-v2/plugin_schema_spike were assigned) and was therefore not independently re-verified end-to-end this pass, per the explicit instruction not to re-sweep.",
+    "Did not re-verify the 17-ADR-id count, the hld.md/hld_v2.md byte-identity, the SS 10 8-step sequence position of register-mcp, or the 18-occurrence count of register-mcp -- all explicitly marked already-verified-by-orchestrator in the brief.",
+    "Did not re-raise the pm_review.json SS 10 staleness -- explicitly named as a known-stale, already-resolved non-defect in the brief.",
+    "Did not verify ba_review.json or sa_defence.json beyond the single FR-25 grep needed to confirm its proposed-status hedging.",
+    "Numeric RAGAS/TruLens/SummaC/BERTScore/FactScore scores remain evaluator-estimated, not machine-scored by an actual NLI classifier -- disclosed in every pass of this thread, kept visible here."
+  ]
+}

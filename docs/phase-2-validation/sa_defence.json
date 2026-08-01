@@ -1,0 +1,522 @@
+{
+  "meta": {
+    "phase": "2.3",
+    "agent": "solution-architect",
+    "date": "2026-08-01",
+    "subject": "docs/phase-1-architecture/hld.md",
+    "hld_version_after_response_now": "2.0.0-hld-draft-15 (hld.md unchanged this pass)",
+    "hld_v2_created_now": true,
+    "hld_v2_path_now": "docs/phase-2-validation/hld_v2.md",
+    "hld_v2_relationship_record": "Byte-identical snapshot of docs/phase-1-architecture/hld.md taken after all Phase 2.3 fixes were applied in place. The phase-1 path remains the single canonical living document; this snapshot exists because the task required hld_v2.md when in-place fixes were applied. Do not edit the snapshot -- it will diverge.",
+    "inputs_read_record": [
+      "docs/phase-1-architecture/plugin_schema_spike.md (items 1-5, item 5 in full)",
+      "docs/phase-2-validation/ba_review.json (via coordinator summary)",
+      "docs/phase-2-validation/pm_review.json (via coordinator summary)"
+    ],
+    "coverage_reduction_now": "ba_review.json finding IDs and pm_review.json's structure were read directly from disk for this reconciliation. Earlier passes consumed both via coordinator summary, which is how the ID mismatch and the stale denominator arose. NOT independently verified by this agent and recorded as such: ba_review.json's fr_coverage / ac_implementability / rtm_gaps arrays, pm_review.json's WSJF arithmetic, and this file's own fixed_in_session arrays.",
+    "addendum_record": "Phase 2.3 addendum: the coordinator's first relay omitted FIVE findings, not four. Corrected at Phase 2.5. The original note said 'omitted 4 (BA filed 8, 6 relayed; PM filed 9, 6 responded to)' -- which was internally inconsistent on its own terms, since 2 + 3 = 5, matching the 5-entry addendum_findings array it introduced. Both inputs were also stale: BA has 10 findings (FIND-09/FIND-10 were added after the relay snapshot), and PM has 9. See coverage_accounting for the reconciled figures: BA 10/10 by ID, PM 9/9 by severity+text, coordinator challenges 2/2. Provenance recorded because it matters for the class: the '4' originated in the coordinator's relay, was inherited without recomputation, and survived until a gate summed the parenthetical."
+  },
+  "decision_2_3_bundled_mcp_vs_nfr1_now": {
+    "decision_now": "OPTION (a) -- the plugin bundles ZERO MCP servers, with an explicit opt-in registration command",
+    "recorded_as_record": "ADR-019",
+    "hld_locations_now": "SS 4.2, immediately after ADR-018",
+    "evidence_base_record": "plugin_schema_spike.md item 5 -- two full process spawns in a session whose prompt explicitly forbade tool use, both logging the isolated session cwd",
+    "primary_reason_record": "Option (b) would make NFR-1 unfalsifiable. NFR-1 has already taken one carve-out (the retained Stop hook, ADR-018 consequence 3). With ADR-010 forbidding hooks and a second carve-out removing MCP, nothing would remain that could make NFR-1 fail. A metric that cannot fail measures nothing -- the project's primary success metric would pass by construction while the user's machine ran more processes than before.",
+    "secondary_reasons_record": [
+      "The 13 MCP servers already exist as user-scope registrations; bundling duplicates registrations rather than reducing processes, so the plugin gains no operational capability it does not already have.",
+      "ADR-010's test (can the user decline?) transfers, and an explicit opt-in command cures the exact defect ADR-010 identified -- unlike a bundled .mcp.json, an opt-in command can be declined by not running it and reversed by running its inverse."
+    ],
+    "pm_sizing_treated_as_record": "cost data, not recommendation. PM's 'only (b) preserves the MVP boundary without rework' is accepted as accurate schedule data and explicitly rejected as a reason to redefine the metric.",
+    "what_is_lost_now": [
+      {
+        "loss": "True one-step install",
+        "detail_now": "FR-14 requires installable 'in one step with no manual settings.json surgery' and names 'MCP server references' among bundled content. Install is now one step for commands/agents/skills plus a second explicit step for MCP. No hand-editing occurs (the command performs the write), so 'no manual surgery' holds; 'one step' does not.",
+        "severity": "partial deliberate miss against FR-14",
+        "requires_now": "BA/PM acknowledgement -- an architect must not silently absorb a requirement miss"
+      },
+      {
+        "loss": "FR-23's push gate becomes opt-in twice over",
+        "detail_now": "ADR-006 already made enforcement opt-in per session. A user who never runs register-mcp has no MCP-side version-push gate at all. CORRECTED at consensus iteration 3: the earlier wording here said 'the CI-side assertion (ADR-017) is unaffected because it runs in CI, so the governance guarantee survives where it is load-bearing'. That was over-certain and is retracted -- it is the same claim PM-CRITICAL-3 was corrected to withdraw. THE ADR-017 CI ASSERTION DOES NOT EXIST. No governance guarantee survives, because none is running. True state: PROTECTED TODAY via the live PreToolUse hook (FR-4 not yet executed, so push_gate.py still fires); UNPROTECTED both preventively and detectively AFTER FR-4 unless BOTH register-mcp (designed, ADR-019/ADR-020, not built) AND the ADR-017 CI assertion (designed, not built) have landed. See PM-CRITICAL-3.true_state_now, which this entry must stay consistent with.",
+        "severity": "real weakening, disclosed -- and currently unmitigated, since neither replacement is built"
+      },
+      {
+        "loss": "Discoverability",
+        "detail_now": "A user who installs and never reads the README gets a plugin whose MCP-backed capabilities are silently absent.",
+        "mitigation_now": "Plugin commands detect unregistered servers and emit one actionable line naming register-mcp. A missing capability must never present as a working one -- same reasoning as ADR-015."
+      }
+    ],
+    "options_rejected_record": {
+      "b_redefine_nfr1": "Would be the second carve-out; leaves the metric unfalsifiable. Buying schedule with the falsifiability of the primary metric is a bad trade at any price.",
+      "c_per_server_opt_in": "Requires a per-server disable mechanism the spike found no evidence of; needs a further spike; and does not solve the default case -- whatever ships enabled, spawns.",
+      "adr018_minimum_viable_set": "Measured to spawn anyway. Reduces 13 to 2 but does not reach zero, so NFR-1 still fails while the design carries a split registration model for no benefit.",
+      "lazy_connect": "No evidence such a mechanism exists (spike item 5)."
+    }
+  },
+  "ba_findings_now": [
+    {
+      "id": "BA-1",
+      "finding_as_filed": "NFR-2 AC rewritten to cover ADR-016's 9 sites; now requires the 5 liveness mechanisms, not just an absent-timeout grep.",
+      "response_now": "ACCEPTED",
+      "action_now": "No HLD change required -- ADR-016 already specifies all 5 mechanisms and the 9 sites (6 application + 3 definition). BA's AC now matches the HLD rather than the HLD needing to move. Confirms the draft-6/7 enumeration work was correctly scoped.",
+      "hld_changed_now": false
+    },
+    {
+      "id": "BA-2",
+      "finding_as_filed": "NFR-1 AC rewritten for per-component attribution, plus a constraint that any bundled .mcp.json stay to ADR-018's minimum-viable set.",
+      "response_now": "ACCEPTED in part, SUPERSEDED in part",
+      "action_now": "Per-component attribution ACCEPTED and already in SS 9's NFR-1 row. The minimum-viable-set constraint is SUPERSEDED by ADR-019: the spike measured that even a minimum-viable set spawns, so the constraint would not have achieved its purpose. BA's constraint should be restated as 'the plugin bundles no .mcp.json'.",
+      "hld_changed_now": true,
+      "hld_locations_now": [
+        "SS 9 NFR-1 row",
+        "ADR-019"
+      ],
+      "routed_back_to_ba_now": "NFR-1 AC needs one further edit: replace 'minimum-viable set' with 'zero bundled servers; registration is opt-in'."
+    },
+    {
+      "id": "BA-3",
+      "finding_as_filed": "NFR-3 upgraded from 'not designed' to MET, cheaper than scoped; BA named the 3 durability defects from ADR-011 instead.",
+      "response_now": "ACCEPTED",
+      "action_now": "Matches OAQ 1 and ADR-011 exactly. Note added to SS 9's new cross-NFR interaction table: ADR-019 would have broken NFR-3 had ADR-011 not already forbidden the dual write, since the MCP progress tool is a projection rather than the writer.",
+      "hld_changed_now": true,
+      "hld_locations_now": [
+        "SS 9 cross-NFR interaction check"
+      ]
+    },
+    {
+      "id": "BA-4",
+      "finding_as_filed": "FR-18 narrowed to plugin-attributable residue, original stated as unachievable; new FR-24 added for a user-run cleanup runbook.",
+      "response_now": "ACCEPTED",
+      "action_now": "Directly supported by spike item 4 (both keys emptied to {} but never removed; orphaned cache dir survives claude plugin prune). SS 9's NFR-5 row updated to assert on plugin-attributable residue only, with the reason stated. FR-24 added to SS 1.3 scope and covered by SS 10 plus ADR-019's unregister-mcp inverse.",
+      "hld_changed_now": true,
+      "hld_locations_now": [
+        "SS 9 NFR-5 row",
+        "SS 1.3",
+        "SS 11 FR-14a table"
+      ]
+    },
+    {
+      "id": "BA-5",
+      "finding_as_filed": "FR-9a now has its own AC covering all four truncation sites, escalated from ADVISORY.",
+      "response_now": "ACCEPTED",
+      "action_now": "No HLD change required -- SS 12 OAQ 4 already enumerates all four with cap constants and walk lines and states that 'fixed the one Phase 0 named' is not an acceptable end state. Escalation from ADVISORY to a hard AC is correct and the HLD already supports it.",
+      "hld_changed_now": false
+    },
+    {
+      "id": "BA-6",
+      "finding_as_filed": "ROUTED TO SA: FR-16 is architecturally covered but missing from the HLD's own scope listing.",
+      "response_now": "ACCEPTED -- BA is correct and was right to decline editing the HLD",
+      "action_now": "SS 1.3's abbreviated 'FR-14..FR-18' range now enumerated explicitly, naming FR-14, FR-14a, FR-15, FR-16, FR-17, FR-18 and adding FR-24. The abbreviation is how a covered requirement can read as an omitted one -- a scope-listing instance of the same summary-versus-enumeration defect class fixed across consensus iterations 2-4.",
+      "hld_changed_now": true,
+      "hld_locations_now": [
+        "SS 1.3"
+      ]
+    }
+  ],
+  "pm_findings_now": [
+    {
+      "id": "PM-1",
+      "finding_as_filed": "NFR-3 resized 8 -> 3, WSJF 3.00 -> 6.33.",
+      "response_now": "ACCEPTED",
+      "action_now": "This is the re-sizing OAQ 1 called for and explicitly left to Workstream B rather than asserting from the HLD. The boundary held correctly in both directions.",
+      "hld_changed_now": false
+    },
+    {
+      "id": "PM-2",
+      "finding_as_filed": "NFR-2 split out as its own row, size 8, WSJF 2.88.",
+      "response_now": "ACCEPTED",
+      "action_now": "Correct consequence of ADR-016's [NEW-P1] finding that NFR-2 is violated inside the engine independently of hooks. Splitting it from the hook-deletion row reflects that it is no longer satisfied as a side effect of FR-4/FR-5.",
+      "hld_changed_now": false
+    },
+    {
+      "id": "PM-3",
+      "finding_as_filed": "NFR-1 given its own row, size 2, WSJF 10.50.",
+      "response_now": "ACCEPTED",
+      "action_now": "Consistent with ADR-019, which makes NFR-1 achievable by construction rather than by measurement luck. Note the size assumes zero bundled MCP; option (b) would have been smaller still and worthless.",
+      "hld_changed_now": false
+    },
+    {
+      "id": "PM-4",
+      "finding_as_filed": "FR-4/FR-5 WSJF 7.00 -> 6.67, 'core NFR-1 outcome' corrected to 'necessary but not sufficient'.",
+      "response_now": "ACCEPTED, and this is the single most important PM correction",
+      "action_now": "Matches ADR-018 consequence 1 exactly: FR-4+FR-5 remove ~6 of 116 spawn sites (~5%). De-hooking removes involuntary per-tool-call invocation, not process spawning in general. 'Necessary but not sufficient' is the correct characterisation and prevents a false completion claim at D6.",
+      "hld_changed_now": false
+    },
+    {
+      "id": "PM-5",
+      "finding_as_filed": "MVP boundary unchanged but now carries two conditions: the 2.3 decision and FR-18's resolution.",
+      "response_now": "ACCEPTED -- both conditions now discharged",
+      "action_now": "Condition 1 discharged by ADR-019. Condition 2 discharged by BA-4 (FR-18 narrowed, FR-24 added), grounded in spike item 4. PM should re-confirm the MVP boundary against ADR-019's cost, since one-step install was an implicit MVP property.",
+      "hld_changed_now": true,
+      "routed_back_to_pm_now": "ADR-019 gives up true one-step install. If that was an MVP-boundary assumption, the boundary needs an explicit re-confirmation rather than inheriting silently."
+    },
+    {
+      "id": "PM-6",
+      "finding_as_filed": "CRITICAL: deliverable-5 gate text carried the falsified 'uninstalls cleanly' claim. Already fixed by orchestrator with supersession notes.",
+      "response_now": "ACKNOWLEDGED -- no action taken, deliberately",
+      "action_now": "Verified as already-handled per the coordinator's explicit instruction not to fix twice. The HLD's own FR-18 treatment (SS 9 NFR-5 row, SS 11 item 4) is independently consistent with the corrected claim.",
+      "hld_changed_now": false
+    }
+  ],
+  "critical_items_fixed_in_session_now": [
+    {
+      "item": "Bundled-MCP vs NFR-1 conflict (spike item 5)",
+      "status_now": "FIXED",
+      "how_now": "ADR-019 authored and applied; NFR-1 row rewritten; cross-NFR interaction check added"
+    },
+    {
+      "item": "FR-16 absent from HLD scope listing (BA-6)",
+      "status_now": "FIXED",
+      "how_now": "SS 1.3 enumerated"
+    },
+    {
+      "item": "ADR-012 reading as primary when it is now defence-in-depth",
+      "status_now": "FIXED",
+      "how_now": "STATUS UPDATE block added; env var stated as primary, ascent retained as fallback with the reason for keeping it"
+    },
+    {
+      "item": "SS 11 FR-14a presented as blocking/PROVISIONAL after the spike completed",
+      "status_now": "FIXED",
+      "how_now": "Replaced with a measured-results table; original list retained for traceability"
+    },
+    {
+      "item": "SS 4 heading-count basis went stale when ADR-019 was added (self-inflicted, caught in-session)",
+      "status_now": "FIXED",
+      "how_now": "13 -> 14 headings, 15 -> 16 ADRs. This is the count-scoping defect class from consensus iterations 2-4; it recurred the moment an ADR was added, which is evidence the annotation pattern is necessary rather than sufficient."
+    }
+  ],
+  "nfrs_disturbed_now": {
+    "method_record": "Full NFR map re-run rather than spot-edit, per task item 6",
+    "NFR-1": "IMPROVED -- achievable by construction and still falsifiable",
+    "NFR-2": "UNCHANGED -- ADR-019 adds no timeout and touches no pipeline-path call site",
+    "NFR-3": "UNCHANGED, but only because ADR-011 already forbade the dual write. The per-tool-call progress replacement is reached via mcp-post-tool-tracker, which ADR-019 makes opt-in. That would have broken NFR-3 if the MCP tool were the writer; ADR-011 defect 2 makes it a projection of the checkpoint record, whose writer is in-process CheckpointManager. A user who never registers MCP loses the query surface, not crash recovery.",
+    "NFR-4": "UNCHANGED -- documentation, not runtime",
+    "NFR-5": "CHANGED AND IMPROVED -- unblocked by the completed spike; gains a 4th round-trip scenario for register/unregister-mcp",
+    "FR-23": "WEAKENED AND DISCLOSED -- local MCP-side gate now opt-in twice over; CI-side assertion unaffected"
+  },
+  "disputed_now": [],
+  "dispute_count_now": 0,
+  "note_on_zero_disputes_record": "No BA or PM finding was disputed. BA-2's minimum-viable-set constraint is marked SUPERSEDED rather than DISPUTED because it was correct when written and was invalidated by measurement that arrived afterwards, not by an error in BA's reasoning.",
+  "addendum_findings_now": [
+    {
+      "id": "PM-CRITICAL-3",
+      "finding_as_filed": "FR-23's MUST-PRECEDE-FR-4 ordering constraint, protecting the version-push gate closed by commit 1bb4303, is not mechanically enforced.",
+      "response_now": "ACCEPTED -- ADR-017 covers the ordering constraint. But ADR-019 changed WHERE the guarantee lives, and that is disclosed rather than left implicit.",
+      "covered_now": "AS OF 2026-08-01 THE CI ASSERTION IS DESIGNED, NOT BUILT. ADR-017 specifies it -- fail the build if the PreToolUse registration is absent while no MCP-side version-push gate is reachable by name, asserting on the REPLACEMENT rather than on the old hook's survival (polarity gate-verified). That specification is complete and correct. No such CI check exists in the repository today.",
+      "what_changed_now": "ADR-019 made MCP registration opt-in, moving WHERE the local guarantee would live. But the earlier wording here -- 'the CI assertion is the ONLY mechanical protection remaining' -- implied that one exists. IT DOES NOT. Corrected at consensus iteration 2.",
+      "character_change_now": "PREVENTIVE -> DETECTIVE. The gate no longer blocks a non-compliant push at push time; it fails the build afterwards. Adequate for a shared repository (nothing non-compliant merges); NOT equivalent for a developer's local history. Calling the two the same would be the softening this HLD has refused elsewhere.",
+      "remaining_open_now": "Preventive local protection, if wanted. Named as ADV-012 (git pre-push hook -- not a Claude Code hook, so ADR-010 does not apply; spawns only on explicit git push, so NFR-1-compatible). NAMED, NOT ADOPTED -- new scope belonging to FR-23's owner.",
+      "hld_changed_now": true,
+      "hld_locations_now": [
+        "ADR-017 Phase 2 amendment"
+      ],
+      "true_state_now": {
+        "as_of": "2026-08-01, consensus iteration 2",
+        "today_before_FR4_now": "PROTECTED. push_gate.py still runs via the live PreToolUse hook; FR-4 has not been executed. The bypass commit 1bb4303 closed is currently closed.",
+        "after_FR4_if_neither_built_now": "UNPROTECTED, preventively AND detectively. register-mcp does not exist, so there is no local MCP-side gate. The ADR-017 CI assertion does not exist, so there is no repository- level catch. Both are proposals.",
+        "preventive_mechanism_now": "register-mcp -- DESIGNED (ADR-019/ADR-020), NOT BUILT",
+        "detective_mechanism_now": "ADR-017 CI assertion -- DESIGNED, NOT BUILT",
+        "implication_now": "FR-23's MUST-PRECEDE-FR-4 ordering is therefore not merely unenforced by CI -- it has no mechanical enforcement of any kind pending both builds. This does NOT weaken ADR-017's design; it means the design must actually land before FR-4 is actioned, which is exactly what the ordering constraint says and exactly what nothing currently enforces."
+      },
+      "status_correction_record": "This entry previously asserted 'the CI assertion is the ONLY mechanical protection remaining', with no qualifier that it has not been built -- implying one exists. The correction landed in product-sequencing-v2.md (4+ locations) and pm_review.json but not here, in the entry that answers this exact finding. Fourth recurrence of the stale-review-artifact class in this file."
+    },
+    {
+      "id": "BA-FIND-05",
+      "finding_as_filed": "FR-15's AC asserted a disputed figure (13 CODE-level sites) as settled fact. BA replaced it with an AST-classifier method, withdrawing rather than deleting the old wording.",
+      "response_now": "ACCEPTED -- verified point-for-point against HLD OAQ 6's recommendation. NO DIVERGENCE.",
+      "verification_record": "Read ba_review.json FIND-05 directly rather than relying on a second summary. All four elements of the HLD's recommendation are present: (1) AST classifier partitioning into CODE/DOCSTRING/COMMENT by enclosing node type; (2) terminal condition of zero CODE-classified sites; (3) path_resolver.py's own canonical strings excluded -- the INDEPENDENT defect the HLD identified, separate from the disputed figure; (4) FR-15 explicitly UNSIZED in both documents. BA also struck through rather than deleted, preserving the audit trail.",
+      "hld_changed_now": true,
+      "hld_locations_now": [
+        "SS 12 OAQ 6 -- Phase 2 status block recording BA's action"
+      ]
+    },
+    {
+      "id": "BA-FIND-06",
+      "finding_as_filed": "FYI -- pre-existing RTM defect: prd-v2.md Section 6 pointed FR-18 at a non-existent Section 5 row. BA fixed it.",
+      "response_now": "AGREED it was a defect. No action -- purely a prd-v2.md issue, correctly owned and fixed by BA. No HLD implication.",
+      "hld_changed_now": false
+    },
+    {
+      "id": "PM-ADVISORY-9",
+      "finding_as_filed": "FYI -- splitting NFR-1 and NFR-2 into separate WSJF rows is bookkeeping.",
+      "response_now": "AGREED, bookkeeping. Substantively correct for the reason given in PM-2: NFR-2 is no longer satisfied as a side effect of FR-4/FR-5, so it should not share a row with hook deletion.",
+      "hld_changed_now": false
+    },
+    {
+      "id": "BA-FIND-10",
+      "severity": "ADVISORY (logged by BA, not applied -- correctly declined to edit hld.md)",
+      "finding_as_filed": "SS 10 migration runbook step 2 verified FR-23 reachability, an assumption written when the push gate was expected to ship bundled. Under ADR-019 it is not reachable until register-mcp runs, and register-mcp appeared nowhere in the numbered sequence.",
+      "response_now": "ACCEPTED -- BA is correct, and the consequence is worse than a missing step.",
+      "why_it_mattered_record": "A v1.21.4 user following the runbook correctly would hit a verification that CANNOT pass, with no instruction explaining why. The natural reading of a failed reachability check is 'the migration failed', not 'you have not registered yet'.",
+      "consequence_chain_record": "ADR-019 makes MCP opt-in -> push gate not reachable post-install -> runbook step 2's ordering assumption breaks -> a user following instructions correctly gets a failure that looks like a defect. Three agents each caught a different link; none caught their own.",
+      "fixes_applied_now": [
+        "register-mcp inserted as step 2; sequence renumbered 7 -> 8 steps; step 3's 'must pass before step 4' corrected to 'before step 5'.",
+        "Step 3 now states inline that a failure almost always means step 2 was not run -- so the failure explains itself rather than reading as a broken migration.",
+        "SAFETY PROPERTY added, and it is the substantive find rather than the renumbering: step 5 (hook deletion) has a hard precondition on steps 2-3. Deleting PreToolUse without the MCP replacement leaves NO local push gate, reopening the bypass commit 1bb4303 closed. Step 2 is optional for the migration as a whole and MANDATORY for step 5. That conditional is why step 2 is numbered rather than mentioned in prose.",
+        "VALID STOPPING POINTS table added -- see stop_after_step_one below.",
+        "Step 5 annotated for the progress-writer assumption (same shape as the push gate): removing PostToolUse ends per-tool-call progress writing; crash recovery is unaffected because CheckpointManager is in-process (ADR-011), but the progress QUERY surface is MCP-backed and also depends on step 2.",
+        "Rollback extended: full rollback is the runbook inverted -- restore hook entries, unregister-mcp, uninstall -- with FR-14a item 4's residue and FR-24's cleanup runbook named."
+      ],
+      "other_steps_same_assumption_now": "One, and it is now annotated: step 5's PostToolUse removal implicitly assumed the MCP-backed progress replacement was available. No other step depends on an MCP-backed capability. Steps 1, 4, 6, 7, 8 are MCP-independent.",
+      "stop_after_step_one_now": "NOW DESCRIBED, and it is a SAFE end state. Plugin installed; commands, agents and skills working; all v1.21.4 hooks still running so enforcement is unchanged and complete. Missing: MCP-backed capabilities only. A user who stops here is DONE, NOT BROKEN. The table also names the single unsafe state -- step 5 having skipped steps 2-3 -- as one to neither stop at nor pass through.",
+      "hld_changed_now": true,
+      "hld_locations_now": [
+        "SS 10 (full rewrite of the step table, plus safety property, stopping-points table, and rollback)"
+      ]
+    },
+    {
+      "id": "COORD-CHALLENGE-DOCUMENTED-ONLY",
+      "severity": "CRITICAL (raised by coordinator, not by BA/PM)",
+      "challenge_as_filed": "The SS 10 step-5 precondition was documentation-only, in a project whose central finding is that documented-only controls fail (8 of 46 policies DOCUMENTED-ONLY; 3 more silently no-op).",
+      "response_now": "ACCEPTED -- the challenge is correct and the fix is ADR-020.",
+      "interception_point_exists_now": "ASYMMETRIC -- yes on one path, no on another, and not needed on a third.",
+      "paths_now": {
+        "A_manual_settings_edit": {
+          "interception_now": "NONE",
+          "reason_record": "The plugin ships no hooks (ADR-010) and Claude Code does not notify plugins of settings.json edits. Prevention is genuinely impossible without reintroducing a hook.",
+          "control_now": "DETECTION at next invocation -- doctor command plus a per-command start-up check. NFR-1-safe because ADR-006 means the plugin runs only when invoked.",
+          "honest_label_record": "unenforceable at edit time, documented deliberately -- NOT 'we wrote a doc and moved on'. Layer 2 bounds the undetected window to a single plugin invocation."
+        },
+        "B_unregister_mcp": {
+          "interception_now": "YES, FULL",
+          "reason_record": "unregister-mcp is a plugin-owned command that IS DESIGNED TO read and write settings.json per ADR-019 (design, not existing behaviour -- the command does not exist yet).",
+          "control_now": "PREVENTION -- refuse by default when PreToolUse is absent, name the consequence, offer two ways forward (restore PreToolUse, or re-run with an explicit acknowledgement flag). Same shape as ADR-007's dev-mode guardrails: possible, never accidental.",
+          "significance_record": "THIS PATH REACHES THE UNSAFE STATE WITHOUT PASSING THROUGH THE RUNBOOK AT ALL. A user who migrated correctly and later unregisters lands in the step-5-without-step-2 configuration having never reopened SS 10. Runbook wording gives zero coverage. This alone settles the question."
+        },
+        "C_plugin_uninstall": {
+          "interception_now": "NONE (uninstall is Claude Code's command, not the plugin's)",
+          "control_now": "INFERRED to need none -- NOT measured. Verification task attached.",
+          "status_correction_record": "This entry previously asserted that user-scope registrations 'SURVIVE plugin uninstall' and that Path C needs 'NONE NEEDED', stated as fact. Both gates independently reached the same objection and the HLD's ADR-020 was corrected at Phase 2.4; this finding record was not, and kept asserting the claim its own fix retracted. Corrected at Phase 2.5 with the same four-part structure the HLD carries.",
+          "measured_record": [
+            "Across a full install -> uninstall -> prune cycle the parsed-JSON structural diff reports 'changed keys: (none)'; the 5 hook registrations and 25 pre-existing mcpServers entries are byte-for-byte identical to baseline. Uninstall added enabledPlugins and extraKnownMarketplaces and emptied them; it changed nothing else.",
+            "The spike plugin's own .mcp.json server was NOT merged into the top-level mcpServers key at all -- it stayed plugin-scoped, tracked in the plugin manifest and installed_plugins.json."
+          ],
+          "inferred_now": "Uninstall manages plugin-scoped registrations in a DIFFERENT STORE from top-level mcpServers, and demonstrably does not alter that key's contents for anyone. register-mcp writes to top-level mcpServers (user scope), so an entry it writes should survive its own plugin's uninstall.",
+          "not_measured_record": "No entry written by register-mcp existed during the measured uninstall, because register-mcp does not exist yet. The 25 surviving entries were pre-existing and unrelated to the plugin. The spike shows uninstall does not remove UNRELATED entries; it does not show uninstall would not remove entries ATTRIBUTABLE to the plugin being uninstalled. That would require provenance tracking on a key that the second measured finding makes architecturally unlikely -- but unlikely is not measured.",
+          "why_the_label_matters_now": "If the inference is wrong, Path C is the ONLY path with no available control. Prevention is impossible (uninstall is Claude Code's command) and detection is impossible too -- the plugin is gone, so no doctor command and no per-command check can run. Every other path degrades to a weaker control; Path C degrades to none. The unhedged claim was concealing the highest-consequence uncertainty in the ADR.",
+          "verification_task_now": "Owner: whoever implements register-mcp. ~10 minutes, at the only moment it can be performed. Install the plugin, run register-mcp, run /plugin uninstall, confirm the written mcpServers entry is still present in settings.json. If it survives, Path C is measured safe and ADR-020 needs only a status update. If it does not, Path C acquires a control at that point -- and because no plugin-side control is possible, that control must be external: promote ADV-012's git pre-push hook from proposed to required, as the only mechanism surviving the plugin's own removal.",
+          "conditional_benefit_now": "IF the inference holds, ADR-019 also removed a failure mode nobody identified: had the servers been bundled, uninstall would have taken the push gate with them. Genuine second-order win, contingent on the verification above, NOT claimed as established."
+        }
+      },
+      "decision_now": "ADR-020 -- three layers matched to what each path permits: (1) PREVENT on Path B via unregister-mcp refusal-by-default; (2) DETECT on Path A via doctor + per-command check; (3) PREVENT THE HARM rather than the config state via ADV-012's git pre-push hook if adopted, with ADR-017's CI assertion as detective backstop.",
+      "rejected_now": [
+        "Leave the runbook as the only control -- repeats the DOCUMENTED-ONLY defect, and Path B proves runbook wording cannot cover a transition that bypasses the runbook.",
+        "unregister-mcp warns but proceeds -- a command that warns then does the thing is exactly how the 7 dead Stop-hook references failed.",
+        "unregister-mcp refuses absolutely with no override -- paternalistic, and contradicts ADR-019's own principle that the user must be able to decline. Agency is the point; accidents are the target.",
+        "Block all plugin commands while the unsafe state persists -- over-reach; the plugin would refuse unrelated work over a configuration it does not own, which is the involuntary blocking ADR-006 removed."
+      ],
+      "hld_changed_now": true,
+      "hld_locations_now": [
+        "ADR-020 (new)",
+        "SS 10 safety property",
+        "SS 4 ADR count 16->17 and heading basis 14->15"
+      ]
+    }
+  ],
+  "adv_011_promotion_now": {
+    "position_now": "AGREE -- promote",
+    "proposed_id_now": "FR-25",
+    "requirement_now": "A CI check over docs/phase-1-architecture/hld.md that recomputes every annotated counting basis (ADR headings, C4 node counts, OAQ-2 disposition tallies, ADR-016 citation counts, spawn-site totals) and fails the build on mismatch.",
+    "why_a_requirement_record": "Annotation makes a count checkable; it does not make it self-updating. Five instances of this defect class were found across four consensus iterations, and a sixth recurred during Phase 2.3 the moment ADR-019 was added -- invalidating SS 4's heading basis within the same session that fixed the fifth. An advisory someone reads will not stop the seventh; a gate someone owns will.",
+    "feasibility_record": "Only possible BECAUSE every count now carries an explicit basis. The annotation work of consensus iterations 2-4 is the enabling precondition, not a substitute."
+  },
+  "ba_completed_work_noted_now": [
+    "NFR-1 constraint revised at all three sites to 'plugin bundles ZERO MCP servers (ADR-019)', made structural -- any server entry in a plugin-root .mcp.json fails the AC outright regardless of process count. Agreed, and stronger than the process-count check because it fails on the cause rather than the symptom.",
+    "FR-14 AMENDED not absorbed -- one-step install satisfied for commands/agents/skills, explicitly NOT for MCP-backed capabilities, recorded as a deliberate acknowledged trade-off. This is exactly the acknowledgement ADR-019 asked for rather than an architect's silent absorption.",
+    "NFR-5 install test gained a fourth assertion exercising both steps and confirming the push gate is unreachable after step one alone. That test now proves the two-step reality rather than assuming it.",
+    "ADR-018's superseded clause kept in-line with a supersession note rather than deleted, consistent with the FR-15 withdrawal handling."
+  ],
+  "coverage_accounting_now": {
+    "correction_record": "The earlier accounting used ad-hoc IDs (BA-1..BA-6, PM-1..PM-6) taken from a coordinator summary, not the canonical IDs in the review files, and quoted a denominator of 8 BA findings from a snapshot predating FIND-09 and FIND-10. Both are corrected here. The arithmetic below reconciles.",
+    "ba_coverage_now": {
+      "canonical_finding_count_now": 10,
+      "ids_present_record": [
+        "FIND-01",
+        "FIND-02",
+        "FIND-03",
+        "FIND-04",
+        "FIND-05",
+        "FIND-06",
+        "FIND-07",
+        "FIND-08",
+        "FIND-09",
+        "FIND-10"
+      ],
+      "responded_now": 10,
+      "unanswered_now": 0,
+      "id_mapping_record": {
+        "FIND-01": "answered as BA-1 (NFR-2 AC scanned only bundled code, missing the 6 timeout= application sites) -- ACCEPTED",
+        "FIND-02": "answered as BA-2 (NFR-1 AC ill-defined) -- ACCEPTED in part, minimum-viable-set clause SUPERSEDED by ADR-019",
+        "FIND-03": "answered as BA-3 (NFR-3 premise conflation) -- ACCEPTED",
+        "FIND-04": "answered as BA-4 (FR-18 AC unachievable; FR-24 added) -- ACCEPTED",
+        "FIND-05": "answered in addendum as BA-FIND-05 (FR-15 disputed figure) -- ACCEPTED, verified no divergence",
+        "FIND-06": "answered in addendum as BA-FIND-06 (RTM defect) -- ACCEPTED, no HLD implication",
+        "FIND-07": "answered as BA-5 (FR-9a had no dedicated AC) -- ACCEPTED",
+        "FIND-08": "answered as BA-6 (FR-16 covered but absent from the HLD scope listing). PREVIOUSLY UNTRACKED BY ID ONLY -- the finding was answered and the HLD fix applied (SS 1.3 enumerated); the ad-hoc label BA-6 simply never mapped to FIND-08. Now tracked.",
+        "FIND-09": "ADR-019 follow-up (NFR-1 constraint made structural, FR-14 amended not absorbed, NFR-5 4th assertion, ADR-018 supersession note). Recorded under ba_completed_work_noted_no_action -- AGREED, no action required of SA. Now tracked as a finding ID.",
+        "FIND-10": "answered in addendum as BA-FIND-10 (SS 10 step 2 unreachable under ADR-019) -- ACCEPTED, SS 10 rewritten"
+      }
+    },
+    "pm_coverage_now": {
+      "correction_record": "The prior claim in this file -- that pm_review.json 'has no findings array and no IDs at all' and carries 9 top-level keys -- was WRONG and is retracted. The file has 14 top-level keys and DOES contain a findings array of 9 findings. Cause: my extraction script sliced list(d.keys())[:9] and walked only for objects carrying an 'id' key; PM findings use 'finding' + 'severity' with no 'id', so the walker returned zero and the truncated key list was reported as complete. A probe with a limit, read as exhaustive.",
+      "what_was_actually_true_record": "The findings carry NO IDs -- only 'finding' and 'severity'. That is the correct narrow claim. It does NOT prevent completeness assertion: 9 findings are enumerable by severity and text. Completeness against PM CAN be asserted, just not by ID reconciliation.",
+      "canonical_finding_count_now": 9,
+      "severity_tally_now": {
+        "CRITICAL": 3,
+        "MAJOR": 4,
+        "ADVISORY": 2
+      },
+      "responded_now": 9,
+      "unanswered_now": 0,
+      "enumeration_now": [
+        {
+          "n": 1,
+          "severity": "CRITICAL",
+          "finding_as_filed": "Deliverable 5's gate text 'Installs and uninstalls cleanly on Windows' is measured-false by FR-14a item 4.",
+          "response_now": "ACKNOWLEDGED, no action -- fixed directly by the orchestrator with supersession notes. The HLD's own FR-18 treatment (SS 9 NFR-5 row, SS 11 item 4) is independently consistent with the corrected claim.",
+          "previously_tracked_as_record": "PM-6"
+        },
+        {
+          "n": 2,
+          "severity": "CRITICAL",
+          "finding_as_filed": "NFR-2 under-scoped by being bundled into a shared 3-point measurement-harness row with NFR-1; ADR-016 shows a 5-mechanism build across 6 timeout= call sites in 5 files.",
+          "response_now": "ACCEPTED. Direct consequence of ADR-016's [NEW-P1] finding that NFR-2 is violated inside the engine independently of hooks. It is no longer satisfied as a side effect of FR-4/FR-5, so it must not share a row with hook deletion.",
+          "previously_tracked_as_record": "PM-2"
+        },
+        {
+          "n": 3,
+          "severity": "CRITICAL",
+          "finding_as_filed": "FR-23's MUST-PRECEDE-FR-4 ordering is specified in ADR-017 but has no CI enforcement as of this revision.",
+          "response_now": "ACCEPTED. ADR-017 covers the ordering; the CI assertion is designed with replacement-reachability polarity (gate-verified). Amended at Phase 2.4 to disclose that ADR-019 moved WHERE the guarantee lives -- for a user who never registers MCP, the CI assertion is the ONLY mechanical protection, changing the guarantee from PREVENTIVE to DETECTIVE. ADV-012 (git pre-push hook) named as the way to restore prevention, not adopted.",
+          "previously_tracked_as_record": "PM-CRITICAL-3 (addendum)"
+        },
+        {
+          "n": 4,
+          "severity": "MAJOR",
+          "finding_as_filed": "NFR-3 overscored (size 8, WSJF 3.00) against a false premise that a new crash-recovery writer had to be built; re-scored size 3, WSJF 6.33.",
+          "response_now": "ACCEPTED. This is the re-sizing OAQ 1 called for and deliberately left to Workstream B rather than asserted from the HLD.",
+          "previously_tracked_as_record": "PM-1"
+        },
+        {
+          "n": 5,
+          "severity": "MAJOR",
+          "finding_as_filed": "FR-4/FR-5's 'core NFR-1 outcome' justification rested on an assumed large process-footprint reduction; the corrected census shows ~6 of 116 spawn sites (~5%).",
+          "response_now": "ACCEPTED, and the single most important PM correction. Matches ADR-018 consequence 1 exactly. 'Necessary but not sufficient' prevents a false completion claim at D6.",
+          "previously_tracked_as_record": "PM-4"
+        },
+        {
+          "n": 6,
+          "severity": "MAJOR",
+          "finding_as_filed": "FR-18's AC unachievable as written; BA owns the rewrite; two resolution paths sized here (FR-18a plugin-shipped cleanup command, +2 points).",
+          "response_now": "ACCEPTED on the AC rewrite (BA FIND-04, actioned). NEWLY ANSWERED at Phase 2.4 -- the FR-18a sizing sub-point was not previously responded to. ARCHITECTURAL CONSTRAINT ON FR-18a: a PLUGIN-SHIPPED cleanup command cannot execute after the plugin is uninstalled, which is precisely when the residue exists (empty-but-present settings.json keys, orphaned unpruned cache dir). This is structurally identical to ADR-020 Path C -- once the plugin is gone, no plugin-side code can run. FR-18a is therefore viable ONLY as a pre-uninstall preparation step, which is a different capability from cleaning post-uninstall residue, or as an EXTERNAL script. FR-24's user-run cleanup runbook is the shape that actually works post-uninstall. RECOMMEND: PM re-scope FR-18a explicitly as pre-uninstall prep, or fold it into FR-24. Sizing it as a cleanup command implies a capability the architecture cannot deliver.",
+          "previously_tracked_as_record": "partially, via BA-4 / FIND-04"
+        },
+        {
+          "n": 7,
+          "severity": "MAJOR",
+          "finding_as_filed": "The NFR-1/bundled-MCP conflict was unsized; assigned to solution-architect for decision at Phase 2.3; three options sized.",
+          "response_now": "ACCEPTED and DECIDED -- ADR-019, option (a): the plugin bundles zero MCP servers, registration is an opt-in command. PM's sizing treated as cost data, not recommendation. Full reasoning and costs in decision_2_3_bundled_mcp_vs_nfr1.",
+          "previously_tracked_as_record": "PM-5 / decision_2_3"
+        },
+        {
+          "n": 8,
+          "severity": "ADVISORY",
+          "finding_as_filed": "FR-14a fully RESOLVED (5/5 measured); retired from the active WSJF table and the 'second-riskiest link' framing; ADR-009a branch 2 unblocked via ADR-012's manifest-anchored ascent.",
+          "response_now": "NEWLY ANSWERED at Phase 2.4 -- not previously tracked. AGREED on retirement: SS 11 now carries the measured-results table and nothing PROVISIONAL remains, so removing FR-14a from the active WSJF table and the second-riskiest-link framing is correct. ONE CORRECTION TO THE ATTRIBUTION: ADR-009a branch 2 is unblocked by FR-14a ITEM 2's measurement -- CLAUDE_PLUGIN_ROOT is present in os.environ -- NOT by ADR-012's manifest-anchored ascent. Per the spike's own verdict the ascent is DEFENCE-IN-DEPTH, explicitly 'not a required fallback'. The ascent would have unblocked branch 2 had the env var been absent; it is not what unblocked it. Minor, but it is exactly the kind of attribution drift that propagates into later documents unchallenged.",
+          "previously_tracked_as_record": "NOT PREVIOUSLY TRACKED"
+        },
+        {
+          "n": 9,
+          "severity": "ADVISORY",
+          "finding_as_filed": "Splitting NFR-1 and NFR-2 into separate WSJF rows changes the top-5 ranking (NFR-1 enters at #3, WSJF 10.50) without changing scope.",
+          "response_now": "AGREED, bookkeeping. Substantively right for the finding-2 reason: NFR-2 is no longer satisfied as a side effect of FR-4/FR-5.",
+          "previously_tracked_as_record": "PM-ADVISORY-9 (addendum)"
+        }
+      ],
+      "completeness_basis_record": "Enumerated by severity and text against all 9 entries in the findings array, read from disk in full. Not ID-based, because PM findings carry no IDs -- but complete."
+    },
+    "arithmetic_now": {
+      "ba": {
+        "total_now": 10,
+        "responded_now": 10,
+        "outstanding_now": 0,
+        "basis_record": "ID reconciliation, FIND-01..FIND-10"
+      },
+      "pm": {
+        "total_now": 9,
+        "responded_now": 9,
+        "outstanding_now": 0,
+        "basis_record": "severity + text enumeration; no IDs exist in the file"
+      },
+      "coordinator_challenges": {
+        "total_now": 2,
+        "responded_now": 2,
+        "outstanding_now": 0
+      },
+      "grand_total_now": {
+        "findings": 21,
+        "responded_now": 21,
+        "disputed_now": 0
+      },
+      "history_of_this_arithmetic_record": "Wrong twice before this pass, from opposite directions. (1) A stale denominator relayed by the coordinator: 8 BA findings, predating FIND-09 and FIND-10. (2) My own partial read of pm_review.json: a key list truncated at 9 by my probe's [:9] slice, plus a walker matching only objects with an 'id' key, together producing the false claim 'no findings array'. Both produced confident arithmetic over an incomplete set. Reading from disk is necessary and not sufficient -- a partial read is still a read, and a probe with a limit must never be reported as exhaustive."
+    }
+  },
+  "stale_review_artifact_class_now": {
+    "finding_as_filed": "Every fix this project produced was applied to hld.md and to nothing else. The finding records that prompted those fixes kept asserting the claims the fixes retracted. Three instances found at Phase 2.5, all in this file: the 'omitted 4' count, 'already reads and writes', and Path C stated as measured.",
+    "root_cause_record": "A review artifact reads as a historical record, so nobody treats it as something that can go stale. But sa_defence.json is not a changelog -- it states CURRENT POSITIONS, and a current position that has been superseded is simply wrong. The distinction that matters: a changelog QUOTES an old value (correct, and must not be edited); a position record ASSERTS a value (must be updated). This file contains both, which is why the error was easy to miss.",
+    "relationship_to_other_classes_record": "This is the backward-propagation class one layer out. The four earlier instances were hld.md-internal (SS 3 diagram, SS 10 runbook, SS 4 heading basis, coverage accounting). These three are hld.md-external -- the artifact is a different file entirely, which is why an ADR Affects list scoped to HLD sections would not have caught any of them.",
+    "instances_record": [
+      "sa_defence.json meta.addendum: 'omitted 4' vs its own 2+3=5 arithmetic and its 5-entry array",
+      "sa_defence.json: 'already reads and writes' for a command that does not exist -- the exact framing corrected in hld.md at Phase 2.4",
+      "sa_defence.json COORD-CHALLENGE paths.C: Path C asserted as measured-safe in the very finding that produced ADR-020's INFERRED label"
+    ],
+    "note_on_provenance_record": "One of the three ('omitted 4') originated in the coordinator's relay rather than in this agent's analysis, and was inherited without recomputation. That does not change the fix, but it locates the failure precisely: an inherited figure is exactly the kind that never gets recomputed, because nobody feels ownership of arithmetic they did not perform."
+  },
+  "_field_semantics_contract": {
+    "purpose": "Make the record-vs-claim distinction STRUCTURAL rather than a rule someone remembers. Four recurrences of the stale-review-artifact class happened in this file, including one in the same pass that added a self-diagnostic naming the risk. Writing down a tendency did not prevent it. The field NAME must now answer 'is this a record or a claim?'",
+    "suffix_rules": {
+      "_as_filed / _record": "FROZEN. A quotation of what was said, or of what was believed true, at the time of filing. NEVER edited. Cannot go stale, because it does not assert a present fact.",
+      "_now": "LIVE. A current claim about the present state of the design or the codebase. MUST be re-verified on every pass and updated the moment it is superseded. If you cannot verify it this pass, say so IN the field rather than leaving it to age silently.",
+      "metadata allowlist": "Structural keys carrying no substantive claim (id, n, severity, phase, date...)."
+    },
+    "enforcement": "validator_source below is the actual check, embedded so it is reproducible rather than described. Run it against this file before committing. It returns the list of fields in a claim-bearing container whose name does not classify itself; a non-empty list is a schema violation. A convention nobody can violate silently is the only kind that survives -- same reasoning as ADR-013's non-optional manifest argument and ADR-015's three-way union: the defect is made inexpressible rather than discouraged.",
+    "claim_bearing_containers": "ALL top-level sections (see scope_now)",
+    "known_limitation": "NONE REMAINING WITHIN THIS FILE. The convention now covers all 14 top-level sections, not the three finding arrays it originally covered. The residual limitation is one of kind rather than scope: the convention classifies FIELDS, so it guarantees that every claim declares whether it is frozen or live. It does NOT verify that a _now field's content is actually current -- only that its staleness is checkable rather than invisible. Keeping _now fields true is still work; the convention makes that work enumerable, which is what a manual sweep could never do.",
+    "validator_result_now": {
+      "as_of": "2026-08-01, consensus iteration 3",
+      "unclassified_fields": [],
+      "count": 0,
+      "status": "PASS",
+      "scope": "all 14 top-level sections",
+      "negative_test": "REQUIRED, and run: an unclassified field was injected into the first container and the validator returned 1 violation(s), proving it is not a no-op. Adopted from the consensus gate's stress test, which went beyond what either party specified. A validator that always passes is indistinguishable from one that works; only trying to break it separates them. Any check FR-25 or FR-26 produces needs the same companion negative test, or it is a green light with no mechanism behind it.",
+      "embedded_source_verified_now": "The validator_source string above was exec'd and run against this document, not a local copy: 0 violation(s). Negative test injected an unclassified field into meta and the SAME embedded source returned 1 violation(s), so the embedded string is itself proven non-trivial. This closes the gap where an embedded validator could drift out of sync with the scope it claims to check -- which would have been this very defect class inside the field designed to prevent it."
+    },
+    "validator_source": "def validate_field_semantics(doc):\n    META = {'id','n','severity','item','loss','meta','phase','agent','date','subject','as_of',\n            'A_manual_settings_edit','B_unregister_mcp','C_plugin_uninstall',\n            'CRITICAL','MAJOR','ADVISORY','ba','pm','coordinator_challenges','findings',\n            'b_redefine_nfr1','c_per_server_opt_in','adr018_minimum_viable_set','lazy_connect',\n            'NFR-1','NFR-2','NFR-3','NFR-4','NFR-5','FR-23'}\n    META |= {'FIND-%02d' % i for i in range(1, 11)}\n    bad = []\n    def walk(o, path):\n        if isinstance(o, list):\n            for i, x in enumerate(o): walk(x, '%s[%d]' % (path, i))\n        elif isinstance(o, dict):\n            for k, v in o.items():\n                if not (k in META or k.endswith('_now') or k.endswith('_record')\n                        or k.endswith('_as_filed') or k.startswith('_')):\n                    bad.append('%s.%s' % (path, k))\n                walk(v, '%s.%s' % (path, k))\n    # SCOPE: every top-level section except the contract itself.\n    for cont in [k for k in doc if not k.startswith('_')]:\n        walk(doc[cont], cont)\n    return bad\n",
+    "proof_it_works_record": "On its first run the validator FAILED with 5 violations -- all of them fields this same pass had just added (true_state_now's children: today_before_FR-4, after_FR-4_if_neither_is_built, preventive_mechanism, detective_mechanism, and a bare as_of). The convention caught its own author adding unclassified fields, in the same edit that introduced the convention. That is the difference between a rule remembered and a rule enforced, and it is the evidence that the previous four recurrences were not a discipline problem.",
+    "scope_now": {
+      "as_of": "2026-08-01, consensus iteration 3",
+      "covered": [
+        "meta",
+        "decision_2_3_bundled_mcp_vs_nfr1_now",
+        "ba_findings_now",
+        "pm_findings_now",
+        "critical_items_fixed_in_session_now",
+        "nfrs_disturbed_now",
+        "disputed_now",
+        "dispute_count_now",
+        "note_on_zero_disputes_record",
+        "addendum_findings_now",
+        "adv_011_promotion_now",
+        "ba_completed_work_noted_now",
+        "coverage_accounting_now",
+        "stale_review_artifact_class_now"
+      ],
+      "count": 14,
+      "previously": "three finding arrays only; narrative sections were disclosed as excluded",
+      "why_extended": "The disclosed gap contained a live instance -- decision_2_3 still asserted the ADR-017 CI assertion 'is unaffected... so the governance guarantee survives', the exact over-certain claim PM-CRITICAL-3 had just been corrected to retract. Disclosing a gap is not the same as the gap being empty. The manual-sweep alternative was rejected: a date-stamped sweep is itself a documented-only control, and this file already carries direct evidence it does not hold -- four recurrences while the author was actively concentrating on the class."
+    },
+    "scope_history_record": [
+      "iteration 2: three finding arrays. Narrative sections honestly disclosed as excluded.",
+      "iteration 3: extended to all 14 top-level sections, because the disclosed gap turned out to contain a live instance -- decision_2_3 still asserted a CI assertion exists. Disclosing a gap is not the same as the gap being empty."
+    ]
+  }
+}
