@@ -14,14 +14,29 @@ directly it undermines something else in the corpus.
 **Claim:** An AST-based CallGraph (578+ classes, 3,985+ methods, 4 languages) drives impact-analysis
 decisions at pre-analysis, implementation and review steps.
 
-**Reality:** `langgraph_engine/parsers/config.py:11` hard-codes `MAX_FILES = 300`. A real (not
+**Reality:** the builder hard-codes `MAX_FILES = 300`. A real (not
 simulated) invocation of `call_graph_builder.py` against this repo returned `files_analyzed: 300`
-against 411 actual `.py` files. Because the builder's file-discovery order is alphabetical-by-subpackage
+against 411 actual `.py` files.
+
+Because the builder's file-discovery order is alphabetical-by-subpackage
 within `langgraph_engine/`, its budget is exhausted before reaching `s*`-prefixed packages:
 **`langgraph_engine/sdlc_pipeline/` -- the entire Level-2 SDLC execution core, 45/45 files -- is 100%
 absent from its output**, along with 38/45 files across the three canonical hook packages
 (`pre_tool_enforcer/`, `post_tool_tracker/`, `stop_notifier/`). Meanwhile 75 of the 300-file budget
 (25%) is spent on `tests/`, which is not even in the policy's stated live scope.
+
+> **SITE CORRECTED 2026-08-01.** The "Reality" paragraph above originally named
+> `langgraph_engine/parsers/config.py:11` as the hard-coding site. **That constant is dead code,
+> read by nothing.** Its only importer, `parsers/__init__.py:22`, merely re-exports it. **The binding
+> cap is `parsers/call_graph_builder_legacy.py:64`**, bound as a default at `:76` and enforced at
+> `:107` and `:118`. A **second** binding cap, `parsers/graph_model.py:43` (`MAX_PATHS = 500`),
+> survives fixing the first and truncates path traversal regardless of file count. Of 17 truncation
+> sites, only these 2 bind.
+>
+> **This contradiction is unaffected and still holds** -- only the site attribution was wrong. It is
+> corrected here because this document is listed as must-read in `docs/REVIEW-INDEX.md`, and a reader
+> acting on the old attribution would change a dead constant, produce a diff resembling the fix, and
+> leave discovery capped at 300 files. See `docs/phase-5-uml/callgraph_coverage_probe.md`.
 
 **Why it's #1:** CLAUDE.md advertises this exact mechanism as "578 classes, 3,985 methods... heavily
 ALIVE" and cites it as informing decisions at Steps 0/4/5 (current numbering). Every impact analysis
