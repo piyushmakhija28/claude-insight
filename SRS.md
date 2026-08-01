@@ -140,7 +140,11 @@ create_flow_graph(hook_mode=False)  # full run (Steps 0-8)
 #### v2.0.0 Functional Requirements (APPENDED 2026-08-01, per rules/44 section 4.1)
 
 **Numbering.** FR-1 through FR-9 above are unchanged and unedited. The next available number in this
-file is FR-10, so this block runs FR-10 through FR-37 (28 entries).
+file is FR-10, so this block runs FR-10 through FR-38 (29 entries).
+
+> **Count corrected 2026-08-01.** This line read "FR-10 through FR-37 (28 entries)" -- written before
+> FR-38 was appended for the resolver defect, and not updated when it was. Verified by enumeration:
+> 29 entries, FR-10..FR-38 inclusive.
 
 **NAMING COLLISION WARNING -- read before citing any FR number from this block.** The source document
 `docs/phase-0-requirements/prd-v2.md` has its own independent FR-1..FR-24 series. SRS FR-10..FR-37
