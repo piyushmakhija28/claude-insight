@@ -764,6 +764,87 @@ none is currently met, with the single exception of FR-27.
 
 ---
 
+### Revised Acceptance Criterion for FR-21 (APPENDED 2026-08-01, per rules/44 section 4.2)
+
+The `| FR-21 |` row in the table above is retained verbatim and is NOT deleted or edited. It is
+superseded by the criterion below on an owner ruling dated 2026-08-01. It is retained because other
+artifacts still reference its wording and a reader needs the disposition, not an absence.
+
+**Why it was superseded, stated plainly.** The original criterion asserted on the end states of FOUR
+named constants. One of the four (`langgraph_engine/parsers/config.py:11`) is dead code read by
+nothing, and the criterion OMITTED `langgraph_engine/parsers/graph_model.py:43` entirely -- a cap
+that binds and that survives any fix to the file cap. An implementer working strictly to the original
+criterion would have fixed four sites, one of them dead, watched every assertion pass, and left a
+binding truncation in production. The original also asserted on *constants*, and constant-inspection
+is exactly the failure mode that produced this defect: reading `config.py:11` and concluding the cap
+had been found is what 19 files across every phase did.
+
+**AC-21 (Updated 2026-08-01):** Every assertion below is on the OUTPUT of an actual in-process build.
+No assertion may be satisfied by inspecting the value of a constant. A committed regression test
+SHALL construct the builder against the project root, run `.build()`, and assert:
+
+- **(A) Discovery is coverage-complete.** The set of files in the builder's analysed set EQUALS the
+  set of eligible source files independently enumerated by the test's own oracle -- set equality with
+  an empty symmetric difference, not a comparison against a hardcoded number.
+- **(B) The named canary is whole.** The symmetric difference between the enumerated
+  `langgraph_engine/sdlc_pipeline/` files and the analysed `langgraph_engine/sdlc_pipeline/` files is
+  empty. MEASURED baseline 2026-08-01: that tree holds 45 files and the shipping builder analyses
+  **0 of 45** -- the entire Level 2 SDLC Execution Core is invisible. The 300-file budget is
+  exhausted five files before the tree begins (first `sdlc_pipeline` file at discovery index 304).
+- **(C) No traversal truncation is emitted.** Log capture over the
+  `langgraph_engine.parsers.graph_model` logger during the build contains ZERO records matching
+  `hit max_paths=` and `limit; results truncated`. **This is the load-bearing assertion and the
+  reason this correction exists:** that warning fired on BOTH probe runs, including the run with the
+  file cap fully lifted. A fix satisfying (A), (B) and (D) but not (C) is precisely the half-fix this
+  correction was written to prevent, and must fail the gate.
+- **(D) Regression floor, grounded in MEASURED post-fix figures.** With the caps lifted the probe
+  measured `files_analyzed=411`, `total_classes=480`, `total_methods=3506` (also `functions=1340`,
+  `call_edges=26114`, `resolved_edges=7004`). The test asserts `>= 411`, `>= 480`, `>= 3506` -- a
+  floor rather than equality, so legitimately adding source files cannot fail the suite while any
+  regression toward the truncated shipping figures (300 files, 449 classes, 2,844 methods) does. The
+  exact 2026-08-01 values are recorded in the test as the documented baseline.
+- **(E) The silent-no-op trap is closed.** The test SHALL NOT establish the fix by rebinding the
+  module global `call_graph_builder_legacy.MAX_FILES`. The probe MEASURED that rebinding the module
+  attribute is a silent no-op -- still 300 files -- because `max_files=MAX_FILES` binds at def-time,
+  whereas the constructor kwarg and `__init__.__defaults__` patching both reach 411. A fix
+  implemented as a module-global edit, or a test that "proves" the fix that way, fails this criterion.
+- **(F)** "Fixed the one site Phase 0 named" remains NOT an acceptable end state -- carried forward
+  from the superseded criterion, which was correct on this point.
+
+**Assertion target, corrected.** The two sites that bind are
+`langgraph_engine/parsers/call_graph_builder_legacy.py:64` (`MAX_FILES = 300`, defaulted into
+`CallGraphBuilder.__init__` at `:76`, stored at `:79`, enforced at `:107` and `:118`) and
+`langgraph_engine/parsers/graph_model.py:43`
+(`DEFAULT_MAX_PATHS = _env_int("CLAUDE_CG_MAX_PATHS", 500)`, applied at `:320-321`, enforced at
+`:354`, `:357` and `:388`, warning emitted at `:390-392`). Both were re-verified on disk by this
+pass. `langgraph_engine/parsers/config.py:11` is DROPPED from the assertion set -- it may be deleted
+as dead-code cleanup, but deleting it asserts nothing and must not be counted as progress.
+
+**Site accounting, so the count matches its enumeration.** 17 distinct truncation sites exist; 2
+bind. The 15 that do not: 1 dead file-count cap (`parsers/config.py:11`); 1 dormant duplicate with no
+importers (`sdlc_pipeline/architecture/00-code-graph-analysis/code_graph_analyzer.py:73`); 1
+live-but-non-binding file-count cap above the corpus size and off the UML path
+(`scripts/architecture/03-execution-system/00-code-graph-analysis/code-graph-analyzer.py:68`, value
+500 against 411 files on disk); 4 file-size caps with MEASURED-ZERO impact, since no source file in
+the repo exceeds 100 KB; 1 non-binding traversal cap (`graph_model.py:42`, `DEFAULT_MAX_DEPTH = 30`,
+observed depths 11 and 7); 2 different-class truncators that do not participate in call-graph
+construction (`build_dependency_resolver/parsers.py:681-682`, `sdlc_pipeline/code_explorer.py:453`);
+and 5 downstream diagram truncators that sit after discovery. 1 + 1 + 1 + 4 + 1 + 2 + 5 = 15;
+15 + 2 = 17.
+
+**Sizing impact, FLAGGED and deliberately NOT applied here.** `docs/phase-6-sprint/github_issues.json`
+issue V2-009 carries size 5 (`size_provenance: SOURCED`, WSJF 4.60), estimated against a two-site
+constant-change assumption. Assertions (A), (B), (C) and (E) add a runtime probe harness, an
+independent enumeration oracle, log capture, and a negative test for the def-time binding trap. This
+pass judges that 5 no longer holds. It is not re-pointed here; re-sizing is product-manager-agent's
+call.
+
+**Interaction with FR-38.** FR-21 is discovery, FR-38 is resolution. Satisfying this criterion alone
+produces a LARGER graph that is still misleading, because the same ambiguous-name resolver runs over
+more files. Both must land.
+
+---
+
 ## 5. Out of Scope
 
 Explicitly excluded, to prevent scope creep:
@@ -809,6 +890,7 @@ oversight.
 | 2026-08-01 | 1.21.5 | Supersede SRS FR-9's four-hook-event acceptance criterion (Phase 5, `prd-v2.md` FR-22) | Appended a revised AC-9 per rules/44 section 4.2. The original FR-9 row in section 4 is retained verbatim and was NOT deleted. FR-13 deletes 2 of FR-9's 4 hook events outright, which falsifies the original criterion; FR-15 affects a third by taking it off the hot path, with its exact end state left open rather than guessed. The exit-code-2 blocking guarantee is replaced by three compensating controls, all recorded as DESIGNED, NOT BUILT. Also appended acceptance criteria for FR-10..FR-37 and NFR-7..NFR-12, and a v2.1 deferral list under section 5. | Done |
 | 2026-08-01 | 1.21.5 | Add FR-38 -- call-graph resolution correctness (Phase 5 follow-up, `prd-v2.md` FR-9b) | The project owner ruled a newly-found defect IN v2.0.0 scope. Appended SRS FR-38 and its acceptance criterion. Defect: `langgraph_engine/parsers/graph_model.py:265` binds an ambiguous bare method name to `candidates[0]`, so `list.append()` resolves to `JsonlAppender.append` (in-degree 1592), `str.format()` to `ErrorMessages.format` (in-degree 755-756), and `dict.get()`/`set()` to `_MemoryLayer`. 55.5 percent of cross-file resolved edges are collision artifacts. Because `call_graph_analyzer.py:56-67` classifies risk purely by caller count and feeds `danger_zones`/`hot_nodes` into the Step 1 planning template via `prompt_gen_expert_caller.py:204-207`, the planning prompt has been receiving noise as risk signal. Numbered FR-9b in the PRD, not FR-25 (already claimed in `advisory_items.json`). All source claims verified against the working tree by this pass; the runtime edge counts were measured by two other agents and are labelled as not re-derived. FR-21 alone is recorded as INSUFFICIENT. A `resolve_edges()`/`graph.edges` divergence is named as a consumer trap and marked as NOT affecting shipping code. | Done |
 | 2026-08-01 | 1.21.5 | Correct the FR-21 truncation-site citation (Phase 5 follow-up) | IN-PLACE CORRECTION, disclosed rather than silent, and confined strictly to content this same pass appended earlier today -- no content that predates 2026-08-01 was edited. FR-21's status line originally cited `langgraph_engine/parsers/config.py:11` as the binding truncation site, quoting `hld_v2.md` OAQ 4. VERIFIED wrong: that constant is dead code, re-exported by `parsers/__init__.py:22` and read by nothing. The binding cap is `parsers/call_graph_builder_legacy.py:64`, enforced at `:107` and `:118`. The same wrong citation appears in 19 files across every phase; only this document's own line was corrected, and the other 18 are reported as unowned in `docs/phase-5-srs/srs_update_report.md`. Also added to FR-21 a MEASURED scope note: 411 `.py` files and ZERO `.java`/`.ts`/`.tsx`/`.kt` files exist in this repo, so four-language coverage figures describe a capability, not a corpus. Pre-existing four-language claims elsewhere in this document were NOT edited, per rules/44. | Done |
+| 2026-08-01 | 1.21.5 | Supersede FR-21's acceptance criterion; require runtime proof (Phase 6 owner ruling) | Appended a revised AC-21 per rules/44 section 4.2. The original `| FR-21 |` row in the acceptance-criteria table is retained VERBATIM and was neither deleted nor edited. Reason for supersession: the original asserted on four constants, one of which (`parsers/config.py:11`) is dead code, and omitted `parsers/graph_model.py:43` (`DEFAULT_MAX_PATHS`, default 500) -- a cap that binds and survives fixing the file cap, so an implementer working to the original would have passed every assertion and shipped a binding truncation. The revised criterion asserts on the OUTPUT of an in-process build, never on a constant: set-equality discovery oracle, the `langgraph_engine/sdlc_pipeline` 45-file canary (0 of 45 today), a log-capture assertion that no `hit max_paths=... limit; results truncated` record is emitted (load-bearing -- it fired on BOTH probe runs even with the file cap lifted), a regression floor of 411 files / 480 classes / 3,506 methods, and a negative test closing the silent-no-op trap where rebinding the module global does nothing because defaults bind at def-time. 17 truncation sites total, 2 binding, 15 non-binding enumerated. Figures sourced from `docs/phase-5-uml/callgraph_coverage_probe.md` (MEASURED-RUNTIME); both binding sites re-verified on disk here. V2-009's 5-point size is flagged as no longer sufficient and deliberately not re-pointed. | Done |
 | PENDING -- date of the PR that deletes PreToolUse/PostToolUse | 2.0.0 | FR-34 completion row (NOT YET ADDED) | `prd-v2.md` FR-22's acceptance criterion requires a Change Log row dated to the PR that deletes `PreToolUse`/`PostToolUse`, referencing the superseding FR by number (SRS FR-34). That PR does not exist as of 2026-08-01, so this row cannot be dated and is recorded here as an explicit outstanding obligation rather than being back-dated or omitted. | OUTSTANDING |
 
 ---

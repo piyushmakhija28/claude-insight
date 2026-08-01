@@ -38,11 +38,20 @@
       "title": "PRD FR-6 / SRS FR-16: create docs/architecture/ADR-006-hook-free-execution.md",
       "batch": "A",
       "gate": "D2",
-      "implements": {"prd": "FR-6", "srs": "FR-16"},
+      "implements": {
+        "prd": "FR-6",
+        "srs": "FR-16"
+      },
       "size": 1,
       "size_provenance": "SOURCED",
       "wsjf_as_published": 12.0,
-      "labels": ["v2.0.0", "batch:A", "gate:D2", "type:docs", "size:1"],
+      "labels": [
+        "v2.0.0",
+        "batch:A",
+        "gate:D2",
+        "type:docs",
+        "size:1"
+      ],
       "blocked_by": [],
       "build_status": "DESIGNED, NOT BUILT. The ADR-006 text exists pre-committed in docs/orchestration_prompt.md section 5. The file at the required path does NOT exist on disk (verified absent 2026-08-01).",
       "body": "Create the ADR-006 hook-free-execution document at its required path from the text already pre-committed by the project owner in docs/orchestration_prompt.md section 5. Content exists; the file does not.\n\nThis is the sizing anchor for the whole plan: one file, one known path, text already written, one section to verify. Every other size in this plan is a multiple of this job.\n\nThe Consequence section states that enforcement becomes opt-in. That is an accepted risk recorded under ADR-006 in docs/REVIEW-INDEX.md section 3. Do not soften it.",
@@ -59,11 +68,21 @@
       "title": "PRD FR-9 / SRS FR-20: reconcile claude-global-library master graph count drift",
       "batch": "A",
       "gate": "D3",
-      "implements": {"prd": "FR-9 (library count drift)", "srs": "FR-20"},
+      "implements": {
+        "prd": "FR-9 (library count drift)",
+        "srs": "FR-20"
+      },
       "size": 2,
       "size_provenance": "SOURCED",
       "wsjf_as_published": 6.0,
-      "labels": ["v2.0.0", "batch:A", "gate:D3", "type:fix", "size:2", "external-repo"],
+      "labels": [
+        "v2.0.0",
+        "batch:A",
+        "gate:D3",
+        "type:fix",
+        "size:2",
+        "external-repo"
+      ],
       "blocked_by": [],
       "build_status": "Root-caused, fix not started.",
       "body": "The drift is NOT filesystem-versus-README as the original requirement doc assumed. knowledge-graph/_master/README.md (505/992) already matches the filesystem. The stale artifact is master_graph.md alone, from an earlier same-session build (21:33 versus 21:42 on 2026-07-31).\n\nThe fix is narrow: build_master.py --full regeneration, then validate.py, then test_invariant_checker.py. It is not a full graph rebuild.\n\nNOTE ON OWNERSHIP: the work executes inside claude-global-library, a separate repository. 'Out of repo scope' is correct for WHO does the work. 'Not assessed' is no longer correct -- it was assessed and scoped down. Do not carry forward the original doc's larger drift framing.\n\nNAMING COLLISION: this is PRD FR-9 (library count drift). It is unrelated to SRS.md's own pre-existing FR-9 (hook system), which PRD FR-22 / SRS FR-34 supersedes.",
@@ -80,13 +99,26 @@
       "title": "PRD NFR-1 / SRS NFR-7: build the per-component process-count measurement harness",
       "batch": "A",
       "gate": "D6",
-      "implements": {"prd": "NFR-1", "srs": "NFR-7"},
+      "implements": {
+        "prd": "NFR-1",
+        "srs": "NFR-7"
+      },
       "size": 2,
       "size_provenance": "SOURCED",
       "wsjf_as_published": 10.5,
-      "labels": ["v2.0.0", "batch:A", "gate:D6", "type:test", "size:2", "primary-success-metric"],
+      "labels": [
+        "v2.0.0",
+        "batch:A",
+        "gate:D6",
+        "type:test",
+        "size:2",
+        "primary-success-metric"
+      ],
       "blocked_by": [],
-      "closes_after": ["V2-015", "V2-027"],
+      "closes_after": [
+        "V2-015",
+        "V2-027"
+      ],
       "build_status": "Harness DESIGNED, NOT BUILT. The measurement protocol is fully specified; no harness code exists.",
       "body": "NFR-1 is this project's stated single primary success metric. Build the harness that measures it.\n\nThe harness build has no blocking dependency and can start immediately. The MEASUREMENT it performs cannot be executed until a plugin exists to install (V2-015) and the hooks are deleted (V2-027). This issue is therefore in batch A for the build and carries closes_after for the run. Do not close it on a harness that has never produced a pass.\n\nUnder ADR-019 the plugin bundles ZERO MCP servers, so NFR-1 is achievable by construction rather than by redefinition, and the metric stays falsifiable: any future component that spawns without invocation still fails this test.\n\nExactly ONE exclusion is permitted (HLD section 9): the retained user-level Stop and Notification hooks, which the plugin never owned. hooks/stop_notifier/ holds 17 spawn sites and fires every response turn.",
       "acceptance_criteria": [
@@ -104,10 +136,21 @@
       "title": "PRD FR-1 / SRS FR-10: produce docs/reports/policy-implementation-audit-v2.md",
       "batch": "A",
       "gate": "D1",
-      "implements": {"prd": "FR-1", "srs": "FR-10"},
+      "implements": {
+        "prd": "FR-1",
+        "srs": "FR-10"
+      },
       "size": 8,
       "size_provenance": "ASSUMED",
-      "labels": ["v2.0.0", "batch:A", "gate:D1", "type:docs", "size:8", "unsized-in-source", "needs-decision"],
+      "labels": [
+        "v2.0.0",
+        "batch:A",
+        "gate:D1",
+        "type:docs",
+        "size:8",
+        "unsized-in-source",
+        "needs-decision"
+      ],
       "blocked_by": [],
       "build_status": "DESIGNED, NOT BUILT. docs/reports/policy-implementation-audit-v2.md verified ABSENT on disk 2026-08-01 by this pass, and independently listed as absent at SRS.md:152-157.",
       "body": "SCOPE DISCREPANCY -- READ BEFORE STARTING. product-sequencing-v2.md section 1 records Deliverable 1 as 'DONE, approved 2026-08-01'. What was approved is the Deliverable-1 DECISION SET (three binding resolutions in orchestration_prompt.md section 3.3), not the Deliverable-1 ARTIFACT. The artifact does not exist. prd-v2.md still lists FR-1 as Partial and SRS.md:152-157 lists SRS FR-10 as DESIGNED, NOT BUILT.\n\nIf the project owner reads D1 as fully discharged, this issue and V2-005 through V2-008 drop from the plan and 18 ASSUMED points leave it. That is an owner decision. See sequencing_risks.md R-6.\n\nSIZE IS ASSUMED, NOT SOURCED. product-sequencing-v2.md carries no WSJF row for FR-1 because it treated D1 as spent. 8 points against the anchor: a line-by-line read of 46 policy documents dominates; the 46-row table is the smaller half.\n\npolicy_enforcement_raw.json already has 5 of the 7 required columns for all 46 policies. The read pass is the gap, not the tabulation.",
@@ -123,11 +166,23 @@
       "title": "PRD FR-2 / SRS FR-11: populate all 7 audit-matrix columns for all 46 policies",
       "batch": "A",
       "gate": "D1",
-      "implements": {"prd": "FR-2", "srs": "FR-11"},
+      "implements": {
+        "prd": "FR-2",
+        "srs": "FR-11"
+      },
       "size": 3,
       "size_provenance": "ASSUMED",
-      "labels": ["v2.0.0", "batch:A", "gate:D1", "type:docs", "size:3", "unsized-in-source"],
-      "blocked_by": ["V2-004"],
+      "labels": [
+        "v2.0.0",
+        "batch:A",
+        "gate:D1",
+        "type:docs",
+        "size:3",
+        "unsized-in-source"
+      ],
+      "blocked_by": [
+        "V2-004"
+      ],
       "build_status": "DESIGNED, NOT BUILT. The matrix file does not exist (see V2-004).",
       "body": "The missing column is 'Post-plugin plan'. policy_enforcement_raw.json already carries 5 of the 7 required columns for all 46 policies.\n\nThe Post-plugin plan vocabulary is FIXED and closed: keep-as-is, port-to-plugin, port-to-MCP, demote-to-advisory, delete. A value outside that set fails review.\n\nSize ASSUMED at 3. Mechanical once V2-004's read pass exists; the row set and the vocabulary are both known in advance.",
       "acceptance_criteria": [
@@ -142,11 +197,24 @@
       "title": "PRD FR-3 / SRS FR-12: record a disposition and rationale for each of the 15 hook-coupled policies",
       "batch": "A",
       "gate": "D1",
-      "implements": {"prd": "FR-3", "srs": "FR-12"},
+      "implements": {
+        "prd": "FR-3",
+        "srs": "FR-12"
+      },
       "size": 3,
       "size_provenance": "ASSUMED",
-      "labels": ["v2.0.0", "batch:A", "gate:D1", "type:docs", "size:3", "unsized-in-source", "risk:sequencing-critical"],
-      "blocked_by": ["V2-005"],
+      "labels": [
+        "v2.0.0",
+        "batch:A",
+        "gate:D1",
+        "type:docs",
+        "size:3",
+        "unsized-in-source",
+        "risk:sequencing-critical"
+      ],
+      "blocked_by": [
+        "V2-005"
+      ],
       "build_status": "DESIGNED, NOT BUILT.",
       "body": "15 policies whose sole enforcement mechanism is a PreToolUse block: the 4 that self-declare hook-coupling plus the 11 that do not (as-built-prd.md section 6.3).\n\nONE ROW IS PRE-DECIDED AND NOT OPEN TO GENERIC CLASSIFICATION: push_gate.py's row reads port-to-MCP, per PRD FR-23. No other value passes review. This is called out separately so it cannot be lost inside a 46-row table -- commit 1bb4303 was recent, deliberate governance work closing a version-push bypass, and letting FR-4's blanket deletion reopen it silently would undo that work without anyone deciding to.\n\nSEQUENCING: this ledger is a prerequisite for V2-034 (PRD FR-21). FR-21's retirement path requires the lost capability to appear with a disposition in the FR-12/NFR-10 ledger. Without this ledger, only the rebuild path remains, and rebuild is deferred to v2.1. See sequencing_risks.md R-11.\n\nPhase 1 already resolved the disposition split: 5 port-to-MCP, 5 demote-to-advisory, 5 delete, with push_gate fixed as mandatory port-to-MCP plus CI gate. Note that a wrong policy-disposition tally (4/6/5 versus 5/5/5, both summing to 15) is recorded as one of corrections #9-13 -- any total-check passes both, so check the enumeration, not the sum.",
       "acceptance_criteria": [
@@ -160,11 +228,23 @@
       "title": "PRD FR-20 / SRS FR-32: record a post-plugin disposition for all 14 genuine policy orphans",
       "batch": "A",
       "gate": "D1",
-      "implements": {"prd": "FR-20", "srs": "FR-32"},
+      "implements": {
+        "prd": "FR-20",
+        "srs": "FR-32"
+      },
       "size": 2,
       "size_provenance": "ASSUMED",
-      "labels": ["v2.0.0", "batch:A", "gate:D1", "type:docs", "size:2", "unsized-in-source"],
-      "blocked_by": ["V2-005"],
+      "labels": [
+        "v2.0.0",
+        "batch:A",
+        "gate:D1",
+        "type:docs",
+        "size:2",
+        "unsized-in-source"
+      ],
+      "blocked_by": [
+        "V2-005"
+      ],
       "build_status": "Gap named; not started.",
       "body": "32 of the 46 policies map cleanly to an SRS FR/NFR. The 14 that do not are the genuine orphans, enumerated in as-built-prd.md section 4.2: anti-hallucination-enforcement.md, architecture-script-mapping-policy.md, two point-in-time changelog files, cross-project-patterns-policy.md, file-management-policy.md, git-auto-commit-policy.md, intelligent-decision-engine-policy.md, parallel-execution-policy.md, proactive-consultation-policy.md, session-chaining-policy.md, session-pruning-policy.md, test-case-policy.md, user-preferences-policy.md.\n\nTHE POINT OF THIS FR: 'no SRS FR maps to it' is not a reason to skip a disposition. 6 of the 14 are independently CONTRADICTED or broken regardless of SRS coverage and need a decision on their own evidence. All 14 already have an evidenced status; none of the 14 yet has a decided post-plugin disposition. Those are different things and the AC requires the second.\n\nCOUNT NOTE: the enumeration above lists 13 named files plus 'two point-in-time changelog files' as a single entry, which resolves to 14 items. If your count comes out at 13 or 15, reconcile against as-built-prd.md section 4.2 before proceeding.",
       "acceptance_criteria": [
@@ -178,11 +258,24 @@
       "title": "PRD NFR-4 / SRS NFR-10: cross-check all 25 capability_loss.md names against the audit matrix",
       "batch": "A",
       "gate": "D1",
-      "implements": {"prd": "NFR-4", "srs": "NFR-10"},
+      "implements": {
+        "prd": "NFR-4",
+        "srs": "NFR-10"
+      },
       "size": 2,
       "size_provenance": "ASSUMED",
-      "labels": ["v2.0.0", "batch:A", "gate:D1", "type:test", "size:2", "unsized-in-source"],
-      "blocked_by": ["V2-006", "V2-007"],
+      "labels": [
+        "v2.0.0",
+        "batch:A",
+        "gate:D1",
+        "type:test",
+        "size:2",
+        "unsized-in-source"
+      ],
+      "blocked_by": [
+        "V2-006",
+        "V2-007"
+      ],
       "build_status": "Precondition satisfied, decision not made. capability_loss.md exists and names 25 capabilities; none yet carries a decided disposition.",
       "body": "capability_loss.md is exactly the required 'every capability gets a disposition' ledger. It names 25 capabilities: 14 PreToolUse gates, 9 PostToolUse capabilities, plus 2 others. This issue delivers the script that proves none of them silently disappeared.\n\nThe check must fail on an empty disposition AND on the literal value 'disappeared'. A capability recorded as 'disappeared' is not a disposition; it is the absence of one.\n\nSize ASSUMED at 2: one script over two existing lists.",
       "acceptance_criteria": [
@@ -196,32 +289,68 @@
       "title": "PRD FR-9a / SRS FR-21: fix call-graph DISCOVERY truncation",
       "batch": "B",
       "gate": "D4",
-      "implements": {"prd": "FR-9a", "srs": "FR-21"},
+      "implements": {
+        "prd": "FR-9a",
+        "srs": "FR-21"
+      },
       "size": 5,
       "size_provenance": "SOURCED",
       "wsjf_as_published": 4.6,
-      "labels": ["v2.0.0", "batch:B", "gate:D4", "type:fix", "size:5", "risk:sequencing-critical", "needs-decision", "critical-path"],
+      "labels": [
+        "v2.0.0",
+        "batch:B",
+        "gate:D4",
+        "type:fix",
+        "size:5",
+        "risk:sequencing-critical",
+        "needs-decision",
+        "critical-path"
+      ],
       "blocked_by": [],
       "build_status": "Root-caused, fix NOT started. The ADR-013 design is RESOLVED in design; no code implements it.",
-      "body": "PAIRED DELIVERABLE. This ships WITH V2-010 (PRD FR-9b, resolution) or not at all. See sequencing_risks.md R-3.\n\nTHE WRITTEN ACCEPTANCE CRITERION IS BOTH PADDED AND INCOMPLETE. This issue is labelled needs-decision for that reason. Read sequencing_risks.md R-4 before starting.\n\nWhat the AC names: FOUR sites, of which one (langgraph_engine/parsers/config.py:11) is DEAD CODE read by nothing -- recorded as correction #22 in docs/REVIEW-INDEX.md, and cited in 19 files across every phase including SRS.md. Two more are dormant near-duplicates.\n\nWhat actually binds, MEASURED at runtime by the Phase 5 probe and verified on disk by this planning pass on 2026-08-01:\n  1. langgraph_engine/parsers/call_graph_builder_legacy.py:64 -- line 64 reads MAX_FILES = 300. Enforced at :107 and :118. BINDING.\n  2. langgraph_engine/parsers/graph_model.py:43 -- line 43 reads DEFAULT_MAX_PATHS = _env_int(\"CLAUDE_CG_MAX_PATHS\", 500). BINDING.\n\nSITE 2 APPEARS IN NEITHER THE PRD AC NOR THE SRS AC. It survives fixing the file cap. Both probe runs emitted 'hit max_paths=500 limit; results truncated'. Every sequence and interaction diagram is capped at 500 paths regardless of how many files are ingested. An implementer working strictly to the written AC would fix four sites, one of which is dead, watch every assertion pass, and leave a binding truncation in production.\n\nMEASURED impact of site 1: 300 of 411 Python files ingested at the shipping default. 111 files, 27 percent of the codebase, invisible.\n\nA read-only override EXISTS and is demonstrated: CallGraphBuilder.__init__.__defaults__ = (N,) propagates through build_call_graph(). Rebinding the module-level MAX_FILES is a SILENT NO-OP -- defaults bind at def-time. That is the trap. No env var exists for the file cap. CLAUDE_CG_MAX_PATHS=500 truncates traversal independently.\n\nPROPAGATION HAZARD: the supersession is recorded in hld_v2.md section 12 OAQ 4, but ADR-013's own body (hld_v2.md:406 and :436-443) and the binding clause at hld_v2.md:1696-1700 still carry the superseded four-site framing with no pointer to the correction.\n\nOWNER DECISION REQUIRED BEFORE THIS CAN CLOSE CORRECTLY: whether the AC is amended to the two binding sites plus graph_model.py:43. This plan does not rewrite a gate-passed acceptance criterion.",
+      "body": "PAIRED DELIVERABLE. This ships WITH V2-010 (PRD FR-9b, resolution) or not at all. See sequencing_risks.md R-3.\n\nTHE WRITTEN ACCEPTANCE CRITERION IS BOTH PADDED AND INCOMPLETE. This issue is labelled needs-decision for that reason. Read sequencing_risks.md R-4 before starting.\n\nWhat the AC names: FOUR sites, of which one (langgraph_engine/parsers/config.py:11) is DEAD CODE read by nothing -- recorded as correction #22 in docs/REVIEW-INDEX.md, and cited in 19 files across every phase including SRS.md. Two more are dormant near-duplicates.\n\nWhat actually binds, MEASURED at runtime by the Phase 5 probe and verified on disk by this planning pass on 2026-08-01:\n  1. langgraph_engine/parsers/call_graph_builder_legacy.py:64 -- line 64 reads MAX_FILES = 300. Enforced at :107 and :118. BINDING.\n  2. langgraph_engine/parsers/graph_model.py:43 -- line 43 reads DEFAULT_MAX_PATHS = _env_int(\"CLAUDE_CG_MAX_PATHS\", 500). BINDING.\n\nSITE 2 APPEARS IN NEITHER THE PRD AC NOR THE SRS AC. It survives fixing the file cap. Both probe runs emitted 'hit max_paths=500 limit; results truncated'. Every sequence and interaction diagram is capped at 500 paths regardless of how many files are ingested. An implementer working strictly to the written AC would fix four sites, one of which is dead, watch every assertion pass, and leave a binding truncation in production.\n\nMEASURED impact of site 1: 300 of 411 Python files ingested at the shipping default. 111 files, 27 percent of the codebase, invisible.\n\nA read-only override EXISTS and is demonstrated: CallGraphBuilder.__init__.__defaults__ = (N,) propagates through build_call_graph(). Rebinding the module-level MAX_FILES is a SILENT NO-OP -- defaults bind at def-time. That is the trap. No env var exists for the file cap. CLAUDE_CG_MAX_PATHS=500 truncates traversal independently.\n\nPROPAGATION HAZARD: the supersession is recorded in hld_v2.md section 12 OAQ 4, but ADR-013's own body (hld_v2.md:406 and :436-443) and the binding clause at hld_v2.md:1696-1700 still carry the superseded four-site framing with no pointer to the correction.\n\nOWNER DECISION TAKEN 2026-08-01 -- the AC IS AMENDED, and to the stronger of the two options offered. The acceptance criteria on this issue have been replaced: they now assert on the TWO binding sites, DROP the dead config.py:11 site, and require RUNTIME PROOF (an in-process build with a set-equality discovery oracle, the sdlc_pipeline 45-file canary, a log-capture assertion that no max_paths truncation record is emitted, a 411/480/3506 regression floor, and a negative test for the def-time binding trap) rather than asserting that constants changed. The superseded AC is retained verbatim at the end of the acceptance_criteria array. Amendment owned by business-analyst-agent; edits confined to this issue's acceptance-criteria content only -- key, title, batch, gate, implements, size, labels and blocked_by are untouched, so the file's dependency closure and acyclicity are undisturbed. SIZE FLAG: 5 points was estimated on a two-site constant-change assumption and is judged no longer sufficient; deliberately NOT re-pointed here -- that is product-manager-agent's call.",
       "acceptance_criteria": [
-        "AS WRITTEN (carried verbatim, flagged superseded): each of the four named sites reaches exactly one of two recorded end states -- migrated to the ADR-013 coverage-complete contract (ENUMERATE, ALLOCATE, RECONCILE, PROPAGATE; non-optional DiscoveryManifest constructor argument; default budget unbounded) or formally retired with the removal recorded (valid for sites 2 and 4 if no live caller remains).",
-        "AS WRITTEN: 'fixed the one Phase 0 named' is explicitly NOT an acceptable end state.",
-        "AS WRITTEN: the ADR-013 regression test test_discovery_covers_every_package passes, and its assertion 5 (the named canary) confirms manifest.packages['langgraph_engine/sdlc_pipeline'].analysed_n == 45.",
-        "FLAGGED GAP, NOT AN INVENTED AC: the four-site list does not include langgraph_engine/parsers/graph_model.py:43, which the Phase 5 probe measured as binding. Closing this issue against the AC as written would leave that truncation in place. An AC amendment is required and is an owner decision."
+        "CORRECTED AND STRENGTHENED 2026-08-01 (owner ruling). This AC replaces the four-site constant-inspection AC, which is retained verbatim at the end of this list. Every assertion below is on the OUTPUT of an actual in-process build. No assertion may be satisfied by inspecting the value of a constant -- constant-inspection is the failure mode that produced this defect.",
+        "(A) DISCOVERY IS COVERAGE-COMPLETE. A committed regression test constructs CallGraphBuilder against the project root, runs .build(), and asserts the set of files in the analysed set EQUALS the set of eligible source files independently enumerated by the test's own oracle. Set equality, empty symmetric difference -- not a comparison against a hardcoded number.",
+        "(B) THE NAMED CANARY IS WHOLE. The symmetric difference between the enumerated langgraph_engine/sdlc_pipeline/ files and the analysed langgraph_engine/sdlc_pipeline/ files is empty. MEASURED baseline 2026-08-01: 45 files in that tree, 0 of 45 analysed by the shipping builder. The 300-file budget is exhausted five files before the tree begins (first sdlc_pipeline file at discovery index 304).",
+        "(C) NO TRAVERSAL TRUNCATION IS EMITTED. Log capture over the langgraph_engine.parsers.graph_model logger during the build contains ZERO records matching 'hit max_paths=' and 'limit; results truncated'. THIS IS THE LOAD-BEARING ASSERTION AND THE REASON THIS CORRECTION EXISTS: that warning fired on BOTH probe runs, including the run with the file cap fully lifted. A fix satisfying (A), (B) and (D) but not (C) is the half-fix this correction was written to prevent and must fail the gate.",
+        "(D) REGRESSION FLOOR, grounded in the MEASURED post-fix figures from docs/phase-5-uml/callgraph_coverage_probe.md: files_analyzed=411, total_classes=480, total_methods=3506 (also functions=1340, call_edges=26114, resolved_edges=7004). The test asserts >= 411, >= 480, >= 3506 -- a floor, not equality, so legitimately adding source files cannot fail the suite while any regression toward the truncated shipping figures (300 files, 449 classes, 2844 methods) does. The exact 2026-08-01 values are recorded in the test as the documented baseline.",
+        "(E) THE SILENT-NO-OP TRAP IS CLOSED. The test SHALL NOT establish the fix by rebinding the module global call_graph_builder_legacy.MAX_FILES. The probe MEASURED that rebinding the module attribute is a silent no-op (still 300 files) because max_files=MAX_FILES binds at def-time, whereas the constructor kwarg and __init__.__defaults__ patching both reach 411. A fix implemented as a module-global edit, or a test that proves the fix that way, fails this AC.",
+        "(F) 'Fixed the one Phase 0 named' is still NOT an acceptable end state -- carried forward from the superseded AC, which was correct on this point.",
+        "ASSERTION TARGET, CORRECTED: the TWO sites that bind are (1) langgraph_engine/parsers/call_graph_builder_legacy.py:64 -- MAX_FILES = 300, defaulted into CallGraphBuilder.__init__ at :76, stored at :79, enforced at :107 and :118; and (2) langgraph_engine/parsers/graph_model.py:43 -- DEFAULT_MAX_PATHS = _env_int('CLAUDE_CG_MAX_PATHS', 500), applied at :320-321, enforced at :354, :357 and :388, warning emitted at :390-392. langgraph_engine/parsers/config.py:11 is DROPPED from the assertion set: it may be deleted as dead-code cleanup, but deleting it asserts nothing and must not be counted as progress.",
+        "SITE ACCOUNTING (count matches its enumeration): 17 distinct truncation sites exist, 2 bind. The 15 that do not: 1 dead file-count cap (parsers/config.py:11); 1 dormant duplicate with no importers (sdlc_pipeline/architecture/00-code-graph-analysis/code_graph_analyzer.py:73); 1 live-but-non-binding file-count cap above the corpus size and off the UML path (scripts/architecture/03-execution-system/00-code-graph-analysis/code-graph-analyzer.py:68, value 500 vs 411 files on disk); 4 file-size caps with MEASURED-ZERO impact (no source file exceeds 100 KB); 1 non-binding traversal cap (graph_model.py:42, DEFAULT_MAX_DEPTH = 30, observed depths 11 and 7); 2 different-class truncators outside call-graph construction (build_dependency_resolver/parsers.py:681-682, sdlc_pipeline/code_explorer.py:453); 5 downstream diagram truncators after discovery. 1+1+1+4+1+2+5 = 15; 15+2 = 17.",
+        "SIZING FLAGGED, NOT APPLIED: this issue's size 5 was estimated against a two-site constant-change assumption. Assertions (A), (B), (C) and (E) add a runtime probe harness, an independent enumeration oracle, log capture, and a negative test for the def-time binding trap. business-analyst-agent judges that 5 no longer holds. The size field is deliberately UNCHANGED here -- re-sizing is product-manager-agent's call.",
+        "SUPERSEDED AC, RETAINED VERBATIM (do not delete -- other artifacts reference this wording and a reader needs the disposition, not an absence): 'each of the four named sites reaches exactly one of two recorded end states -- migrated to the ADR-013 coverage-complete contract (ENUMERATE, ALLOCATE, RECONCILE, PROPAGATE; non-optional DiscoveryManifest constructor argument; default budget unbounded) or formally retired with the removal recorded (valid for sites 2 and 4 if no live caller remains).'",
+        "SUPERSEDED AC, RETAINED VERBATIM: 'fixed the one Phase 0 named is explicitly NOT an acceptable end state.'",
+        "SUPERSEDED AC, RETAINED VERBATIM: 'the ADR-013 regression test test_discovery_covers_every_package passes, and its assertion 5 (the named canary) confirms manifest.packages[langgraph_engine/sdlc_pipeline].analysed_n == 45.' NOTE: this assertion survives in spirit as (B) above, restated as a set-difference check so that growth in the sdlc_pipeline tree cannot silently invalidate a hardcoded 45.",
+        "SUPERSEDED FLAG, NOW RESOLVED: the prior list carried an open flag that the four-site list omitted langgraph_engine/parsers/graph_model.py:43 and that an AC amendment was an owner decision. That decision was taken on 2026-08-01 and is applied above."
       ],
-      "acceptance_criteria_source": "prd-v2.md section 5, FR-9a row (verbatim); SRS.md:736 (FR-21). The flagged gap is sourced from docs/REVIEW-INDEX.md section 4b and hld_v2.md:1617-1636, and is NOT an acceptance criterion this document wrote."
+      "acceptance_criteria_source": "prd-v2.md section 5, FR-9a SUPERSEDING row (Phase 6, 2026-08-01 owner ruling) -- verbatim; SRS.md appended 'Revised Acceptance Criterion for FR-21' block (rules/44 section 4.2). MEASURED-RUNTIME figures from docs/phase-5-uml/callgraph_coverage_probe.md sections 1.3 and 2. Both binding sites re-verified on disk 2026-08-01. The superseded AC is retained verbatim in the acceptance_criteria array rather than deleted."
     },
     {
       "key": "V2-010",
       "title": "PRD FR-9b / SRS FR-38: fix the call-graph RESOLVER ambiguous bare-name bind",
       "batch": "B",
       "gate": "D4",
-      "implements": {"prd": "FR-9b", "srs": "FR-38"},
+      "implements": {
+        "prd": "FR-9b",
+        "srs": "FR-38"
+      },
       "size": 5,
       "size_provenance": "ASSUMED",
-      "labels": ["v2.0.0", "batch:B", "gate:D4", "type:fix", "size:5", "unsized-in-source", "risk:sequencing-critical", "critical-path"],
-      "blocked_by": ["V2-009"],
+      "labels": [
+        "v2.0.0",
+        "batch:B",
+        "gate:D4",
+        "type:fix",
+        "size:5",
+        "unsized-in-source",
+        "risk:sequencing-critical",
+        "critical-path"
+      ],
+      "blocked_by": [
+        "V2-009"
+      ],
       "build_status": "Root-caused and source-verified. Fix NOT started.",
       "body": "PAIRED DELIVERABLE with V2-009. Shipping V2-009 alone yields a LARGER graph feeding the same broken resolver -- more files, the same wrong hot_nodes and danger_zones, and a HIGHER collided in-degree on the same wrong nodes. prd-v2.md states verbatim: 'FR-9a alone is INSUFFICIENT'. SRS.md:296-297 states the same. FR-9b does not supersede FR-9a and FR-9a does not subsume FR-9b.\n\nTHE DEFECT, verified on disk by this planning pass 2026-08-01: langgraph_engine/parsers/graph_model.py:265 reads 'return candidates[0]' -- the third of three returns inside _resolve_target(), reached when a bare simple method name matches multiple known method FQNs and none is in the caller's file. An arbitrary first-match bind with no disambiguation and no confidence marker. Lines 253-254 and 263-264 (the len(candidates) == 1 cases) are legitimate. The dotted path at 243-255 correctly returns unresolved when ambiguous, so the defect is specific to bare names.\n\nMEASURED consequences (by two independent agents; cited, not re-derived by this planning pass):\n  list.append()  binds to JsonlAppender.append  (src/mcp/base/persistence.py:222)  in-degree 1592\n  str.format()   binds to ErrorMessages.format  (langgraph_engine/error_messages.py:568)  in-degree 755-756 (two agents measured 755 and 756; reported as a range, not adjudicated)\n  dict.get()/set() bind to _MemoryLayer.get/set (langgraph_engine/cache_system.py:101 and :113)\n\n55.5 percent of cross-file 'resolved' edges are collision artifacts. Of 26,114 total: 18,608 unresolved + 2,853 builtin-collision + 433 cross-file ambiguity = 21,894, leaving 4,220 high-confidence. Arithmetic checked and exact.\n\nWHY IT IS NOT COSMETIC: sdlc_pipeline/call_graph_analyzer.py builds danger_zones (:303) and hot_nodes (:1197) on an n >= 5 caller-count gate, and _classify_risk (:56-67) labels per-method risk on an 8+ gate. Both are caller-count-only. JsonlAppender.append currently ranks as the codebase's top danger zone on the strength of every list.append() in the repo, and that ranking is injected into the Step 0 planning prompt via prompt_gen_expert_caller.py:179-182 and :204-207.\n\nPRECONDITION VERIFIED, NOT ASSUMED: resolve_edges() IS invoked at call_graph_builder_legacy.py:96 on every build. Had it not been, get_edges() would return raw edges and this requirement would be unwarranted.\n\nEXPLICITLY NOT PART OF THIS DEFECT: resolve_edges() writes to _resolved_edges, not graph.edges, so reading graph.edges gives 656 instead of 7,004. NO SHIPPING CODE DOES THIS -- all four consumers use get_edges() (:155, :455, :600, :1209). It caught an agent, not the pipeline. Do not conflate the two.\n\nSIZE IS ASSUMED (5). The one-line source fix is trivial; the cost is the two-field confidence reporting at 6 named consumption points, the committed collision check, and the unit test.\n\nNUMBERING: this is FR-9b, not FR-25. FR-25 is already claimed by a proposed CI check in advisory_items.json and reusing it would create an ID collision.",
       "acceptance_criteria": [
@@ -237,14 +366,32 @@
       "title": "PRD FR-10 / SRS FR-22: KG-driven agent and skill selection, zero hardcoded lists",
       "batch": "C",
       "gate": "D4",
-      "implements": {"prd": "FR-10", "srs": "FR-22"},
+      "implements": {
+        "prd": "FR-10",
+        "srs": "FR-22"
+      },
       "size": 8,
       "size_provenance": "SOURCED_SET_SPLIT",
       "set_size": 13,
-      "set_members": ["V2-011", "V2-012", "V2-013", "V2-014"],
+      "set_members": [
+        "V2-011",
+        "V2-012",
+        "V2-013",
+        "V2-014"
+      ],
       "wsjf_as_published": 1.69,
-      "labels": ["v2.0.0", "batch:C", "gate:D4", "type:feat", "size:8", "critical-path"],
-      "blocked_by": ["V2-009", "V2-010"],
+      "labels": [
+        "v2.0.0",
+        "batch:C",
+        "gate:D4",
+        "type:feat",
+        "size:8",
+        "critical-path"
+      ],
+      "blocked_by": [
+        "V2-009",
+        "V2-010"
+      ],
       "build_status": "Contradicted in the as-built. No graph-query-based selection exists anywhere in live scope. Build from scratch.",
       "body": "The flagship v2.0.0 deliverable. It carries the LOWEST published WSJF (1.69) because its size is large (13 for the set), not because its value is low -- Reinertsen's formula rewards small high-stakes jobs. WSJF sequences work inside a gate; it does not demote FR-10 out of v2.0.0.\n\nHARD PREREQUISITE: both V2-009 and V2-010 must have landed. The AC's own wording enforces the first half of this -- edge paths must be verified against a rebuilt (FR-9a-fixed) call graph, 'never the current truncated builder'. That clause is review-enforced, not automated.\n\nCurrent state: user-preferences-policy.md selection is ad hoc. There is no selector to extend.\n\nSize 8 is an ASSUMED split of the SOURCED 13-point set total across V2-011 through V2-014. The set total is sourced; the split is this document's.",
       "acceptance_criteria": [
@@ -259,13 +406,29 @@
       "title": "PRD FR-11 / SRS FR-23: emit selection explainability, five fields per selected agent",
       "batch": "C",
       "gate": "D4",
-      "implements": {"prd": "FR-11", "srs": "FR-23"},
+      "implements": {
+        "prd": "FR-11",
+        "srs": "FR-23"
+      },
       "size": 2,
       "size_provenance": "SOURCED_SET_SPLIT",
       "set_size": 13,
-      "set_members": ["V2-011", "V2-012", "V2-013", "V2-014"],
-      "labels": ["v2.0.0", "batch:C", "gate:D4", "type:feat", "size:2"],
-      "blocked_by": ["V2-011"],
+      "set_members": [
+        "V2-011",
+        "V2-012",
+        "V2-013",
+        "V2-014"
+      ],
+      "labels": [
+        "v2.0.0",
+        "batch:C",
+        "gate:D4",
+        "type:feat",
+        "size:2"
+      ],
+      "blocked_by": [
+        "V2-011"
+      ],
       "build_status": "Not assessed in code -- no selection-explainability mechanism exists to assess. Build from scratch, not a partial.",
       "body": "For every agent the selector picks, emit the agent name, source domain, and the remaining named fields, so a selection can be audited after the fact rather than trusted.\n\nSRS FR-23 states the check as all five fields present for EVERY agent selected during a full pipeline run: a run with any field missing or empty fails. Confirm the exact five field names against SRS.md FR-23 (SRS.md:307-310) before implementing -- this issue does not restate them from memory.",
       "acceptance_criteria": [
@@ -279,13 +442,29 @@
       "title": "PRD FR-12 / SRS FR-24: explicit no-match and low-confidence fallback path",
       "batch": "C",
       "gate": "D4",
-      "implements": {"prd": "FR-12", "srs": "FR-24"},
+      "implements": {
+        "prd": "FR-12",
+        "srs": "FR-24"
+      },
       "size": 2,
       "size_provenance": "SOURCED_SET_SPLIT",
       "set_size": 13,
-      "set_members": ["V2-011", "V2-012", "V2-013", "V2-014"],
-      "labels": ["v2.0.0", "batch:C", "gate:D4", "type:feat", "size:2"],
-      "blocked_by": ["V2-011"],
+      "set_members": [
+        "V2-011",
+        "V2-012",
+        "V2-013",
+        "V2-014"
+      ],
+      "labels": [
+        "v2.0.0",
+        "batch:C",
+        "gate:D4",
+        "type:feat",
+        "size:2"
+      ],
+      "blocked_by": [
+        "V2-011"
+      ],
       "build_status": "Not assessed in code -- no code exists. Build from scratch.",
       "body": "Define what the selector does when nothing matches or confidence is below threshold. The failure mode this exists to prevent is a silent default pick, which is indistinguishable from a confident correct pick at the call site.",
       "acceptance_criteria": [
@@ -299,13 +478,29 @@
       "title": "PRD FR-13 / SRS FR-25: conform to the model fallback protocol",
       "batch": "C",
       "gate": "D4",
-      "implements": {"prd": "FR-13", "srs": "FR-25"},
+      "implements": {
+        "prd": "FR-13",
+        "srs": "FR-25"
+      },
       "size": 1,
       "size_provenance": "SOURCED_SET_SPLIT",
       "set_size": 13,
-      "set_members": ["V2-011", "V2-012", "V2-013", "V2-014"],
-      "labels": ["v2.0.0", "batch:C", "gate:D4", "type:feat", "size:1"],
-      "blocked_by": ["V2-011"],
+      "set_members": [
+        "V2-011",
+        "V2-012",
+        "V2-013",
+        "V2-014"
+      ],
+      "labels": [
+        "v2.0.0",
+        "batch:C",
+        "gate:D4",
+        "type:feat",
+        "size:1"
+      ],
+      "blocked_by": [
+        "V2-011"
+      ],
       "build_status": "The RULE exists and is live (~/.claude/rules/model-fallback.md, global-only, no repo-relative copy). Code conformance is not assessed. 'Not assessed in code' is accurate; it should NOT be read as 'does not exist'.",
       "body": "The documented chain is haiku -> sonnet -> opus -> escalate to user. The rule is a behavioural contract on the calling agent, not code in this repo. This issue makes the selector's invocation path conform to it.\n\nCOLLISION WARNING: SRS FR-25 is this requirement. FR-25 (proposed) in advisory_items.json is a completely different thing -- a proposed CI arithmetic-recomputation check that has NOT been accepted into the PRD. Do not conflate them.",
       "acceptance_criteria": [
@@ -319,11 +514,21 @@
       "title": "PRD FR-14 / SRS FR-26: build the installable plugin manifest, zero hooks, zero .mcp.json",
       "batch": "D",
       "gate": "D5",
-      "implements": {"prd": "FR-14", "srs": "FR-26"},
+      "implements": {
+        "prd": "FR-14",
+        "srs": "FR-26"
+      },
       "size": 8,
       "size_provenance": "SOURCED",
       "wsjf_as_published": 2.38,
-      "labels": ["v2.0.0", "batch:D", "gate:D5", "type:feat", "size:8", "critical-path"],
+      "labels": [
+        "v2.0.0",
+        "batch:D",
+        "gate:D5",
+        "type:feat",
+        "size:8",
+        "critical-path"
+      ],
       "blocked_by": [],
       "build_status": "Research COMPLETE, spike COMPLETE (all 5 FR-14a items MEASURED), build NOT STARTED. .claude-plugin/plugin.json verified ABSENT on disk 2026-08-01.",
       "body": "PRD FR-14a (SRS FR-27) is DONE -- all 5 spike items are MEASURED, none provisional. This issue is the build that the spike unblocked. No FR-14a issue is drafted because the requirement is satisfied (docs/phase-1-architecture/plugin_schema_spike.md exists, verified 2026-08-01).\n\nTWO ADR-010 / ADR-019 CONSTRAINTS ARE ABSOLUTE:\n  - The plugin ships ZERO hooks. Plugin hooks merge silently and cannot be individually disabled, so bundling any would defeat the project at install time. This is evidence-forced, not a preference.\n  - The plugin ships ZERO MCP servers -- no .mcp.json at all. Any bundled server, however minimal, spawns eagerly on plugin enable with zero tool calls (MEASURED: 2 confirmed spawns in a session whose prompt explicitly forbade tool use), which fails NFR-1 through the exact mechanism chosen to replace hooks.\n\nTHE ONE-STEP-INSTALL TRADE-OFF IS EXPLICIT, NOT SILENT. /plugin install alone delivers commands, agents and skills -- a complete functional surface with no hand-edited settings.json, so 'no manual surgery' holds in full. MCP-backed capabilities (the FR-23 push gate, the progress writer) are NOT available after that one step and require the separate register-mcp command (V2-016). prd-v2.md's FR-14 wording was amended to say so (ba_review.json FIND-09, APPLIED). This is a recorded, deliberate trade-off.",
@@ -340,12 +545,25 @@
       "title": "SRS FR-37 / ADR-019: build register-mcp and unregister-mcp",
       "batch": "D",
       "gate": "D5",
-      "implements": {"prd": "no PRD FR -- ADR-019 scope, sized as mandatory v2.0.0 work in product-sequencing-v2.md section 2c", "srs": "FR-37"},
+      "implements": {
+        "prd": "no PRD FR -- ADR-019 scope, sized as mandatory v2.0.0 work in product-sequencing-v2.md section 2c",
+        "srs": "FR-37"
+      },
       "size": 5,
       "size_provenance": "SOURCED",
       "wsjf_as_published": 3.8,
-      "labels": ["v2.0.0", "batch:D", "gate:D5", "type:feat", "size:5", "risk:sequencing-critical", "critical-path"],
-      "blocked_by": ["V2-015"],
+      "labels": [
+        "v2.0.0",
+        "batch:D",
+        "gate:D5",
+        "type:feat",
+        "size:5",
+        "risk:sequencing-critical",
+        "critical-path"
+      ],
+      "blocked_by": [
+        "V2-015"
+      ],
       "build_status": "DESIGNED, NOT BUILT. hld_v2.md:759 states verbatim that register-mcp 'does not exist yet'. hld_v2.md:738 describes unregister-mcp as 'is designed to read and write' settings.json -- a wording downgrade recorded in that file's own change log at line 1934. ZERO lines of code exist for either.",
       "body": "Under ADR-019 this command pair is the ONLY path to any MCP-backed capability at all. There is no 'ship it bundled instead' fallback. It is mandatory v2.0.0 scope, not optional.\n\nBLOCKS V2-024 AND THEREFORE V2-027. See sequencing_risks.md R-1: PRD FR-4 (hook deletion) must not land before BOTH this command pair AND the ADR-017 CI assertion exist.\n\nsettings.json WRITE SAFETY: the write must be a merge-against-fresh-read (HLD section 8.4), not a full-file read-modify-write. ADV-008 records that setup_wizard.py's full-file read-modify-write can clobber settings.json, and 17 pre-existing settings.json writers are known. A shared write-safety helper that both writers use consistently is flagged in advisory_items.json as an ESCALATION CANDIDATE, not merely advisory.\n\nIN SCOPE FOR THIS ISSUE -- THE ADR-020 PATH C VERIFICATION TASK (hld_v2.md:773, 'owner: whoever implements register-mcp; ~10 minutes, at the only moment it can be performed'). Path C is a user running /plugin uninstall after removing PreToolUse. It is INFERRED safe, NOT MEASURED safe (hld_v2.md:741-742). It could not be measured before now because, per hld_v2.md:758-760, 'no entry written by register-mcp was present during the measured uninstall, because register-mcp does not exist yet.' If the inference is wrong, Path C is the one path with NO available control -- prevention and detection are both impossible once the plugin is gone. Fallback if it fails: ADV-012's git pre-push hook would move from proposed to required. See sequencing_risks.md R-10.\n\nDISCOVERABILITY (ADR-019 'what is lost', item 3): plugin commands must detect an unregistered server and emit ONE actionable line naming register-mcp, so a missing capability never presents as a working one.",
       "acceptance_criteria": [
@@ -361,11 +579,24 @@
       "title": "SRS NFR-12 / ADR-020: PREVENT and DETECT layers on the push gate",
       "batch": "D",
       "gate": "D5",
-      "implements": {"prd": "no PRD NFR -- ADR-020 scope", "srs": "NFR-12"},
+      "implements": {
+        "prd": "no PRD NFR -- ADR-020 scope",
+        "srs": "NFR-12"
+      },
       "size": 3,
       "size_provenance": "ASSUMED",
-      "labels": ["v2.0.0", "batch:D", "gate:D5", "type:feat", "size:3", "unsized-in-source", "risk:sequencing-critical"],
-      "blocked_by": ["V2-016"],
+      "labels": [
+        "v2.0.0",
+        "batch:D",
+        "gate:D5",
+        "type:feat",
+        "size:3",
+        "unsized-in-source",
+        "risk:sequencing-critical"
+      ],
+      "blocked_by": [
+        "V2-016"
+      ],
       "build_status": "DESIGNED, NOT BUILT. ADR-020's layers are written in prescriptive voice throughout; the HLD states no build status for any of them. No doctor command and no commands/ directory exist on disk (verified absent 2026-08-01).",
       "body": "ADR-020 specifies THREE layers, each matched to what its path actually permits. No single layer is trusted alone. This issue delivers the first two.\n\n  Layer 1, PREVENT where the plugin owns the action: unregister-mcp checks whether PreToolUse is absent from settings.json before unregistering. If it is, the command REFUSES BY DEFAULT, names the consequence ('this would leave no local version-push gate'), and states the two ways forward -- restore the PreToolUse entry, or re-run with an explicit acknowledgement flag.\n\n  Layer 2, DETECT everywhere else: a doctor command, plus a cheap precondition check that every FR-7 command runs at start. If PreToolUse is absent and no MCP push gate is registered, emit one unmissable line.\n\n  Layer 3, PREVENT THE HARM: ADV-012's git pre-push hook. NAMED, NOT ADOPTED -- it is new scope belonging to whoever owns PRD FR-23 and is NOT part of this issue. Its absence is the reason post-FR-4 protection is detective-only for a user who never runs register-mcp.\n\nThe start-up check must not itself spawn a process, or it breaks NFR-1. The AC says so explicitly.",
       "acceptance_criteria": [
@@ -380,10 +611,21 @@
       "title": "PRD FR-15 / SRS FR-28: AST-classify every home-directory occurrence, then remediate the CODE ones",
       "batch": "E",
       "gate": "D5",
-      "implements": {"prd": "FR-15", "srs": "FR-28"},
+      "implements": {
+        "prd": "FR-15",
+        "srs": "FR-28"
+      },
       "size": null,
       "size_provenance": "UNSIZED_BY_MANDATE",
-      "labels": ["v2.0.0", "batch:E", "gate:D5", "type:fix", "size:unsized", "disputed-measurement", "needs-decision"],
+      "labels": [
+        "v2.0.0",
+        "batch:E",
+        "gate:D5",
+        "type:fix",
+        "size:unsized",
+        "disputed-measurement",
+        "needs-decision"
+      ],
       "blocked_by": [],
       "build_status": "Partial. The remediation surface is DISPUTED and unsized. path_resolver.py itself is comprehensive (23 top-level functions, verified 2026-08-01, at src/utils/path_resolver.py) and 0 absolute path literals exist anywhere -- both are positive findings, not gaps.",
       "body": "THIS ISSUE CARRIES NO POINT VALUE, DELIBERATELY. product-sequencing-v2.md section 2a and prd-v2.md section 5 both state FR-15 must not be sized until the AST classifier has run. This plan honours that. AN ABSENT NUMBER IS NOT A SMALL NUMBER. See sequencing_risks.md R-9.\n\nTHE DISPUTE: two differently-derived measurements of the same surface stand unreconciled.\n  13 live-code sites / 103 comments+docstrings -- AST-based, path_violations.md.\n  approximately 95 live-code / 23 comments -- an independent line-oriented grep.\nApproximately a 7x swing in remediation scope. hld_v2.md OAQ 6 states plainly: 'Both cannot stand.' The grep cannot structurally separate docstring bodies from code, so it does not refute the AST figure -- but 13 has never been verified by an independent method either, and it passed both Phase 0 gates at 1.00/1.00 while remaining unverified.\n\nTHE PRIOR AC IS WITHDRAWN, not merely superseded: it asserted '13' as fact inside a gate-passed acceptance criterion. The withdrawn wording is retained struck-through in prd-v2.md for audit trail.\n\nTASK 1 is the classifier. TASK 2 is remediation, whose size is unknown until task 1 completes. Report the size back before starting task 2.\n\nThe withdrawn AC also contained a defect the replacement fixes: it did not exclude src/utils/path_resolver.py, which is the canonical SOURCE of these strings and is not a violation.\n\nPAIRING NOTE: FR-15's WSJF row was paired with FR-17 at size 3 / WSJF 4.67. That pairing is derived from the withdrawn figure. product-sequencing-v2.md's own guidance is that the pairing must SPLIT rather than be re-estimated as a unit, because FR-17's 19-site count is independently confirmed and stable. This plan splits them: see V2-019.",
@@ -402,10 +644,20 @@
       "title": "PRD FR-17 / SRS FR-30: pass encoding= at every text-mode open()",
       "batch": "E",
       "gate": "D5",
-      "implements": {"prd": "FR-17", "srs": "FR-30"},
+      "implements": {
+        "prd": "FR-17",
+        "srs": "FR-30"
+      },
       "size": 2,
       "size_provenance": "ASSUMED",
-      "labels": ["v2.0.0", "batch:E", "gate:D5", "type:fix", "size:2", "unsized-in-source"],
+      "labels": [
+        "v2.0.0",
+        "batch:E",
+        "gate:D5",
+        "type:fix",
+        "size:2",
+        "unsized-in-source"
+      ],
       "blocked_by": [],
       "build_status": "Partial. Count corrected and confirmed: 19 sites, not the earlier undercount of 12.",
       "body": "19 confirmed sites. The earlier 12-count grep MISSED the mode-less open(path) form; any detection tooling must catch it. That is the specific reason the count moved, and it is the specific trap to avoid re-introducing.\n\n0 absolute path literals exist anywhere -- that is a positive finding, confirmed by both sources, and this issue must not regress it.\n\nSPLIT FROM FR-15. The two were paired at size 3 / WSJF 4.67, derived from FR-15's withdrawn 13-figure. FR-17's 19-site count is independently confirmed and stable, so the pairing splits rather than re-estimating as a unit. Size 2 here is ASSUMED against the anchor: 19 mechanical sites plus one scan with an exemption list.",
@@ -420,12 +672,23 @@
       "title": "PRD FR-16 / SRS FR-29: build-time library snapshot script",
       "batch": "E",
       "gate": "D5",
-      "implements": {"prd": "FR-16", "srs": "FR-29"},
+      "implements": {
+        "prd": "FR-16",
+        "srs": "FR-29"
+      },
       "size": 5,
       "size_provenance": "SOURCED",
       "wsjf_as_published": 2.8,
-      "labels": ["v2.0.0", "batch:E", "gate:D5", "type:feat", "size:5"],
-      "blocked_by": ["V2-015"],
+      "labels": [
+        "v2.0.0",
+        "batch:E",
+        "gate:D5",
+        "type:feat",
+        "size:5"
+      ],
+      "blocked_by": [
+        "V2-015"
+      ],
       "build_status": "Design SETTLED (ADR-007), build NOT started.",
       "body": "Bundle, do not duplicate. The design is a pinned build-time snapshot (ADR-007) of the routing registries plus only the personas for DISPATCHABLE agents -- not all 505 agent directories -- with a CLAUDE_PLUGIN_DEV_MODE=1 escape hatch for local iteration.\n\nThe escape hatch is the hazard: the release script must FAIL if CLAUDE_PLUGIN_DEV_MODE is set in the publishing environment. A dev-mode snapshot shipped to users would point at a checkout that does not exist on their machine.\n\nADV-006 (advisory, cheap): run scripts/secrets_check.py against the SNAPSHOT ARTIFACT, not only the source tree. The existing gate scans source only.",
       "acceptance_criteria": [
@@ -440,11 +703,23 @@
       "title": "PRD FR-24 / SRS FR-36: publish the uninstall-residue runbook",
       "batch": "E",
       "gate": "D5",
-      "implements": {"prd": "FR-24", "srs": "FR-36"},
+      "implements": {
+        "prd": "FR-24",
+        "srs": "FR-36"
+      },
       "size": 1,
       "size_provenance": "ASSUMED",
-      "labels": ["v2.0.0", "batch:E", "gate:D5", "type:docs", "size:1", "unsized-in-source"],
-      "blocked_by": ["V2-015"],
+      "labels": [
+        "v2.0.0",
+        "batch:E",
+        "gate:D5",
+        "type:docs",
+        "size:1",
+        "unsized-in-source"
+      ],
+      "blocked_by": [
+        "V2-015"
+      ],
       "build_status": "Named at Phase 2.1 with a defined AC; NOT started. docs/guides/uninstall-residue.md verified ABSENT on disk 2026-08-01.",
       "body": "This is DELIBERATELY NOT an executable plugin command. There is no plugin-side execution point at uninstall time -- the same structural gap ADR-012 found at install time. A plugin-shipped cleanup command would have to run after the thing that would run it no longer exists. That contradiction is why FR-18a was INVALIDATED (not merely deprioritised) and folded into this requirement, at size zero: an honest zero, because the work is fully subsumed here, not a hedge.\n\nA human runs this runbook after the plugin is gone -- the only time the residue exists and the only actor left who could act on it.\n\nMEASURED residue to document, by exact path:\n  - settings.json's enabledPlugins and extraKnownMarketplaces keys, emptied to {} on uninstall rather than removed. Functionally inert; a byte-level and structural difference from a pre-install baseline.\n  - ~/.claude/plugins/cache/<marketplace>/<plugin>/<version>/ and its .orphaned_at marker, all files intact.\n  - claude plugin prune does NOT clean this -- its own help text scopes it to auto-installed dependencies, not a manually installed-then-uninstalled plugin.",
       "acceptance_criteria": [
@@ -459,14 +734,30 @@
       "title": "PRD FR-18 / SRS FR-31: zero plugin-attributable functional residue after uninstall",
       "batch": "E",
       "gate": "D5",
-      "implements": {"prd": "FR-18", "srs": "FR-31"},
+      "implements": {
+        "prd": "FR-18",
+        "srs": "FR-31"
+      },
       "size": 3,
       "size_provenance": "SOURCED_SET_SPLIT",
       "set_size": 5,
-      "set_members": ["V2-022", "V2-023"],
+      "set_members": [
+        "V2-022",
+        "V2-023"
+      ],
       "wsjf_as_published": 3.2,
-      "labels": ["v2.0.0", "batch:E", "gate:D5", "type:feat", "size:3"],
-      "blocked_by": ["V2-015", "V2-016", "V2-021"],
+      "labels": [
+        "v2.0.0",
+        "batch:E",
+        "gate:D5",
+        "type:feat",
+        "size:3"
+      ],
+      "blocked_by": [
+        "V2-015",
+        "V2-016",
+        "V2-021"
+      ],
       "build_status": "NOT started, and the ORIGINAL AC was unachievable as written. The narrowed replacement AC is what this issue implements.",
       "body": "THE ORIGINAL BAR WAS UNACHIEVABLE AND IS STATED PLAINLY, NOT QUIETLY NARROWED. 'Uninstall leaves no orphaned files, MCP registrations, or settings entries' cannot be met by ANY plugin design, because the residue is produced by Claude Code's own claude plugin uninstall, which the plugin does not control and cannot intercept.\n\nThe replacement AC is scoped to PLUGIN-ATTRIBUTABLE residue only. What is out of scope, by decision not omission: the {}-emptied bookkeeping keys and the orphaned cache directory. Those are Claude-Code-owned and are DOCUMENTED by V2-021 (PRD FR-24) rather than asserted absent.\n\nThe delta-not-equality principle matters beyond this issue: 17 pre-existing settings.json writers are known (a LOWER BOUND -- audit_surface.json's AST scan missed 4 aliased subprocess imports and nobody has checked whether the same blind spot affects that figure). Whole-file equality against a pre-install snapshot would fail for reasons that have nothing to do with the plugin.",
       "acceptance_criteria": [
@@ -481,13 +772,30 @@
       "title": "PRD NFR-5 / SRS NFR-11: install, invoke, uninstall and register round-trip lifecycle tests",
       "batch": "E",
       "gate": "D5",
-      "implements": {"prd": "NFR-5", "srs": "NFR-11"},
+      "implements": {
+        "prd": "NFR-5",
+        "srs": "NFR-11"
+      },
       "size": 2,
       "size_provenance": "SOURCED_SET_SPLIT",
       "set_size": 5,
-      "set_members": ["V2-022", "V2-023"],
-      "labels": ["v2.0.0", "batch:E", "gate:D5", "type:test", "size:2"],
-      "blocked_by": ["V2-015", "V2-016", "V2-021", "V2-022"],
+      "set_members": [
+        "V2-022",
+        "V2-023"
+      ],
+      "labels": [
+        "v2.0.0",
+        "batch:E",
+        "gate:D5",
+        "type:test",
+        "size:2"
+      ],
+      "blocked_by": [
+        "V2-015",
+        "V2-016",
+        "V2-021",
+        "V2-022"
+      ],
       "build_status": "NOT started, but UNBLOCKED -- the FR-14a spike gate is satisfied (all 5 items MEASURED, none provisional).",
       "body": "Three tests, plus a fourth assertion that ADR-019 forced.\n\nThe INVOKE test must exercise TWO steps, not one: /plugin install followed by the explicit register-mcp command. It must confirm the FR-23 push gate and progress writer are UNREACHABLE after step one alone and reachable only after step two. Unreachability after step one is EXPECTED BEHAVIOUR, not a defect.\n\nThe INSTALL test must assert the plugin ships NO .mcp.json at all -- superseding ADR-018's earlier minimum-viable-bundle mitigation, because spike item 5 measured eager spawn on enable for ANY bundled server, however minimal.\n\nGherkin scenarios for install/invoke/uninstall are specified in prd-v2.md section 7.",
       "acceptance_criteria": [
@@ -504,12 +812,26 @@
       "title": "PRD FR-23 / SRS FR-35: port push_gate.py to a named MCP tool BEFORE PreToolUse is deleted",
       "batch": "F",
       "gate": "D6",
-      "implements": {"prd": "FR-23", "srs": "FR-35"},
+      "implements": {
+        "prd": "FR-23",
+        "srs": "FR-35"
+      },
       "size": 3,
       "size_provenance": "SOURCED",
       "wsjf_as_published": 7.67,
-      "labels": ["v2.0.0", "batch:F", "gate:D6", "type:feat", "size:3", "risk:sequencing-critical", "critical-path"],
-      "blocked_by": ["V2-016", "V2-006"],
+      "labels": [
+        "v2.0.0",
+        "batch:F",
+        "gate:D6",
+        "type:feat",
+        "size:3",
+        "risk:sequencing-critical",
+        "critical-path"
+      ],
+      "blocked_by": [
+        "V2-016",
+        "V2-006"
+      ],
       "build_status": "Disposition MANDATED; port NOT started. hooks/pre_tool_enforcer/policies/push_gate.py exists on disk (verified 2026-08-01), covered by tests/test_push_gate.py (verified 2026-08-01).",
       "body": "THIS IS THE MOST IMPORTANT ORDERING CONSTRAINT IN THE PLAN. Read sequencing_risks.md R-1 in full before starting.\n\nThe push gate is protected TODAY only because PRD FR-4 has not run and the live PreToolUse hook still fires. Commit 1bb4303 was recent, deliberate governance work closing a version-push bypass. FR-4's blanket PreToolUse deletion would reopen it silently unless this port lands first.\n\nThis is singled out as a MANDATORY port-to-MCP disposition, not a generic 'decide one of four options' item like the rest of PRD FR-3's scope. It is called out as its own issue so it cannot be lost inside a 46-row audit table.\n\nThe AC's ordering clause is verified by COMMIT ORDERING, which means it is checkable after the fact but does not prevent the wrong order. V2-025 (the ADR-017 CI assertion) is what makes it mechanical, and V2-025 is DESIGNED, NOT BUILT.\n\nBlocked by V2-016 because an MCP tool that cannot be registered cannot be reached. Blocked by V2-006 because push_gate.py's audit-matrix row must read port-to-MCP.",
       "acceptance_criteria": [
@@ -524,11 +846,26 @@
       "title": "ADR-017: build the assert_push_gate_reachable() CI assertion",
       "batch": "F",
       "gate": "D6",
-      "implements": {"prd": "no PRD FR -- ADR-017 mechanism, referenced by PRD FR-23", "srs": "supports FR-35's commit-ordering clause; no standalone SRS FR"},
+      "implements": {
+        "prd": "no PRD FR -- ADR-017 mechanism, referenced by PRD FR-23",
+        "srs": "supports FR-35's commit-ordering clause; no standalone SRS FR"
+      },
       "size": 2,
       "size_provenance": "ASSUMED",
-      "labels": ["v2.0.0", "batch:F", "gate:D6", "type:test", "size:2", "unsized-in-source", "risk:sequencing-critical", "critical-path", "no-prd-ac"],
-      "blocked_by": ["V2-024"],
+      "labels": [
+        "v2.0.0",
+        "batch:F",
+        "gate:D6",
+        "type:test",
+        "size:2",
+        "unsized-in-source",
+        "risk:sequencing-critical",
+        "critical-path",
+        "no-prd-ac"
+      ],
+      "blocked_by": [
+        "V2-024"
+      ],
       "build_status": "DESIGNED, NOT BUILT. Recorded as correction #17 in docs/REVIEW-INDEX.md section 7: a governance guarantee that had been documented as ACTIVE and does not exist. The HLD states no build status for it either way -- all its language is prescriptive.",
       "body": "THIS ISSUE HAS NO ACCEPTANCE CRITERION IN THE PRD OR THE SRS. Stated rather than invented. SRS FR-35's AC covers commit ordering; it does not specify the CI check itself. The criteria below are drawn from hld_v2.md section 7.7 (the formal signature) and hld_v2.md:661-664 (ADR-017 Chosen), and are labelled HLD-sourced.\n\nWHAT MAKES THIS ASSERTION DIFFERENT FROM THE OBVIOUS ONE: it asserts on the REPLACEMENT's existence and reachability, never on the old hook's presence. An assertion that checks 'is the hook still there' would block the deletion the project exists to perform. The signature explicitly forbids it.\n\nONE OF THE TWO RULES THAT CAME OUT OF THIS PROJECT'S CORRECTION RECORD APPLIES DIRECTLY HERE: 'Any check needs a companion negative test proving it can fail. Otherwise it is a green light with no mechanism behind it.' A negative test is required, not optional.\n\nDEGRADED GUARANTEE, ACCEPTED KNOWINGLY: once register-mcp exists, a user who never runs it has no local MCP-side gate at all. This CI assertion becomes the ONLY mechanical protection, and the guarantee moves from PREVENTIVE to DETECTIVE (hld_v2.md:683). ADV-012's git pre-push hook would restore local prevention and is NAMED, NOT ADOPTED.",
       "acceptance_criteria": [
@@ -545,12 +882,24 @@
       "title": "PRD FR-7 / SRS FR-17: six explicit slash-command entry points",
       "batch": "F",
       "gate": "D6",
-      "implements": {"prd": "FR-7", "srs": "FR-17"},
+      "implements": {
+        "prd": "FR-7",
+        "srs": "FR-17"
+      },
       "size": 5,
       "size_provenance": "SOURCED",
       "wsjf_as_published": 4.2,
-      "labels": ["v2.0.0", "batch:F", "gate:D6", "type:feat", "size:5", "risk:sequencing-critical"],
-      "blocked_by": ["V2-015"],
+      "labels": [
+        "v2.0.0",
+        "batch:F",
+        "gate:D6",
+        "type:feat",
+        "size:5",
+        "risk:sequencing-critical"
+      ],
+      "blocked_by": [
+        "V2-015"
+      ],
       "build_status": "NOT started. No slash-command layer exists; no commands/ directory exists on disk (verified absent 2026-08-01).",
       "body": "PREREQUISITE FOR SAFE FR-5, not merely a peer of it. product-sequencing-v2.md section 2 labels this row verbatim 'entry points, prerequisite for safe FR-5'. Removing UserPromptSubmit from the hot path with no slash commands in place leaves the pipeline with NO user-reachable entry point at all. See sequencing_risks.md R-5.\n\nThe minimum set: plan/decompose, implement, review, document, release, plus one full-pipeline command running Steps 0 through 8.\n\nEvery command built here must carry the ADR-020 layer-2 start-up check delivered by V2-017: if PreToolUse is absent and no MCP push gate is registered, emit one unmissable line. The check must not spawn a process, or NFR-1 breaks.",
       "acceptance_criteria": [
@@ -564,14 +913,34 @@
       "title": "PRD FR-4 / SRS FR-13: delete the PreToolUse and PostToolUse hook registrations",
       "batch": "G",
       "gate": "D6",
-      "implements": {"prd": "FR-4", "srs": "FR-13"},
+      "implements": {
+        "prd": "FR-4",
+        "srs": "FR-13"
+      },
       "size": 2,
       "size_provenance": "SOURCED_SET_SPLIT",
       "set_size": 3,
-      "set_members": ["V2-027", "V2-028"],
+      "set_members": [
+        "V2-027",
+        "V2-028"
+      ],
       "wsjf_as_published": 6.67,
-      "labels": ["v2.0.0", "batch:G", "gate:D6", "type:feat", "size:2", "risk:sequencing-critical", "critical-path"],
-      "blocked_by": ["V2-016", "V2-024", "V2-025", "V2-006", "V2-031"],
+      "labels": [
+        "v2.0.0",
+        "batch:G",
+        "gate:D6",
+        "type:feat",
+        "size:2",
+        "risk:sequencing-critical",
+        "critical-path"
+      ],
+      "blocked_by": [
+        "V2-016",
+        "V2-024",
+        "V2-025",
+        "V2-006",
+        "V2-031"
+      ],
       "build_status": "NOT started. Both hooks fully wired today.",
       "body": "DO NOT START THIS ISSUE UNTIL EVERY BLOCKER HAS LANDED. Three of the five blockers exist to prevent a live protection lapsing:\n  V2-016 register-mcp (DESIGNED, NOT BUILT) -- without it no MCP capability is reachable at all.\n  V2-024 the push gate as an MCP tool -- the replacement.\n  V2-025 the ADR-017 CI assertion (DESIGNED, NOT BUILT) -- the mechanism that catches a violation.\nThe other two: V2-006 (the disposition ledger) and V2-031 (NFR-3's durability fixes, because per-tool-call progress writing dies with PostToolUse).\n\nSee sequencing_risks.md R-1. THE VIOLATION WOULD NOT BE DETECTED. tests/test_push_gate.py currently covers only the hook path; delete the hook and the test is likely removed with the package it tests. The CI assertion that would catch it is V2-025, which does not exist yet.\n\nSTRUCTURAL BLAST RADIUS IS SMALL AND MEASURED: 135 of 2,218 nodes (6.09 percent) go dark, with zero surviving cross-boundary edges after confidence verification. Deletion is structurally safe. CAPABILITY-LEVEL safety is a separate question -- see V2-029 (PRD FR-4a) and its three named consequences.\n\nWHAT ELSE DIES WITH THESE HOOKS: 14 PreToolUse gates and 9 PostToolUse capabilities, named in capability_loss.md. The warm daemon lives at hooks/pre_tool_enforcer/daemon.py and is reached from PreToolUse, NOT PostToolUse -- a prior attribution to PostToolUse was wrong, and a replacement must not be designed against the wrong component.\n\nSCOPE CORRECTION, carried so the value claim is not overstated: FR-4 plus FR-5 remove roughly 6 of 116 spawn sites, about 5 percent -- NOT a large footprint reduction. hooks/stop_notifier/ alone retains 17 spawn sites by ADR-010's deliberate keep decision. The real value is INVOCATION FREQUENCY: two Python interpreter starts per tool call. That argument survives; the footprint framing does not.\n\nThe PR that closes this issue is the PR that V2-030 (PRD FR-22) must be dated to.",
       "acceptance_criteria": [
@@ -585,13 +954,28 @@
       "title": "PRD FR-5 / SRS FR-15: take UserPromptSubmit off the every-prompt hot path",
       "batch": "G",
       "gate": "D6",
-      "implements": {"prd": "FR-5", "srs": "FR-15"},
+      "implements": {
+        "prd": "FR-5",
+        "srs": "FR-15"
+      },
       "size": 1,
       "size_provenance": "SOURCED_SET_SPLIT",
       "set_size": 3,
-      "set_members": ["V2-027", "V2-028"],
-      "labels": ["v2.0.0", "batch:G", "gate:D6", "type:feat", "size:1", "risk:sequencing-critical"],
-      "blocked_by": ["V2-026"],
+      "set_members": [
+        "V2-027",
+        "V2-028"
+      ],
+      "labels": [
+        "v2.0.0",
+        "batch:G",
+        "gate:D6",
+        "type:feat",
+        "size:1",
+        "risk:sequencing-critical"
+      ],
+      "blocked_by": [
+        "V2-026"
+      ],
       "build_status": "NOT started. scripts/3-level-flow.py remains the registered entry point, 120s timeout, unchanged.",
       "body": "BLOCKED BY V2-026 (PRD FR-7, slash commands) as a correctness constraint, not a preference. Remove the every-prompt entry point before the explicit entry points exist and the pipeline becomes unreachable. See sequencing_risks.md R-5.\n\nThe AC itself encodes the dependency: pipeline execution begins only from an explicit FR-17 (SRS) command. The criterion for removing the old entry point is written in terms of the new one existing.\n\nThis violation, unlike most in this plan, WOULD be detected -- immediately and loudly, on the first attempt to run the pipeline. It is listed as a constraint because FR-4 and FR-5 look like one deletion job and are not.",
       "acceptance_criteria": [
@@ -605,11 +989,23 @@
       "title": "PRD FR-4a / SRS FR-14: record the blast-radius measurement and its three named consequences",
       "batch": "G",
       "gate": "D6",
-      "implements": {"prd": "FR-4a", "srs": "FR-14"},
+      "implements": {
+        "prd": "FR-4a",
+        "srs": "FR-14"
+      },
       "size": 1,
       "size_provenance": "ASSUMED",
-      "labels": ["v2.0.0", "batch:G", "gate:D6", "type:docs", "size:1", "unsized-in-source"],
-      "blocked_by": ["V2-027"],
+      "labels": [
+        "v2.0.0",
+        "batch:G",
+        "gate:D6",
+        "type:docs",
+        "size:1",
+        "unsized-in-source"
+      ],
+      "blocked_by": [
+        "V2-027"
+      ],
       "build_status": "Measured; consequences UN-ACTIONED. The measurement exists; the record does not.",
       "body": "The structural measurement is done: 135 of 2,218 nodes (6.09 percent) go dark, zero surviving cross-boundary edges. What is missing is the recorded cross-reference of the three capability-level consequences, which do NOT reduce to 'safe':\n  1. SRS FR-9's four-hook-event guarantee is violated -- addressed by V2-030 (PRD FR-22).\n  2. The version-push-gate bypass reopens -- addressed by V2-024 and V2-025.\n  3. NFR-3 crash-recovery loss -- re-scoped to telemetry loss by ADR-011; addressed by V2-031.\n\nTHE AC'S SHARP CLAUSE: a consequence recorded only in docs/orchestration_prompt.md does NOT satisfy this. The ADR-006 document body must cross-reference all three. That is why this issue exists at all -- the measurement without the recorded consequences is what 'un-actioned' means here.\n\nSize ASSUMED at 1: the measurement exists; only the recording remains.",
       "acceptance_criteria": [
@@ -623,12 +1019,23 @@
       "title": "PRD FR-22 / SRS FR-34: add the SRS Change Log row dated to the hook-deletion PR",
       "batch": "G",
       "gate": "D6",
-      "implements": {"prd": "FR-22", "srs": "FR-34"},
+      "implements": {
+        "prd": "FR-22",
+        "srs": "FR-34"
+      },
       "size": 1,
       "size_provenance": "SOURCED",
       "wsjf_as_published": 13.0,
-      "labels": ["v2.0.0", "batch:G", "gate:D6", "type:docs", "size:1"],
-      "blocked_by": ["V2-027"],
+      "labels": [
+        "v2.0.0",
+        "batch:G",
+        "gate:D6",
+        "type:docs",
+        "size:1"
+      ],
+      "blocked_by": [
+        "V2-027"
+      ],
       "build_status": "HALF DONE. Clause one (the appended superseding FR entry) is SATISFIED by the Phase 5 SRS append. Clause two (the Change Log row) is recorded at SRS.md:808 as an explicit OUTSTANDING obligation with a PENDING date.",
       "body": "THE HIGHEST-WSJF ITEM IN THE PUBLISHED TABLE (13.00) CANNOT BE DONE FIRST. Half of it is already done and the other half is blocked by V2-027, which is nearly the last thing to land. See sequencing_risks.md R-7.\n\nSRS.md:749 records the split verbatim: 'The first clause is satisfied by this append; the second is NOT and cannot be until that PR exists.' SRS.md:808 carries a PENDING row rather than a back-dated one -- do not back-date it now either.\n\nRequired by rules/44 (SRS is append-only). Without this row, SRS.md:206's acceptance criterion becomes permanently false the moment PreToolUse and PostToolUse are deleted, with no compensating record of why.\n\nNAMING COLLISION: the SRS FR being superseded is SRS.md's own pre-existing FR-9 (hook system), which is unrelated in content to PRD FR-9 (library count drift). The superseding entry is SRS FR-34.",
       "acceptance_criteria": [
@@ -642,11 +1049,21 @@
       "title": "PRD NFR-3 / SRS NFR-9: name the CheckpointManager contract and fix 3 durability defects",
       "batch": "G",
       "gate": "D6",
-      "implements": {"prd": "NFR-3", "srs": "NFR-9"},
+      "implements": {
+        "prd": "NFR-3",
+        "srs": "NFR-9"
+      },
       "size": 3,
       "size_provenance": "SOURCED",
       "wsjf_as_published": 6.33,
-      "labels": ["v2.0.0", "batch:G", "gate:D6", "type:fix", "size:3", "parallelisable"],
+      "labels": [
+        "v2.0.0",
+        "batch:G",
+        "gate:D6",
+        "type:fix",
+        "size:3",
+        "parallelisable"
+      ],
       "blocked_by": [],
       "build_status": "The writer ALREADY EXISTS and is already wired. langgraph_engine/checkpoint_manager.py::CheckpointManager, 9 public methods plus _atomic_write, triggered at every step boundary by core/step_decorator.py. It survives PRD FR-4 untouched.",
       "body": "THE PREMISE THIS WAS ORIGINALLY SIZED ON WAS FALSE. NFR-3 was sized at 8 points / WSJF 3.00 on the Phase 0 claim that post-tool-tracker.py was the sole writer of checkpoint state. HLD OAQ 1 verified against live source that this conflated TWO INDEPENDENT SYSTEMS. Re-scored: size 8 -> 3, WSJF 3.00 -> 6.33.\n\n  System A, step-boundary crash recovery: CheckpointManager, hook-independent, lives entirely outside the three deleted hook packages, with a real resume entry point (orchestrator.py::resume_flow -> quality/recovery_handler.py::resume_from_checkpoint). SURVIVES FR-4 UNTOUCHED. The crash-recovery guarantee was never at risk.\n  System B, per-tool-call progress: hooks/post_tool_tracker/progress_tracker.py, finer-grained than any SRS step guarantee. This part genuinely dies with FR-4. Its replacement is the existing mcp-post-tool-tracker server, called as a PROJECTION of the checkpoint record, never an independent writer.\n\nCorrected verdict: this is closer to telemetry loss than crash-recovery loss.\n\nNO DEPENDENCY ON ANY OTHER ISSUE. It sits in batch G only because product-sequencing-v2.md section 1 fixes the D1-D7 gate order and NFR-3 belongs to D6. If work is parallelised it can start at any time.\n\nBlocks V2-027, because the progress projection must exist before the writer that currently produces progress is deleted.",
@@ -663,11 +1080,23 @@
       "title": "PRD FR-8 / SRS FR-18: keep Stop and Notification as user-level registrations, byte-identical across install/uninstall",
       "batch": "G",
       "gate": "D6",
-      "implements": {"prd": "FR-8", "srs": "FR-18"},
+      "implements": {
+        "prd": "FR-8",
+        "srs": "FR-18"
+      },
       "size": 1,
       "size_provenance": "ASSUMED",
-      "labels": ["v2.0.0", "batch:G", "gate:D6", "type:test", "size:1", "unsized-in-source"],
-      "blocked_by": ["V2-015"],
+      "labels": [
+        "v2.0.0",
+        "batch:G",
+        "gate:D6",
+        "type:test",
+        "size:1",
+        "unsized-in-source"
+      ],
+      "blocked_by": [
+        "V2-015"
+      ],
       "build_status": "Decided (keep both), then conditionally re-opened as PRD FR-8a. The decision stands; the test does not exist.",
       "body": "FR-8 is formally resolved: keep both. ADR-010 confirms the plugin NEVER owns them. This issue delivers the test that proves the plugin does not touch them.\n\nTHE 'KEEP' IS CONDITIONAL, WHICH IS WHY FR-8a EXISTS. Stop fires EVERY RESPONSE TURN, not once per session as FR-8's original rationale assumed. 'Keep' survives; 'keep everything it currently runs' does not. See V2-033 and V2-034.\n\nA measured install/uninstall cycle already showed 5 hook registrations byte-for-byte identical to baseline. This issue turns that observation into a standing test.",
       "acceptance_criteria": [
@@ -680,13 +1109,25 @@
       "title": "PRD FR-8a / SRS FR-19: instrument the Stop hook over 20 invocations and decide each capability",
       "batch": "G",
       "gate": "D6",
-      "implements": {"prd": "FR-8a", "srs": "FR-19"},
+      "implements": {
+        "prd": "FR-8a",
+        "srs": "FR-19"
+      },
       "size": 2,
       "size_provenance": "SOURCED_SET_SPLIT",
       "set_size": 3,
-      "set_members": ["V2-033", "V2-034"],
+      "set_members": [
+        "V2-033",
+        "V2-034"
+      ],
       "wsjf_as_published": 6.0,
-      "labels": ["v2.0.0", "batch:G", "gate:D6", "type:test", "size:2"],
+      "labels": [
+        "v2.0.0",
+        "batch:G",
+        "gate:D6",
+        "type:test",
+        "size:2"
+      ],
       "blocked_by": [],
       "build_status": "Measured (statically); work NOT started. hooks/stop_notifier/ has ZERO test coverage -- characterisation tests are a blocking prerequisite for any reduction work.",
       "body": "THE FLOOR FIGURE MOVED AND THE PROBLEM CHANGED SHAPE. Initially measured at 8 spawns per turn (16 with retries). That measurement assumed the gated target scripts exist. 7 of the 9 referenced scripts were verified ABSENT, so their .exists() guards fail and they never spawn. The true floor is approximately 2 -- the unconditional git rev-parse calls.\n\nCONSEQUENCE: FR-8a is NOT primarily an overhead problem. Stop does fire every response turn, but the per-turn cost is small. The real defect is CORRECTNESS, and it is tracked separately as PRD FR-21 (V2-034).\n\nCANNOT BE SATISFIED BY A STATIC RE-DERIVATION. The approximately-2 figure is a static filesystem inference and has NEVER been observed at runtime. The AC requires 20 consecutive REAL invocations with runtime instrumentation. A static re-derivation does not satisfy it.\n\nWHAT SHIPS IN v2.0.0: the instrumentation script, the per-capability decision with a written rationale, and reference retirement for every capability decided 'not rebuilt' (V2-034).\nWHAT DEFERS TO v2.1: BUILDING any of the 5 capabilities the decision session selects for rebuild -- auto-save-session, archive-old-sessions, plan-session-archiver, preference-auto-tracker, common-failures-prevention. No D1-D7 gate requires any of them. 'Delete the reference' is a valid end state per capability, not a fallback.\n\nNOTE THE AC'S OWN INCENTIVE: it asserts a per-turn spawn count of at most 2 unless a named exception is documented with a rationale. Every capability rebuilt that adds a spawn must individually clear that bar. Rebuilding is a cost this FR was written to constrain, not a free win.",
@@ -701,13 +1142,29 @@
       "title": "PRD FR-21 / SRS FR-33: fix or formally retire the 7 dead Stop-hook script references",
       "batch": "G",
       "gate": "D6",
-      "implements": {"prd": "FR-21", "srs": "FR-33"},
+      "implements": {
+        "prd": "FR-21",
+        "srs": "FR-33"
+      },
       "size": 1,
       "size_provenance": "SOURCED_SET_SPLIT",
       "set_size": 3,
-      "set_members": ["V2-033", "V2-034"],
-      "labels": ["v2.0.0", "batch:G", "gate:D6", "type:fix", "size:1"],
-      "blocked_by": ["V2-033", "V2-006", "V2-008"],
+      "set_members": [
+        "V2-033",
+        "V2-034"
+      ],
+      "labels": [
+        "v2.0.0",
+        "batch:G",
+        "gate:D6",
+        "type:fix",
+        "size:1"
+      ],
+      "blocked_by": [
+        "V2-033",
+        "V2-006",
+        "V2-008"
+      ],
       "build_status": "Root-caused; NOT started.",
       "body": "THIS IS A CORRECTNESS DEFECT, SEPARABLE FROM FR-8a's OVERHEAD SCOPE. hooks/stop-notifier.py references 9 scripts. 7 do not exist on disk: archive-old-sessions.py, auto-save-session.py, common-failures-prevention.py, git-auto-commit-policy.py, plan-session-archiver.py, preference-auto-tracker.py, session-pruner.py. Only sync-version.py and voice-notifier.py exist.\n\nEach missing-script .exists() guard fails SILENTLY, every turn, with zero log trace. 7 of 9 advertised behaviours -- auto-save, archiving, common-failure prevention, git auto-commit, plan-session archiving, preference tracking, session pruning -- have NEVER EXECUTED.\n\nWHY THIS IS ITS OWN ISSUE: FR-8a as scoped is 'measure and reduce overhead'. It will correctly measure the real 2-spawn floor and could plausibly report 'already optimal' -- TRUE for overhead and FALSE for correctness.\n\nDEPENDENCY THAT IS EASY TO MISS: the retirement path requires the lost capability to appear with a disposition in the FR-12/NFR-10 ledger (V2-006, V2-008). Without that ledger, only the rebuild path remains, and rebuild defers to v2.1. See sequencing_risks.md R-11.\n\n'Silently broken' is not an acceptable end state for either choice.",
       "acceptance_criteria": [
@@ -721,11 +1178,21 @@
       "title": "PRD NFR-2 / SRS NFR-8: replace fixed pipeline timeouts with 5 non-temporal control mechanisms",
       "batch": "G",
       "gate": "D6",
-      "implements": {"prd": "NFR-2", "srs": "NFR-8"},
+      "implements": {
+        "prd": "NFR-2",
+        "srs": "NFR-8"
+      },
       "size": 8,
       "size_provenance": "SOURCED",
       "wsjf_as_published": 2.88,
-      "labels": ["v2.0.0", "batch:G", "gate:D6", "type:feat", "size:8", "parallelisable"],
+      "labels": [
+        "v2.0.0",
+        "batch:G",
+        "gate:D6",
+        "type:feat",
+        "size:8",
+        "parallelisable"
+      ],
       "blocked_by": [],
       "build_status": "Contradicted on a WIDER surface than Phase 0 scoped. NOT started.",
       "body": "DELETING THE HOOKS DOES NOT SATISFY NFR-2. It satisfies only the hook half of a two-part defect. This is the single most under-scoped item in the original plan: NFR-2 previously shared a 3-point measurement-harness row with NFR-1; split out, it is 8 points, and that is where the real size was hiding.\n\nNFR-2 IS ALREADY VIOLATED INSIDE THE ENGINE, ON THE PIPELINE PATH, INDEPENDENTLY OF HOOKS. 6 timeout= APPLICATION sites across 5 files:\n  prompt_gen_expert_caller.py:228\n  todo_decomposer.py:147\n  orchestrator_agent_caller.py:137\n  todo_executor.py:114\n  task_orchestration.py:160\n  task_orchestration.py:217\nPlus 3 DEFINITION sites: STEP1_PROMPT_GEN_TIMEOUT default 60 at prompt_gen_expert_caller.py:54; STEP1_TODO_DECOMPOSER_TIMEOUT default 90 at todo_decomposer.py:37; a function-local read at task_orchestration.py:128.\n\ntask_orchestration.py:160 composes to a 75-SECOND FIXED WALL-CLOCK TIMEOUT on the Step 1 pipeline path (_pg_inner_timeout + 15 = 60 + 15). NONE of these 9 sites appears in any Phase 0 artifact -- Phase 0 scoped NFR-2 to the 4 hook timeouts only. The missing 75-second timeout is recorded as one of corrections #9-13.\n\nThis is a RESILIENCE-ENGINEERING BUILD, not a scan-and-confirm.\n\nNO DEPENDENCY ON ANY OTHER ISSUE IN THIS PLAN. It sits in batch G only because the D1-D7 gate order is fixed and NFR-2 belongs to D6. If work is parallelised, this is the single best candidate to pull forward: it is the largest sourced item outside the selector, and it blocks nothing and is blocked by nothing.",
@@ -742,12 +1209,43 @@
       "title": "D7: migration guide, CHANGELOG, and VERSION bump to 2.0.0",
       "batch": "H",
       "gate": "D7",
-      "implements": {"prd": "no FR -- Deliverable D7", "srs": "no FR -- Deliverable D7"},
+      "implements": {
+        "prd": "no FR -- Deliverable D7",
+        "srs": "no FR -- Deliverable D7"
+      },
       "size": 2,
       "size_provenance": "SOURCED",
       "wsjf_as_published": 5.5,
-      "labels": ["v2.0.0", "batch:H", "gate:D7", "type:docs", "size:2", "release"],
-      "blocked_by": ["V2-001", "V2-002", "V2-003", "V2-008", "V2-010", "V2-012", "V2-013", "V2-014", "V2-017", "V2-018", "V2-019", "V2-020", "V2-023", "V2-026", "V2-028", "V2-029", "V2-030", "V2-032", "V2-034", "V2-035"],
+      "labels": [
+        "v2.0.0",
+        "batch:H",
+        "gate:D7",
+        "type:docs",
+        "size:2",
+        "release"
+      ],
+      "blocked_by": [
+        "V2-001",
+        "V2-002",
+        "V2-003",
+        "V2-008",
+        "V2-010",
+        "V2-012",
+        "V2-013",
+        "V2-014",
+        "V2-017",
+        "V2-018",
+        "V2-019",
+        "V2-020",
+        "V2-023",
+        "V2-026",
+        "V2-028",
+        "V2-029",
+        "V2-030",
+        "V2-032",
+        "V2-034",
+        "V2-035"
+      ],
       "blocked_by_note": "This list names every leaf issue in the plan. Every other issue is covered transitively. V2-037 is deliberately NOT a blocker -- see its own note.",
       "build_status": "NOT started.",
       "body": "The migration guide derives from hld_v2.md section 10's 8-step runbook, which was rebuilt in Phase 2 and IS current: register-mcp is step 2 (hld_v2.md:1318) and the FR-23 reachability verification is step 3 (hld_v2.md:1319), which reads 'Cannot pass before step 2'.\n\nSTALENESS NOTE, so it is not re-fixed: product-sequencing-v2.md states three times (sections 6, 7 and 8) that this runbook has 'NOT YET' been updated to insert register-mcp. That statement is STALE. The edit is recorded in hld_v2.md's own change log at line 1936 (draft-11, BA FIND-10) and docs/REVIEW-INDEX.md:25 agrees the runbook is rebuilt. Do not re-open it.\n\nThe runbook's own safety property must survive into the migration guide verbatim: step 2 is optional for the migration as a whole and MANDATORY for step 5, and 'Step 5, having SKIPPED steps 2-3' is marked 'NO -- do not stop here, and do not pass through here.'\n\nStep 8 is the behaviour change and must be stated at full strength: nothing is enforced on a session where no command is invoked (ADR-006).\n\nVERSION must reach 2.0.0. Per rules/11, VERSION is the single source of truth and must contain one line of valid semver with no trailing whitespace and no extra lines. CHANGELOG must follow Keep a Changelog with an ISO 8601 date.",
@@ -764,10 +1262,21 @@
       "title": "Resolve the VERSION vs CLAUDE.md version contradiction",
       "batch": "H",
       "gate": "D7",
-      "implements": {"prd": "no FR -- pre-existing open item", "srs": "no FR -- pre-existing open item"},
+      "implements": {
+        "prd": "no FR -- pre-existing open item",
+        "srs": "no FR -- pre-existing open item"
+      },
       "size": 1,
       "size_provenance": "ASSUMED",
-      "labels": ["v2.0.0", "batch:H", "gate:D7", "type:fix", "size:1", "unsized-in-source", "pre-existing"],
+      "labels": [
+        "v2.0.0",
+        "batch:H",
+        "gate:D7",
+        "type:fix",
+        "size:1",
+        "unsized-in-source",
+        "pre-existing"
+      ],
       "blocked_by": [],
       "build_status": "Open, unowned, predates this project.",
       "body": "VERIFIED ON DISK BY THIS PLANNING PASS, 2026-08-01:\n  VERSION reads 1.21.5\n  CLAUDE.md:4 reads **Version:** 1.21.4\n\nrules/11 makes VERSION the single source of truth, so CLAUDE.md is the stale one. Both phase-0 documents also say 1.21.4 and inherit the same staleness.\n\nRecorded as an open item in docs/REVIEW-INDEX.md section 2: 'Unowned and predates this project. Trivial to fix, but nobody has.'\n\nBundled into batch H because the 2.0.0 version bump touches both files anyway. Doing it here rather than earlier avoids fixing the same line twice. If it is fixed earlier, that is harmless -- this issue has no blockers.\n\nABSORPTION NOTE: if V2-036 lands first AND updates CLAUDE.md's Version field alongside VERSION, this issue closes as absorbed rather than as work done. It is deliberately not listed as a blocker of V2-036 for that reason. It is drafted separately only so a pre-existing, unowned contradiction does not disappear into a release chore unrecorded.",
