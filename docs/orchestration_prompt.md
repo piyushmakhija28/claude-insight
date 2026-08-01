@@ -285,8 +285,18 @@ data itself is current.
 
 **FR-9a — the call graph the selector depends on is measurably broken (ADDED 2026-08-01, verified).**
 Phase 0.1 invoked `call_graph_builder.py` against this repo and the orchestrator independently
-confirmed the root cause. `langgraph_engine/parsers/config.py:11` sets `MAX_FILES = 300` against a
-repo of **411 Python files**. Consequences, all verified:
+confirmed the root cause. The builder is capped at `MAX_FILES = 300` against a repo of
+**411 Python files**.
+
+> **SITE CORRECTED 2026-08-01 (Phase 5 probe).** This originally attributed the cap to
+> `langgraph_engine/parsers/config.py:11`. **That constant is dead code — read by nothing**; its
+> only importer, `parsers/__init__.py:22`, re-exports it. **The binding cap is
+> `parsers/call_graph_builder_legacy.py:64`**, enforced at `:107` and `:118`. A second binding cap,
+> **`parsers/graph_model.py:43` (`MAX_PATHS = 500`)**, survives fixing the first and truncates path
+> traversal regardless of file count. Of 17 truncation sites, only these 2 bind. See
+> `docs/phase-5-uml/callgraph_coverage_probe.md`.
+
+Consequences, all verified:
 - `langgraph_engine/sdlc_pipeline/` — 45 files, the entire Level-2 SDLC execution core — is **100%
   absent** from the builder's output.
 - 38 of 45 hook-package files are also absent.

@@ -100,7 +100,24 @@ Neither is complete, but for different reasons, and the divergence is diagnostic
   resolution, so its per-call-site precision is a documented approximation (see
   `refinement_stats.note` in ast_call_graph.json), not a claim of type-exact CHA/RTA.
 
-**Recommendation:** raise or remove `MAX_FILES` in `parsers/config.py:11`, or make
-file discovery scope-aware so `tests/` is scanned last (or excluded from the default
-call), before trusting `call_graph_builder.py` output for any impact-analysis or
-UML-generation decision that touches `sdlc_pipeline/` or the hook packages.
+**Recommendation SUPERSEDED 2026-08-01 -- the original named the wrong file.**
+
+> The recommendation below said to raise or remove `MAX_FILES` in `parsers/config.py:11`.
+> **That constant is dead code.** It is read by nothing; its only importer,
+> `parsers/__init__.py:22`, merely re-exports it. Acting on the original recommendation
+> would change the constant, produce a diff that looks like the fix, pass review, and
+> leave discovery stopped at 300 files.
+>
+> **The binding cap is `parsers/call_graph_builder_legacy.py:64`**, enforced at `:107`
+> and `:118`. A second cap survives fixing it: **`parsers/graph_model.py:43`
+> (`MAX_PATHS = 500`)**, which truncates path traversal independently of the file count.
+> Both must be addressed. See `docs/phase-5-uml/callgraph_coverage_probe.md` for the
+> runtime measurement and the full 17-site enumeration.
+>
+> The rest of this document's analysis stands; only the site attribution was wrong.
+
+**Original recommendation (retained as filed):** raise or remove `MAX_FILES` in
+`parsers/config.py:11`, or make file discovery scope-aware so `tests/` is scanned last
+(or excluded from the default call), before trusting `call_graph_builder.py` output for
+any impact-analysis or UML-generation decision that touches `sdlc_pipeline/` or the hook
+packages.
