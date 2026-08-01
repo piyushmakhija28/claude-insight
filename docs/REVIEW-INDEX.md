@@ -1,0 +1,324 @@
+# v2.0.0 Review Index
+
+**For:** Piyush Makhija · **Purpose:** one review pass before implementation begins
+**Status:** Phase 0 COMPLETE · Phase 1 COMPLETE · **Phase 2 COMPLETE — consensus APPROVED at iteration 4, 0 open items**
+**Artifacts:** 61 across `docs/phase-0-*`, `docs/phase-1-architecture/`, `docs/phase-2-validation/`
+**Last updated:** 2026-08-01
+
+Read the MUST READ tier. Skim the second. Ignore the third unless you want to audit a specific claim.
+
+If something looks wrong, name the artifact and the claim. Everything here traces to a source.
+
+---
+
+## 1. MUST READ — your judgement changes the implementation
+
+| # | File | Size | What it is | What to look for |
+|---|------|------|-----------|------------------|
+| 1 | `phase-0-reverse-engineering/as_built_executive_summary.md` | 32 lines | The five findings that most change what v2.0.0 should do | Start here. One file if you read nothing else. |
+| 2 | `phase-1-architecture/hld.md` **SS 12** | — | Answers to the 6 open architectural questions | **The highest-value section.** Each labelled RESOLVED or PROVISIONAL. These are the real design decisions. |
+| 3 | `phase-1-architecture/hld.md` **SS 4** | 15 ADRs | Every technology decision, Chosen/Why/Rejected | ADR-006 (opt-in trade-off), ADR-010 (zero bundled hooks), ADR-012 (plugin-root ascent), ADR-015 (KG adapter) |
+| 4 | `phase-0-reverse-engineering/contradictions.md` | 175 lines | 6 ranked policy-vs-code contradictions | Whether you agree with the ranking. #1 and #2 drive real scope. |
+| 5 | `phase-0-requirements/product-sequencing-v2.md` | ~287 lines | WSJF, MVP boundary, critical path, risks | **The MVP boundary** — what ships in v2.0.0 vs defers to v2.1 |
+| 6 | `phase-0-requirements/prd-v2.md` | ~476 lines | FR-1..FR-23, NFR-1..NFR-5, measurable ACs, RTM | Sections 4 and 5. Are these ACs ones you could hold someone to? |
+| 7 | `phase-2-validation/hld_v2.md` **ADR-019, ADR-020** | — | The two Phase 2 decisions | **ADR-019: the plugin bundles ZERO MCP servers.** ADR-020: three-layer control on the push gate. Both change what gets built. |
+| 8 | `phase-2-validation/hld_v2.md` **SS 10** | 8 steps | Migration runbook, rebuilt in Phase 2 | Step 2 is `register-mcp`. If a user skips it, they get a plugin with no MCP servers and no error. Judge whether that ordering is safe. |
+| 9 | `phase-1-architecture/consensus_summary_phase1.md` + `phase-2-validation/consensus_summary_phase2.md` | ≤80 lines each | Both binary gates' final verdicts | What each checked, and what each explicitly did not |
+
+**Suggested order:** 1 → 2 → 3 → 7 → 5. Items 4, 6, 8, 9 are supporting detail.
+
+---
+
+## 2. OPEN ITEMS — unresolved, NOT decided
+
+Carried forward deliberately. Not settled to make the documents look finished.
+
+| Item | Status | Why it matters |
+|------|--------|----------------|
+| **FR-15 home-directory split** | **DISPUTED** | C.1 says 13 live-code sites / 103 comments. An independent grep says ~95 / 23. The grep cannot structurally separate docstring bodies from code, so it does not refute C.1 — but 13 is unverified by any independent method. **~7x swing in remediation scope.** AST re-derivation mandated before FR-15 is sized. (OAQ 6) |
+| **Plugin extraction boundary** | **NO CLEAN SEAM** | Package-level import SCC spans ~15-16 subpackages; function-level has ZERO cycles and 708 fragmented communities (largest 9%). Both correct, different graphs. HLD draws the seam *around* the monolith (`plugin_api/` Facade) rather than forcing a cut. Cycle-breaking sequenced to v2.1+ with quantified targets. (OAQ 5) |
+| **`${CLAUDE_PLUGIN_ROOT}` in `.mcp.json`** | UNDOCUMENTED | If unsupported, bundled MCP servers cannot use relative paths. (FR-14a item 1) |
+| **What `/plugin install` writes to settings.json** | UNDOCUMENTED | FR-18 cannot verify clean uninstall without knowing what install created. (FR-14a item 3) |
+| **What `/plugin uninstall` leaves behind** | UNDOCUMENTED | Same. (FR-14a item 4) |
+| **Bundled MCP servers vs NFR-1** | **PROVISIONAL** | ADR-018: bundled `.mcp.json` stdio servers are spawned processes too — NFR-1 could fail through the mechanism chosen to replace hooks. (FR-14a item 5) |
+| **Stop-hook true per-turn spawn count** | INFERRED, NOT MEASURED | ~2 is a static filesystem inference (7 of 9 scripts absent), never observed at runtime. FR-8a's AC requires runtime instrumentation; a static re-derivation does NOT satisfy it. |
+| **`audit_surface.json` counts** | **LOWER BOUNDS** | Its AST scan missed 4 aliased subprocess imports. The same blind spot may affect its 62 credential sites and 17 settings.json writers — nobody has checked. |
+| **Push gate after FR-4** | **UNPROTECTED, BOTH WAYS** | Protected *today* only because FR-4 has not run and the live PreToolUse hook still fires. After FR-4 it has neither preventive nor detective cover unless **both** `register-mcp` and the ADR-017 CI assertion are built. Both are **designed, not built**. This is a sequencing constraint on implementation, not a doc fix. (Phase 2) |
+| **WSJF inputs behind the MVP boundary** | **UNVALIDATED JUDGEMENT** | The arithmetic over them is exact and verified. The integers themselves are the PM's single-pass estimates, entered once, never cross-checked by a second party. Normal for WSJF and not a defect — but the MVP line is softer than the precision of the numbers implies. (Phase 2, consensus iteration 3) |
+
+**FR-14a is a spike, not a doc question.** Four of the above resolve in under an hour by building a throwaway plugin and measuring. That must happen before the packaging design freezes.
+
+| **FR-25 / FR-26 have no owner** | **PROPOSED ONLY — YOUR DECISION** | The two anti-defect checks (arithmetic recomputation; cross-file backward-propagation) exist only as proposals in `advisory_items.json`. `prd-v2.md` stops at FR-24. Each was **narrowed three times in three passes** as new instances outgrew its scope, and FR-25's own file records that a recomputation check "would have PASSED both before and after the fix while the diagram was actively contradicting an ADR." **Accept into the PRD, defer to v2.1, or drop.** Not decided. (Phase 2) |
+| **`VERSION` vs `CLAUDE.md`** | **CONTRADICTION, pre-existing** | `VERSION` reads **1.21.5**; `CLAUDE.md` and both phase-0 docs say **1.21.4**. Rule 11 makes `VERSION` the single source of truth, so `CLAUDE.md` is stale. Unowned and predates this project. Trivial to fix, but nobody has. |
+
+**The push-gate item is the one to read twice.** It is the only open item where the *order* of implementation determines whether a live protection lapses.
+
+---
+
+## 3. ACCEPTED RISKS — you decided these; recorded so they are not silently revisited
+
+| Risk | Decision | Consequence accepted |
+|------|----------|---------------------|
+| Enforcement becomes opt-in | ADR-006 | Policies do not apply on sessions where the plugin is never invoked. Stated at full strength twice in the HLD, verified unsoftened by the gate. |
+| 3 policies deleted permanently | ADR-009b | `auto-skill-agent-selection` (710 lines), `auto-plan-mode-suggestion` (1,045), `adaptive-skill-registry` (109) — **1,864 lines, irrecoverable.** `~/.claude/` is not version-controlled. A port-to-git-first alternative was offered and declined. |
+| Stop hook repaired, not removed | FR-8a | 7 of 9 dead script references individually rebuilt or formally retired. More work than stripping it. |
+| Plugin ships zero hooks | ADR-010 | Evidence-forced. Plugin hooks merge silently and cannot be individually disabled, so bundling any would defeat the project at install time. |
+
+---
+
+## 4. WHAT PHASE 1 DECIDED — the six open questions
+
+| # | Question | Verdict |
+|---|----------|---------|
+| 1 | What replaces `post-tool-tracker.py` as checkpoint writer? | **RESOLVED** — `CheckpointManager` already exists, sits outside the deletion set, triggered at step boundaries. Phase 0's "sole writer" claim was a conflation of two independent systems; crash recovery was never at risk. |
+| 2 | Disposition of the 15 hook-coupled policies | **RESOLVED** — 5 port-to-MCP, 5 demote-to-advisory, 5 delete. `push_gate` fixed as mandatory port-to-MCP + CI gate. |
+| 3 | How the plugin finds its own root | **RESOLVED** — manifest-anchored `__file__` ascent needs no undocumented behaviour, so ADR-009a branch 2 no longer depends on the unverified env-var question. |
+| 4 | The CallGraph truncation fix | **RESOLVED in design, but its TARGET was wrong — see 4b below.** Four-phase discovery, unbounded default, mandatory `DiscoveryManifest` argument, so dropping becomes *inexpressible* rather than discouraged. The design stands. The site list it was written against does not. |
+| 5 | Plugin extraction boundary | **RESOLVED AS A NEGATIVE** — no clean seam exists; 708 fragmented communities is positive evidence *against* a cut. Seam drawn around the monolith instead. |
+| 6 | FR-15's home-directory split | **UNRESOLVED BY DESIGN** — left unsized, AST re-derivation required first. |
+
+**Scope expansions Phase 1 found that Phase 0 missed entirely:**
+- **NFR-2 is already violated inside the engine** — 6 `timeout=` application sites across 5 files, including a 75-second wall-clock timeout on the pipeline path. Deleting hooks does not satisfy NFR-2.
+- **NFR-1's acceptance criterion was ill-defined** — the retained Stop hook is engine code, so "delta = 0 processes attributable to claude-workflow-engine" could never pass. Now requires per-component attribution.
+- **De-hooking removes ~6 of 116 spawn sites (~5%)**, not the large reduction the narrative implied. `stop_notifier/` retains 17 and is kept.
+
+---
+
+## 4b. WHAT PHASE 5's PROBE FOUND — read this before implementing FR-9a
+
+`ast-graph-engineer` ran the builder rather than reading it. Four findings, all **MEASURED at runtime**.
+
+**1. The cap everyone cites is dead code.** `langgraph_engine/parsers/config.py:11`'s `MAX_FILES = 300`
+is read by nothing. Its only importer re-exports it. Its own docstring calls itself "a single source
+of truth" — false. **The cap that binds is `parsers/call_graph_builder_legacy.py:64`**, enforced at
+lines 107 and 118.
+
+> **Consequence:** implementing FR-9a against the cited line would have changed the constant, looked
+> complete, and left discovery stopping at 300 files. **19 files across every phase cite
+> `parsers/config.py`** — including `SRS.md`, written the same day as this probe.
+
+**2. 17 truncation sites exist — but only TWO bind.** Phase 1's "four files plus a fifth
+different-class truncator" was half right. The full enumeration, and what it means as a work list:
+
+| Class | Sites | Binding today |
+|---|---|---|
+| File-count caps | 4 | **1** — `call_graph_builder_legacy.py:64` |
+| File-size caps | 4 | **0** — measured; no file exceeds 100 KB |
+| Graph-traversal caps | 2 | **1** — `graph_model.py:43`, `MAX_PATHS = 500` |
+| Different-class truncators | 2 | n/a — not call-graph |
+| Downstream diagram truncators | 5 | post-discovery |
+| **Total** | **17** | **2** |
+
+> **Why the distinction matters:** 17 counts *code locations*, not active truncations. Read as a work
+> list it sends an implementer to 17 places, of which 4 have measured-zero impact, 1 is dead and 1 is
+> dormant. **A work list padded with inert sites invites exactly the failure this whole finding is
+> about** — a fix aimed at the wrong site that looks complete.
+
+> **`graph_model.py:43` survives fixing the file cap.** Both probe runs emitted `hit max_paths=500
+> limit; results truncated`. **Every sequence and interaction diagram is capped at 500 paths no
+> matter how many files are ingested.** FR-9a must cover both sites or it half-works.
+
+**3. `CLAUDE.md`'s "578 classes / 3,985 methods" is a genuine untruncated measurement — of a
+different codebase.** Traced via `git log -S` to commit `ab54428`, whose tree held 226 `.py` files;
+under 300, so truncation was impossible. Re-running the builder on that archived tree reproduces
+**579 / 3,992**. **Today's complete figures are 480 / 3,506 — lower, despite nearly double the
+files**, because the v1.15–v1.20 refactors deleted class surface. What the pipeline consumes today
+is **449 / 2,844**.
+
+**4. "4 languages (Python/Java/TS/Kotlin)" is false, and always was.** Zero Java, TypeScript or
+Kotlin source files at the current tree *or* the 2026-03 tree. Published in **`CLAUDE.md:25,248`,
+`CHANGELOG.md:433`, ADR-002:51,96, `PIPELINE_ARCHITECTURE.md:137,212`.**
+
+**A rule-45 inversion — RESOLVED, and NOT by changing the rule.** The AST fallback
+(`diagrams/ast_analyzer.py:152,193`) uses an **uncapped** `rglob("*.py")`, so the mandated primary
+source reaches **73%** of the codebase while the fallback beneath it reaches **100%**.
+
+I initially read this as a rule defect and said so. **The architect overruled it, and is right.**
+Rule 45 §6 is correct *in principle* — a CallGraph carries resolved call edges the AST scan cannot
+produce, so it is the better source **in kind**. What is broken is that the better source is capped.
+Changing the rule would **enshrine a workaround for a defect**, and the ordering would become wrong
+again the moment FR-9a lands, with the rule then documenting the bug as intended behaviour. That is
+the DOCUMENTED-ONLY failure running in reverse.
+
+It is also **not uniform by diagram type**, so a blanket change would be wrong even as a stopgap: for
+class and package diagrams coverage dominates and the fallback is currently better; for sequence and
+interaction diagrams the primary remains better despite lower coverage — and is separately capped by
+`graph_model.py:43`, which the AST fallback never reaches because it produces no call paths at all.
+
+**Disposition:** leave §6 unchanged; the inversion is recorded in the HLD as independent
+justification for FR-9a, so nobody "fixes" a diagram-coverage complaint by bypassing the primary and
+thereby removes the pressure to fix the real defect.
+
+**Read-only override: EXISTS, demonstrated.** `CallGraphBuilder.__init__.__defaults__ = (N,)`
+propagates through `build_call_graph()`. Rebinding module-level `MAX_FILES` is a silent no-op —
+defaults bind at def-time, which is the trap. No env var exists. `CLAUDE_CG_MAX_PATHS=500` truncates
+traversal independently and fired on **both** probe runs. This is why the 26 diagrams could be
+generated from complete data without editing source.
+
+---
+
+## 4c. FR-9b / SRS FR-38 — the resolver defect (YOUR RULING: v2.0.0 scope)
+
+**`langgraph_engine/parsers/graph_model.py:265`**, inside `_resolve_target()`, returns `candidates[0]`
+for a bare simple method name matching multiple FQNs. Builtin and stdlib calls therefore bind to
+whatever same-named project class sorts first:
+
+| Collision | Inflated target | Measured in-degree |
+|---|---|---|
+| `list.append()` | `JsonlAppender.append` | **1,592** |
+| `str.format()` | `ErrorMessages.format` | 755–756 *(two agents measured 755 and 756; left as a range, not adjudicated)* |
+| `dict.get()` | `_MemoryLayer.get` / `set` | — |
+
+**55.5% of cross-file "resolved" edges are collision artifacts.** Of 26,114 total: 18,608 unresolved,
+2,853 builtin-collision, 433 cross-file ambiguity, leaving **4,220 high-confidence**. *(Arithmetic
+reconciles exactly: 18,608 + 2,853 + 433 = 21,894; 26,114 − 21,894 = 4,220.)*
+
+**Why it is not cosmetic:** `sdlc_pipeline/call_graph_analyzer.py` builds `danger_zones` (`:303`) and
+`hot_nodes` (`:1197`) from an `n >= 5` caller-count gate — and `_classify_risk` (`:56-67`) labels
+per-method risk on an 8+ gate. **Both are caller-count-only.** So `JsonlAppender.append` currently
+ranks as the codebase's top danger zone on the strength of every `list.append()` in the repo, and
+that ranking is injected into the Step 0 planning prompt via `prompt_gen_expert_caller.py`.
+
+**The precondition was verified, not assumed:** `resolve_edges()` *is* invoked at
+`call_graph_builder_legacy.py:96` on every build. Had it not been, `_resolved_edges` would stay
+`None`, `get_edges()` would return raw edges, and the requirement would have been unwarranted.
+
+**FR-9a alone is insufficient.** Fixing discovery without fixing resolution yields a *larger* graph
+feeding the same broken resolver. The dependency is stated in the requirement.
+
+**A separate consumer trap, explicitly NOT this defect:** `resolve_edges()` writes to
+`_resolved_edges`, not `graph.edges` — so reading `graph.edges` gives 656 instead of 7,004. **No
+shipping code does this**; all four consumers use `get_edges()` (`:155`, `:455`, `:600`, `:1209`).
+It caught an agent, not the pipeline.
+
+---
+
+## 4a. WHAT PHASE 2 DECIDED — cross-validation of the HLD
+
+Phase 2 put the HLD in front of the BA and PM agents, let the architect defend it, and ran the
+gates over the whole exchange. It produced two new ADRs and one structural mechanism.
+
+| # | Decision | Verdict |
+|---|----------|---------|
+| ADR-019 | Does the plugin bundle MCP servers? | **NO — zero bundled servers.** Bundled `.mcp.json` stdio servers spawn on plugin enable, so bundling any would violate NFR-1 through the very mechanism chosen to replace hooks. Registration becomes an explicit opt-in `register-mcp` command. Resolves OAQ from Phase 1's PROVISIONAL ADR-018. |
+| ADR-020 | How is the push gate protected once its hook is deleted? | **Three layers** — PREVENT (`unregister-mcp` refuses to strip it), DETECT (`doctor` reports it missing), PREVENT-THE-HARM (git `pre-push` hook as the last line). No single layer is trusted alone. **Neither of the first two is built yet** — see the open item above. |
+| SS 10 | Migration runbook | Rebuilt from scratch to **8 steps**, with `register-mcp` at step 2. Prior version silently assumed servers arrived with the plugin. |
+
+**The mechanism worth knowing about:** `sa_defence.json` now carries a field-suffix convention —
+`_record`/`_as_filed` means frozen-at-filing, `_now` means live-and-must-be-current — enforced by a
+validator **embedded in the file itself** and covering all 14 top-level sections. It exists because
+one defect class recurred four times in that file while the architect was actively concentrating on
+it. A date-stamped manual sweep was offered as the alternative and rejected: a sweep is a
+documented-only control, and this file is its own disproof.
+
+**What the convention does NOT do**, stated by the architect and accepted by the gate: it classifies
+*fields*, not *content*. It makes omitting the frozen/live distinction impossible. It cannot verify
+that a correctly-labelled `_now` claim is actually true. Keeping them true is still human work — the
+convention makes that work *enumerable* rather than a judgement call over prose.
+
+---
+
+## 5. SHOULD SKIM
+
+| File | What it tells you |
+|------|-------------------|
+| `phase-0-reverse-engineering/capability_loss.md` | What stops working when hooks are deleted — 14 PreToolUse gates, 9 PostToolUse capabilities, by name |
+| `phase-0-reverse-engineering/builder_divergence.md` | Root cause of `MAX_FILES=300`, with the real invocation that proved it |
+| `phase-0-reverse-engineering/path_violations.md` | Every `~/.claude/` reference and unencoded `open()`, by file:line |
+| `phase-0-reverse-engineering/claude_md_drift.md` | Where CLAUDE.md disagrees with the filesystem |
+| `phase-1-architecture/hld.md` SS 13a | The HLD's own verification-status statement and correction record |
+| `phase-0-reverse-engineering/as-built-prd.md` Appendix E | Per-FR gap analysis vs your original requirement doc |
+
+---
+
+## 6. REFERENCE ONLY — machine output, audit-on-demand
+
+**Graph/analysis:** `ast_call_graph.json` (4.2 MB) · `codebase_kg/` (5 files) · `audit_surface.json` ·
+`impact_analysis_graph.json` · `structural_inventory.json` · `complexity_report.json` · `lhs.json` ·
+`api_surface.json` · `rts_selection.json` · `policy_corpus_inventory.json` ·
+`policy_enforcement_raw.json` · `dead_code_report.json`
+
+**Gate output:** `hallucination_report_phase0/1/2.json` · `faithfulness_scorecard_phase0/1/2.json` ·
+`hallucination_report_sequencing.json` · `consensus_verdict_phase1/2.json` — plus their
+`_summary.md` counterparts
+
+**Phase 2 review exchange:** `ba_review.json` (10 findings) · `pm_review.json` (9 findings) ·
+`sa_defence.json` (the architect's response, plus the field-suffix convention and its embedded
+validator) · `advisory_items.json`
+
+**Per-agent prose summaries** (each duplicates its JSON): `dead_code_summary.md` ·
+`ast_call_graph_summary.md` · `impact_analysis_summary.md` · `structural_inventory_summary.md` ·
+`policy_corpus_summary.md` · `policy_enforcement_summary.md` · `stop_hook_overhead.md`
+
+**Housekeeping — two files for you to rule on:**
+- `dead_code_report.json.malformed.bak` — backup of an artifact repaired mid-run. Safe to delete.
+- `phase-1-architecture/hld-v1.20.0-superseded.md` — the **pre-existing git-tracked HLD** that the
+  new one replaced. The orchestrator assigned that output path without checking it was occupied;
+  the architect preserved the prior content and disclosed it. The original is also recoverable via
+  `git show a955c43:docs/phase-1-architecture/hld.md`. Keep or delete as you prefer.
+
+---
+
+## 7. WHAT THE QUALITY GATES DO AND DO NOT GUARANTEE
+
+Read this before weighting the scores.
+
+**They verify PROVENANCE.** A claim traces to a cited source, and the source says what is claimed.
+This caught a citation invoking a skill file as *licence* for a method that file explicitly
+*forbids* — which required reading the cited text, and which no internal-consistency check finds.
+
+**They do NOT verify TRUTH.** If a source was never independently measured, accurate citation
+upgrades its apparent status without adding evidence. FR-15's "13 call sites" passed both Phase 0
+gates at 1.00/1.00 and remains unverified. That is the gates' scope, not a defect in them — and it
+is why section 2 exists.
+
+**"No defect found in what was examined" is not "verified."** Both Phase 1.3 gates declared coverage
+reductions. The consensus gate names what it did not re-read in each iteration. The HLD's own SS 13a
+states this in the same terms. Treat clean scores as bounded by their stated scope.
+
+**Correction record — every defect caught before shipping, by phase:**
+
+| # | Correction | Found by |
+|---|-----------|----------|
+| 1 | "46/46 orphan policies" — false, artifact of an orchestrator briefing error (SRS.md never supplied). Real figure 14/46. | The KG agent flagging it as absence-of-evidence |
+| 2 | "70% cycle blocks extraction" — overstated; package-level vs function-level measure different graphs | Phase C.2.5 |
+| 3 | 8-spawn Stop-hook floor — wrong; 7 of 9 target scripts do not exist, true floor ~2 | Cross-agent contradiction |
+| 4 | Three invented skill names in an orchestrator dispatch | The BA agent refusing to substitute |
+| 5 | Malformed `dead_code_report.json` (illegal key inside an array) | Phase C.2.5 ingestion |
+| 6 | `setup_wizard.py` "writes hook registrations" — fabricated mechanism | Orchestrator, then confirmed 3x independently |
+| 7 | `audit_surface.json` undercounts spawns — AST scan misses 4 aliased imports | Hallucination gate, generalised by orchestrator |
+| 8 | "7 empty KG domains" — false; they hold **486 real edges** under a `relationships` key | Faithfulness gate's from-scratch classifier |
+| 9-13 | **Five instances** of one defect class: a summary count disagreeing with its enumeration. Included a **missing 75-second timeout** on the pipeline path and a **wrong policy-disposition tally** (4/6/5 vs 5/5/5 — both sum to 15, so any total-check passes it) | Consensus gate across 4 iterations |
+| 14 | **Eight instances** of a second class — *backward propagation*: a claim corrected in one place, left standing in the artifact it was copied from or into. 4 in `hld.md`, 4 in `sa_defence.json` | Consensus gate, Phase 2 |
+| 15 | ADR-012's **heading** kept a claim its own body, diagram and table had already reframed. Diagnosis: "a heading is skimmed as a label rather than re-read as a claim" | Consensus gate, Phase 2 |
+| 16 | `pm_review.json` reported as having "no findings array" — it has 9. Root cause: a probe using `list(d.keys())[:9]` read as exhaustive | Consensus gate, Phase 2 |
+| 17 | A governance guarantee documented as **active** that does not exist (ADR-017's CI assertion is designed, not built) | Consensus gate, Phase 2 iteration 2 |
+| 18 | The **validator itself went stale in the pass that extended it** — its embedded source still encoded the old 3-array scope while the file claimed 14 sections. The stale-claim defect, inside the mechanism built to prevent it | The architect, by executing the *stored* string instead of trusting the authored form |
+| 19-20 | Two orchestrator errors: findings mis-attributed between the BA and PM reviews, and an "omitted 4" figure that was really 5 against a stale denominator — which then survived three passes | Consensus gate, Phase 2 |
+| 21 | This index stated two new rules were "binding on FR-25 and FR-26" with the "(proposed)" hedge dropped — present-tense-as-existing framing, in the document that catalogues that defect | Phase 5 SRS agent, contradicting its own brief |
+| 22 | **`parsers/config.py:11` is dead code** — the truncation constant cited in **19 files across every phase** is read by nothing. Fixing it would have changed nothing while appearing to succeed | Phase 5 probe, by running the builder instead of reading it |
+| 23 | "578 classes / 3,985 methods" in `CLAUDE.md` — a real untruncated measurement of a **226-file 2026-03 tree**. Today's complete figure is **480 / 3,506** | Phase 5 probe, via `git log -S` + archived-tree re-run |
+| 24 | **"4 languages (Python/Java/TS/Kotlin)"** — false at every timestamp; zero Java/TS/Kotlin files ever. Published in 5 documents | Phase 5 probe |
+
+**Of these, only #6 was authoring fabrication.** The rest were accurate citation of imperfect
+measurements, or errors originating in the orchestrator's own briefs. That is the dominant failure
+mode in this run: not agents inventing facts, but faithful propagation of unverified ones. Treat
+cited Phase 0 numbers as **best available**, not verified.
+
+**Two rules came out of this that apply to everything built from here:**
+
+1. **Any check needs a companion negative test proving it can fail.** Otherwise it is a green light
+   with no mechanism behind it.
+2. **Any embedded or generated check must be executed from its stored form, not its authored form.**
+   Defect #18 was invisible to every method except this one, and it was found in the same pass that
+   created it.
+
+**These two rules have no owner.** They were written to bind **FR-25 and FR-26** — but those are
+**PROPOSED IDs that exist only in `phase-2-validation/advisory_items.json`**, hedged as "(proposed)"
+in every occurrence. **`prd-v2.md` stops at FR-24.** Neither proposal has been accepted into the
+requirement set, sized, or assigned. **This is a decision for you** (see section 2).
+
+*Recorded as correction #21: an earlier revision of this very section stated the rules were "binding
+on FR-25 and FR-26" with the "(proposed)" hedge dropped — present-tense-as-existing framing, the
+exact leak `hallucination_report_sequencing.json` was checking for, committed in the document that
+catalogues that defect class. Found by the Phase 5 SRS agent contradicting its own brief.*
