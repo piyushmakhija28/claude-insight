@@ -300,6 +300,13 @@ states this in the same terms. Treat clean scores as bounded by their stated sco
 | 24 | **"4 languages (Python/Java/TS/Kotlin)"** — false at every timestamp; zero Java/TS/Kotlin files ever. Published in 5 documents | Phase 5 probe |
 | 25 | This index said `hld.md` SS 4 holds **"15 ADRs"** — correct at Phase 1, stale once ADR-019 and ADR-020 landed at Phase 2. It is **17**: 15 numeric ids (006–020) plus ADR-**009a** and **009b**, which a `ADR-[0-9]{3}` regex silently misses | V2-001's author, while writing ADR-006 |
 | 26 | `prd-v2.md` SS 9 still claimed hook deletion "removes the sole writer of crash-recovery checkpoint state" — **retracted**; OAQ 1 established `CheckpointManager` sits outside the deletion set, so crash recovery was never at risk. The real loss is per-tool-call *telemetry* | V2-001's author |
+| 27 | The orchestrator's closing comment on **#267 cited commit `8c34d3f`**, which is not a commit in this repository. The real hash is **`92053ff`**. Typed from memory instead of read from `git log`, in a comment whose entire purpose is to make the work auditable — a wrong hash makes the close *unverifiable*, which is worse than omitting it. Corrected publicly on the issue rather than by editing the comment | The orchestrator, immediately after, by reading `git log` |
+
+**#27 is the second instance of the same root cause as #19-20: a fact restated from working memory
+when the source was one command away.** Both were caught only because something else prompted a
+re-read. The rule that follows is narrow and mechanical — **an identifier that another person will
+use to look something up (commit hash, issue number, line number, file path) gets read from the tool
+that owns it at the moment of writing, never recalled.**
 
 **Of these, only #6 was authoring fabrication.** The rest were accurate citation of imperfect
 measurements, or errors originating in the orchestrator's own briefs. That is the dominant failure
