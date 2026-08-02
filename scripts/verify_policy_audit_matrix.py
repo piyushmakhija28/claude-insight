@@ -1,8 +1,9 @@
 """Verify the Deliverable-1 policy audit matrix against V2-004 acceptance criteria.
 
-Checks ``docs/reports/policy-implementation-audit-v2.md`` against the six
-re-scoped acceptance criteria recorded for issue V2-004 in
-``docs/phase-6-sprint/github_issues.json``:
+Checks ``docs/reports/policy-implementation-audit-v2.md`` against seven
+acceptance criteria recorded in ``docs/phase-6-sprint/github_issues.json``:
+AC1 through AC6 are V2-004's re-scoped set, and AC7 is V2-005's, added here
+because the column it governs had no enforcing check anywhere:
 
 AC1 Row-set identity -- the set of Policy-file cells in the matrix equals the set
     of ``.md`` basenames in ``docs/policies/``, tested as an empty symmetric
@@ -26,8 +27,16 @@ AC5 NONE is explicit and never blank -- no Evidence cell is empty, a row naming
 AC6 The reported MEASURED/CITED/INFERRED split equals the split recomputed from
     the rows. AC6 asserts on the label's presence and correctness, never on its
     value, so no minimum MEASURED count is imposed.
+AC7 Every Post-plugin plan cell is populated and drawn from the closed
+    vocabulary keep-as-is | port-to-plugin | port-to-MCP | demote-to-advisory |
+    delete. This is V2-005's criterion, added after the column was found to be
+    parsed into ``Row.plan`` and then consumed by nothing -- an acceptance
+    criterion no check enforces is a review-time hope. It is EXPECTED TO FAIL
+    while rows whose disposition no evidence supports remain deliberately blank,
+    and that failure is the mechanism that surfaces them rather than a defect in
+    the artifact.
 
-Exit status is 0 only when all six assertions pass; any failure exits 1. The
+Exit status is 0 only when all seven assertions pass; any failure exits 1. The
 script takes no arguments by design: an overridable input path would let a
 caller point the gate at a file other than the artifact it exists to guard.
 """
@@ -53,6 +62,13 @@ MATRIX_HEADER = (
     "Verification",
 )
 VERIFICATION_LABELS = ("MEASURED", "CITED", "INFERRED")
+PLAN_VOCABULARY = (
+    "keep-as-is",
+    "port-to-plugin",
+    "port-to-MCP",
+    "demote-to-advisory",
+    "delete",
+)
 
 _EXT = r"(?:py|md|json|txt|ya?ml|toml|ini|cfg|ts|tsx|js|java|kt|sh|bat)"
 PATH_TOKEN = re.compile(r"[A-Za-z0-9_./-]+\." + _EXT)
@@ -425,6 +441,58 @@ def check_none_explicit(rows: list[Row]) -> Result:
     return Result("AC5", "NONE is explicit, never blank, never MEASURED", not failures, failures, notes)
 
 
+def check_plan_populated(rows: list[Row]) -> Result:
+    """Assert every Post-plugin plan cell is populated and in vocabulary (AC7).
+
+    V2-005 states that a row with an empty Post-plugin plan cell fails, and that
+    a value outside the fixed vocabulary fails review. Until this assertion
+    existed, the parser read the column into ``Row.plan`` and no check consumed
+    it, so the column could be empty on any number of rows while the gate exited
+    zero. An acceptance criterion no check enforces is a review-time hope.
+
+    Empty cells are a deliberate state in this project, not an oversight: a row
+    whose disposition no evidence supports is left blank rather than filled with
+    a placeholder, because a non-empty token that encodes "undecided" satisfies
+    the letter of FR-2 and FR-20 while defeating what both exist to force. This
+    assertion is expected to FAIL while such rows remain, and that failure is
+    the mechanism that surfaces them.
+
+    Args:
+        rows: Parsed matrix rows.
+
+    Returns:
+        Result listing empty plan cells and out-of-vocabulary values, with a
+        per-disposition tally as advisory notes.
+    """
+    failures: list[str] = []
+    notes: list[str] = []
+    tally: dict[str, int] = {value: 0 for value in PLAN_VOCABULARY}
+    empty = 0
+    for row in rows:
+        plan = row.plan.strip()
+        if not plan:
+            empty += 1
+            failures.append(f"line {row.line_no} ({row.policy}): Post-plugin plan cell is empty")
+            continue
+        if plan not in PLAN_VOCABULARY:
+            failures.append(
+                f"line {row.line_no} ({row.policy}): Post-plugin plan " f"{plan!r} is outside the fixed vocabulary"
+            )
+            continue
+        tally[plan] += 1
+    for value in PLAN_VOCABULARY:
+        notes.append(f"{value}: {tally[value]}")
+    notes.append(f"empty: {empty}")
+    notes.append(f"tally total: {sum(tally.values()) + empty} of {len(rows)} rows")
+    return Result(
+        "AC7",
+        "Post-plugin plan populated and in vocabulary",
+        not failures,
+        failures,
+        notes,
+    )
+
+
 def check_reported_split(text: str, rows: list[Row]) -> Result:
     """Assert the reported verification split equals the recomputed split (AC6).
 
@@ -464,7 +532,7 @@ def check_reported_split(text: str, rows: list[Row]) -> Result:
 
 
 def main() -> int:
-    """Run all six assertions and print a report.
+    """Run all seven assertions and print a report.
 
     Returns:
         0 when every assertion passes, 1 otherwise.
@@ -492,6 +560,7 @@ def main() -> int:
         check_cited_attribution(rows),
         check_none_explicit(rows),
         check_reported_split(text, rows),
+        check_plan_populated(rows),
     ]
 
     for result in results:
@@ -507,7 +576,7 @@ def main() -> int:
     if failed:
         print("RESULT: FAIL (" + ", ".join(failed) + ")")
         return 1
-    print("RESULT: PASS (AC1-AC6)")
+    print("RESULT: PASS (AC1-AC7)")
     return 0
 
 
