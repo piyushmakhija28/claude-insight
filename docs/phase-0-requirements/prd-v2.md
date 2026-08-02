@@ -395,9 +395,18 @@ following are consequences this pass surfaced that the user may not have had in 
 was accepted -- flagged for awareness, not for re-litigation.
 
 - **ADR-006 (hook-free):** accepted consequence is "enforcement becomes opt-in." This pass adds that
-  the SAME deletion also removes the sole writer of crash-recovery checkpoint state (NFR-3,
-  Section 3) and reopens a deliberately-closed version-push bypass (FR-23) -- both are downstream of
-  ADR-006 but were not enumerated in the ADR's own "Consequence" line. Recommend the ADR-006 document
+  the SAME deletion also costs per-tool-call progress telemetry (NFR-3, Section 3) and reopens a
+  deliberately-closed version-push bypass (FR-23) -- both are downstream of
+  ADR-006 but were not enumerated in the ADR's own "Consequence" line.
+
+  > **SUPERSEDED CLAIM CORRECTED 2026-08-02.** This bullet previously read "removes the sole writer
+  > of crash-recovery checkpoint state (NFR-3)". **That framing is wrong and was retracted.**
+  > `hld.md` SS 12 OAQ 1 resolves it: `CheckpointManager` already exists, sits OUTSIDE the deletion
+  > set, and is triggered at step boundaries, so **crash recovery was never at risk**. Phase 0's
+  > "sole writer" claim conflated two independent systems. What the deletion actually costs is
+  > per-tool-call progress *telemetry*, which is a narrower loss. Found while authoring
+  > `docs/architecture/ADR-006-hook-free-execution.md` (V2-001), which documents the corrected
+  > version. Recommend the ADR-006 document
   cross-reference FR-4a's three named consequences explicitly rather than leaving them only in the
   orchestration prompt.
 - **ADR-007 (pinned snapshot):** no new consequence found; the dev-mode escape hatch's three guard

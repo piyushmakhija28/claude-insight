@@ -17,7 +17,7 @@ If something looks wrong, name the artifact and the claim. Everything here trace
 |---|------|------|-----------|------------------|
 | 1 | `phase-0-reverse-engineering/as_built_executive_summary.md` | 32 lines | The five findings that most change what v2.0.0 should do | Start here. One file if you read nothing else. |
 | 2 | `phase-1-architecture/hld.md` **SS 12** | — | Answers to the 6 open architectural questions | **The highest-value section.** Each labelled RESOLVED or PROVISIONAL. These are the real design decisions. |
-| 3 | `phase-1-architecture/hld.md` **SS 4** | 15 ADRs | Every technology decision, Chosen/Why/Rejected | ADR-006 (opt-in trade-off), ADR-010 (zero bundled hooks), ADR-012 (plugin-root ascent), ADR-015 (KG adapter) |
+| 3 | `phase-1-architecture/hld.md` **SS 4** | **17 ADRs** | Every technology decision, Chosen/Why/Rejected | ADR-006 (opt-in trade-off), ADR-010 (zero bundled hooks), ADR-012 (plugin-root ascent), ADR-015 (KG adapter), ADR-019 (zero bundled MCP servers), ADR-020 (three-layer push gate) |
 | 4 | `phase-0-reverse-engineering/contradictions.md` | 175 lines | 6 ranked policy-vs-code contradictions | Whether you agree with the ranking. #1 and #2 drive real scope. |
 | 5 | `phase-0-requirements/product-sequencing-v2.md` | ~287 lines | WSJF, MVP boundary, critical path, risks | **The MVP boundary** — what ships in v2.0.0 vs defers to v2.1 |
 | 6 | `phase-0-requirements/prd-v2.md` | ~476 lines | FR-1..FR-23, NFR-1..NFR-5, measurable ACs, RTM | Sections 4 and 5. Are these ACs ones you could hold someone to? |
@@ -299,6 +299,8 @@ states this in the same terms. Treat clean scores as bounded by their stated sco
 | 22 | **`parsers/config.py:11` is dead code** — the truncation constant cited in **19 files across every phase** is read by nothing. Fixing it would have changed nothing while appearing to succeed | Phase 5 probe, by running the builder instead of reading it |
 | 23 | "578 classes / 3,985 methods" in `CLAUDE.md` — a real untruncated measurement of a **226-file 2026-03 tree**. Today's complete figure is **480 / 3,506** | Phase 5 probe, via `git log -S` + archived-tree re-run |
 | 24 | **"4 languages (Python/Java/TS/Kotlin)"** — false at every timestamp; zero Java/TS/Kotlin files ever. Published in 5 documents | Phase 5 probe |
+| 25 | This index said `hld.md` SS 4 holds **"15 ADRs"** — correct at Phase 1, stale once ADR-019 and ADR-020 landed at Phase 2. It is **17**: 15 numeric ids (006–020) plus ADR-**009a** and **009b**, which a `ADR-[0-9]{3}` regex silently misses | V2-001's author, while writing ADR-006 |
+| 26 | `prd-v2.md` SS 9 still claimed hook deletion "removes the sole writer of crash-recovery checkpoint state" — **retracted**; OAQ 1 established `CheckpointManager` sits outside the deletion set, so crash recovery was never at risk. The real loss is per-tool-call *telemetry* | V2-001's author |
 
 **Of these, only #6 was authoring fabrication.** The rest were accurate citation of imperfect
 measurements, or errors originating in the orchestrator's own briefs. That is the dominant failure
