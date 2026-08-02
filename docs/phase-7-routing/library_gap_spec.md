@@ -47,6 +47,35 @@ as an attack surface.
 **Suggested skills:** `mcp-server-engineering-core` (new, see below), plus existing
 `api-design-core`, `contract-testing-core`, `error-handling-patterns`.
 
+### AMENDMENT 2026-08-02 -- build this agent on `mcp-base`, not from first principles
+
+Surveying the workspace changed this entry. **21 working MCP servers already exist**, all
+registered, all sharing a vendored copy of the `mcp-base` framework
+(`~/Documents/workspace-spring-tool-suite-4-4.27.0-new/mcp-base`). The capability gap is
+real -- no *agent* owns MCP engineering -- but the *domain knowledge* is not missing from the
+organisation, only from the library. The agent must be written against this existing corpus,
+so it produces servers consistent with the other 21 rather than a 22nd dialect.
+
+`mcp-base` supplies: `MCPResponse` builder, the `@mcp_tool_handler` decorator,
+`AtomicJsonStore`, and `LazyClient`.
+
+**This directly reduces V2-016's hardest constraint.** ADV-008 requires that `register-mcp`
+edit `settings.json` by merge-against-fresh-read so a concurrent writer is not clobbered.
+`AtomicJsonStore` (`mcp_base/persistence.py:26`) already implements exactly that -- thread-safe,
+write-to-temp-then-rename for crash safety, with an atomic read-modify-write path. **V2-016
+should reuse it rather than reimplement it**, and the agent must know that. Whether this
+changes V2-016's size is the product manager's call, not this spec's.
+
+**A live maintenance hazard the agent must understand.** `mcp-base` is vendored by copy into
+each server as `base/`, not depended on as a package. A fix to one copy does not reach the
+others. This was demonstrated today: the non-idempotent POST retry was first fixed in
+`mcp-github-api/base/clients.py` (`33af037`) while the canonical
+`mcp-base/mcp_base/clients.py` still carried it, along with 18 further vendored copies.
+Canonical is now fixed (`354ed99`). Measured blast radius was narrow -- only `mcp-github-api`
+and `mcp-figma` reference `GitHubApiClient` outside `base/`, and figma's are test-only -- but
+the propagation model is a standing hazard, and an MCP-engineering agent that does not know
+about it will keep fixing copies.
+
 ---
 
 ## PRIORITY 2 -- `claude-code-plugin-engineer`
@@ -111,7 +140,7 @@ plus existing `requirements-traceability-core`.
 
 | Skill | For | Must cover |
 |---|---|---|
-| `mcp-server-engineering-core` | P1 | MCP protocol, tool schema design, stdio transport, user-scope registration, merge-against-fresh-read config safety, register/unregister round trip |
+| `mcp-server-engineering-core` | P1 | MCP protocol, tool schema design, stdio transport, user-scope registration, merge-against-fresh-read config safety, register/unregister round trip. **Write it against `mcp-base` and the 21 existing servers** -- `MCPResponse`, `@mcp_tool_handler`, `AtomicJsonStore`, `LazyClient` -- plus the vendored-copy propagation hazard |
 | `claude-code-plugin-packaging-core` | P2 | manifest schema, convention discovery, install/enable/uninstall lifecycle, hook-merge semantics, `${CLAUDE_PLUGIN_ROOT}`, marketplace entries |
 | `technical-writing-core` | P3 | audience analysis, information architecture, procedural vs reference vs explanatory modes, minimalism (Carroll) |
 | `procedural-documentation-core` | P3 | runbooks, migration guides, preconditions, verification points, rollback steps, numbered-step discipline |
