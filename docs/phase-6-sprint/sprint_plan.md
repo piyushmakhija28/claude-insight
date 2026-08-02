@@ -390,12 +390,15 @@ Strictly serial. Each issue blocks the next.
 | V2-016 | SRS FR-37 / ADR-019 -- `register-mcp` and `unregister-mcp` | 5 SOURCED |
 | V2-017 | SRS NFR-12 / ADR-020 -- PREVENT and DETECT layers on the push gate | 3 ASSUMED |
 
-**Both `register-mcp` and `unregister-mcp` are DESIGNED, NOT BUILT.** `hld_v2.md:759` states
-verbatim that `register-mcp` "does not exist yet". `hld_v2.md:738` describes `unregister-mcp` as "is
+**Both `register-mcp` and `unregister-mcp` are DESIGNED, NOT BUILT.** `hld_v2.md:790` states
+verbatim that `register-mcp` "does not exist yet". `hld_v2.md:769` describes `unregister-mcp` as "is
 designed to read and write" `settings.json` -- a wording downgrade recorded in that file's own change
-log at line 1934. Zero lines of code exist for either.
+log at line 2011. Zero lines of code exist for either.
 
-**V2-016 carries the ADR-020 Path C verification task** (`hld_v2.md:773`, "~10 minutes, at the only
+<!-- Line citations re-anchored 2026-08-02 (was 759 / 738 / 1934 / 773). All four were stale by the
+     same cause: hld_v2.md grew after these were written. See REVIEW-INDEX correction 28. -->
+
+**V2-016 carries the ADR-020 Path C verification task** (`hld_v2.md:804`, "~10 minutes, at the only
 moment it can be performed"). Path C -- a user running `/plugin uninstall` after removing PreToolUse
 -- is INFERRED safe, not measured safe, and it is the one path with no available control if the
 inference is wrong.

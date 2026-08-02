@@ -1,0 +1,14 @@
+{
+  "name": "techdeveloper-org",
+  "owner": {
+    "name": "techdeveloper-org"
+  },
+  "description": "Private marketplace catalog for the techdeveloper-org Claude Code plugins.",
+  "plugins": [
+    {
+      "name": "claude-workflow-engine",
+      "source": "./plugin",
+      "description": "SDLC orchestration entry points for the Claude Workflow Engine. Ships commands, agents and skills only: zero hooks and zero bundled MCP servers, so an enabled-but-uninvoked plugin contributes no processes to a session."
+    }
+  ]
+}

@@ -302,6 +302,14 @@ states this in the same terms. Treat clean scores as bounded by their stated sco
 | 26 | `prd-v2.md` SS 9 still claimed hook deletion "removes the sole writer of crash-recovery checkpoint state" — **retracted**; OAQ 1 established `CheckpointManager` sits outside the deletion set, so crash recovery was never at risk. The real loss is per-tool-call *telemetry* | V2-001's author |
 | 27 | The orchestrator's closing comment on **#267 cited commit `8c34d3f`**, which is not a commit in this repository. The real hash is **`92053ff`**. Typed from memory instead of read from `git log`, in a comment whose entire purpose is to make the work auditable — a wrong hash makes the close *unverifiable*, which is worse than omitting it. Corrected publicly on the issue rather than by editing the comment | The orchestrator, immediately after, by reading `git log` |
 
+| 28 | **Line citations into `hld_v2.md` have drifted wholesale.** V2-015's author found `hld_v2.md:759` wrong; measuring the rest showed it is not a typo but one systematic cause — the file grew, and *nothing re-anchored the citations*. Three of four checked were off by **exactly +31** (759→790, 738→769, 773→804) and the fourth by +77 (1934→2011). **36 such citations exist across 6 documents**; spot-resolving them lands several on blank lines and one on a table separator | V2-015's author found the first; the orchestrator measured the scope |
+
+**#28 is the defect class already recorded at #23-25 — citation drift from document growth — but this
+is the first time it was measured as a *population* rather than found one at a time.** Only the four
+that batch D's next agent will actually read were re-anchored; **the other 32 are recorded and left**,
+because a mass rewrite would drift again on the next edit. The durable fix is to cite by heading
+rather than by line, and that is a decision for the reviewer, not a change to make silently.
+
 **#27 is the second instance of the same root cause as #19-20: a fact restated from working memory
 when the source was one command away.** Both were caught only because something else prompted a
 re-read. The rule that follows is narrow and mechanical — **an identifier that another person will

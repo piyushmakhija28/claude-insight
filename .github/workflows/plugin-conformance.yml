@@ -1,0 +1,80 @@
+# Plugin conformance gate - PRD FR-14 / SRS FR-26 (issue V2-015)
+#
+# This is a SEPARATE workflow from ci.yml on purpose. ci.yml carries a
+# paths-ignore list containing "**/*.md", and the plugin tree is almost entirely
+# markdown - a change that added plugin/hooks/README.md would create a hooks/
+# directory in the plugin tree and ci.yml would never run. A conformance gate
+# that a markdown-only commit can skip is not a gate. This workflow declares no
+# path filters at all, so it runs on every push and pull request to main.
+#
+# The negative-control step below is not decoration. A gate that has never been
+# observed to reject anything is indistinguishable from a gate that cannot
+# reject anything, so the workflow plants a violation in a scratch copy of the
+# plugin tree on every run and fails the build if the gate accepts it.
+
+name: Plugin conformance
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: plugin-conformance-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  plugin-conformance:
+    name: Plugin conformance (ADR-010 / ADR-019 CRITICAL)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install jsonschema
+        run: pip install "jsonschema>=4.0.0,<5.0.0"
+
+      - name: Plugin conformance gate
+        run: python scripts/verify_plugin_conformance.py
+
+      - name: Plugin conformance gate negative control
+        shell: bash
+        run: |
+          set -eu
+          scratch="$(mktemp -d)"
+          cp -r plugin/. "$scratch/"
+          mkdir -p "$scratch/hooks"
+          printf '{"hooks":{}}' > "$scratch/hooks/hooks.json"
+          if python scripts/verify_plugin_conformance.py --plugin-root "$scratch"; then
+            echo "NEGATIVE CONTROL FAILED: the gate accepted a plugin tree carrying a planted hooks artefact"
+            exit 1
+          fi
+          echo "NEGATIVE CONTROL OK: the gate rejected the planted hooks artefact"
+
+      - name: Plugin conformance specificity control
+        shell: bash
+        run: |
+          set -eu
+          scratch="$(mktemp -d)"
+          cp -r plugin/. "$scratch/"
+          mkdir -p "$scratch/reference/hooks-notes"
+          printf 'notes about hooks\n' > "$scratch/reference/hooks-notes/webhooks.md"
+          printf 'notes about mcp\n' > "$scratch/reference/mcp-notes.md"
+          printf '{}' > "$scratch/reference/mcp.json.sample"
+          if python scripts/verify_plugin_conformance.py --plugin-root "$scratch"; then
+            echo "SPECIFICITY CONTROL OK: the gate accepted unrelated content"
+          else
+            echo "SPECIFICITY CONTROL FAILED: the gate rejected content that violates nothing"
+            exit 1
+          fi
