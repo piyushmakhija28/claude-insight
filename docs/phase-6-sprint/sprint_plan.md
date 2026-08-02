@@ -7,7 +7,10 @@ sections 2.4, 3 batch B, 4, 5.2 and 7. One issue re-sized; no dependency, orderi
 (revised again 2026-08-02 by scrum-master-agent -- mechanical consistency pass: ASSUMPTION A3
 corrected 74 -> 69 to agree with A5; section 5.2's propagation paragraph re-verified against disk and
 corrected, two of its three claims were false; V2-009's WSJF recomputed in new section 2.5. No size,
-dependency, ordering or scope change in this pass.)
+dependency, ordering or scope change in that pass.)
+(revised again 2026-08-02 by scrum-master-agent -- V2-004 re-pointed 8 -> 3 RE-ESTIMATED; two
+missing dependency edges added, V2-017 -> V2-026 and V2-017 -> V2-027; section 4's chain figures
+recomputed and one of them corrected. Totals moved 111 -> 106.)
 **Target:** `claude-workflow-engine` v1.21.5 -> v2.0.0
 **Status of this document:** DRAFT. Nothing in it has been created on GitHub. `github_issues.json`
 in this directory holds 37 issue drafts, none created.
@@ -53,9 +56,9 @@ not capacity boundaries, so they survive any velocity value.
 |---|---|---|
 | A1 | Relative point sizes are comparable across issues drawn from `product-sequencing-v2.md` and issues sized by this document. | The former are the product manager's single-pass Fibonacci estimates; the latter are this document's. Neither has ever been calibrated against a completed item, because no item has completed. |
 | A2 | A batch is workable by one person or a small team without further decomposition. | No team size is on record. If the work is parallelised across more than one person, batches B, E and G contain issues that can proceed concurrently; batches A, D and F contain serial chains that cannot. |
-| A3 | The 34 ASSUMED points added by this document (section 2) are of the same currency as the 69 SOURCED points. | They were sized against the same anchor, but by a different estimator in a different pass. Treat the two totals separately until one completed item calibrates them. **Corrected 2026-08-02:** this row read "74 sourced points" until then. 74 predated V2-009's re-point and contradicted A5 directly beneath it, which already read 69. 69 is correct: V2-009's original 5 left the SOURCED bucket when it moved to RE-ESTIMATED, so SOURCED went 74 -> 69 while the total went 108 -> 111. |
+| A3 | The 26 ASSUMED points added by this document (section 2) are of the same currency as the 69 SOURCED points. | They were sized against the same anchor, but by a different estimator in a different pass. Treat the two totals separately until one completed item calibrates them. **Corrected 2026-08-02:** this row read "74 sourced points" until then. 74 predated V2-009's re-point and contradicted A5 directly beneath it, which already read 69. 69 is correct: V2-009's original 5 left the SOURCED bucket when it moved to RE-ESTIMATED, so SOURCED went 74 -> 69 while the total went 108 -> 111. |
 | A4 | No batch contains hidden work discovered only on contact. | Contradicted in advance for at least two items -- PRD FR-15 is explicitly unsizable until an AST re-derivation runs, and PRD FR-9a's written acceptance criterion was known to be both padded and incomplete (section 5.2; the AC has since been amended and V2-009 re-pointed, section 2.4). Both are named rather than absorbed. A third is now named: the cost of an unbounded path enumeration on a 26,114-edge graph is INFERRED, not measured (section 2.4). |
-| A5 | The 8 RE-ESTIMATED points (section 2.4) are of the same currency as the 69 SOURCED and the 34 ASSUMED. | Added 2026-08-02. This is A3's problem one degree worse. The re-estimate was set against the same anchor, but by a **third** estimator in a **third** pass, and like the other two it has never been calibrated against a completed item, because no item has completed. A re-estimate is ASSUMED in kind. Treat all three totals separately. |
+| A5 | The 11 RE-ESTIMATED points (section 2.4) are of the same currency as the 69 SOURCED and the 26 ASSUMED. | Added 2026-08-02. This is A3's problem one degree worse. The re-estimate was set against the same anchor, but by a **third** estimator in a **third** pass, and like the other two it has never been calibrated against a completed item, because no item has completed. A re-estimate is ASSUMED in kind. Treat all three totals separately. |
 
 ---
 
@@ -74,22 +77,24 @@ in this plan is expressed as a multiple of that job.
 - **SOURCED** -- the size comes from `product-sequencing-v2.md` section 2 or 2a or 2c. 69 points
   total (45 pure SOURCED + 24 split inside a sourced set, see section 2.3).
 - **ASSUMED** -- the size was set by this document against the anchor above, because the source set
-  contains no size for the unit. 34 points total, across 13 issues.
+  contains no size for the unit. 26 points total, across 12 issues.
 - **RE-ESTIMATED** -- the unit carried a size from an earlier pass, that size's stated basis was
-  invalidated by a later scope change, and the size was re-derived against the anchor above. 8 points
-  total, across 1 issue (V2-009). Added 2026-08-02; see section 2.4. This bucket exists because such
+  invalidated by a later scope change, and the size was re-derived against the anchor above. 11 points
+  total, across 2 issues (V2-009 and V2-004). Added 2026-08-02; see sections 2.4 and 2.4b. This bucket exists because such
   a size is neither SOURCED (the source figure no longer describes the work) nor ASSUMED (a prior
   figure existed and was displaced, rather than being absent).
 - **UNSIZED BY MANDATE** -- 1 issue (PRD FR-15 / SRS FR-28). `product-sequencing-v2.md` section 2a
   and `prd-v2.md` section 5 both state FR-15 must not be sized until the AST classifier has run.
   This plan honours that and assigns no number.
 
-**Total: 69 SOURCED + 34 ASSUMED + 8 RE-ESTIMATED = 111 points, plus 1 unsized item.** These three
+**Total: 69 SOURCED + 26 ASSUMED + 11 RE-ESTIMATED = 106 points, plus 1 unsized item.** These three
 totals are reported separately and deliberately not merged into a single headline figure.
 
-**Change from the 2026-08-01 figure of 108.** V2-009 was re-pointed 5 -> 8 on 2026-08-02 after the
-owner ruling of 2026-08-01 replaced its acceptance criterion. 5 points left SOURCED (74 -> 69) and 8
-points entered RE-ESTIMATED, a net +3. No other size moved.
+**Change history of the total.** The 2026-08-01 baseline was 108. V2-009 was re-pointed 5 -> 8 on
+2026-08-02 after the owner ruling replaced its acceptance criterion: 5 points left SOURCED
+(74 -> 69) and 8 entered RE-ESTIMATED, a net +3, giving 111. Later the same day V2-004 was
+re-pointed 8 -> 3, once its artifact was measured as built and reshaped: 8 points left ASSUMED
+(34 -> 26) and 3 entered RE-ESTIMATED (8 -> 11), a net -5, giving **106**. No other size has moved.
 
 **What a point is NOT here:** it is not a day, not an hour, not a percentage of a sprint. It has no
 time interpretation at all until a velocity measurement exists.
@@ -125,11 +130,10 @@ time interpretation at all until a velocity measurement exists.
 FR-15's figure must be recomputed after measurement. This plan splits them: FR-17 carries an ASSUMED
 size, FR-15 carries none.
 
-### 2.2 ASSUMED sizes (34 points, set by this document)
+### 2.2 ASSUMED sizes (26 points, set by this document)
 
 | Unit | Size | Basis relative to the 1-point anchor |
 |---|---|---|
-| PRD FR-1 policy audit document | 8 | Line-by-line read of 46 policy documents plus a 46-row evidence table. The read pass, not the writing, dominates. |
 | PRD FR-2 audit matrix, 7 columns x 46 rows | 3 | Mechanical once FR-1's read exists; the vocabulary is fixed and the row set is known. |
 | PRD FR-3 dispositions for 15 hook-coupled policies | 3 | 15 judgement calls with a written rationale each, one of which (push_gate) is pre-decided. |
 | PRD FR-20 dispositions for 14 orphan policies | 2 | 14 judgement calls, no new evidence gathering, list already enumerated. |
@@ -155,11 +159,12 @@ Each split is ASSUMED; each set total is SOURCED.
 | PRD FR-4 + FR-5 (3) | FR-4 = 2, FR-5 = 1 |
 | PRD FR-8a + FR-21 (3) | FR-8a = 2, FR-21 = 1 |
 
-### 2.4 RE-ESTIMATED sizes (8 points, 1 issue, added 2026-08-02)
+### 2.4 RE-ESTIMATED sizes (11 points, 2 issues, added 2026-08-02)
 
 | Unit | Was | Now | Basis relative to the 1-point anchor |
 |---|---|---|---|
 | PRD FR-9a / SRS FR-21 CallGraph discovery fix (V2-009) | 5 SOURCED | **8** | See below. |
+| PRD FR-1 / SRS FR-10 policy implementation audit (V2-004) | 8 ASSUMED | **3** | See 2.4b. |
 
 **Why the sourced 5 was withdrawn rather than kept.** `product-sequencing-v2.md` SS 2 sized FR-9a at
 5 against the work as it was then written: change two constants and retire two dead sites. On
@@ -204,6 +209,49 @@ paths from every entry point, and the cost of an unbounded run has **not been me
 not terminate acceptably, the fix becomes an algorithmic change and 8 will not hold. This is named
 rather than absorbed into the estimate, per ASSUMPTION A4. **Do not read 8 as covering an
 algorithmic redesign of path enumeration.**
+
+### 2.4b Why V2-004 moved 8 -> 3
+
+**The anchor the 8 rested on no longer exists.** The 8 was set in this document against
+"a line-by-line read of 46 policy documents dominates; the 46-row table is the smaller half".
+Both halves have since landed: the read in commit `bf92747`, the 46-row matrix in `e520b5e`.
+
+**MEASURED on disk 2026-08-02 by row-level enumeration of the matrix, not by grep over the whole
+file** -- a whole-file grep over-counts the Verification values by 3, picking up the legend and the
+summary lines:
+
+| Property | Measured |
+|---|---|
+| `docs/reports/policy-implementation-audit-v2.md` | 556 lines, 41,827 bytes |
+| Data rows in the single matrix at line 62 | **46** |
+| Verification split | 9 MEASURED / 37 CITED / 0 INFERRED = 46 |
+| Row set vs the 46 `.md` basenames in `docs/policies/` | exact match, empty symmetric difference both ways |
+| Verification script implementing criteria (1)-(6) | **absent** -- not in `scripts/`, `scripts/tools/` or `tests/` |
+
+Acceptance criteria (1) and (2) are therefore already satisfied by the artifact. **What remains is
+one verification script**, implementing six mechanical checks: row-set identity as a set comparison,
+a closed-vocabulary label check, `path:line` resolution with a line-count assertion for MEASURED
+rows, an existence check for CITED sources, a NONE-is-explicit rule that also forbids
+NONE-plus-MEASURED, and a header-versus-rows split reconciliation.
+
+**Why 3 and not 2.** The nearest comparable is V2-008 at 2 ASSUMED, "one script over two existing
+lists". This is strictly more: six distinct assertions rather than one comparison, plus filesystem
+resolution of `path:line` references. Two of the six were prototyped inline while measuring the
+artifact for this re-point, in a few lines each -- so the happy path alone would be a 2. The third
+point covers the companion negative tests this project's own standing rule requires: *"any check
+needs a companion negative test proving it can fail, otherwise it is a green light with no
+mechanism behind it"* (`docs/REVIEW-INDEX.md` section 7).
+
+**Why 3 and not 5.** There is no production-code change at all, no new evidence gathering, no
+judgement calls, and the artifact is already in the shape the script must check.
+
+**Why RE-ESTIMATED and not ASSUMED.** A prior figure existed and was displaced by a scope change,
+rather than being absent. The same reasoning as V2-009, in the opposite direction.
+
+**Carried forward:** like every other point value in this plan, 3 has never been calibrated against
+a completed item.
+
+---
 
 ### 2.5 WSJF consequence of the V2-009 re-point (recomputed here 2026-08-02, not adopted)
 
@@ -270,7 +318,7 @@ Eight batches. A batch may begin when every issue it depends on has landed. With
 FR-10..FR-38. They are different requirements. Every reference below names the document. This is the
 naming collision `SRS.md:145-150` documents and does not work around.
 
-### Batch A -- Foundation (8 issues, 5 SOURCED + 18 ASSUMED = 23 points)
+### Batch A -- Foundation (8 issues, 5 SOURCED + 10 ASSUMED + 3 RE-ESTIMATED = 18 points)
 
 Everything here has zero blocking dependency on any other batch. Batch A is the only batch that can
 start today.
@@ -280,7 +328,7 @@ start today.
 | V2-001 | PRD FR-6 / SRS FR-16 -- ADR-006 hook-free-execution document | 1 SOURCED |
 | V2-002 | PRD FR-9 / SRS FR-20 -- `claude-global-library` master-graph count drift | 2 SOURCED |
 | V2-003 | PRD NFR-1 / SRS NFR-7 -- process-count measurement harness | 2 SOURCED |
-| V2-004 | PRD FR-1 / SRS FR-10 -- policy implementation audit document | 8 ASSUMED |
+| V2-004 | PRD FR-1 / SRS FR-10 -- policy implementation audit document | 3 RE-ESTIMATED |
 | V2-005 | PRD FR-2 / SRS FR-11 -- 7-column audit matrix, 46 rows | 3 ASSUMED |
 | V2-006 | PRD FR-3 / SRS FR-12 -- dispositions for the 15 hook-coupled policies | 3 ASSUMED |
 | V2-007 | PRD FR-20 / SRS FR-32 -- dispositions for the 14 orphan policies | 2 ASSUMED |
@@ -294,11 +342,16 @@ because it can close there.
 **Scope discrepancy this batch surfaces (see `sequencing_risks.md` R-6).**
 `product-sequencing-v2.md` records Deliverable 1 as "DONE, approved 2026-08-01". The artifacts its
 own acceptance criteria require are **absent on disk, verified 2026-08-01 by this pass**:
-`docs/reports/policy-implementation-audit-v2.md` does not exist. `SRS.md:152-157` independently lists
-SRS FR-10, FR-11, FR-12 and FR-32 as DESIGNED, NOT BUILT. What was approved was the Deliverable-1
-*decision set*, not the deliverable. Batch A therefore carries this work as real, unsized-in-source
-scope. If the project owner reads D1 as fully discharged, these five issues drop and 18 ASSUMED
-points leave the plan -- that is an owner decision, not a planning one.
+`SRS.md:152-157` independently lists SRS FR-10, FR-11, FR-12 and FR-32 as DESIGNED, NOT BUILT, and
+what was approved was the Deliverable-1 *decision set*, not the deliverable.
+
+**Partly overtaken by events 2026-08-02.** The audit artifact now EXISTS and has been reshaped into
+a conformant 46-row matrix (`bf92747`, then `e520b5e`) -- measured in 2.4b -- which is why V2-004
+dropped 8 -> 3. The discrepancy is narrower than it was but is **not closed**: the artifact has not
+been verified against its acceptance criteria and no verification script exists. Batch A therefore
+still carries this work as real, unsized-in-source scope. If the project owner reads D1 as fully
+discharged, these five issues drop and 13 points leave the plan -- that is an owner decision, not a
+planning one.
 
 ### Batch B -- Call-graph correctness (2 issues, 8 RE-ESTIMATED + 5 ASSUMED = 13 points)
 
@@ -366,6 +419,11 @@ until the first completes. **Do not treat V2-018's absent number as a small numb
 
 ### Batch F -- Push-gate replacement and entry points (3 issues, 8 SOURCED + 2 ASSUMED = 10 points)
 
+**Edge added 2026-08-02:** V2-026 now carries a `blocked_by` on **V2-017** (batch D). V2-026's own
+body already required V2-017's ADR-020 layer-2 start-up check on every command it builds; the edge
+was simply missing from the graph. Adding it changes execution order and was made under owner
+ruling. It also lengthens the plugin-side chain -- see section 4.
+
 **This batch is the safety precondition for batch G. Nothing in batch G may start before it closes.**
 
 | Key | Requirement | Size |
@@ -428,54 +486,62 @@ bump touches both files anyway.
 
 The longest dependency chain through the plan. Every arrow is a hard `blocked_by`.
 
-```
-V2-015 (PRD FR-14, plugin skeleton, 8)
-   -> V2-016 (register-mcp / unregister-mcp, 5)          [DESIGNED, NOT BUILT]
-      -> V2-024 (PRD FR-23, push_gate -> MCP tool, 3)
-         -> V2-025 (ADR-017 CI assertion, 2)             [DESIGNED, NOT BUILT]
-            -> V2-027 (PRD FR-4, hook deletion, 2)
-               -> V2-030 (PRD FR-22, SRS Change Log row, 1)
-                  -> V2-036 (D7 release, 2)
-```
+**Recomputed 2026-08-02** by a weighted longest-path walk over the `blocked_by` DAG, after two new
+edges (V2-017 -> V2-026, V2-017 -> V2-027) and two re-points. **One previously stated figure was
+wrong and is corrected below.**
 
-**Critical path length: 23 points across 7 issues.**
-
-A second chain of comparable weight runs through the selector and is **independent of the plugin
-chain until the release**:
+### Longest path overall: 25 points across 5 issues
 
 ```
 V2-009 (PRD FR-9a, discovery, 8)                      [RE-ESTIMATED 2026-08-02, was 5]
    -> V2-010 (PRD FR-9b, resolution, 5)
       -> V2-011 (PRD FR-10, selector, 8)
-         -> V2-012 / V2-013 / V2-014 (2 + 2 + 1 = 5 combined)
+         -> V2-012 (PRD FR-11, explainability, 2)
             -> V2-036 (D7 release, 2)
 ```
 
-**Selector chain length: 8 + 5 + 8 + 2 + 2 + 1 + 2 = 28 points across 7 issues.** Was 25 until
-2026-08-02, when V2-009 was re-pointed 5 -> 8 (section 2.4). By raw point count this chain is
-*longer* than the plugin chain, and the source documents agree on its risk:
-`product-sequencing-v2.md` SS 6 names FR-9a -> FR-10 "the single riskiest link" across three separate
-revisions.
+**CORRECTION: the "28-point selector chain" previously stated here was not a path.** It wrote
+`V2-012 / V2-013 / V2-014 (2 + 2 + 1 = 5 combined)` as one step and summed all three. Those three are
+**parallel siblings** -- each is blocked only by V2-011 and none blocks another -- so no path passes
+through more than one of them. A longest path takes the largest, giving 8 + 5 + 8 + 2 + 2 = **25**.
+The three siblings still represent 5 points of *work*; they simply do not lie on one *chain*. Total
+work and chain length are different quantities and this section is about the second. The same error
+inflated the pre-re-point figure, which was stated as 25 and was really 22.
 
-**Note the two chain totals are not additive.** V2-036 (2 points) is the convergence issue and is
-counted in both. The union of the two chains is 13 distinct issues, not 14.
+### Second chain, plugin and push-gate side: 24 points across 6 issues
 
-**Both chains converge only at V2-036.** With more than one worker they run in parallel and the
-critical path is the selector chain, now at 28 points against the plugin chain's 23. With a single
-worker the critical path is the whole plan and this distinction has no scheduling meaning. **Which of
-these holds is still unknown -- team size is not on record (ASSUMPTION A2). The re-point does not
-resolve that and no team size is assumed here.**
+```
+V2-015 (PRD FR-14, plugin skeleton, 8)
+   -> V2-016 (register-mcp / unregister-mcp, 5)        [DESIGNED, NOT BUILT]
+      -> V2-017 (SRS NFR-12 / ADR-020 layers, 3)       [DESIGNED, NOT BUILT]
+         -> V2-026 (PRD FR-7, slash commands, 5)
+            -> V2-028 (PRD FR-5, UserPromptSubmit off hot path, 1)
+               -> V2-036 (D7 release, 2)
+```
 
-**What the re-point did and did not change.** It did not change *which* chain is longer under
-parallelism -- the selector chain was already the longer of the two. It widened the margin from 2
-points to 5 (25 vs 23, now 28 vs 23). **Caveat, stated rather than laundered:** both chain totals are
-sums of relative story points that ASSUMPTION A1 records as single-pass estimates never calibrated
-against a completed item, and one of the 28 chain's seven terms is now a third-pass re-estimate
-(A5). A 2-point gap between two such sums was not a safe basis for declaring a binding chain; a
-5-point gap is better but rests on the same uncalibrated integers. The direction of the conclusion is
-unchanged and its margin is larger; **it is not thereby made measured.** (This is the story-point
-analogue of the WSJF caveat in section 5.6, not the WSJF caveat itself -- WSJF sequences nothing in
-this plan, and the chain comparison uses story points, not WSJF.)
+**This side lengthened 23 -> 24 as a direct result of the new V2-017 -> V2-026 edge.** The
+previously documented route -- V2-015 -> V2-016 -> V2-024 -> V2-025 -> V2-027 -> V2-030 -> V2-036 --
+still exists and is still 23 points; it is simply no longer the longest on this side.
+
+**The two chains converge only at V2-036** (2 points, counted in both, so the totals are not
+additive). With more than one worker they run in parallel; with a single worker the critical path is
+the whole plan and the distinction has no scheduling meaning. Which holds is unknown -- team size is
+not on record (ASSUMPTION A2).
+
+**The margin is now ONE point, and that is too thin to lean on.** Under parallelism the selector
+chain (25) leads the plugin chain (24) by a single point. **Do not treat this as establishing which
+chain binds.** Both totals are sums of relative story points that ASSUMPTION A1 records as
+single-pass estimates never calibrated against a completed item, and the 25-chain's leading term is
+itself a third-pass re-estimate (A5). A one-point gap between two such sums is inside the noise of
+the instrument. Treat the two as effectively tied and schedule on dependencies, not on this
+comparison. (This is the story-point analogue of the WSJF caveat in section 5.6, not that caveat
+itself -- WSJF sequences nothing here, and this comparison uses story points.)
+
+**Margin history, so the reader can see how unstable this figure has been:** stated as 2 points on
+2026-08-01, then 5 after V2-009's re-point, both computed by the sibling-summing method now
+corrected. On the corrected method it was 22 vs 23 (the plugin side ahead) before the re-point, and
+is 25 vs 24 now. **The re-point did not merely widen a margin -- it flipped which side leads**, which
+the superseded arithmetic concealed.
 
 **What is NOT on the critical path, despite high WSJF:** PRD FR-22 (WSJF 13.00, the published #1) and
 PRD FR-6 (WSJF 12.00, the published #2). FR-6 genuinely is a free early win. FR-22 is not -- see
@@ -568,8 +634,10 @@ pass and the header count was not updated with it. **This is one more instance o
 #9-13** (a summary count disagreeing with its enumeration), occurring in the document that carries the
 v2.0.0 scope statement. Filed as `sequencing_risks.md` R-8. This plan uses 29.
 
-**5.5 Deliverable 1 is recorded DONE while its artifacts are absent.** See batch A above and
-`sequencing_risks.md` R-6. 18 ASSUMED points hang on this.
+**5.5 Deliverable 1 is recorded DONE while its artifacts were, at the time, absent.** See batch A
+above and `sequencing_risks.md` R-6. **Partly overtaken 2026-08-02:** the artifact now exists and
+has been reshaped (2.4b), so the claim narrows from "absent" to "unverified against its ACs, with
+no verification script". 13 points hang on this, down from 18 after V2-004's re-point.
 
 **5.6 The MVP boundary rests on WSJF inputs that were never cross-checked.** The WSJF arithmetic in
 `product-sequencing-v2.md` is exact and verified. The **input integers are the product manager's
@@ -650,29 +718,29 @@ the reason the post-FR-4 push gate is detective-only rather than preventive for 
 
 | Batch | Issues | SOURCED pts | ASSUMED pts | RE-EST pts | Unsized | Batch total | Blocked by |
 |---|---|---|---|---|---|---|---|
-| A Foundation | 8 | 5 | 18 | 0 | 0 | 23 | nothing |
+| A Foundation | 8 | 5 | 10 | 3 | 0 | 18 | nothing |
 | B Call-graph correctness | 2 | 0 | 5 | 8 | 0 | 13 | nothing |
 | C KG selector | 4 | 13 | 0 | 0 | 0 | 13 | B (both issues) |
 | D Plugin skeleton + MCP registration | 3 | 13 | 3 | 0 | 0 | 16 | nothing |
 | E Plugin hardening + lifecycle | 6 | 10 | 3 | 0 | 1 | 13 | D (V2-015, V2-016) |
-| F Push gate + entry points | 3 | 8 | 2 | 0 | 0 | 10 | D (V2-016) |
-| G Hook deletion + NFR closure | 9 | 18 | 2 | 0 | 0 | 20 | **F in full** |
+| F Push gate + entry points | 3 | 8 | 2 | 0 | 0 | 10 | D (V2-016, **V2-017**) |
+| G Hook deletion + NFR closure | 9 | 18 | 2 | 0 | 0 | 20 | **F in full**, plus D (**V2-017**) |
 | H Release | 2 | 2 | 1 | 0 | 0 | 3 | A-G |
-| **Total** | **37** | **69** | **34** | **8** | **1** | **111** | |
+| **Total** | **37** | **69** | **26** | **11** | **1** | **106** | |
 
 Sum check, each total against its enumeration:
 
 - Issues: 8+2+4+3+6+3+9+2 = 37.
 - SOURCED: 5+0+13+13+10+8+18+2 = 69.
-- ASSUMED: 18+5+0+3+3+2+2+1 = 34.
-- RE-ESTIMATED: 0+8+0+0+0+0+0+0 = 8.
-- Batch totals: 23+13+13+16+13+10+20+3 = 111. And 69+34+8 = 111. Both routes agree.
+- ASSUMED: 10+5+0+3+3+2+2+1 = 26.
+- RE-ESTIMATED: 3+8+0+0+0+0+0+0 = 11.
+- Batch totals: 18+13+13+16+13+10+20+3 = 106. And 69+26+11 = 106. Both routes agree.
 
 Per-batch point enumerations, so every batch total above is checkable without re-reading section 3:
 
 | Batch | Sizes enumerated | Sum |
 |---|---|---|
-| A | 1+2+2+8+3+3+2+2 | 23 |
+| A | 1+2+2+3+3+3+2+2 | 18 |
 | B | 8+5 | 13 |
 | C | 8+2+2+1 | 13 |
 | D | 8+5+3 | 16 |
@@ -681,8 +749,16 @@ Per-batch point enumerations, so every batch total above is checkable without re
 | G | 2+1+1+1+3+1+2+1+8 | 20 |
 | H | 2+1 | 3 |
 
-Changed 2026-08-02: batch B 10 -> 13, total 108 -> 111, SOURCED 74 -> 69, new RE-ESTIMATED column.
-V2-009 only.
+**Graph invariants re-verified 2026-08-02 after the two new edges** (the first edges added since the
+graph was machine-verified): 37 issues, keys unique and in order, **0 dangling `blocked_by`
+references**, **0 cycles** across a full DFS with every node as root, **60 edges**, and **0
+batch-order inversions** -- no issue is blocked by an issue in a later batch. Both new edges run
+D -> F and D -> G, forward through the batch order.
+
+Change history: 2026-08-01 baseline 108. Then batch B 10 -> 13 (V2-009 re-pointed 5 -> 8), SOURCED
+74 -> 69, new RE-ESTIMATED column, total 111. Then batch A 23 -> 18 (V2-004 re-pointed 8 -> 3),
+ASSUMED 34 -> 26, RE-ESTIMATED 8 -> 11, total **106**. Two issues re-pointed in total; no other size
+has moved.
 
 ---
 

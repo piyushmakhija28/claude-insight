@@ -16,15 +16,15 @@
     "duplicate_summary": "Exactly one duplicate pair, from the first create call before the root cause was known. No duplicate occurred in the 36 subsequent creates, each of which was verified immediately after creation by a narrow label listing.",
     "duplicate_root_cause": "mcp-github-api/base/clients.py:338 returned Github(token) with PyGithub defaults. PyGithub GithubRetry adds POST to urllib3 allowed_methods; urllib3 omits POST by design because retrying a non-idempotent write duplicates the resource. With timeout=15 and a status_forcelist covering 500-599 plus 403, a POST that GitHub accepts but answers slowly is retried and creates the record twice. Fixed in commit 33af037 on branch fix/non-idempotent-post-retry. THE FIX WAS NOT LIVE DURING THIS RUN -- it requires an MCP server restart that did not happen. Every write in this run was made under the unfixed client.",
     "size_totals": {
-      "ASSUMED": 34,
-      "RE_ESTIMATED": 8,
       "SOURCED": 45,
+      "RE_ESTIMATED": 11,
+      "ASSUMED": 26,
       "SOURCED_SET_SPLIT": 24,
-      "TOTAL": 111,
+      "TOTAL": 106,
       "unsized_entries": 1,
-      "note": "Computed by summing the map entries themselves, not copied from sprint_plan.md. SOURCED_SET_SPLIT entries are per-issue splits whose set totals are SOURCED; they are counted here under their own label so the arithmetic is transparent."
+      "note": "Computed by summing the map entries themselves, not copied from sprint_plan.md. SOURCED_SET_SPLIT entries are per-issue splits whose set totals are SOURCED; counted under their own label so the arithmetic is transparent. SOURCED + SOURCED_SET_SPLIT = 69."
     },
-    "correction_2026_08_02": "V2-009 held size 5 / SOURCED, stale after the 2026-08-02 re-point. It was the ONLY stale size entry of the 37: verified by enumerating all 37 entries, not sampled. Corrected to 8 / RE_ESTIMATED. Map total moved 108 -> 111."
+    "correction_2026_08_02": "Two re-points, both RE_ESTIMATED. V2-009 5 -> 8 after the owner ruling strengthened FR-9a to runtime proof. V2-004 8 -> 3 after its artifact was measured as built and reshaped. Map total moved 108 -> 111 -> 106. Also this date: two missing dependency edges added in github_issues.json (V2-017 -> V2-026 and V2-017 -> V2-027); acyclicity and closure re-verified, 0 cycles, 0 dangling refs, 60 edges, 0 batch-order inversions."
   },
   "labels": {
     "path_taken": "github_create_issue AUTO-CREATED every missing label. No github_create_label call was made at any point.",
@@ -93,10 +93,11 @@
       "batch": "A",
       "gate": "D1",
       "title": "PRD FR-1 / SRS FR-10: produce docs/reports/policy-implementation-audit-v2.md",
-      "size": 8,
-      "size_provenance": "ASSUMED",
+      "size": 3,
+      "size_provenance": "RE_ESTIMATED",
       "implements_prd": "FR-1",
-      "implements_srs": "FR-10"
+      "implements_srs": "FR-10",
+      "size_note": "Re-pointed 8 -> 3 on 2026-08-02 by scrum-master-agent. The 8 was anchored on a line-by-line read of 46 policy documents plus building a 46-row table; both landed (bf92747, e520b5e) and were MEASURED complete on 2026-08-02 -- 46 data rows, 9 MEASURED / 37 CITED / 0 INFERRED, row set matching docs/policies/ exactly. What remains is one verification script implementing six mechanical checks, plus its companion negative tests. See sprint_plan.md section 2.4b."
     },
     {
       "key": "V2-005",
