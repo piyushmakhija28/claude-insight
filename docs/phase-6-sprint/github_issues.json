@@ -8,7 +8,7 @@
     "status": "DRAFT -- NOTHING CREATED ON GITHUB. No gh call and no github MCP call was made. The project owner confirms before anything is created.",
     "issue_count": 37,
     "key_scheme": "Stable local keys V2-001..V2-037. Used for cross-reference in blocked_by because no GitHub issue numbers exist yet.",
-    "numbering_warning": "Two independent FR series exist. prd-v2.md has FR-1..FR-24 plus FR-4a/8a/9a/9b/14a. SRS.md has FR-10..FR-38. They are DIFFERENT requirements. Every implements field names both documents explicitly. See SRS.md:145-150.",
+    "numbering_warning": "Two independent FR series exist. prd-v2.md has FR-1..FR-24 plus FR-4a/8a/9a/9b/14a. SRS.md has FR-10..FR-38. They are DIFFERENT requirements. Every implements field names both documents explicitly. See the NAMING COLLISION WARNING block in SRS.md (line 149 as of 2026-08-02).",
     "sizing_basis": "Relative Fibonacci story points. Anchor: 1 point = PRD FR-6 / SRS FR-16 (create one file at a known path from pre-written text, confirm one section unedited). See sprint_plan.md section 1.",
     "size_provenance_values": {
       "SOURCED": "size taken from docs/phase-0-requirements/product-sequencing-v2.md section 2, 2a or 2c",
@@ -29,7 +29,7 @@
     "not_drafted": [
       "FR-25 (proposed) and FR-26 (proposed) -- these exist ONLY as proposals in docs/phase-2-validation/advisory_items.json. prd-v2.md stops at FR-24 and SRS.md does not carry them. Neither has been accepted, sized or assigned. Drafting an issue for either would drop the (proposed) hedge, which is recorded as correction #21 in docs/REVIEW-INDEX.md. Owner decision: accept into the PRD, defer to v2.1, or drop.",
       "ADV-012 (git pre-push hook restoring local preventive push-gate protection) -- NAMED, NOT ADOPTED. Belongs to whoever owns PRD FR-23.",
-      "PRD FR-19 (get_policies_dir four-branch resolver) -- deferred to v2.1, blocked on the ADR-009b five-policy human sign-off. Explicitly not carried into SRS.md per SRS.md:159-162.",
+      "PRD FR-19 (get_policies_dir four-branch resolver) -- deferred to v2.1, blocked on the ADR-009b five-policy human sign-off. Explicitly not carried into SRS.md per its Scope note (line 163 as of 2026-08-02).",
       "PRD FR-8a rebuild work for any of the 5 dead Stop-hook capabilities -- deferred to v2.1. Only the decision and the retirement ship in v2.0.0, as V2-033 and V2-034.",
       "ADV-001 (fifth truncator at build_dependency_resolver/parsers.py:682) -- different defect class, deliberately out of FR-9a scope, v2.1."
     ]
@@ -63,7 +63,7 @@
         "git log shows the file was added, not generated from a template with the consequence section blank.",
         "SRS FR-16 adds: the ADR-006 document body cross-references all three named consequences; a consequence recorded only in docs/orchestration_prompt.md does not satisfy this."
       ],
-      "acceptance_criteria_source": "prd-v2.md section 5, FR-6 row; SRS.md:731 (FR-16) and SRS.md:729 (FR-14 consequence cross-reference)."
+      "acceptance_criteria_source": "prd-v2.md section 5, FR-6 row; SRS.md AC table row FR-16 (line 743 as of 2026-08-02) and SRS.md AC table row FR-14 consequence cross-reference (line 741 as of 2026-08-02)."
     },
     {
       "key": "V2-002",
@@ -94,7 +94,7 @@
         "validate.py exits 0 and test_invariant_checker.py exits 0.",
         "All three numbers must match, not just two of three."
       ],
-      "acceptance_criteria_source": "prd-v2.md section 5, FR-9 row; SRS.md:735 (FR-20)."
+      "acceptance_criteria_source": "prd-v2.md section 5, FR-9 row; SRS.md AC table row FR-20 (line 747 as of 2026-08-02)."
     },
     {
       "key": "V2-003",
@@ -131,7 +131,7 @@
         "Cold and warm counts are reported as two separate numbers, never blended.",
         "A .mcp.json at the plugin root containing any server entry fails this AC outright, regardless of the process-count result (ADR-019)."
       ],
-      "acceptance_criteria_source": "prd-v2.md section 5, NFR-1 row; SRS.md:754 (NFR-7)."
+      "acceptance_criteria_source": "prd-v2.md section 5, NFR-1 row; SRS.md AC table row NFR-7 (line 766 as of 2026-08-02)."
     },
     {
       "key": "V2-004",
@@ -159,7 +159,7 @@
       "acceptance_criteria": [
         "RE-SCOPED 2026-08-02 (owner ruling). AC3 as originally written was UNSATISFIABLE against AC1 and has been replaced by a POLICY-TO-CODE MAPPING VERIFICATION. The original three criteria are retained verbatim at the end of this list. The intent of the superseded AC3 was never 'read every file'; it was 'prove the status classification is grounded in code, not asserted'. These criteria test that intent and can actually pass.",
         "(1) ROW-SET IDENTITY. The set of Policy cells in the matrix EQUALS the set of .md basenames in docs/policies/ -- empty symmetric difference, checked as a set, not as a count of 46. docs/policies/ is the authoritative corpus (ADR-009); ~/.claude/policies/ is a partial mirror and must not be enumerated for this purpose.",
-        "(2) EVERY ROW CARRIES A VERIFICATION LABEL from the closed set MEASURED | CITED | INFERRED. This is the audit document's OWN already-published vocabulary (docs/reports/policy-implementation-audit-v2.md:22-25), not a new one invented for this issue. No empty cell; no value outside the set.",
+        "(2) EVERY ROW CARRIES A VERIFICATION LABEL from the closed set MEASURED | CITED | INFERRED. This is the audit document's OWN already-published vocabulary (docs/reports/policy-implementation-audit-v2.md, the Verification vocabulary table (lines 38-42 as of 2026-08-02)), not a new one invented for this issue. No empty cell; no value outside the set.",
         "(3) MEASURED ROWS MUST RESOLVE. Every row labelled MEASURED carries an Evidence cell containing at least one path:line reference, and the verification script confirms the path exists in the repository and that the file has at least that many lines. THIS IS THE 'GROUNDED IN CODE, NOT ASSERTED' TEST, and it is mechanical.",
         "(4) CITED ROWS MUST ATTRIBUTE. Every row labelled CITED names its source artifact and the script confirms that file exists on disk.",
         "(5) NONE IS EXPLICIT, NEVER BLANK. A row with no code grounding carries the literal NONE in Evidence, and such a row may not be labelled MEASURED.",
@@ -199,7 +199,7 @@
         "'Post-plugin plan' is populated from the fixed vocabulary: keep-as-is / port-to-plugin / port-to-MCP / demote-to-advisory / delete.",
         "A row with an empty Post-plugin plan cell fails this AC."
       ],
-      "acceptance_criteria_source": "prd-v2.md section 5, FR-2 row; SRS.md FR-11 (SRS.md:175-179)."
+      "acceptance_criteria_source": "prd-v2.md section 5, FR-2 row; SRS.md requirement FR-11 (line 187 as of 2026-08-02)."
     },
     {
       "key": "V2-006",
@@ -230,7 +230,7 @@
         "Every policy whose sole enforcement mechanism is a PreToolUse block (15 policies per as-built-prd.md section 6.3) has a recorded disposition with a one-sentence rationale in the audit matrix.",
         "push_gate.py's row specifically reads port-to-MCP (PRD FR-23) and no other value passes review."
       ],
-      "acceptance_criteria_source": "prd-v2.md section 5, FR-3 row; SRS.md FR-12 (SRS.md:183-186)."
+      "acceptance_criteria_source": "prd-v2.md section 5, FR-3 row; SRS.md requirement FR-12 (line 195 as of 2026-08-02)."
     },
     {
       "key": "V2-007",
@@ -260,7 +260,7 @@
         "All 14 orphan-policy rows in the audit matrix have a non-empty Post-plugin plan value.",
         "A script comparing the 46-row matrix against as-built-prd.md section 4.2's 14-name list confirms zero name mismatches and zero empty dispositions among them."
       ],
-      "acceptance_criteria_source": "prd-v2.md section 5, FR-20 row; SRS.md:747 (FR-32)."
+      "acceptance_criteria_source": "prd-v2.md section 5, FR-20 row; SRS.md AC table row FR-32 (line 759 as of 2026-08-02)."
     },
     {
       "key": "V2-008",
@@ -291,7 +291,7 @@
         "All 25 capabilities named in capability_loss.md have a non-'disappeared' disposition value in the audit matrix.",
         "A script cross-checks the 25 names against the matrix and fails if any is missing or has an empty disposition cell."
       ],
-      "acceptance_criteria_source": "prd-v2.md section 5, NFR-4 row; SRS.md:757 (NFR-10)."
+      "acceptance_criteria_source": "prd-v2.md section 5, NFR-4 row; SRS.md AC table row NFR-10 (line 769 as of 2026-08-02)."
     },
     {
       "key": "V2-009",
@@ -317,7 +317,7 @@
       ],
       "blocked_by": [],
       "build_status": "Root-caused, fix NOT started. The ADR-013 design is RESOLVED in design; no code implements it.",
-      "body": "PAIRED DELIVERABLE. This ships WITH V2-010 (PRD FR-9b, resolution) or not at all. See sequencing_risks.md R-3.\n\nTHE WRITTEN ACCEPTANCE CRITERION IS BOTH PADDED AND INCOMPLETE. This issue is labelled needs-decision for that reason. Read sequencing_risks.md R-4 before starting.\n\nWhat the AC names: FOUR sites, of which one (langgraph_engine/parsers/config.py:11) is DEAD CODE read by nothing -- recorded as correction #22 in docs/REVIEW-INDEX.md, and cited in 19 files across every phase including SRS.md. Two more are dormant near-duplicates.\n\nWhat actually binds, MEASURED at runtime by the Phase 5 probe and verified on disk by this planning pass on 2026-08-01:\n  1. langgraph_engine/parsers/call_graph_builder_legacy.py:64 -- line 64 reads MAX_FILES = 300. Enforced at :107 and :118. BINDING.\n  2. langgraph_engine/parsers/graph_model.py:43 -- line 43 reads DEFAULT_MAX_PATHS = _env_int(\"CLAUDE_CG_MAX_PATHS\", 500). BINDING.\n\nSITE 2 APPEARS IN NEITHER THE PRD AC NOR THE SRS AC. It survives fixing the file cap. Both probe runs emitted 'hit max_paths=500 limit; results truncated'. Every sequence and interaction diagram is capped at 500 paths regardless of how many files are ingested. An implementer working strictly to the written AC would fix four sites, one of which is dead, watch every assertion pass, and leave a binding truncation in production.\n\nMEASURED impact of site 1: 300 of 411 Python files ingested at the shipping default. 111 files, 27 percent of the codebase, invisible.\n\nA read-only override EXISTS and is demonstrated: CallGraphBuilder.__init__.__defaults__ = (N,) propagates through build_call_graph(). Rebinding the module-level MAX_FILES is a SILENT NO-OP -- defaults bind at def-time. That is the trap. No env var exists for the file cap. CLAUDE_CG_MAX_PATHS=500 truncates traversal independently.\n\nPROPAGATION HAZARD: the supersession is recorded in hld_v2.md section 12 OAQ 4, but ADR-013's own body (hld_v2.md:406 and :436-443) and the binding clause at hld_v2.md:1696-1700 still carry the superseded four-site framing with no pointer to the correction.\n\nOWNER DECISION TAKEN 2026-08-01 -- the AC IS AMENDED, and to the stronger of the two options offered. The acceptance criteria on this issue have been replaced: they now assert on the TWO binding sites, DROP the dead config.py:11 site, and require RUNTIME PROOF (an in-process build with a set-equality discovery oracle, the sdlc_pipeline 45-file canary, a log-capture assertion that no max_paths truncation record is emitted, a 411/480/3506 regression floor, and a negative test for the def-time binding trap) rather than asserting that constants changed. The superseded AC is retained verbatim at the end of the acceptance_criteria array. The AC amendment itself was owned by business-analyst-agent and touched acceptance-criteria content only. SIZE RE-POINTED 2026-08-02: 5 -> 8, provenance RE_ESTIMATED, by product-manager-agent, following the owner's 2026-08-01 ruling that strengthened this criterion to RUNTIME PROOF. The 5 was estimated against a two-site constant-change assumption, and the amended AC invalidated that basis: assertions (A), (B), (C) and (E) add a runtime probe harness, an independent enumeration oracle that must reproduce the builder's eligibility rules without importing them, module-scoped log capture, and a negative test for the def-time binding trap. RE_ESTIMATED is a distinct provenance from SOURCED and ASSUMED: the source figure no longer describes the work, and a prior figure existed and was displaced rather than being absent. See sprint_plan.md section 2.4 for the enumeration behind 8, and section 2.5 for the WSJF consequence. Dependency closure and acyclicity are unaffected by a re-point -- size is not an edge.",
+      "body": "PAIRED DELIVERABLE. This ships WITH V2-010 (PRD FR-9b, resolution) or not at all. See sequencing_risks.md R-3.\n\nTHE WRITTEN ACCEPTANCE CRITERION IS BOTH PADDED AND INCOMPLETE. This issue is labelled needs-decision for that reason. Read sequencing_risks.md R-4 before starting.\n\nWhat the AC names: FOUR sites, of which one (langgraph_engine/parsers/config.py:11) is DEAD CODE read by nothing -- recorded as correction #22 in docs/REVIEW-INDEX.md, and cited in 19 files across every phase including SRS.md. Two more are dormant near-duplicates.\n\nWhat actually binds, MEASURED at runtime by the Phase 5 probe and verified on disk by this planning pass on 2026-08-01:\n  1. langgraph_engine/parsers/call_graph_builder_legacy.py:64 -- line 64 reads MAX_FILES = 300. Enforced at :107 and :118. BINDING.\n  2. langgraph_engine/parsers/graph_model.py:43 -- line 43 reads DEFAULT_MAX_PATHS = _env_int(\"CLAUDE_CG_MAX_PATHS\", 500). BINDING.\n\nSITE 2 APPEARS IN NEITHER THE PRD AC NOR THE SRS AC. It survives fixing the file cap. Both probe runs emitted 'hit max_paths=500 limit; results truncated'. Every sequence and interaction diagram is capped at 500 paths regardless of how many files are ingested. An implementer working strictly to the written AC would fix four sites, one of which is dead, watch every assertion pass, and leave a binding truncation in production.\n\nMEASURED impact of site 1: 300 of 411 Python files ingested at the shipping default. 111 files, 27 percent of the codebase, invisible.\n\nA read-only override EXISTS and is demonstrated: CallGraphBuilder.__init__.__defaults__ = (N,) propagates through build_call_graph(). Rebinding the module-level MAX_FILES is a SILENT NO-OP -- defaults bind at def-time. That is the trap. No env var exists for the file cap. CLAUDE_CG_MAX_PATHS=500 truncates traversal independently.\n\nPROPAGATION HAZARD -- DISCHARGED FOR hld_v2.md 2026-08-02, recorded rather than deleted because an implementer who read the earlier text needs its disposition. This paragraph previously stated that ADR-013's body (cited then as hld_v2.md:406 and :436-443) and the OAQ 4 binding clause (cited then as :1696-1700) still carried the superseded four-site framing. Commit 14f742a corrected all three. VERIFIED ON DISK 2026-08-02: ADR-013's Context (line 406) names call_graph_builder_legacy.py:64 as the binding cap; the site enumeration at line 444 reads '[CORRECTED Phase 5] 17 truncation sites exist; exactly TWO bind'; and the old 'each of sites 1-4' clause now survives only as an explicitly frozen Superseded record at line 1764, quoted as what the clause 'previously read' and labelled 'Wrong in substance'. No un-superseded four-site instruction remains in that file. WHAT REMAINS OPEN: SRS.md's own AC table row FR-21 still reads 'each of the 4 named sites' -- that is REQUIRED, not stale, because rules/44 makes the SRS append-only and the correction was propagated there by appending a Revised Acceptance Criterion for FR-21 block instead. Read that block, not the table row.\n\nOWNER DECISION TAKEN 2026-08-01 -- the AC IS AMENDED, and to the stronger of the two options offered. The acceptance criteria on this issue have been replaced: they now assert on the TWO binding sites, DROP the dead config.py:11 site, and require RUNTIME PROOF (an in-process build with a set-equality discovery oracle, the sdlc_pipeline 45-file canary, a log-capture assertion that no max_paths truncation record is emitted, a 411/480/3506 regression floor, and a negative test for the def-time binding trap) rather than asserting that constants changed. The superseded AC is retained verbatim at the end of the acceptance_criteria array. The AC amendment itself was owned by business-analyst-agent and touched acceptance-criteria content only. SIZE RE-POINTED 2026-08-02: 5 -> 8, provenance RE_ESTIMATED, by product-manager-agent, following the owner's 2026-08-01 ruling that strengthened this criterion to RUNTIME PROOF. The 5 was estimated against a two-site constant-change assumption, and the amended AC invalidated that basis: assertions (A), (B), (C) and (E) add a runtime probe harness, an independent enumeration oracle that must reproduce the builder's eligibility rules without importing them, module-scoped log capture, and a negative test for the def-time binding trap. RE_ESTIMATED is a distinct provenance from SOURCED and ASSUMED: the source figure no longer describes the work, and a prior figure existed and was displaced rather than being absent. See sprint_plan.md section 2.4 for the enumeration behind 8, and section 2.5 for the WSJF consequence. Dependency closure and acyclicity are unaffected by a re-point -- size is not an edge.",
       "acceptance_criteria": [
         "CORRECTED AND STRENGTHENED 2026-08-01 (owner ruling). This AC replaces the four-site constant-inspection AC, which is retained verbatim at the end of this list. Every assertion below is on the OUTPUT of an actual in-process build. No assertion may be satisfied by inspecting the value of a constant -- constant-inspection is the failure mode that produced this defect.",
         "(A) DISCOVERY IS COVERAGE-COMPLETE. A committed regression test constructs CallGraphBuilder against the project root, runs .build(), and asserts the set of files in the analysed set EQUALS the set of eligible source files independently enumerated by the test's own oracle. Set equality, empty symmetric difference -- not a comparison against a hardcoded number.",
@@ -362,14 +362,14 @@
         "V2-009"
       ],
       "build_status": "Root-caused and source-verified. Fix NOT started.",
-      "body": "PAIRED DELIVERABLE with V2-009. Shipping V2-009 alone yields a LARGER graph feeding the same broken resolver -- more files, the same wrong hot_nodes and danger_zones, and a HIGHER collided in-degree on the same wrong nodes. prd-v2.md states verbatim: 'FR-9a alone is INSUFFICIENT'. SRS.md:296-297 states the same. FR-9b does not supersede FR-9a and FR-9a does not subsume FR-9b.\n\nTHE DEFECT, verified on disk by this planning pass 2026-08-01: langgraph_engine/parsers/graph_model.py:265 reads 'return candidates[0]' -- the third of three returns inside _resolve_target(), reached when a bare simple method name matches multiple known method FQNs and none is in the caller's file. An arbitrary first-match bind with no disambiguation and no confidence marker. Lines 253-254 and 263-264 (the len(candidates) == 1 cases) are legitimate. The dotted path at 243-255 correctly returns unresolved when ambiguous, so the defect is specific to bare names.\n\nMEASURED consequences (by two independent agents; cited, not re-derived by this planning pass):\n  list.append()  binds to JsonlAppender.append  (src/mcp/base/persistence.py:222)  in-degree 1592\n  str.format()   binds to ErrorMessages.format  (langgraph_engine/error_messages.py:568)  in-degree 755-756 (two agents measured 755 and 756; reported as a range, not adjudicated)\n  dict.get()/set() bind to _MemoryLayer.get/set (langgraph_engine/cache_system.py:101 and :113)\n\n55.5 percent of cross-file 'resolved' edges are collision artifacts. Of 26,114 total: 18,608 unresolved + 2,853 builtin-collision + 433 cross-file ambiguity = 21,894, leaving 4,220 high-confidence. Arithmetic checked and exact.\n\nWHY IT IS NOT COSMETIC: sdlc_pipeline/call_graph_analyzer.py builds danger_zones (:303) and hot_nodes (:1197) on an n >= 5 caller-count gate, and _classify_risk (:56-67) labels per-method risk on an 8+ gate. Both are caller-count-only. JsonlAppender.append currently ranks as the codebase's top danger zone on the strength of every list.append() in the repo, and that ranking is injected into the Step 0 planning prompt via prompt_gen_expert_caller.py:179-182 and :204-207.\n\nPRECONDITION VERIFIED, NOT ASSUMED: resolve_edges() IS invoked at call_graph_builder_legacy.py:96 on every build. Had it not been, get_edges() would return raw edges and this requirement would be unwarranted.\n\nEXPLICITLY NOT PART OF THIS DEFECT: resolve_edges() writes to _resolved_edges, not graph.edges, so reading graph.edges gives 656 instead of 7,004. NO SHIPPING CODE DOES THIS -- all four consumers use get_edges() (:155, :455, :600, :1209). It caught an agent, not the pipeline. Do not conflate the two.\n\nSIZE IS ASSUMED (5). The one-line source fix is trivial; the cost is the two-field confidence reporting at 6 named consumption points, the committed collision check, and the unit test.\n\nNUMBERING: this is FR-9b, not FR-25. FR-25 is already claimed by a proposed CI check in advisory_items.json and reusing it would create an ID collision.",
+      "body": "PAIRED DELIVERABLE with V2-009. Shipping V2-009 alone yields a LARGER graph feeding the same broken resolver -- more files, the same wrong hot_nodes and danger_zones, and a HIGHER collided in-degree on the same wrong nodes. prd-v2.md states verbatim: 'FR-9a alone is INSUFFICIENT'. SRS.md, the FR-21/FR-38 Dependency note (line 308 as of 2026-08-02) states the same. FR-9b does not supersede FR-9a and FR-9a does not subsume FR-9b.\n\nTHE DEFECT, verified on disk by this planning pass 2026-08-01: langgraph_engine/parsers/graph_model.py:265 reads 'return candidates[0]' -- the third of three returns inside _resolve_target(), reached when a bare simple method name matches multiple known method FQNs and none is in the caller's file. An arbitrary first-match bind with no disambiguation and no confidence marker. Lines 253-254 and 263-264 (the len(candidates) == 1 cases) are legitimate. The dotted path at 243-255 correctly returns unresolved when ambiguous, so the defect is specific to bare names.\n\nMEASURED consequences (by two independent agents; cited, not re-derived by this planning pass):\n  list.append()  binds to JsonlAppender.append  (src/mcp/base/persistence.py:222)  in-degree 1592\n  str.format()   binds to ErrorMessages.format  (langgraph_engine/error_messages.py:568)  in-degree 755-756 (two agents measured 755 and 756; reported as a range, not adjudicated)\n  dict.get()/set() bind to _MemoryLayer.get/set (langgraph_engine/cache_system.py:101 and :113)\n\n55.5 percent of cross-file 'resolved' edges are collision artifacts. Of 26,114 total: 18,608 unresolved + 2,853 builtin-collision + 433 cross-file ambiguity = 21,894, leaving 4,220 high-confidence. Arithmetic checked and exact.\n\nWHY IT IS NOT COSMETIC: sdlc_pipeline/call_graph_analyzer.py builds danger_zones (:303) and hot_nodes (:1197) on an n >= 5 caller-count gate, and _classify_risk (:56-67) labels per-method risk on an 8+ gate. Both are caller-count-only. JsonlAppender.append currently ranks as the codebase's top danger zone on the strength of every list.append() in the repo, and that ranking is injected into the Step 0 planning prompt via prompt_gen_expert_caller.py:179-182 and :204-207.\n\nPRECONDITION VERIFIED, NOT ASSUMED: resolve_edges() IS invoked at call_graph_builder_legacy.py:96 on every build. Had it not been, get_edges() would return raw edges and this requirement would be unwarranted.\n\nEXPLICITLY NOT PART OF THIS DEFECT: resolve_edges() writes to _resolved_edges, not graph.edges, so reading graph.edges gives 656 instead of 7,004. NO SHIPPING CODE DOES THIS -- all four consumers use get_edges() (:155, :455, :600, :1209). It caught an agent, not the pipeline. Do not conflate the two.\n\nSIZE IS ASSUMED (5). The one-line source fix is trivial; the cost is the two-field confidence reporting at 6 named consumption points, the committed collision check, and the unit test.\n\nNUMBERING: this is FR-9b, not FR-25. FR-25 is already claimed by a proposed CI check in advisory_items.json and reusing it would create an ID collision.",
       "acceptance_criteria": [
         "(1) A committed check enumerates every method FQN appearing in danger_zones or hot_nodes for a full-repo analysis run and FAILS if any entry's simple name collides with a Python builtin or stdlib method name AND its fan-in does not survive once collided edges are excluded. The collision list is derived from builtins plus the str/list/dict/set method sets, not hand-maintained. An entry whose fan-in survives exclusion is legitimate and passes -- the check is on the collision, not on the name.",
         "(2) The high-confidence edge count is reported alongside the raw count as two distinct fields at every point fan-in is consumed: _classify_risk's input, danger_zones.callers_count, hot_nodes.callers_count, and all four graph.get_edges() consumers at call_graph_analyzer.py:155, :455, :600 and :1209. A consumer that reads only one of the two numbers fails review.",
         "(3) graph_model.py:265 no longer returns candidates[0] for an ambiguous bare name -- it returns either the unresolved target or a resolution explicitly marked ambiguous -- and a unit test asserts that a bare name matching 2 or more FQNs with no same-file candidate does NOT produce a confident edge.",
         "The AC deliberately does NOT assert that the 55.5 percent collision rate must fall to any specific figure. No post-fix rate has been measured and pre-committing a target would be a fabrication. It asserts the rate is REPORTED and that assertions (1) and (3) hold."
       ],
-      "acceptance_criteria_source": "prd-v2.md section 5, FR-9b row; SRS.md:753 (FR-38)."
+      "acceptance_criteria_source": "prd-v2.md section 5, FR-9b row; SRS.md AC table row FR-38 (line 765 as of 2026-08-02)."
     },
     {
       "key": "V2-011",
@@ -409,7 +409,7 @@
         "Every one of 10 sample task descriptions run through the selector returns a ranked agent set where each entry carries a non-empty KG edge-path array, never [].",
         "Edge paths are verified against docs/phase-0-reverse-engineering/ast_call_graph.json or a rebuilt (FR-9a-fixed) call graph, NEVER the current truncated builder."
       ],
-      "acceptance_criteria_source": "prd-v2.md section 5, FR-10 row; SRS.md:737 (FR-22)."
+      "acceptance_criteria_source": "prd-v2.md section 5, FR-10 row; SRS.md AC table row FR-22 (line 749 as of 2026-08-02)."
     },
     {
       "key": "V2-012",
@@ -440,12 +440,12 @@
         "V2-011"
       ],
       "build_status": "Not assessed in code -- no selection-explainability mechanism exists to assess. Build from scratch, not a partial.",
-      "body": "For every agent the selector picks, emit the agent name, source domain, and the remaining named fields, so a selection can be audited after the fact rather than trusted.\n\nSRS FR-23 states the check as all five fields present for EVERY agent selected during a full pipeline run: a run with any field missing or empty fails. Confirm the exact five field names against SRS.md FR-23 (SRS.md:307-310) before implementing -- this issue does not restate them from memory.",
+      "body": "For every agent the selector picks, emit the agent name, source domain, and the remaining named fields, so a selection can be audited after the fact rather than trusted.\n\nSRS FR-23 states the check as all five fields present for EVERY agent selected during a full pipeline run: a run with any field missing or empty fails. Confirm the exact five field names against SRS.md requirement FR-23 (line 319 as of 2026-08-02) before implementing -- this issue does not restate them from memory.",
       "acceptance_criteria": [
         "For every agent selected during a full pipeline run, the log emits all five fields named in SRS FR-23.",
         "A run with any field missing or empty fails."
       ],
-      "acceptance_criteria_source": "SRS.md:738 (FR-23). prd-v2.md has no separate Section 5 AC row for FR-11 -- it is listed as 'Not assessed in code' in section 2 and has no measurable-AC row. STATED RATHER THAN INVENTED: the AC above is the SRS-side criterion only."
+      "acceptance_criteria_source": "SRS.md AC table row FR-23 (line 750 as of 2026-08-02). prd-v2.md has no separate Section 5 AC row for FR-11 -- it is listed as 'Not assessed in code' in section 2 and has no measurable-AC row. STATED RATHER THAN INVENTED: the AC above is the SRS-side criterion only."
     },
     {
       "key": "V2-013",
@@ -481,7 +481,7 @@
         "A task description with no viable match returns the defined fallback outcome with a stated reason.",
         "Never an unexplained empty result and never a silent default pick."
       ],
-      "acceptance_criteria_source": "SRS.md:739 (FR-24). prd-v2.md has no separate Section 5 AC row for FR-12 -- it is listed as 'Not assessed in code'. STATED RATHER THAN INVENTED."
+      "acceptance_criteria_source": "SRS.md AC table row FR-24 (line 751 as of 2026-08-02). prd-v2.md has no separate Section 5 AC row for FR-12 -- it is listed as 'Not assessed in code'. STATED RATHER THAN INVENTED."
     },
     {
       "key": "V2-014",
@@ -517,7 +517,7 @@
         "A rate-limited model invocation retries at the next tier in the documented chain.",
         "It escalates to the user at the top tier, rather than failing the step."
       ],
-      "acceptance_criteria_source": "SRS.md:740 (FR-25). prd-v2.md has no separate Section 5 AC row for FR-13. STATED RATHER THAN INVENTED."
+      "acceptance_criteria_source": "SRS.md AC table row FR-25 (line 752 as of 2026-08-02). prd-v2.md has no separate Section 5 AC row for FR-13. STATED RATHER THAN INVENTED."
     },
     {
       "key": "V2-015",
@@ -548,7 +548,7 @@
         "(a) A fresh install with no register-mcp run confirms commands, agents and skills are functional AND confirms the FR-23 push gate is NOT YET reachable -- expected, not a defect.",
         "(b) After register-mcp runs, the push gate and progress writer become reachable, per NFR-5's fourth test assertion."
       ],
-      "acceptance_criteria_source": "prd-v2.md section 5, FR-14 row (as amended at Phase 2.1 for ADR-019); SRS.md:741 (FR-26)."
+      "acceptance_criteria_source": "prd-v2.md section 5, FR-14 row (as amended at Phase 2.1 for ADR-019); SRS.md AC table row FR-26 (line 753 as of 2026-08-02)."
     },
     {
       "key": "V2-016",
@@ -574,15 +574,15 @@
       "blocked_by": [
         "V2-015"
       ],
-      "build_status": "DESIGNED, NOT BUILT. hld_v2.md:759 states verbatim that register-mcp 'does not exist yet'. hld_v2.md:738 describes unregister-mcp as 'is designed to read and write' settings.json -- a wording downgrade recorded in that file's own change log at line 1934. ZERO lines of code exist for either.",
-      "body": "Under ADR-019 this command pair is the ONLY path to any MCP-backed capability at all. There is no 'ship it bundled instead' fallback. It is mandatory v2.0.0 scope, not optional.\n\nBLOCKS V2-024 AND THEREFORE V2-027. See sequencing_risks.md R-1: PRD FR-4 (hook deletion) must not land before BOTH this command pair AND the ADR-017 CI assertion exist.\n\nsettings.json WRITE SAFETY: the write must be a merge-against-fresh-read (HLD section 8.4), not a full-file read-modify-write. ADV-008 records that setup_wizard.py's full-file read-modify-write can clobber settings.json, and 17 pre-existing settings.json writers are known. A shared write-safety helper that both writers use consistently is flagged in advisory_items.json as an ESCALATION CANDIDATE, not merely advisory.\n\nIN SCOPE FOR THIS ISSUE -- THE ADR-020 PATH C VERIFICATION TASK (hld_v2.md:773, 'owner: whoever implements register-mcp; ~10 minutes, at the only moment it can be performed'). Path C is a user running /plugin uninstall after removing PreToolUse. It is INFERRED safe, NOT MEASURED safe (hld_v2.md:741-742). It could not be measured before now because, per hld_v2.md:758-760, 'no entry written by register-mcp was present during the measured uninstall, because register-mcp does not exist yet.' If the inference is wrong, Path C is the one path with NO available control -- prevention and detection are both impossible once the plugin is gone. Fallback if it fails: ADV-012's git pre-push hook would move from proposed to required. See sequencing_risks.md R-10.\n\nDISCOVERABILITY (ADR-019 'what is lost', item 3): plugin commands must detect an unregistered server and emit ONE actionable line naming register-mcp, so a missing capability never presents as a working one.",
+      "build_status": "DESIGNED, NOT BUILT. hld_v2.md ADR-020 Path C (line 790 as of 2026-08-02) states verbatim that register-mcp 'does not exist yet'. hld_v2.md ADR-020 Path B row (line 769 as of 2026-08-02) describes unregister-mcp as 'is designed to read and write' settings.json -- a wording downgrade recorded in that file's own change log, entry 2.0.0-hld-draft-13 (line 2011 as of 2026-08-02). ZERO lines of code exist for either.",
+      "body": "Under ADR-019 this command pair is the ONLY path to any MCP-backed capability at all. There is no 'ship it bundled instead' fallback. It is mandatory v2.0.0 scope, not optional.\n\nBLOCKS V2-024 AND THEREFORE V2-027. See sequencing_risks.md R-1: PRD FR-4 (hook deletion) must not land before BOTH this command pair AND the ADR-017 CI assertion exist.\n\nsettings.json WRITE SAFETY: the write must be a merge-against-fresh-read (HLD section 8.4), not a full-file read-modify-write. ADV-008 records that setup_wizard.py's full-file read-modify-write can clobber settings.json, and 17 pre-existing settings.json writers are known. A shared write-safety helper that both writers use consistently is flagged in advisory_items.json as an ESCALATION CANDIDATE, not merely advisory.\n\nIN SCOPE FOR THIS ISSUE -- THE ADR-020 PATH C VERIFICATION TASK (hld_v2.md ADR-020, the Path C VERIFICATION TASK (line 804 as of 2026-08-02), 'owner: whoever implements register-mcp; ~10 minutes, at the only moment it can be performed'). Path C is a user running /plugin uninstall after removing PreToolUse. It is INFERRED safe, NOT MEASURED safe (hld_v2.md ADR-020 Path C (line 772 as of 2026-08-02)). It could not be measured before now because, per hld_v2.md ADR-020 Path C (line 790 as of 2026-08-02), 'no entry written by register-mcp was present during the measured uninstall, because register-mcp does not exist yet.' If the inference is wrong, Path C is the one path with NO available control -- prevention and detection are both impossible once the plugin is gone. Fallback if it fails: ADV-012's git pre-push hook would move from proposed to required. See sequencing_risks.md R-10.\n\nDISCOVERABILITY (ADR-019 'what is lost', item 3): plugin commands must detect an unregistered server and emit ONE actionable line naming register-mcp, so a missing capability never presents as a working one.",
       "acceptance_criteria": [
         "register-mcp writes user-scope MCP server registrations by merge-against-fresh-read.",
         "It is reversible by unregister-mcp.",
         "A capability unreachable before the command becomes reachable after it, and unreachable again after the inverse (round trip).",
         "ADDITIONAL, HLD-SOURCED NOT PRD/SRS-SOURCED: the ADR-020 Path C verification is performed and its result recorded, at the only moment it can be performed."
       ],
-      "acceptance_criteria_source": "SRS.md:752 (FR-37). The Path C item is sourced from hld_v2.md:773 and is labelled as HLD-sourced, not PRD/SRS-sourced. prd-v2.md has no FR for this command pair -- it is ADR-019 scope sized in product-sequencing-v2.md section 2c."
+      "acceptance_criteria_source": "SRS.md AC table row FR-37 (line 764 as of 2026-08-02). The Path C item is sourced from hld_v2.md ADR-020, the Path C VERIFICATION TASK (line 804 as of 2026-08-02) and is labelled as HLD-sourced, not PRD/SRS-sourced. prd-v2.md has no FR for this command pair -- it is ADR-019 scope sized in product-sequencing-v2.md section 2c."
     },
     {
       "key": "V2-017",
@@ -607,14 +607,14 @@
       "blocked_by": [
         "V2-016"
       ],
-      "build_status": "DESIGNED, NOT BUILT. ADR-020's layers are written in prescriptive voice throughout; the HLD states no build status for any of them. No doctor command and no commands/ directory exist on disk (verified absent 2026-08-01).",
+      "build_status": "DESIGNED, NOT BUILT. ADR-020's layers are written in prescriptive voice throughout; the HLD states no build status for any of them. No PLUGIN doctor command and no commands/ directory exist on disk (verified 2026-08-02). Stated precisely because the blunt form is false: an ENGINE doctor already exists -- cmd_doctor at scripts/cli.py:209, registered at scripts/cli.py:341. What ADR-020 layer 2 requires is a plugin-side doctor, which does not exist. The engine one is not a substitute: it is not reachable from an installed plugin.",
       "body": "ADR-020 specifies THREE layers, each matched to what its path actually permits. No single layer is trusted alone. This issue delivers the first two.\n\n  Layer 1, PREVENT where the plugin owns the action: unregister-mcp checks whether PreToolUse is absent from settings.json before unregistering. If it is, the command REFUSES BY DEFAULT, names the consequence ('this would leave no local version-push gate'), and states the two ways forward -- restore the PreToolUse entry, or re-run with an explicit acknowledgement flag.\n\n  Layer 2, DETECT everywhere else: a doctor command, plus a cheap precondition check that every FR-7 command runs at start. If PreToolUse is absent and no MCP push gate is registered, emit one unmissable line.\n\n  Layer 3, PREVENT THE HARM: ADV-012's git pre-push hook. NAMED, NOT ADOPTED -- it is new scope belonging to whoever owns PRD FR-23 and is NOT part of this issue. Its absence is the reason post-FR-4 protection is detective-only for a user who never runs register-mcp.\n\nThe start-up check must not itself spawn a process, or it breaks NFR-1. The AC says so explicitly.",
       "acceptance_criteria": [
         "unregister-mcp refuses by default when PreToolUse is absent, and proceeds only under an explicit acknowledgement flag.",
         "A doctor command and every FR-17 (SRS) command's start-up check emit one actionable line in the unsafe state.",
         "The idle-session process count is unaffected by the check, so NFR-7 (SRS) still passes with it present."
       ],
-      "acceptance_criteria_source": "SRS.md:759 (NFR-12). prd-v2.md has no NFR for ADR-020 -- it post-dates the PRD's NFR set."
+      "acceptance_criteria_source": "SRS.md AC table row NFR-12 (line 771 as of 2026-08-02). prd-v2.md has no NFR for ADR-020 -- it post-dates the PRD's NFR set."
     },
     {
       "key": "V2-018",
@@ -647,7 +647,7 @@
         "The classifier's output is committed as the evidence artifact.",
         "The total occurrence count and the CODE/DOCSTRING/COMMENT split are reported as MEASURED values, never asserted against a pre-committed number."
       ],
-      "acceptance_criteria_source": "prd-v2.md section 5, FR-15 replacement AC (the Phase 2.1 wording, not the struck-through original); SRS.md:743 (FR-28)."
+      "acceptance_criteria_source": "prd-v2.md section 5, FR-15 replacement AC (the Phase 2.1 wording, not the struck-through original); SRS.md AC table row FR-28 (line 755 as of 2026-08-02)."
     },
     {
       "key": "V2-019",
@@ -675,7 +675,7 @@
         "A grep for mode-less open( and explicit text-mode open(..., \"r\" / \"w\" / \"a\") calls lacking encoding= returns zero matches across the 19 confirmed sites.",
         "Binary-mode and tarfile/urllib calls remain excluded by the same grep's exemption list."
       ],
-      "acceptance_criteria_source": "prd-v2.md section 5, FR-17 row; SRS.md:745 (FR-30)."
+      "acceptance_criteria_source": "prd-v2.md section 5, FR-17 row; SRS.md AC table row FR-30 (line 757 as of 2026-08-02)."
     },
     {
       "key": "V2-020",
@@ -700,13 +700,13 @@
         "V2-015"
       ],
       "build_status": "Design SETTLED (ADR-007), build NOT started.",
-      "body": "Bundle, do not duplicate. The design is a pinned build-time snapshot (ADR-007) of the routing registries plus only the personas for DISPATCHABLE agents -- not all 505 agent directories -- with a CLAUDE_PLUGIN_DEV_MODE=1 escape hatch for local iteration.\n\nThe escape hatch is the hazard: the release script must FAIL if CLAUDE_PLUGIN_DEV_MODE is set in the publishing environment. A dev-mode snapshot shipped to users would point at a checkout that does not exist on their machine.\n\nADV-006 (advisory, cheap): run scripts/secrets_check.py against the SNAPSHOT ARTIFACT, not only the source tree. The existing gate scans source only.",
+      "body": "Bundle, do not duplicate. The design is a pinned build-time snapshot (ADR-007) of the routing registries plus only the personas for DISPATCHABLE agents -- not all 508 agent directories -- with a CLAUDE_PLUGIN_DEV_MODE=1 escape hatch for local iteration. LIBRARY SIZE, MEASURED 2026-08-02 with catalogue and disk agreeing: 508 agents and 996 skills. Three agents and four skills were added to close the Phase 7 capability gaps, which is why any earlier figure of 505 agents is superseded.\n\nThe escape hatch is the hazard: the release script must FAIL if CLAUDE_PLUGIN_DEV_MODE is set in the publishing environment. A dev-mode snapshot shipped to users would point at a checkout that does not exist on their machine.\n\nADV-006 (advisory, cheap): run scripts/secrets_check.py against the SNAPSHOT ARTIFACT, not only the source tree. The existing gate scans source only.",
       "acceptance_criteria": [
         "The plugin functions on a machine with no claude-global-library checkout.",
         "A staleness check against the library VERSION fires when the snapshot is behind.",
         "The release script FAILS if CLAUDE_PLUGIN_DEV_MODE is set in the publishing environment."
       ],
-      "acceptance_criteria_source": "SRS.md:744 (FR-29). prd-v2.md section 5 has no separate AC row for FR-16 -- it is recorded in section 2 as 'Design settled, build not started'. STATED RATHER THAN INVENTED: the AC above is the SRS-side criterion only."
+      "acceptance_criteria_source": "SRS.md AC table row FR-29 (line 756 as of 2026-08-02). prd-v2.md section 5 has no separate AC row for FR-16 -- it is recorded in section 2 as 'Design settled, build not started'. STATED RATHER THAN INVENTED: the AC above is the SRS-side criterion only."
     },
     {
       "key": "V2-021",
@@ -737,7 +737,7 @@
         "The NFR-5 uninstall test asserts the runbook file exists.",
         "Its named paths match the plugin's actual marketplace and plugin name strings, with no stale placeholder text."
       ],
-      "acceptance_criteria_source": "prd-v2.md section 5, FR-24 row; SRS.md:751 (FR-36)."
+      "acceptance_criteria_source": "prd-v2.md section 5, FR-24 row; SRS.md AC table row FR-36 (line 763 as of 2026-08-02)."
     },
     {
       "key": "V2-022",
@@ -775,7 +775,7 @@
         "(b) The uninstall test asserts the settings.json delta ATTRIBUTABLE TO THE PLUGIN, never whole-file equality against a pre-install snapshot.",
         "(c) The orphaned plugin cache directory under ~/.claude/plugins/cache/ and its .orphaned_at marker are DOCUMENTED as a known, accepted Claude-Code-level limitation in the FR-24 uninstall runbook, rather than asserted to be zero."
       ],
-      "acceptance_criteria_source": "prd-v2.md section 5, FR-18 replacement AC (Phase 2.1 narrowing); SRS.md:746 (FR-31)."
+      "acceptance_criteria_source": "prd-v2.md section 5, FR-18 replacement AC (Phase 2.1 narrowing); SRS.md AC table row FR-31 (line 758 as of 2026-08-02)."
     },
     {
       "key": "V2-023",
@@ -815,7 +815,7 @@
         "The uninstall test asserts plugin-attributable delta only, per the narrowed FR-18 AC -- NOT whole-directory or whole-file equality.",
         "A fourth register/unregister round-trip scenario returns settings.json to its pre-registration state."
       ],
-      "acceptance_criteria_source": "prd-v2.md section 5, NFR-5 row and section 7 Gherkin; SRS.md:758 (NFR-11)."
+      "acceptance_criteria_source": "prd-v2.md section 5, NFR-5 row and section 7 Gherkin; SRS.md AC table row NFR-11 (line 770 as of 2026-08-02)."
     },
     {
       "key": "V2-024",
@@ -849,7 +849,7 @@
         "tests/test_push_gate.py's existing assertions, or their direct equivalents, pass against the MCP-tool code path.",
         "This happens BEFORE the PR that deletes hooks/pre_tool_enforcer/, verified by commit ordering."
       ],
-      "acceptance_criteria_source": "prd-v2.md section 5, FR-23 row; SRS.md:750 (FR-35)."
+      "acceptance_criteria_source": "prd-v2.md section 5, FR-23 row; SRS.md AC table row FR-35 (line 762 as of 2026-08-02)."
     },
     {
       "key": "V2-025",
@@ -877,7 +877,7 @@
         "V2-024"
       ],
       "build_status": "DESIGNED, NOT BUILT. Recorded as correction #17 in docs/REVIEW-INDEX.md section 7: a governance guarantee that had been documented as ACTIVE and does not exist. The HLD states no build status for it either way -- all its language is prescriptive.",
-      "body": "THIS ISSUE HAS NO ACCEPTANCE CRITERION IN THE PRD OR THE SRS. Stated rather than invented. SRS FR-35's AC covers commit ordering; it does not specify the CI check itself. The criteria below are drawn from hld_v2.md section 7.7 (the formal signature) and hld_v2.md:661-664 (ADR-017 Chosen), and are labelled HLD-sourced.\n\nWHAT MAKES THIS ASSERTION DIFFERENT FROM THE OBVIOUS ONE: it asserts on the REPLACEMENT's existence and reachability, never on the old hook's presence. An assertion that checks 'is the hook still there' would block the deletion the project exists to perform. The signature explicitly forbids it.\n\nONE OF THE TWO RULES THAT CAME OUT OF THIS PROJECT'S CORRECTION RECORD APPLIES DIRECTLY HERE: 'Any check needs a companion negative test proving it can fail. Otherwise it is a green light with no mechanism behind it.' A negative test is required, not optional.\n\nDEGRADED GUARANTEE, ACCEPTED KNOWINGLY: once register-mcp exists, a user who never runs it has no local MCP-side gate at all. This CI assertion becomes the ONLY mechanical protection, and the guarantee moves from PREVENTIVE to DETECTIVE (hld_v2.md:683). ADV-012's git pre-push hook would restore local prevention and is NAMED, NOT ADOPTED.",
+      "body": "THIS ISSUE HAS NO ACCEPTANCE CRITERION IN THE PRD OR THE SRS. Stated rather than invented. SRS FR-35's AC covers commit ordering; it does not specify the CI check itself. The criteria below are drawn from hld_v2.md section 7.7 (the formal signature) and hld_v2.md ADR-017 \"Chosen\" (line 693 as of 2026-08-02) (ADR-017 Chosen), and are labelled HLD-sourced.\n\nWHAT MAKES THIS ASSERTION DIFFERENT FROM THE OBVIOUS ONE: it asserts on the REPLACEMENT's existence and reachability, never on the old hook's presence. An assertion that checks 'is the hook still there' would block the deletion the project exists to perform. The signature explicitly forbids it.\n\nONE OF THE TWO RULES THAT CAME OUT OF THIS PROJECT'S CORRECTION RECORD APPLIES DIRECTLY HERE: 'Any check needs a companion negative test proving it can fail. Otherwise it is a green light with no mechanism behind it.' A negative test is required, not optional.\n\nDEGRADED GUARANTEE, ACCEPTED KNOWINGLY: once register-mcp exists, a user who never runs it has no local MCP-side gate at all. This CI assertion becomes the ONLY mechanical protection, and the guarantee moves from PREVENTIVE to DETECTIVE (hld_v2.md ADR-017 Phase 2 amendment, the PREVENTIVE-to-DETECTIVE clause (line 714 as of 2026-08-02)). ADV-012's git pre-push hook would restore local prevention and is NAMED, NOT ADOPTED.",
       "acceptance_criteria": [
         "HLD-SOURCED (hld_v2.md section 7.7): assert_push_gate_reachable() -> None fails the build IFF the PreToolUse registration is absent AND no MCP tool named as the version-push gate is reachable.",
         "HLD-SOURCED: it MUST NOT assert on the presence of hooks/pre_tool_enforcer/.",
@@ -885,7 +885,7 @@
         "PROJECT-RULE-SOURCED (docs/REVIEW-INDEX.md section 7, rule 1): a companion negative test proves the assertion can fail.",
         "NOT PRD/SRS-SOURCED. No PRD or SRS acceptance criterion exists for this mechanism standalone."
       ],
-      "acceptance_criteria_source": "hld_v2.md section 7.7 and hld_v2.md:661-664; docs/REVIEW-INDEX.md section 7. EXPLICITLY NOT prd-v2.md or SRS.md -- neither carries a standalone AC for this."
+      "acceptance_criteria_source": "hld_v2.md section 7.7 and hld_v2.md ADR-017 \"Chosen\" (line 693 as of 2026-08-02); docs/REVIEW-INDEX.md section 7. EXPLICITLY NOT prd-v2.md or SRS.md -- neither carries a standalone AC for this."
     },
     {
       "key": "V2-026",
@@ -917,7 +917,7 @@
         "Each of the 6 named entry points is invocable by name and reaches its pipeline steps.",
         "The full-pipeline command executes Steps 0 through 8 in order."
       ],
-      "acceptance_criteria_source": "SRS.md:732 (FR-17). prd-v2.md section 5 has no separate AC row for FR-7 -- it is recorded in section 2 as 'Not started', with the minimum command set restated in orchestration_prompt.md section 1.2 as design input. STATED RATHER THAN INVENTED."
+      "acceptance_criteria_source": "SRS.md AC table row FR-17 (line 744 as of 2026-08-02). prd-v2.md section 5 has no separate AC row for FR-7 -- it is recorded in section 2 as 'Not started', with the minimum command set restated in orchestration_prompt.md section 1.2 as design input. STATED RATHER THAN INVENTED."
     },
     {
       "key": "V2-027",
@@ -959,7 +959,7 @@
         "A fresh session shows no PreToolUse and no PostToolUse entry in ~/.claude/settings.json.",
         "No tool call is intercepted by either."
       ],
-      "acceptance_criteria_source": "SRS.md:728 (FR-13). prd-v2.md section 5 has no separate AC row for FR-4 -- it is recorded in section 2 as 'Not started, blast radius now measured'. STATED RATHER THAN INVENTED."
+      "acceptance_criteria_source": "SRS.md AC table row FR-13 (line 740 as of 2026-08-02). prd-v2.md section 5 has no separate AC row for FR-4 -- it is recorded in section 2 as 'Not started, blast radius now measured'. STATED RATHER THAN INVENTED."
     },
     {
       "key": "V2-028",
@@ -994,7 +994,7 @@
         "A user prompt no longer invokes scripts/3-level-flow.py.",
         "Pipeline execution begins only from an explicit SRS FR-17 command."
       ],
-      "acceptance_criteria_source": "SRS.md:730 (FR-15). prd-v2.md section 5 has no separate AC row for FR-5. STATED RATHER THAN INVENTED."
+      "acceptance_criteria_source": "SRS.md AC table row FR-15 (line 742 as of 2026-08-02). prd-v2.md section 5 has no separate AC row for FR-5. STATED RATHER THAN INVENTED."
     },
     {
       "key": "V2-029",
@@ -1024,7 +1024,7 @@
         "The ADR-006 document body cross-references all three named consequences.",
         "A consequence recorded only in docs/orchestration_prompt.md does not satisfy this."
       ],
-      "acceptance_criteria_source": "SRS.md:729 (FR-14). prd-v2.md section 5 has no separate AC row for FR-4a. STATED RATHER THAN INVENTED."
+      "acceptance_criteria_source": "SRS.md AC table row FR-14 (line 741 as of 2026-08-02). prd-v2.md section 5 has no separate AC row for FR-4a. STATED RATHER THAN INVENTED."
     },
     {
       "key": "V2-030",
@@ -1048,13 +1048,13 @@
       "blocked_by": [
         "V2-027"
       ],
-      "build_status": "HALF DONE. Clause one (the appended superseding FR entry) is SATISFIED by the Phase 5 SRS append. Clause two (the Change Log row) is recorded at SRS.md:808 as an explicit OUTSTANDING obligation with a PENDING date.",
-      "body": "THE HIGHEST-WSJF ITEM IN THE PUBLISHED TABLE (13.00) CANNOT BE DONE FIRST. Half of it is already done and the other half is blocked by V2-027, which is nearly the last thing to land. See sequencing_risks.md R-7.\n\nSRS.md:749 records the split verbatim: 'The first clause is satisfied by this append; the second is NOT and cannot be until that PR exists.' SRS.md:808 carries a PENDING row rather than a back-dated one -- do not back-date it now either.\n\nRequired by rules/44 (SRS is append-only). Without this row, SRS.md:206's acceptance criterion becomes permanently false the moment PreToolUse and PostToolUse are deleted, with no compensating record of why.\n\nNAMING COLLISION: the SRS FR being superseded is SRS.md's own pre-existing FR-9 (hook system), which is unrelated in content to PRD FR-9 (library count drift). The superseding entry is SRS FR-34.",
+      "build_status": "HALF DONE. Clause one (the appended superseding FR entry) is SATISFIED by the Phase 5 SRS append. Clause two (the Change Log row) is recorded at SRS.md Change Log, the PENDING row for FR-34 (line 968 as of 2026-08-02) as an explicit OUTSTANDING obligation with a PENDING date.",
+      "body": "THE HIGHEST-WSJF ITEM IN THE PUBLISHED TABLE (13.00) CANNOT BE DONE FIRST. Half of it is already done and the other half is blocked by V2-027, which is nearly the last thing to land. See sequencing_risks.md R-7.\n\nSRS.md AC table row FR-34 (line 761 as of 2026-08-02) records the split verbatim: 'The first clause is satisfied by this append; the second is NOT and cannot be until that PR exists.' SRS.md Change Log, the PENDING row for FR-34 (line 968 as of 2026-08-02) carries a PENDING row rather than a back-dated one -- do not back-date it now either.\n\nRequired by rules/44 (SRS is append-only). Without this row, SRS.md AC table row FR-9's acceptance criterion (line 697 as of 2026-08-02) becomes permanently false the moment PreToolUse and PostToolUse are deleted, with no compensating record of why.\n\nNAMING COLLISION: the SRS FR being superseded is SRS.md's own pre-existing FR-9 (hook system), which is unrelated in content to PRD FR-9 (library count drift). The superseding entry is SRS FR-34.",
       "acceptance_criteria": [
         "SRS.md carries a new appended FR entry, not a replacement of FR-9's text, whose acceptance criterion states the v2.0.0 replacement guarantee for the two removed hook events. (ALREADY SATISFIED by the Phase 5 append.)",
         "SRS.md's Change Log table has a new row DATED TO THE PR that deletes PreToolUse/PostToolUse, referencing that FR by number. (NOT satisfied; this issue delivers it.)"
       ],
-      "acceptance_criteria_source": "prd-v2.md section 5, FR-22 row; SRS.md:749 (FR-34) and SRS.md:808."
+      "acceptance_criteria_source": "prd-v2.md section 5, FR-22 row; SRS.md AC table row FR-34 (line 761 as of 2026-08-02) and SRS.md Change Log, the PENDING row for FR-34 (line 968 as of 2026-08-02)."
     },
     {
       "key": "V2-031",
@@ -1085,7 +1085,7 @@
         "Defect 2: a second test confirms the per-tool-call progress surface is a PROJECTION of the checkpoint record rather than a second writer, so no dual-write path exists.",
         "Defect 3: a replay-idempotency test confirms re-executing a side-effecting step (e.g. GitHub issue creation) twice with the same session-id-plus-step-number key produces no duplicate external effect."
       ],
-      "acceptance_criteria_source": "prd-v2.md section 5, NFR-3 row (Phase 2.1 revision per ADR-011 / OAQ 1); SRS.md:756 (NFR-9)."
+      "acceptance_criteria_source": "prd-v2.md section 5, NFR-3 row (Phase 2.1 revision per ADR-011 / OAQ 1); SRS.md AC table row NFR-9 (line 768 as of 2026-08-02)."
     },
     {
       "key": "V2-032",
@@ -1114,7 +1114,7 @@
       "acceptance_criteria": [
         "An install/uninstall cycle leaves the pre-existing user-level Stop and Notification entries byte-identical to their pre-install state."
       ],
-      "acceptance_criteria_source": "SRS.md:733 (FR-18). prd-v2.md section 5 has no separate AC row for FR-8 -- section 2 records it as 'Decided, then re-opened as FR-8a' and points to the FR-8a AC row. STATED RATHER THAN INVENTED."
+      "acceptance_criteria_source": "SRS.md AC table row FR-18 (line 745 as of 2026-08-02). prd-v2.md section 5 has no separate AC row for FR-8 -- section 2 records it as 'Decided, then re-opened as FR-8a' and points to the FR-8a AC row. STATED RATHER THAN INVENTED."
     },
     {
       "key": "V2-033",
@@ -1142,12 +1142,12 @@
       ],
       "blocked_by": [],
       "build_status": "Measured (statically); work NOT started. hooks/stop_notifier/ has ZERO test coverage -- characterisation tests are a blocking prerequisite for any reduction work.",
-      "body": "THE FLOOR FIGURE MOVED AND THE PROBLEM CHANGED SHAPE. Initially measured at 8 spawns per turn (16 with retries). That measurement assumed the gated target scripts exist. 7 of the 9 referenced scripts were verified ABSENT, so their .exists() guards fail and they never spawn. The true floor is approximately 2 -- the unconditional git rev-parse calls.\n\nCONSEQUENCE: FR-8a is NOT primarily an overhead problem. Stop does fire every response turn, but the per-turn cost is small. The real defect is CORRECTNESS, and it is tracked separately as PRD FR-21 (V2-034).\n\nCANNOT BE SATISFIED BY A STATIC RE-DERIVATION. The approximately-2 figure is a static filesystem inference and has NEVER been observed at runtime. The AC requires 20 consecutive REAL invocations with runtime instrumentation. A static re-derivation does not satisfy it.\n\nWHAT SHIPS IN v2.0.0: the instrumentation script, the per-capability decision with a written rationale, and reference retirement for every capability decided 'not rebuilt' (V2-034).\nWHAT DEFERS TO v2.1: BUILDING any of the 5 capabilities the decision session selects for rebuild -- auto-save-session, archive-old-sessions, plan-session-archiver, preference-auto-tracker, common-failures-prevention. No D1-D7 gate requires any of them. 'Delete the reference' is a valid end state per capability, not a fallback.\n\nNOTE THE AC'S OWN INCENTIVE: it asserts a per-turn spawn count of at most 2 unless a named exception is documented with a rationale. Every capability rebuilt that adds a spawn must individually clear that bar. Rebuilding is a cost this FR was written to constrain, not a free win.",
+      "body": "THE FLOOR IS REDEFINED AS FOUR MEASUREMENT OPPORTUNITIES (owner ruling 2026-08-02), NOT TWO. Initially measured at 8 spawns per turn (16 with retries), on the assumption that the gated target scripts exist. 7 of the 9 referenced scripts were verified ABSENT, so their .exists() guards fail and they never spawn, and the figure was then restated as 'about 2'. That '2' was the defect this ruling fixes: the body attributed it to the two unconditional git rev-parse calls while AC2 attributed it to the two scripts that exist. Those are DIFFERENT pairs. A test written against either reading gives a false pass or a false fail against a runtime that has FOUR distinct spawn opportunities.\n\nMEASURED ON DISK 2026-08-02 by enumerating subprocess call sites, not by grep over a summary:\n  17 subprocess spawn call sites exist in hooks/stop_notifier/ -- core.py 11, post_impl.py 5, voice.py 1. 11 + 5 + 1 = 17.\n  Of those, FOUR are per-turn measurement opportunities:\n    (1) git rev-parse at post_impl.py:56   -- UNCONDITIONAL, fires every turn\n    (2) git rev-parse at post_impl.py:209  -- UNCONDITIONAL, fires every turn\n    (3) sync-version.py  -- GUARDED, resolved at post_impl.py:284\n    (4) voice-notifier.py -- GUARDED, resolved at helpers.py:142, launched from voice.py:144\n\nTWO OF THE FOUR CAN NEVER FIRE AS CURRENTLY RESOLVED, AND THAT IS NOT A TEST FAILURE. Both guarded spawns resolve their target as a SIBLING inside hooks/stop_notifier/, and neither target exists there:\n  post_impl.py:284 computes Path(__file__).resolve().parent / 'sync-version.py'. hooks/stop_notifier/sync-version.py is ABSENT; the real copy lives at scripts/tools/sync-version.py, which this resolution can never reach.\n  helpers.py:142 computes VOICE_SCRIPT = CURRENT_DIR / 'voice-notifier.py'. hooks/stop_notifier/voice-notifier.py is ABSENT.\nSo an implementer instrumenting this should expect 2 observed spawns from 4 opportunities on a normal turn, and must record that as PASS, not as a missing behaviour.\n\nCORRECTION TO THE RULING AS RELAYED, recorded rather than silently absorbed: the ruling described voice-notifier.py as resolving through CLAUDE_IDE_INSTALL_DIR, unset outside IDE mode. MEASURED: it does not. CLAUDE_IDE_INSTALL_DIR appears only in hooks/ide_paths.py and is not on the voice-notifier resolution path. The real mechanism is the same sibling-path defect as sync-version.py, which makes the two failures ONE root cause rather than two. The ruling also cited post_impl.py:285 for the sync-version resolution; the line is :284. Both the count of four and the conclusion that two may never fire are unaffected.\n\nCONSEQUENCE: FR-8a is NOT primarily an overhead problem. Stop does fire every response turn, but the per-turn cost is small. The real defect is CORRECTNESS, and it is tracked separately as PRD FR-21 (V2-034).\n\nCANNOT BE SATISFIED BY A STATIC RE-DERIVATION. The approximately-2 figure is a static filesystem inference and has NEVER been observed at runtime. The AC requires 20 consecutive REAL invocations with runtime instrumentation. A static re-derivation does not satisfy it.\n\nWHAT SHIPS IN v2.0.0: the instrumentation script, the per-capability decision with a written rationale, and reference retirement for every capability decided 'not rebuilt' (V2-034).\nWHAT DEFERS TO v2.1: BUILDING any of the 5 capabilities the decision session selects for rebuild -- auto-save-session, archive-old-sessions, plan-session-archiver, preference-auto-tracker, common-failures-prevention. No D1-D7 gate requires any of them. 'Delete the reference' is a valid end state per capability, not a fallback.\n\nNOTE THE AC'S OWN INCENTIVE: it bounds the per-turn spawn count against the four known opportunities unless a named exception is documented with a rationale. Every capability rebuilt that adds a spawn must individually clear that bar. Rebuilding is a cost this FR was written to constrain, not a free win.",
       "acceptance_criteria": [
         "A committed instrumentation script reports, for 20 consecutive REAL Stop-hook invocations on this repo's current checkout: (a) exact subprocess count per invocation, (b) wall-clock duration per invocation, (c) which of the 9 referenced scripts actually ran versus hit a failed .exists() guard.",
-        "The reduced design's regression test asserts the per-turn spawn count is at most 2 (the two scripts confirmed to exist) unless a named exception is documented with a rationale."
+        "REDEFINED 2026-08-02 BY OWNER RULING -- the bound is FOUR MEASUREMENT OPPORTUNITIES, not a bare count of 2. The reduced design's regression test SHALL assert against the enumerated set below, not against a single number, so that it is deterministically valid either way. The four per-turn spawn opportunities in hooks/stop_notifier/ (17 subprocess call sites in total: core.py 11 + post_impl.py 5 + voice.py 1) are: (1) git rev-parse at post_impl.py:56, UNCONDITIONAL; (2) git rev-parse at post_impl.py:209, UNCONDITIONAL; (3) the sync-version.py spawn, GUARDED, resolved at post_impl.py:284; (4) the voice-notifier.py spawn, GUARDED, resolved at helpers.py:142 and launched from voice.py:144. The test asserts that observed spawns are a SUBSET of these four and that opportunities (1) and (2) fired. It SHALL NOT fail when (3) and (4) do not fire: both resolve their target as a sibling inside hooks/stop_notifier/ and neither target exists there -- the real sync-version.py is at scripts/tools/, unreachable by that resolution -- so a non-firing guard is the MEASURED expected state, not a defect in the test. Any spawn observed outside the four requires a named exception documented with a rationale."
       ],
-      "acceptance_criteria_source": "prd-v2.md section 5, FR-8/FR-8a row; SRS.md:734 (FR-19)."
+      "acceptance_criteria_source": "prd-v2.md section 5, FR-8/FR-8a row; SRS.md AC table row FR-19 (line 746 as of 2026-08-02)."
     },
     {
       "key": "V2-034",
@@ -1183,7 +1183,7 @@
         "For each of the 7 missing scripts, exactly one of two states holds and is recorded: (a) the script file exists on disk and its corresponding .exists() guard now evaluates true in a test run, or (b) the reference is removed from hooks/stop_notifier/core.py AND the lost capability appears with a disposition in the FR-12/NFR-10 ledger.",
         "A grep for the 7 filenames inside hooks/stop_notifier/ after remediation returns either a real file or zero references -- never a dangling reference to an absent file."
       ],
-      "acceptance_criteria_source": "prd-v2.md section 5, FR-21 row; SRS.md:748 (FR-33)."
+      "acceptance_criteria_source": "prd-v2.md section 5, FR-21 row; SRS.md AC table row FR-33 (line 760 as of 2026-08-02)."
     },
     {
       "key": "V2-035",
@@ -1214,7 +1214,7 @@
         "Exactly ONE documented exception is permitted: a single-call socket/HTTP-level I/O timeout that raises a retryable error into a circuit breaker rather than aborting the enclosing pipeline task.",
         "The regression test asserts all 5 ADR-016 mechanisms are present: attempt-count/iteration bound, lease renewal, a convergence (no-progress) signal, a circuit breaker per external dependency with non-fixed reopen-wait, and full-jitter retry."
       ],
-      "acceptance_criteria_source": "prd-v2.md section 5, NFR-2 row (Phase 2.1 revision per ADR-016); SRS.md:755 (NFR-8)."
+      "acceptance_criteria_source": "prd-v2.md section 5, NFR-2 row (Phase 2.1 revision per ADR-016); SRS.md AC table row NFR-8 (line 767 as of 2026-08-02)."
     },
     {
       "key": "V2-036",
@@ -1260,7 +1260,7 @@
       ],
       "blocked_by_note": "This list names every leaf issue in the plan. Every other issue is covered transitively. V2-037 is deliberately NOT a blocker -- see its own note.",
       "build_status": "NOT started.",
-      "body": "The migration guide derives from hld_v2.md section 10's 8-step runbook, which was rebuilt in Phase 2 and IS current: register-mcp is step 2 (hld_v2.md:1318) and the FR-23 reachability verification is step 3 (hld_v2.md:1319), which reads 'Cannot pass before step 2'.\n\nSTALENESS NOTE, so it is not re-fixed: product-sequencing-v2.md states three times (sections 6, 7 and 8) that this runbook has 'NOT YET' been updated to insert register-mcp. That statement is STALE. The edit is recorded in hld_v2.md's own change log at line 1936 (draft-11, BA FIND-10) and docs/REVIEW-INDEX.md:25 agrees the runbook is rebuilt. Do not re-open it.\n\nThe runbook's own safety property must survive into the migration guide verbatim: step 2 is optional for the migration as a whole and MANDATORY for step 5, and 'Step 5, having SKIPPED steps 2-3' is marked 'NO -- do not stop here, and do not pass through here.'\n\nStep 8 is the behaviour change and must be stated at full strength: nothing is enforced on a session where no command is invoked (ADR-006).\n\nVERSION must reach 2.0.0. Per rules/11, VERSION is the single source of truth and must contain one line of valid semver with no trailing whitespace and no extra lines. CHANGELOG must follow Keep a Changelog with an ISO 8601 date.",
+      "body": "The migration guide derives from hld_v2.md section 10's 8-step runbook, which was rebuilt in Phase 2 and IS current: register-mcp is step 2 (hld_v2.md SS 10 runbook step 2 (line 1349 as of 2026-08-02)) and the FR-23 reachability verification is step 3 (hld_v2.md SS 10 runbook step 3 (line 1350 as of 2026-08-02)), which reads 'Cannot pass before step 2'.\n\nSTALENESS NOTE, so it is not re-fixed: product-sequencing-v2.md states three times (sections 6, 7 and 8) that this runbook has 'NOT YET' been updated to insert register-mcp. That statement is STALE. The edit is recorded in hld_v2.md's own change log, entry 2.0.0-hld-draft-11 (BA FIND-10, line 2013 as of 2026-08-02) and docs/REVIEW-INDEX.md section 1 row 8 (line 25 as of 2026-08-02) agrees the runbook is rebuilt. Do not re-open it.\n\nThe runbook's own safety property must survive into the migration guide verbatim: step 2 is optional for the migration as a whole and MANDATORY for step 5, and 'Step 5, having SKIPPED steps 2-3' is marked 'NO -- do not stop here, and do not pass through here.'\n\nStep 8 is the behaviour change and must be stated at full strength: nothing is enforced on a session where no command is invoked (ADR-006).\n\nVERSION must reach 2.0.0. Per rules/11, VERSION is the single source of truth and must contain one line of valid semver with no trailing whitespace and no extra lines. CHANGELOG must follow Keep a Changelog with an ISO 8601 date.",
       "acceptance_criteria": [
         "NO PRD OR SRS ACCEPTANCE CRITERION EXISTS FOR D7. Stated rather than invented. The criteria below are drawn from rules/11 section 2 and hld_v2.md section 10, and are labelled as such.",
         "RULES-SOURCED: VERSION contains a single line matching MAJOR.MINOR.PATCH, reading 2.0.0, with no trailing whitespace and no extra lines.",
@@ -1291,7 +1291,7 @@
       ],
       "blocked_by": [],
       "build_status": "Open, unowned, predates this project.",
-      "body": "VERIFIED ON DISK BY THIS PLANNING PASS, 2026-08-01:\n  VERSION reads 1.21.5\n  CLAUDE.md:4 reads **Version:** 1.21.4\n\nrules/11 makes VERSION the single source of truth, so CLAUDE.md is the stale one. Both phase-0 documents also say 1.21.4 and inherit the same staleness.\n\nRecorded as an open item in docs/REVIEW-INDEX.md section 2: 'Unowned and predates this project. Trivial to fix, but nobody has.'\n\nBundled into batch H because the 2.0.0 version bump touches both files anyway. Doing it here rather than earlier avoids fixing the same line twice. If it is fixed earlier, that is harmless -- this issue has no blockers.\n\nABSORPTION NOTE: if V2-036 lands first AND updates CLAUDE.md's Version field alongside VERSION, this issue closes as absorbed rather than as work done. It is deliberately not listed as a blocker of V2-036 for that reason. It is drafted separately only so a pre-existing, unowned contradiction does not disappear into a release chore unrecorded.",
+      "body": "VERIFIED ON DISK BY THIS PLANNING PASS, 2026-08-01:\n  VERSION reads 1.21.5\n  CLAUDE.md, the Version field (line 4 as of 2026-08-02) reads **Version:** 1.21.4\n\nrules/11 makes VERSION the single source of truth, so CLAUDE.md is the stale one. Both phase-0 documents also say 1.21.4 and inherit the same staleness.\n\nRecorded as an open item in docs/REVIEW-INDEX.md section 2: 'Unowned and predates this project. Trivial to fix, but nobody has.'\n\nBundled into batch H because the 2.0.0 version bump touches both files anyway. Doing it here rather than earlier avoids fixing the same line twice. If it is fixed earlier, that is harmless -- this issue has no blockers.\n\nABSORPTION NOTE: if V2-036 lands first AND updates CLAUDE.md's Version field alongside VERSION, this issue closes as absorbed rather than as work done. It is deliberately not listed as a blocker of V2-036 for that reason. It is drafted separately only so a pre-existing, unowned contradiction does not disappear into a release chore unrecorded.",
       "acceptance_criteria": [
         "RULES-SOURCED (rules/11 section 2): VERSION contains a single line of valid semver, no trailing whitespace, no extra lines.",
         "CLAUDE.md's Version field matches VERSION exactly.",
