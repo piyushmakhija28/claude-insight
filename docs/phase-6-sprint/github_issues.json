@@ -14,14 +14,16 @@
       "SOURCED": "size taken from docs/phase-0-requirements/product-sequencing-v2.md section 2, 2a or 2c",
       "SOURCED_SET_SPLIT": "the set total is SOURCED; the per-issue split is ASSUMED by this document and sums to the sourced total",
       "ASSUMED": "size set by this document against the anchor, because no size exists in any source",
-      "UNSIZED_BY_MANDATE": "the source documents forbid sizing this until a measurement runs"
+      "UNSIZED_BY_MANDATE": "the source documents forbid sizing this until a measurement runs",
+      "RE_ESTIMATED": "the unit carried a size from an earlier pass, that size's stated basis was invalidated by a subsequent scope change, and this document re-estimated it against the section-1 anchor. NOT SOURCED (the source figure no longer describes the work) and NOT ASSUMED (a prior figure existed and was displaced, rather than being absent). 8 points total, across 1 issue: V2-009, re-pointed 5 -> 8 on 2026-08-02 by product-manager-agent after the 2026-08-01 owner ruling replaced its acceptance criterion with a 14-item runtime-proof AC. A re-estimate is ASSUMED in kind: it is a single-pass judgement, uncalibrated against any completed item, and made by a third estimator in a third pass. See sprint_plan.md ASSUMPTION A3 and A5."
     },
     "totals": {
-      "sourced_points": 74,
+      "sourced_points": 69,
       "assumed_points": 34,
-      "combined_points": 108,
+      "combined_points": 111,
       "unsized_issues": 1,
-      "note": "The two totals are reported separately and deliberately not merged into a single headline figure. See sprint_plan.md ASSUMPTION A3."
+      "note": "The three totals are reported separately and deliberately not merged into a single headline figure. 69 SOURCED + 34 ASSUMED + 8 RE_ESTIMATED = 111, plus 1 unsized item. Was 74 + 34 = 108 before V2-009 was re-pointed 5 -> 8 on 2026-08-02: 5 points left the SOURCED bucket (74 -> 69) and 8 points entered the new RE_ESTIMATED bucket, a net +3. The 69 SOURCED comprises 45 pure SOURCED plus 24 SOURCED_SET_SPLIT. See sprint_plan.md ASSUMPTION A3.",
+      "reestimated_points": 8
     },
     "capacity_statement": "NO velocity data exists for this project. No sprint length, no team size, no dates, and no forecast appear anywhere in these drafts. Batches are dependency-closed sets, not time boxes. See sprint_plan.md section 0 for how these convert to sprints without rework.",
     "not_drafted": [
@@ -293,15 +295,15 @@
         "prd": "FR-9a",
         "srs": "FR-21"
       },
-      "size": 5,
-      "size_provenance": "SOURCED",
+      "size": 8,
+      "size_provenance": "RE_ESTIMATED",
       "wsjf_as_published": 4.6,
       "labels": [
         "v2.0.0",
         "batch:B",
         "gate:D4",
         "type:fix",
-        "size:5",
+        "size:8",
         "risk:sequencing-critical",
         "needs-decision",
         "critical-path"

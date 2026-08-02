@@ -2,7 +2,8 @@
 
 **Phase:** 6 (sprint planning)
 **Author:** scrum-master-agent
-**Date:** 2026-08-01
+**Date:** 2026-08-01 (revised 2026-08-02 by product-manager-agent -- V2-009 re-pointed 5 -> 8; see
+sections 2.4, 3 batch B, 4, 5.2 and 7. One issue re-sized; no dependency, ordering or scope change.)
 **Target:** `claude-workflow-engine` v1.21.5 -> v2.0.0
 **Status of this document:** DRAFT. Nothing in it has been created on GitHub. `github_issues.json`
 in this directory holds 37 issue drafts, none created.
@@ -42,14 +43,15 @@ Nothing needs re-sizing, re-scoping, or re-ordering to perform that conversion. 
 across sprints; a sprint may absorb more than one batch. Batch boundaries are dependency boundaries,
 not capacity boundaries, so they survive any velocity value.
 
-### The four capacity ASSUMPTIONS this plan makes
+### The five capacity ASSUMPTIONS this plan makes
 
 | # | ASSUMPTION | Why it is an assumption and not a finding |
 |---|---|---|
 | A1 | Relative point sizes are comparable across issues drawn from `product-sequencing-v2.md` and issues sized by this document. | The former are the product manager's single-pass Fibonacci estimates; the latter are this document's. Neither has ever been calibrated against a completed item, because no item has completed. |
 | A2 | A batch is workable by one person or a small team without further decomposition. | No team size is on record. If the work is parallelised across more than one person, batches B, E and G contain issues that can proceed concurrently; batches A, D and F contain serial chains that cannot. |
 | A3 | The 34 ASSUMED points added by this document (section 2) are of the same currency as the 74 sourced points. | They were sized against the same anchor, but by a different estimator in a different pass. Treat the two totals separately until one completed item calibrates them. |
-| A4 | No batch contains hidden work discovered only on contact. | Contradicted in advance for at least two items -- PRD FR-15 is explicitly unsizable until an AST re-derivation runs, and PRD FR-9a's written acceptance criterion is known to be both padded and incomplete (section 5). Both are named rather than absorbed. |
+| A4 | No batch contains hidden work discovered only on contact. | Contradicted in advance for at least two items -- PRD FR-15 is explicitly unsizable until an AST re-derivation runs, and PRD FR-9a's written acceptance criterion was known to be both padded and incomplete (section 5.2; the AC has since been amended and V2-009 re-pointed, section 2.4). Both are named rather than absorbed. A third is now named: the cost of an unbounded path enumeration on a 26,114-edge graph is INFERRED, not measured (section 2.4). |
+| A5 | The 8 RE-ESTIMATED points (section 2.4) are of the same currency as the 69 SOURCED and the 34 ASSUMED. | Added 2026-08-02. This is A3's problem one degree worse. The re-estimate was set against the same anchor, but by a **third** estimator in a **third** pass, and like the other two it has never been calibrated against a completed item, because no item has completed. A re-estimate is ASSUMED in kind. Treat all three totals separately. |
 
 ---
 
@@ -63,17 +65,27 @@ one known path from text that is already written and pre-committed, and confirm 
 present and unedited. No design, no measurement, no dependency, no test to write. Every other size
 in this plan is expressed as a multiple of that job.
 
-**Provenance of every size is recorded per issue.** Two values only:
+**Provenance of every size is recorded per issue.** Three values, plus the unsized case:
 
-- **SOURCED** -- the size comes from `product-sequencing-v2.md` section 2 or 2a or 2c. 74 points total.
+- **SOURCED** -- the size comes from `product-sequencing-v2.md` section 2 or 2a or 2c. 69 points
+  total (45 pure SOURCED + 24 split inside a sourced set, see section 2.3).
 - **ASSUMED** -- the size was set by this document against the anchor above, because the source set
   contains no size for the unit. 34 points total, across 13 issues.
+- **RE-ESTIMATED** -- the unit carried a size from an earlier pass, that size's stated basis was
+  invalidated by a later scope change, and the size was re-derived against the anchor above. 8 points
+  total, across 1 issue (V2-009). Added 2026-08-02; see section 2.4. This bucket exists because such
+  a size is neither SOURCED (the source figure no longer describes the work) nor ASSUMED (a prior
+  figure existed and was displaced, rather than being absent).
 - **UNSIZED BY MANDATE** -- 1 issue (PRD FR-15 / SRS FR-28). `product-sequencing-v2.md` section 2a
   and `prd-v2.md` section 5 both state FR-15 must not be sized until the AST classifier has run.
   This plan honours that and assigns no number.
 
-**Total: 74 SOURCED + 34 ASSUMED = 108 points, plus 1 unsized item.** These two totals are reported
-separately and deliberately not merged into a single headline figure.
+**Total: 69 SOURCED + 34 ASSUMED + 8 RE-ESTIMATED = 111 points, plus 1 unsized item.** These three
+totals are reported separately and deliberately not merged into a single headline figure.
+
+**Change from the 2026-08-01 figure of 108.** V2-009 was re-pointed 5 -> 8 on 2026-08-02 after the
+owner ruling of 2026-08-01 replaced its acceptance criterion. 5 points left SOURCED (74 -> 69) and 8
+points entered RE-ESTIMATED, a net +3. No other size moved.
 
 **What a point is NOT here:** it is not a day, not an hour, not a percentage of a sprint. It has no
 time interpretation at all until a velocity measurement exists.
@@ -82,14 +94,14 @@ time interpretation at all until a velocity measurement exists.
 
 ## 2. Size Ledger
 
-### 2.1 SOURCED sizes (74 points, from `product-sequencing-v2.md`)
+### 2.1 SOURCED sizes (69 points, from `product-sequencing-v2.md`)
 
 | Unit | Source section | Size | WSJF (as published) |
 |---|---|---|---|
 | PRD FR-6 ADR-006 doc | SS 2 | 1 | 12.00 |
 | PRD FR-9 library KG drift | SS 2 | 2 | 6.00 |
 | PRD NFR-1 measurement harness | SS 2a | 2 | 10.50 |
-| PRD FR-9a CallGraph discovery fix | SS 2 | 5 | 4.60 |
+| ~~PRD FR-9a CallGraph discovery fix~~ **WITHDRAWN, see 2.4** | SS 2 | ~~5~~ | 4.60 |
 | PRD FR-10..FR-13 KG selector (set) | SS 2 | 13 | 1.69 |
 | PRD FR-14 plugin skeleton | SS 2 | 8 | 2.38 |
 | ADR-019 register-mcp / unregister-mcp | SS 2c | 5 | 3.80 |
@@ -139,6 +151,56 @@ Each split is ASSUMED; each set total is SOURCED.
 | PRD FR-4 + FR-5 (3) | FR-4 = 2, FR-5 = 1 |
 | PRD FR-8a + FR-21 (3) | FR-8a = 2, FR-21 = 1 |
 
+### 2.4 RE-ESTIMATED sizes (8 points, 1 issue, added 2026-08-02)
+
+| Unit | Was | Now | Basis relative to the 1-point anchor |
+|---|---|---|---|
+| PRD FR-9a / SRS FR-21 CallGraph discovery fix (V2-009) | 5 SOURCED | **8** | See below. |
+
+**Why the sourced 5 was withdrawn rather than kept.** `product-sequencing-v2.md` SS 2 sized FR-9a at
+5 against the work as it was then written: change two constants and retire two dead sites. On
+2026-08-01 the project owner ruled the acceptance criterion both corrected and strengthened, to a
+14-item AC requiring **runtime proof**. The 5 does not describe the new work, so carrying it forward
+as SOURCED would misattribute this document's judgement to the source document. The row is withdrawn
+from 2.1 and re-derived here.
+
+**What the strengthened AC adds beyond a constant change**, enumerated (this is the basis for the
+number, and every item is drawn from the AC text in `github_issues.json`, not invented here):
+
+| # | Added work | Comparable |
+|---|---|---|
+| 1 | The discovery fix itself, which AC (E) forbids implementing as a module-global edit -- the budget must be threaded through the constructor, because `max_files=MAX_FILES` binds at def-time | roughly the original 5's core |
+| 2 | The traversal fix at `graph_model.py:43`, enforced at `:354`, `:357`, `:388` -- a second site absent from the original AC | -- |
+| 3 | A new test module, built from nothing. `tests/test_call_graph_builder.py` **does not exist**, and neither does `test_discovery_covers_every_package`; the AC's named predecessor test is a test to be written, not extended | -- |
+| 4 | An **independent enumeration oracle** that must reproduce the builder's eligibility rules without importing them: 5 extensions in glob order, a 12-entry excluded-dirs set, a 100 KB size cap, and OSError handling | no comparable exists elsewhere in this plan |
+| 5 | Module-scoped log capture over `langgraph_engine.parsers.graph_model` asserting zero `hit max_paths=` records | -- |
+| 6 | Two set-equality assertions on empty symmetric difference, whole-project and the 45-file `sdlc_pipeline` canary | -- |
+| 7 | A three-value regression floor (411 / 480 / 3506) | cheap |
+| 8 | A negative test proving the check can fail, against the def-time binding trap | half of V2-025 (2 pts) |
+
+**Why 8 and not 5.** The nearest comparable is **V2-010 at 5** (section 2.2): a trivial one-line
+source fix whose cost is six mechanical consumption-point edits plus a collision check plus one unit
+test. V2-009 now carries eight items rather than eight edits, and item 4 is the only piece of work
+anywhere in this plan that must **deliberately duplicate logic it may not import** -- an oracle that
+imports the builder's rules proves nothing, and an oracle that hardcodes a stale copy of them
+diverges silently. That is design judgement plus a correctness trap of its own, which V2-010 has none
+of. 5 no longer covers it.
+
+**Why 8 and not 13.** 13 appears in this plan only as a set total across four issues (FR-10..FR-13);
+no single unit is a 13. V2-009's surface is bounded and fully enumerated: two source files to change,
+one test module to write. There is no new subsystem, no external integration, and no
+unknown-until-measured scope of the V2-018 kind. 8 places it alongside V2-035 (6 sites across 5
+files plus 5 control mechanisms) and V2-004 (a 46-document read plus a 46-row table), which is the
+right neighbourhood.
+
+**Named risk that could re-open this number -- INFERRED, not measured.** AC (C) demands *zero*
+`hit max_paths=` records. The probe measured 26,114 call edges. Removing the 500-path ceiling on a
+graph that size may not be a matter of raising a number: the DFS at `graph_model.py:320-392` enumerates
+paths from every entry point, and the cost of an unbounded run has **not been measured**. If it does
+not terminate acceptably, the fix becomes an algorithmic change and 8 will not hold. This is named
+rather than absorbed into the estimate, per ASSUMPTION A4. **Do not read 8 as covering an
+algorithmic redesign of path enumeration.**
+
 ---
 
 ## 3. The Batches
@@ -180,14 +242,18 @@ SRS FR-10, FR-11, FR-12 and FR-32 as DESIGNED, NOT BUILT. What was approved was 
 scope. If the project owner reads D1 as fully discharged, these five issues drop and 18 ASSUMED
 points leave the plan -- that is an owner decision, not a planning one.
 
-### Batch B -- Call-graph correctness (2 issues, 5 SOURCED + 5 ASSUMED = 10 points)
+### Batch B -- Call-graph correctness (2 issues, 8 RE-ESTIMATED + 5 ASSUMED = 13 points)
 
 **These two are ONE deliverable split across two issues for reviewability. Neither ships alone.**
 
 | Key | Requirement | Size |
 |---|---|---|
-| V2-009 | PRD FR-9a / SRS FR-21 -- call-graph discovery truncation | 5 SOURCED |
+| V2-009 | PRD FR-9a / SRS FR-21 -- call-graph discovery truncation | 8 RE-ESTIMATED |
 | V2-010 | PRD FR-9b / SRS FR-38 -- call-graph resolver ambiguous-name bind | 5 ASSUMED |
+
+**Batch total: 8 + 5 = 13 points across 2 issues.** Was 10 (5 + 5) until 2026-08-02. V2-009 was
+re-pointed 5 -> 8 after the owner ruling replaced its acceptance criterion; see section 2.4. No
+SOURCED points remain in this batch -- it is now the only batch carrying no sourced size at all.
 
 Shipping V2-009 alone yields a larger graph feeding the same broken resolver: more files, the same
 wrong `hot_nodes` and `danger_zones`, and a *higher* collided in-degree on the same wrong nodes.
@@ -320,21 +386,38 @@ A second chain of comparable weight runs through the selector and is **independe
 chain until the release**:
 
 ```
-V2-009 (PRD FR-9a, discovery, 5)
+V2-009 (PRD FR-9a, discovery, 8)                      [RE-ESTIMATED 2026-08-02, was 5]
    -> V2-010 (PRD FR-9b, resolution, 5)
       -> V2-011 (PRD FR-10, selector, 8)
-         -> V2-012 / V2-013 / V2-014 (5 combined)
+         -> V2-012 / V2-013 / V2-014 (2 + 2 + 1 = 5 combined)
             -> V2-036 (D7 release, 2)
 ```
 
-**Selector chain length: 25 points across 7 issues.** By raw point count this chain is *longer* than
-the plugin chain, and the source documents agree on its risk: `product-sequencing-v2.md` SS 6 names
-FR-9a -> FR-10 "the single riskiest link" across three separate revisions.
+**Selector chain length: 8 + 5 + 8 + 2 + 2 + 1 + 2 = 28 points across 7 issues.** Was 25 until
+2026-08-02, when V2-009 was re-pointed 5 -> 8 (section 2.4). By raw point count this chain is
+*longer* than the plugin chain, and the source documents agree on its risk:
+`product-sequencing-v2.md` SS 6 names FR-9a -> FR-10 "the single riskiest link" across three separate
+revisions.
+
+**Note the two chain totals are not additive.** V2-036 (2 points) is the convergence issue and is
+counted in both. The union of the two chains is 13 distinct issues, not 14.
 
 **Both chains converge only at V2-036.** With more than one worker they run in parallel and the
-critical path is the selector chain at 25 points. With a single worker the critical path is the whole
-plan and this distinction has no scheduling meaning. **Which of these holds is unknown -- team size
-is not on record (ASSUMPTION A2).**
+critical path is the selector chain, now at 28 points against the plugin chain's 23. With a single
+worker the critical path is the whole plan and this distinction has no scheduling meaning. **Which of
+these holds is still unknown -- team size is not on record (ASSUMPTION A2). The re-point does not
+resolve that and no team size is assumed here.**
+
+**What the re-point did and did not change.** It did not change *which* chain is longer under
+parallelism -- the selector chain was already the longer of the two. It widened the margin from 2
+points to 5 (25 vs 23, now 28 vs 23). **Caveat, stated rather than laundered:** both chain totals are
+sums of relative story points that ASSUMPTION A1 records as single-pass estimates never calibrated
+against a completed item, and one of the 28 chain's seven terms is now a third-pass re-estimate
+(A5). A 2-point gap between two such sums was not a safe basis for declaring a binding chain; a
+5-point gap is better but rests on the same uncalibrated integers. The direction of the conclusion is
+unchanged and its margin is larger; **it is not thereby made measured.** (This is the story-point
+analogue of the WSJF caveat in section 5.6, not the WSJF caveat itself -- WSJF sequences nothing in
+this plan, and the chain comparison uses story points, not WSJF.)
 
 **What is NOT on the critical path, despite high WSJF:** PRD FR-22 (WSJF 13.00, the published #1) and
 PRD FR-6 (WSJF 12.00, the published #2). FR-6 genuinely is a free early win. FR-22 is not -- see
@@ -372,10 +455,23 @@ cap, and both probe runs emitted `hit max_paths=500 limit; results truncated`. A
 strictly to the written AC would fix four sites, one of which is dead, and would **leave a binding
 truncation in place** while every check in the AC passed.
 
-**This plan does not rewrite the AC.** Rewriting a gate-passed acceptance criterion is not a sprint
-planner's call. V2-009's issue body carries the AC as written, flags it as superseded, names
-`graph_model.py:43` as an omission, and marks the issue `needs-decision`. **The AC amendment is an
-owner decision and is a prerequisite to closing V2-009 correctly.**
+**RESOLVED 2026-08-01 -- the owner amended the AC, and to the stronger option.** This paragraph
+previously read "this plan does not rewrite the AC", on the grounds that rewriting a gate-passed
+acceptance criterion is not a sprint planner's call. That remained correct: the amendment was taken
+as an owner ruling, not a planning edit. V2-009's acceptance criteria in `github_issues.json` now
+assert on the **two** binding sites, drop the dead `config.py:11` site, and require **runtime proof**
+-- an in-process build, an independent enumeration oracle, log capture asserting no `max_paths`
+truncation record, a 411/480/3506 regression floor, and a negative test for the def-time binding
+trap. The superseded AC is retained verbatim at the end of that array. The issue keeps its
+`needs-decision` label for the propagation hazard below, which is not yet discharged.
+
+**Consequence for sizing, applied 2026-08-02.** The strengthened AC invalidated the basis of the
+sourced 5. V2-009 is re-pointed to **8 RE-ESTIMATED**; see section 2.4 for the enumeration behind the
+number. Batch B moves 10 -> 13 and the selector chain 25 -> 28 (section 4).
+
+**Still open:** the AC amendment did not propagate to `prd-v2.md` section 5, `SRS.md:736`, or the
+ADR-013 bodies at `hld_v2.md:406`, `:436-443` and `:1696-1700`, which continue to carry the
+superseded four-site framing. See the propagation hazard recorded in V2-009's issue body.
 
 **5.3 `product-sequencing-v2.md`'s sequencing risk #3 is stale and is not carried forward.** That
 document states three times (SS 6, SS 7, SS 8) that `hld_v2.md` SS 10's migration runbook has "NOT
@@ -468,19 +564,41 @@ the reason the post-FR-4 push gate is detective-only rather than preventive for 
 
 ## 7. Batch Summary
 
-| Batch | Issues | SOURCED pts | ASSUMED pts | Unsized | Blocked by |
-|---|---|---|---|---|---|
-| A Foundation | 8 | 5 | 18 | 0 | nothing |
-| B Call-graph correctness | 2 | 5 | 5 | 0 | nothing |
-| C KG selector | 4 | 13 | 0 | 0 | B (both issues) |
-| D Plugin skeleton + MCP registration | 3 | 13 | 3 | 0 | nothing |
-| E Plugin hardening + lifecycle | 6 | 10 | 3 | 1 | D (V2-015, V2-016) |
-| F Push gate + entry points | 3 | 8 | 2 | 0 | D (V2-016) |
-| G Hook deletion + NFR closure | 9 | 18 | 2 | 0 | **F in full** |
-| H Release | 2 | 2 | 1 | 0 | A-G |
-| **Total** | **37** | **74** | **34** | **1** | |
+| Batch | Issues | SOURCED pts | ASSUMED pts | RE-EST pts | Unsized | Batch total | Blocked by |
+|---|---|---|---|---|---|---|---|
+| A Foundation | 8 | 5 | 18 | 0 | 0 | 23 | nothing |
+| B Call-graph correctness | 2 | 0 | 5 | 8 | 0 | 13 | nothing |
+| C KG selector | 4 | 13 | 0 | 0 | 0 | 13 | B (both issues) |
+| D Plugin skeleton + MCP registration | 3 | 13 | 3 | 0 | 0 | 16 | nothing |
+| E Plugin hardening + lifecycle | 6 | 10 | 3 | 0 | 1 | 13 | D (V2-015, V2-016) |
+| F Push gate + entry points | 3 | 8 | 2 | 0 | 0 | 10 | D (V2-016) |
+| G Hook deletion + NFR closure | 9 | 18 | 2 | 0 | 0 | 20 | **F in full** |
+| H Release | 2 | 2 | 1 | 0 | 0 | 3 | A-G |
+| **Total** | **37** | **69** | **34** | **8** | **1** | **111** | |
 
-Sum check: issues 8+2+4+3+6+3+9+2 = 37. SOURCED 5+5+13+13+10+8+18+2 = 74. ASSUMED 18+5+0+3+3+2+2+1 = 34.
+Sum check, each total against its enumeration:
+
+- Issues: 8+2+4+3+6+3+9+2 = 37.
+- SOURCED: 5+0+13+13+10+8+18+2 = 69.
+- ASSUMED: 18+5+0+3+3+2+2+1 = 34.
+- RE-ESTIMATED: 0+8+0+0+0+0+0+0 = 8.
+- Batch totals: 23+13+13+16+13+10+20+3 = 111. And 69+34+8 = 111. Both routes agree.
+
+Per-batch point enumerations, so every batch total above is checkable without re-reading section 3:
+
+| Batch | Sizes enumerated | Sum |
+|---|---|---|
+| A | 1+2+2+8+3+3+2+2 | 23 |
+| B | 8+5 | 13 |
+| C | 8+2+2+1 | 13 |
+| D | 8+5+3 | 16 |
+| E | 2+5+1+3+2 (+1 unsized) | 13 |
+| F | 3+2+5 | 10 |
+| G | 2+1+1+1+3+1+2+1+8 | 20 |
+| H | 2+1 | 3 |
+
+Changed 2026-08-02: batch B 10 -> 13, total 108 -> 111, SOURCED 74 -> 69, new RE-ESTIMATED column.
+V2-009 only.
 
 ---
 
