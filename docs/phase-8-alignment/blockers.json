@@ -3,6 +3,12 @@
   "generated": "2026-08-02",
   "author": "architecture-conformance-auditor",
   "scope": "Adversarial gate before code is written against batch A (8 open issues: 256, 258, 259, 260, 261, 262, 263, 264).",
+  "citation_policy": {
+    "revised": "2026-08-02",
+    "rule": "Address content by a STABLE ANCHOR -- a heading, an ADR number, a section number, a table-row prefix, a quoted sentence opening, or a constant/function name. Keep the line number only as a scanning hint. Where no stable anchor exists, say what the line points at, so a reader can find it by content when the number rots.",
+    "why": "Every document this file cites is growing because it is being corrected. MEASURED by wc -l: SRS.md 974 -> 1130 lines and hld_v2.md 1945 -> 2022 since the sprint issues were drafted. A line-keyed citation stops finding what it names the moment content is inserted above it. This is the same mechanism that hid the ADR-013 binding clause through three correction passes, and that produced finding S-03 across 7 issues in premise_scan_bh.json.",
+    "applied": "Every line citation in this file was re-opened on 2026-08-02 rather than offset-computed. Corrections are recorded per-entry in citation_note fields."
+  },
   "evidence_labels": {
     "MEASURED": "Checked against disk, git or the live GitHub API by this pass, now.",
     "CITED": "Read from an artifact; not independently re-derived by this pass.",
@@ -27,7 +33,7 @@
         "docs/phase-6-sprint/github_issues.json -> V2-004.build_status ('verified ABSENT on disk 2026-08-01 by this pass')",
         "docs/phase-6-sprint/sprint_plan.md batch A section ('does not exist')",
         "docs/phase-6-sprint/sequencing_risks.md R-6 ('Verified independently by this pass, 2026-08-01: ABSENT')",
-        "SRS.md:152-157 (names the file among files 'verified absent on disk on 2026-08-01')",
+        "SRS.md SS 3.1, the 'Build status' paragraph beginning 'Verified absent on disk on 2026-08-01:' (line 157) -- names the file among files verified absent",
         "live GitHub issue #260 body"
       ],
       "defect_class": "backward propagation (correction record class #14): a fact that changed in one place, left standing in every artifact copied from it",
@@ -113,9 +119,10 @@
       "title": "SRS.md's risk table still directs an implementer at the dead truncation constant",
       "issue_keys": ["V2-009"],
       "issue_numbers": [265],
-      "what_is_missing": "SRS.md:1048 reads '| Large codebase exceeds CallGraph limits | Medium | Low | MAX_FILES=300, MAX_FILE_SIZE_KB=100 in `parsers/config.py` |'. That is correction #22's dead constant, presented as the live mitigation, in the requirements document of record. SRS.md corrects the same error thoroughly at :267-289 and :774-829 and explicitly DROPS parsers/config.py from the FR-9a assertion set at :820 -- so the same file both corrects and repeats the defect. The binding caps are parsers/call_graph_builder_legacy.py:64 and parsers/graph_model.py:43.",
-      "adjacent_finding": "SRS.md:1046 reads '4-provider fallback chain'. CLAUDE.md records the chain as 2 providers (claude_cli, anthropic) since v1.15.3, when Ollama, NPU, GPU, OpenAI and DeepSeek were removed. The SRS risk table appears to be pre-v2 content that was never revised when FR-10..FR-38 were appended.",
-      "what_unblocks_it": "Correct SRS.md:1048 to name the two binding sites, and re-check the whole Risks & Mitigation table for other pre-v2 residue.",
+      "what_is_missing": "In SRS.md section '## Risks & Mitigation', the row beginning '| Large codebase exceeds CallGraph limits |' (line 1122 as of 2026-08-02) reads '... MAX_FILES=300, MAX_FILE_SIZE_KB=100 in `parsers/config.py` |'. That is correction #22's dead constant, presented as the live mitigation, in the requirements document of record. SRS.md corrects the same error thoroughly under the '**FR-21:**' SHALL statement in SS 3.1 and under '### Revised Acceptance Criterion for FR-21', and explicitly DROPS it in the sentence beginning '`langgraph_engine/parsers/config.py:11` is DROPPED from the assertion set' (line 893) -- so the same file both corrects and repeats the defect. The binding caps are parsers/call_graph_builder_legacy.py:64 (MAX_FILES = 300) and parsers/graph_model.py:43 (DEFAULT_MAX_PATHS), both verified present on 2026-08-02.",
+      "adjacent_finding": "In the same '## Risks & Mitigation' table, the row beginning '| All LLM providers fail |' (line 1120) reads '4-provider fallback chain'. CLAUDE.md records the chain as 2 providers (claude_cli, anthropic) since v1.15.3, when Ollama, NPU, GPU, OpenAI and DeepSeek were removed. The SRS risk table appears to be pre-v2 content that was never revised when FR-10..FR-38 were appended.",
+      "what_unblocks_it": "Correct the CallGraph-limits row of '## Risks & Mitigation' to name the two binding sites, and re-check the whole table for other pre-v2 residue.",
+      "citation_note": "Addressed by section heading and table-row prefix rather than by line number. These two rows were at :1048 and :1046 when this file was written; SRS.md has since grown from 1056 to 1130 lines and they are now at :1122 and :1120. The anchors do not move.",
       "evidence": "MEASURED"
     },
     {
@@ -167,7 +174,9 @@
       "title": "FR-9a's WSJF was never recomputed after the re-point; five sites still publish the size-5 figure",
       "issue_keys": ["V2-009"],
       "issue_numbers": [265],
-      "what_is_missing": "WSJF = CoD / Size. CoD is 23 (product-sequencing-v2.md). At size 5 that is 4.60; at size 8 it is 2.875. Sites still publishing 4.60 or 4.6: product-sequencing-v2.md:187, sprint_plan.md:104, github_issues.json:301, prd-v2.md:137, SRS.md:836. Only github_issues.json's field is defensibly named 'wsjf_as_published'; the other four present it as the item's current WSJF.",
+      "status_2026_08_02": "RESOLVED except for one site. MEASURED: sprint_plan.md now shows '~~4.60~~ **2.875, recomputed**' in its size ledger (line 113) and carries a before/after WSJF rank table (lines 287-292) recording FR-9a dropping from 10th to joint 13th/14th -- confirming the rank consequence this entry INFERRED. github_issues.json now holds wsjf_as_published 2.88 plus a wsjf_note. STILL OPEN: product-sequencing-v2.md:187 publishes size 5 / WSJF 4.60 unstruck; that file is unchanged since 7699e89, so the line number still holds.",
+      "what_is_missing": "WSJF = CoD / Size. CoD is 23 (product-sequencing-v2.md). At size 5 that is 4.60; at size 8 it is 2.875. Sites publishing 4.60 or 4.6 when this was written, addressed by anchor: the FR-9a row of product-sequencing-v2.md's WSJF table (line 187); sprint_plan.md's '## 2. Size Ledger' section; the V2-009 record's wsjf_as_published field in github_issues.json (cited by key path, not line number, because that file is under concurrent edit); the FR-9a row of prd-v2.md's requirement table (line 137); and the sentence in SRS.md beginning 'issue V2-009 carries size 5' (line 909). Only github_issues.json's field was defensibly named 'wsjf_as_published'; the other four presented it as the item's current WSJF.",
+      "citation_note": "github_issues.json:301 was the original address for the wsjf field. A line number into a JSON file is the most fragile citation form in this project -- the file is machine-generated and reordered by every edit. It is now addressed as issues[key=V2-009].wsjf_as_published, which no reformatting can break.",
       "mitigating_context": "sprint_plan.md section 5.6 states 'Where WSJF IS load-bearing in this plan: nowhere', so no ordering decision rests on it. The figure is wrong but quarantined. INFERRED: the rank change from 4.60 to 2.88 would move FR-9a materially down the table if WSJF were ever used for ordering.",
       "what_unblocks_it": "Either recompute to 2.88 at the four unqualified sites or label them 'as published at size 5' the way github_issues.json does.",
       "evidence": "MEASURED for the published figures; INFERRED for the rank consequence"
@@ -199,9 +208,10 @@
       "title": "The superseded four-site framing survives unmarked in SRS.md's normative requirement text and AC row",
       "issue_keys": ["V2-009"],
       "issue_numbers": [265],
-      "what_is_missing": "MEASURED: SRS.md:258-259 (the SHALL statement) requires the fix 'at all four known truncation sites'. SRS.md:277-287 enumerates 'The four sites, as corrected', retaining config.py:11 as item 4. SRS.md:740 (the acceptance-criteria table row for FR-21) reads 'Each of the 4 named sites reaches exactly one recorded end state'. SRS.md:878 refers to 'FR-21's four-site closure requirement'. The revised 14-item runtime-proof criterion is appended at SRS.md:767-844, but NONE of these four locations carries an inline pointer to it. A reader landing on the acceptance-criteria table sees the four-site AC with no indication it was superseded. Equivalent unmarked four-site framing survives at product-sequencing-v2.md:578, :615 and :718.",
+      "what_is_missing": "MEASURED 2026-08-02, addressed by anchor because every one of these moved. (1) The '**FR-21:**' SHALL statement in SRS.md SS 3.1 (line 267) requires the fix 'at all four known truncation sites'. (2) The paragraph beginning 'The four sites, as corrected:' (line 285) enumerates them, retaining config.py:11 as item 4. (3) The '| FR-21 |' row of '### Acceptance Criteria for the v2.0.0 Requirements' (line 748) reads 'Each of the 4 named sites reaches exactly one recorded end state'. (4) The sentence containing \"FR-21's four-site closure requirement\" (line 951) refers to it. The revised 14-item runtime-proof criterion is appended under '### Revised Acceptance Criterion for FR-21 (APPENDED 2026-08-01, per rules/44 section 4.2)' (line 840), but NONE of these four locations carries an inline pointer to it. A reader landing on the acceptance-criteria table sees the four-site AC with no indication it was superseded. Equivalent unmarked four-site framing survives at product-sequencing-v2.md:578, :615 and :718 (that file is unchanged since 7699e89, so those line numbers still hold).",
       "note": "Retention of superseded text is deliberate per rules/44's append-only rule and is correct in principle. The defect is the absence of an inline supersession marker at the point of use, not the retention.",
-      "what_unblocks_it": "Add an inline '[SUPERSEDED 2026-08-01, see SRS.md:767]' marker at :258, :277, :740 and :878, matching the treatment prd-v2.md:138 already applies to its own superseded row.",
+      "what_unblocks_it": "Add an inline supersession marker naming the section '### Revised Acceptance Criterion for FR-21' at all four locations above, matching the treatment prd-v2.md:138 already applies to its own superseded row ('THIS ROW SUPERSEDES THE FR-9a ROW IMMEDIATELY BELOW, which is retained verbatim and must not be deleted'). The marker should name the target SECTION, not a line number, for the reason recorded in citation_note.",
+      "citation_note": "All five addresses in this entry were line numbers when written (:258-259, :277-287, :740, :878, :767-844) and all five rotted when SRS.md grew 1056 -> 1130 lines. They are now keyed to the SHALL label, a sentence prefix, a table-row prefix, a quoted phrase and a section heading respectively, with line numbers retained only as scanning hints.",
       "evidence": "MEASURED"
     },
     {
@@ -217,11 +227,11 @@
     {
       "id": "B-20",
       "severity": "LOW",
-      "title": "Three artifacts cite SRS.md:736 for the FR-21 acceptance criterion; that line is FR-17",
+      "title": "Three artifacts cite SRS.md:736 for the FR-21 acceptance criterion; that line has never been the FR-21 row",
       "issue_keys": ["V2-009"],
       "issue_numbers": [265],
-      "what_is_missing": "MEASURED: SRS.md:736 reads '| FR-17 | Each of the 6 named entry points ...'. The FR-21 row is at SRS.md:740. The wrong citation appears in sprint_plan.md (twice) and sequencing_risks.md (once). Checked against git show 92a9a5d^:SRS.md -- line 736 was FR-17 before the append too, so this is a pre-existing off-by-four error, not drift introduced by the recent corrections.",
-      "what_unblocks_it": "Correct the three citations to SRS.md:740.",
+      "what_is_missing": "MEASURED 2026-08-02: SRS.md line 736 is now a table separator ('|---|---|'); the FR-17 row is at line 744 and the FR-21 row at line 748. The target the three artifacts mean is the '| FR-21 |' row of '### Acceptance Criteria for the v2.0.0 Requirements'. The wrong citation appears in sprint_plan.md (twice) and sequencing_risks.md (once). Checked against git show 92a9a5d^:SRS.md -- line 736 was the FR-17 row before the append too, so the citation was already wrong when written: pre-existing, not drift introduced by the recent corrections.",
+      "what_unblocks_it": "Point the three citations at the '| FR-21 |' row of '### Acceptance Criteria for the v2.0.0 Requirements' rather than at a line number. This entry is itself the argument for that: the correct line number moved from 740 to 748 between this file being written and being revised.",
       "evidence": "MEASURED"
     },
     {

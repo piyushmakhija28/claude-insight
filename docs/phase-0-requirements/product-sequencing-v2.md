@@ -184,7 +184,24 @@ governance guarantees named in `prd-v2.md`**). Size in Fibonacci story points. W
 | ~~FR-14a plugin-schema spike (4 unknowns)~~ -- **DONE 2026-08-01, all 5 items measured, retired from active table (SS 0a item 5)** | D5 | -- | -- | -- | -- | -- | -- |
 | FR-15/FR-17 remediation (13 + 19 sites, counts already narrowed) | D5 | 4 | 4 | 6 | 14 | 3 | **4.67** |
 | FR-7 slash commands (entry points, prerequisite for safe FR-5) | D6 | 8 | 8 | 5 | 21 | 5 | **4.20** |
-| FR-9a CallGraph scope-aware fix (prerequisite for FR-10) | D4 | 6 | 9 | 8 | 23 | 5 | **4.60** |
+| FR-9a CallGraph scope-aware fix (prerequisite for FR-10) | D4 | 6 | 9 | 8 | 23 | **8** | **2.88** |
+
+> **Re-pointed and recomputed 2026-08-02.** This row published size **5** and WSJF **4.60** until
+> today. FR-9a's acceptance criterion was strengthened by owner ruling to require runtime proof --
+> a probe harness, an independent enumeration oracle, module-scoped log capture and a negative test --
+> which invalidated the two-constant basis the 5 was estimated against. Re-pointed to **8**
+> (provenance `RE_ESTIMATED`). Cost of delay is unchanged at 23, since the re-point moved size and
+> not CoD, so WSJF becomes `23 / 8 = 2.875`, shown as **2.88** at the two decimals this table uses.
+>
+> This drops FR-9a from 10th to joint 13th of the 17 WSJF-bearing units. **Nothing was reordered.**
+> No batch boundary and no intra-batch ordering in this plan derives from WSJF -- FR-9a stays first
+> in its batch because FR-9b hard-blocks on it.
+>
+> Carried forward and not laundered: recomputing makes the score arithmetically consistent with the
+> new size. It does not make it calibrated. The inputs 6, 9 and 8 remain single-pass estimates never
+> cross-checked against a completed item, and NFR-2 now scores an identical 2.875 from a materially
+> different split of 8, 8 and 7 -- a fair illustration of what compressing three uncalibrated
+> integers into one ratio costs.
 | FR-16 build-time snapshot script | D5 | 5 | 5 | 4 | 14 | 5 | **2.80** |
 | ~~NFR-3 replacement crash-recovery writer~~ -- **re-scored, see SS 2a** | D6 | ~~7~~ | 8 | 9 | ~~24~~ | ~~8~~ | ~~3.00~~ |
 | FR-18/NFR-5 uninstall lifecycle + 3 tests (contingent addendum was SS 2a FR-18a, INVALIDATED not merely un-activated -- see SS 2d) | D5 | 5 | 5 | 6 | 16 | 5 | **3.20** |

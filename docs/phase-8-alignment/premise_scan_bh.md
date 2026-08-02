@@ -54,8 +54,12 @@ correct. **29 expected, 29 examined.**
 - `hld_v2.md:1696` is the rules/45 data-source inversion note and names
   `call_graph_builder_legacy.py`.
 
-**When it flipped.** Commit `14f742a`, 2026-08-02 07:50:31, *"docs(adr-013): correct the binding
-target"*, +77 lines to both HLDs. The issue was drafted at `7b29820` on 2026-08-01 17:08:00.
+**When it flipped.** Two commits, not one -- corrected 2026-08-02. `14f742a` at 07:50:31
+(*"docs(adr-013): correct the binding target, and add a contested-fact check"*) took `hld_v2.md` from
+1945 to 1976 lines, **+31**; `b2246af` at 10:13 (*"docs(adr-013): close the last four-site clause and
+mark it a summary"*) took it from 1976 to 2022, **+46**. The **+77** is the sum across both, which the
+first pass wrongly attributed to `14f742a` alone. The issue was drafted at `7b29820` on 2026-08-01
+17:08:00, so the claim was true when written and was falsified in two stages.
 
 **This is the exact V2-004 shape.** True when written, false now, still standing in the live issue.
 It is advisory rather than blocking -- but it sends the implementer of the highest-risk call-graph
@@ -80,12 +84,17 @@ citations no longer resolve. MEASURED, at draft commit `7b29820` versus now:
 
 | Document | At draft | Now | Delta |
 |---|---|---|---|
-| `SRS.md` | 975 | 1131 | **+156** |
-| `hld_v2.md` | 1946 | 2023 | **+77** |
-| `hld.md` | 1946 | 2023 | **+77** |
-| `prd-v2.md` | 507 | 511 | +4 |
-| `product-sequencing-v2.md` | 760 | 760 | 0 |
-| `REVIEW-INDEX.md` | 325 | 325 | 0 |
+| `SRS.md` | 974 | 1130 | **+156** |
+| `hld_v2.md` | 1945 | 2022 | **+77** |
+| `hld.md` | 1945 | 2022 | **+77** |
+| `prd-v2.md` | 506 | 510 | +4 |
+| `product-sequencing-v2.md` | 759 | 759 | 0 |
+| `REVIEW-INDEX.md` | 324 | 324 | 0 |
+
+> **Figure correction, 2026-08-02.** The absolute counts above were originally one higher in every
+> row. They came from `len(text.split('\n'))`, which counts a phantom element after the trailing
+> newline. The figures are now `wc -l`. **Every delta was and remains correct** -- the off-by-one
+> cancels in a subtraction, which is exactly why it survived the first pass unnoticed.
 
 **17 of the 18** md line citations in B-H point into a document that changed length. I resolved 16
 individually; **8 are confirmed wrong**:
@@ -158,7 +167,7 @@ it.
 | **V2-034** #290 | 9 scripts referenced, 7 absent, only `sync-version.py` and `voice-notifier.py` exist | **Exact.** All 7 return nothing from a repo-wide `find` *and* nothing under `~/.claude`; all 7 are referenced from `stop_notifier/core.py`; the 2 exist at `scripts/tools/`. 7 + 2 = 9 |
 | **V2-035** #291 | 6 application + 3 definition timeout sites, 9 total; `task_orchestration.py:160` composes to 75s | **Accurate at every one of the 9 lines.** `:160` reads `timeout=_pg_inner_timeout + 15,` with `_pg_inner_timeout = 60` at `:128`. 60 + 15 = 75 confirmed |
 | **V2-019** #275 | 19 `open()` sites lacking `encoding=`, up from a 12-count grep that missed the mode-less form | **Independently reproduced.** My own AST scan of `langgraph_engine/`, `hooks/`, `scripts/`, `src/` returned exactly **19**, of which **7 are the mode-less form** -- the precise trap the issue names |
-| **V2-031** #287 | `step_decorator.py:169` swallows a checkpoint failure; CheckpointManager survives FR-4 | **Exact.** `:169` is `logger.warning("[step_decorator] Checkpoint save failed: %s" % exc)` inside an `except`. `resume_flow` at `orchestrator.py:941`, `resume_from_checkpoint` at `recovery_handler.py:462` |
+| **V2-031** #287 | `step_decorator.py:169` swallows a checkpoint failure; CheckpointManager survives FR-4 | **Exact.** The `except Exception` in `langgraph_engine/core/step_decorator.py` whose body is `logger.warning("[step_decorator] Checkpoint save failed: %s" % exc)` (line 169). `def resume_flow` in `langgraph_engine/orchestrator.py` (line 941); `def resume_from_checkpoint` in **`langgraph_engine/quality/recovery_handler.py`** (line 462) -- full path required, because `langgraph_engine/recovery_handler.py` is a 15-line backward-compat shim that re-exports the same name and a bare-basename citation resolves to it |
 | **V2-027/029** #283/#285 | 135 of 2,218 nodes (6.09%); ~6 of 116 spawn sites; 17 retained | **Accurate, and 116 reconciles.** `impact_analysis_graph.json` holds exactly 135 `affected_nodes`; 135/2218 = 6.086%. `audit_surface.json` says 112 spawn sites, and correction #7's 4 missed aliased imports gives 112 + 4 = **116**. A grep of `stop_notifier/` returns **17** |
 | **V2-021** #277 | `docs/guides/uninstall-residue.md` absent | **Still true.** 14 other files in `docs/guides/`, not this one |
 | **V2-015** #271 | `.claude-plugin/plugin.json` absent | **Still true.** Neither file nor directory exists |
@@ -226,11 +235,19 @@ Held to the standard the Phase 8 report set when it discarded a non-recursive gl
    refute V2-036's staleness note. Case-insensitively it returns **13**, of which 5 concern the
    runbook. **Discarded; V2-036 is recorded as accurate.**
 
-**And my own prior citations have rotted.** The Phase 8 readiness report cites `SRS.md:1048`, `:740`
-and `:736`. SRS.md has since grown 1056 -> 1131 (`92a9a5d`, then `f26940d`). Those findings remain
-open but have moved: the dead-constant risk row is now **`SRS.md:1122`**, the FR-21 four-site AC row
-is now **`SRS.md:748`**, FR-17 is now **`SRS.md:744`**. Recorded because this pass audits exactly that
-failure mode, and exempting itself would be the defect.
+**And my own prior citations had rotted -- now FIXED (2026-08-02).** The Phase 8 readiness report
+cited `SRS.md:1048`, `:740` and `:736`. SRS.md grew 1056 -> 1130 (`wc -l`; `92a9a5d`, then
+`f26940d`). Every citation in `readiness_report.md` and `blockers.json` has since been **re-opened
+individually and re-keyed to a stable anchor**:
+
+| Was | Now addressed as | Line hint |
+|---|---|---|
+| `SRS.md:1048` | the `\| Large codebase exceeds CallGraph limits \|` row of `## Risks & Mitigation` | 1122 |
+| `SRS.md:740` | the `\| FR-21 \|` row of `### Acceptance Criteria for the v2.0.0 Requirements` | 748 |
+| `SRS.md:736` | the `\| FR-17 \|` row of the same table | 744 |
+
+Recorded because this pass audits exactly that failure mode, and exempting itself would be the
+defect.
 
 ---
 

@@ -10,6 +10,44 @@ in-batch predecessors.
 This report was written adversarially. It tried to start batch A and records what stopped it. Where
 a check found nothing, the check and its method are stated rather than padded.
 
+---
+
+## Citation-integrity revision, 2026-08-02
+
+**Every line citation in this report was re-opened on 2026-08-02 and corrected where it had rotted.**
+`SRS.md` grew 974 -> 1130 lines and `hld_v2.md` 1945 -> 2022 (`wc -l`) during the correction passes,
+so line-keyed addresses stopped finding what they named. **Citations are now keyed to stable anchors**
+-- a heading, an ADR number, a table-row prefix, or a constant name -- with the line number kept only
+as a scanning hint. Where no stable anchor exists, the citation says what it points at, so a reader
+can find the target by content when the number rots again.
+
+**Findings MEASURED as resolved since this report was written.** Recorded so no reader acts on a
+closed item; the finding text below is left intact as the record of what was found.
+
+| ID | Status now | Evidence |
+|---|---|---|
+| B-01, B-02, B-03 | **RESOLVED** | `SRS.md` gained **`### Revised Acceptance Criterion for FR-10 (APPENDED 2026-08-02)`** (line 775), which rules `docs/policies/` the authoritative 46-file corpus, records `~/.claude/policies/` as a PARTIAL MIRROR, and states that `get_policies_dir()` (`src/utils/path_resolver.py:255-261`) resolves to the mirror. The audit file was reshaped by `e520b5e` to a 7-column, 46-row matrix. |
+| B-11 | **RESOLVED** | `issue_key_map.json` now carries V2-009 at `size 8`, `RE_ESTIMATED`. |
+| B-13 | **RESOLVED** | ASSUMPTION A3 now reads "69 SOURCED"; A5 reads "11 RE-ESTIMATED". |
+| B-14 | **RESOLVED** | The "Still open" paragraph has been removed from `sprint_plan.md`. |
+| B-15 | **RESOLVED** | WSJF recomputed. `sprint_plan.md` line 113 shows `~~4.60~~ **2.875, recomputed**`, and its before/after rank table (lines 287-292) records FR-9a dropping from 10th to joint 13th/14th -- confirming the rank consequence this report INFERRED. `github_issues.json` now holds `wsjf_as_published: 2.88` plus a `wsjf_note`. |
+| B-19 | **STILL OPEN** | `product-sequencing-v2.md:187` still publishes FR-9a at size 5 / WSJF **4.60**, unstruck. The file is unchanged since `7699e89`. |
+| B-09, B-18, B-20 | **STILL OPEN** | Re-verified by opening each anchor on 2026-08-02; see the corrected addresses in section 2. |
+
+**The point ledger has moved and this report's figures are superseded.** This report states 111 points
+(69 SOURCED + 34 ASSUMED + 8 RE_ESTIMATED). MEASURED 2026-08-02 by recomputing from
+`github_issues.json`: **45 SOURCED + 24 SOURCED_SET_SPLIT + 26 ASSUMED + 11 RE_ESTIMATED = 106
+points**, 37 issues, 1 unsized (V2-018). `sprint_plan.md` agrees, stating "69 SOURCED + 26 ASSUMED +
+11 RE-ESTIMATED = 106 points". **`github_issues.json`'s own `meta.totals` block still reads
+`assumed_points: 34`, `combined_points: 111`, `reestimated_points: 8` -- it now disagrees with its own
+enumeration.** That file was being written by another agent during this pass and was not modified
+here; the disagreement is reported, not fixed, and may be transient.
+
+**Not re-audited.** B-04 through B-08, B-10, B-12, B-16 and B-17 were not re-checked in this pass.
+Their absence from the resolved table means only that -- not that they are open.
+
+---
+
 ## Evidence labelling
 
 | Label | Meaning |
@@ -62,7 +100,7 @@ Four artifacts assert it is absent, plus the live issue body:
 | `github_issues.json` V2-004 `build_status` | "verified ABSENT on disk 2026-08-01 by this pass" |
 | `sprint_plan.md` batch A section | "does not exist" |
 | `sequencing_risks.md` R-6 | "Verified independently by this pass, 2026-08-01: **ABSENT**" |
-| `SRS.md:152-157` | names it among files "verified absent on disk on 2026-08-01" |
+| `SRS.md` SS 3.1, the **"Build status"** paragraph opening *"Verified absent on disk on 2026-08-01:"* (line 157) | names it among files verified absent |
 | live GitHub issue #260 | created from the above |
 
 The timeline, MEASURED from git and the GitHub API:
@@ -134,10 +172,13 @@ enumeration**, and **(b) backward propagation**.
    MEASURED: searching `github_issues.json` for `578`, `3,985`, `3985`, `4 languages`, `Kotlin` and
    `TypeScript` returns **NO ISSUE** for every term. V2-037 covers only the version string. True
    figures per the correction record: 480 / 3,506, and zero Java/TS/Kotlin files ever. **B-07.**
-3. **SRS.md:1048 still directs an implementer at the dead constant.** The risk table reads
+3. **SRS.md's risk table still directs an implementer at the dead constant.** In `SRS.md` section
+   **`## Risks & Mitigation`**, the row beginning **`| Large codebase exceeds CallGraph limits |`**
+   (line 1122) reads
    *"MAX_FILES=300, MAX_FILE_SIZE_KB=100 in `parsers/config.py`"* as the live mitigation -- correction
    #22's dead code, in the requirements document of record. The same file corrects this error
-   thoroughly at `:267-289` and `:774-829` and explicitly DROPS `parsers/config.py` from the FR-9a
+   thoroughly under **`**FR-21:**`** in SS 3.1 and under **`### Revised Acceptance Criterion for
+   FR-21`** (lines ~267-289 and ~840-919) and explicitly DROPS `parsers/config.py` from the FR-9a
    assertion set at `:820`. **One file both corrects and repeats the defect.** **B-09.**
 4. **`CLAUDE.md:151` claims `docs/policies/` mirrors `~/.claude/policies/`.** MEASURED false: 18
    absent, 7 extra. **B-08.**
@@ -198,17 +239,26 @@ MEASURED; the load-bearing ones were re-verified independently of the probe that
     V2-009 correctly."* MEASURED: the file has not been touched since `7b29820`, so no part of R-4
     reflects the amendment. Its R-14 summary row also records the AC as testing *"discovery, not path
     enumeration"*, which the new clause (C) directly contradicts. **B-17.**
-14. **The four-site framing survives unmarked in SRS.md's normative text.** MEASURED: `SRS.md:258-259`
-    (the SHALL statement) still requires the fix *"at all four known truncation sites"*; `:277-287`
-    enumerates "The four sites, as corrected"; **`:740`, the acceptance-criteria table row for FR-21,
-    still reads "Each of the 4 named sites"**; `:878` refers to "FR-21's four-site closure
-    requirement". The revised 14-item criterion is appended at `:767-844`, but none of those four
-    locations carries an inline pointer to it. Same at `product-sequencing-v2.md:578, :615, :718`.
-    Retention is correct under rules/44's append-only rule; the defect is the missing supersession
-    marker at the point of use. **B-18.**
-15. **`SRS.md:736` is cited for the FR-21 AC in three places; that line is FR-17.** MEASURED: FR-21 is
-    at `:740`. Verified against `git show 92a9a5d^:SRS.md` that 736 was FR-17 before the append too,
-    so this is pre-existing, not drift. **B-20.**
+14. **The four-site framing survives unmarked in SRS.md's normative text.** Addressed by anchor,
+    because every one of these moved while this report was open. MEASURED 2026-08-02:
+    - the **`**FR-21:**`** SHALL statement in SS 3.1 (line 267) still requires the fix *"at all four
+      known truncation sites"*;
+    - the paragraph beginning **`The four sites, as corrected:`** (line 285) still enumerates them,
+      retaining `config.py:11` as item 4;
+    - the **`| FR-21 |`** row of **`### Acceptance Criteria for the v2.0.0 Requirements`** (line 748)
+      still reads *"Each of the 4 named sites"*;
+    - the sentence containing **`FR-21's four-site closure requirement`** (line 951) refers to it.
+
+    The revised 14-item criterion is appended under **`### Revised Acceptance Criterion for FR-21
+    (APPENDED 2026-08-01, per rules/44 section 4.2)`** (line 840), but none of those four locations
+    carries an inline pointer to it. Same at `product-sequencing-v2.md` (unchanged since 7699e89):
+    `:578, :615, :718`. Retention is correct under rules/44's append-only rule; the defect is the
+    missing supersession marker at the point of use. **B-18.**
+15. **Three artifacts cite `SRS.md:736` for the FR-21 acceptance criterion; it has never been that
+    row.** MEASURED 2026-08-02: line 736 is now a table separator (`|---|---|`). The FR-21 row is the
+    **`| FR-21 |`** row of **`### Acceptance Criteria for the v2.0.0 Requirements`**, currently line
+    **748**. Verified against `git show 92a9a5d^:SRS.md` that 736 was the FR-17 row before the append
+    too, so the citation was already wrong when written -- pre-existing, not drift. **B-20.**
 
 The criterion itself is sound where it landed: MEASURED, the `acceptance_criteria` array has exactly
 **14 items**, and `sprint_plan.md` is the only artifact stating a count -- it says 14, correctly. No
@@ -344,7 +394,7 @@ close requires none.
 | B-06 | MEDIUM | "25 capabilities" vs 27 enumerated rows vs 23 in REVIEW-INDEX | #264 |
 | B-07 | MEDIUM | Corrections #23/#24 unowned; 5 documents still publish the false claims | none -- that is the finding |
 | B-08 | MEDIUM | CLAUDE.md's `docs/policies` mirror claim is measured false | none |
-| B-09 | MEDIUM | SRS.md:1048 still directs implementers at the dead constant | #265 |
+| B-09 | MEDIUM | SRS.md `## Risks & Mitigation`, the CallGraph-limits row, still names the dead constant | #265 |
 | B-11 | HIGH | `issue_key_map.json` holds V2-009 at size 5 / SOURCED; sums to 108 vs 111 | #265 |
 | B-12 | HIGH | V2-009's body and AC item 10 assert "size 5" against its own `size: 8` | #265 |
 | B-13 | MEDIUM | ASSUMPTION A3 says "74 sourced points"; A5 beneath it says 69 | none |
@@ -354,7 +404,7 @@ close requires none.
 | B-17 | MEDIUM | `sequencing_risks.md` R-4 states the AC amendment as still pending | #265 |
 | B-18 | MEDIUM | Four-site framing unmarked in SRS.md's SHALL statement and FR-21 AC row | #265 |
 | B-19 | LOW | `product-sequencing-v2.md:187` is the only unstruck superseded WSJF row | #265 |
-| B-20 | LOW | Three artifacts cite SRS.md:736 for FR-21; that line is FR-17 | #265 |
+| B-20 | LOW | Three artifacts cite SRS.md:736 for FR-21; the FR-21 AC row is elsewhere and always was | #265 |
 | B-10 | LOW | SRS.md's Next Review date precedes its Last Updated date | none |
 
 **20 blockers.** Counted from `blockers.json` rather than by hand, and enumerated in full:

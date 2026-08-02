@@ -19,11 +19,12 @@
     },
     "totals": {
       "sourced_points": 69,
-      "assumed_points": 34,
-      "combined_points": 111,
+      "assumed_points": 26,
+      "combined_points": 106,
       "unsized_issues": 1,
-      "note": "The three totals are reported separately and deliberately not merged into a single headline figure. 69 SOURCED + 34 ASSUMED + 8 RE_ESTIMATED = 111, plus 1 unsized item. Was 74 + 34 = 108 before V2-009 was re-pointed 5 -> 8 on 2026-08-02: 5 points left the SOURCED bucket (74 -> 69) and 8 points entered the new RE_ESTIMATED bucket, a net +3. The 69 SOURCED comprises 45 pure SOURCED plus 24 SOURCED_SET_SPLIT. See sprint_plan.md ASSUMPTION A3.",
-      "reestimated_points": 8
+      "totals_corrected_2026_08_02": "This block previously read assumed_points 34, combined_points 111, reestimated_points 8 -- correct after the V2-009 re-point and NOT updated when V2-004 was re-pointed 8 -> 3 in the same effort, moving 8 points out of ASSUMED and 3 into RE_ESTIMATED. The issues array was right throughout; only this summary lagged, and sprint_plan.md already agreed with 106 while this block still said 111. That is the count-versus-enumeration defect class, occurring in metadata nobody re-derived. Recompute these figures from the issues array rather than trusting them.",
+      "note": "The three totals are reported separately and deliberately not merged into a single headline figure. 69 SOURCED + 26 ASSUMED + 11 RE_ESTIMATED = 106, plus 1 unsized item. The 69 SOURCED comprises 45 pure SOURCED plus 24 SOURCED_SET_SPLIT. History, in order: 74 + 34 = 108 originally; V2-009 re-pointed 5 -> 8 on 2026-08-02, moving 5 points out of SOURCED (74 -> 69) and 8 into the new RE_ESTIMATED bucket for 69 + 34 + 8 = 111; then V2-004 re-pointed 8 -> 3 in the same effort, moving 8 out of ASSUMED (34 -> 26) and 3 into RE_ESTIMATED (8 -> 11) for 106. See sprint_plan.md ASSUMPTION A3 and A5.",
+      "reestimated_points": 11
     },
     "capacity_statement": "NO velocity data exists for this project. No sprint length, no team size, no dates, and no forecast appear anywhere in these drafts. Batches are dependency-closed sets, not time boxes. See sprint_plan.md section 0 for how these convert to sprints without rework.",
     "not_drafted": [
