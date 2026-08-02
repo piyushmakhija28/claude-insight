@@ -423,6 +423,127 @@ or inspect any historical revision.
 
 ---
 
+## 8b. Phase 6 Follow-Up -- FR-9a / SRS FR-21 Acceptance Criterion Corrected and Strengthened
+
+Owner ruling, 2026-08-01. Defect found by the Phase 6 scrum-master agent. Three files touched.
+
+### 8b.1 What was wrong
+
+FR-9a's acceptance criterion asserted on FOUR truncation sites, of which one
+(`langgraph_engine/parsers/config.py:11`) is dead code read by nothing, and it OMITTED
+`langgraph_engine/parsers/graph_model.py:43` entirely -- a cap that BINDS and that survives any fix
+to the file cap. An implementer working strictly to that AC would have fixed four sites, one of them
+dead, watched every assertion pass, and left a binding truncation in production. The AC also
+asserted on *end states of constants*, and constant-inspection is the exact failure mode that
+produced the defect: reading `config.py:11` and concluding the cap had been found is what 19 files
+across every phase did.
+
+The coordinator corrected FR-9a's DESCRIPTION column earlier the same day but not its AC. This pass
+closes that.
+
+### 8b.2 Verification performed before writing
+
+| Claim | Result |
+|---|---|
+| `graph_model.py:43` is `DEFAULT_MAX_PATHS = _env_int("CLAUDE_CG_MAX_PATHS", 500)` | **CONFIRMED**, exact text. Applied at `:320-321`, enforced at `:354`, `:357`, `:388`; warning emitted at `:390-392`. |
+| The truncation warning string | **CONFIRMED** at `graph_model.py:390-391`: `"compute_call_paths: hit max_paths=%d limit; results truncated. Increase via CLAUDE_CG_MAX_PATHS env var or pass max_paths kwarg."` |
+| `call_graph_builder_legacy.py:64` binds | **CONFIRMED.** `MAX_FILES = 300`, defaulted into `__init__` at `:76`, stored at `:79`, enforced at `:107` and `:118`. |
+| `config.py:11` is dead | **CONFIRMED.** Only importer is `parsers/__init__.py:22`, which re-exports it. |
+| 17 sites total, 2 binding | **CONFIRMED against `callgraph_coverage_probe.md`, and the enumeration reconciles:** 4 file-count + 4 file-size + 2 traversal + 2 different-class + 5 diagram = 17. Binding = FC-2 and GT-2 = 2. Non-binding = 1 dead + 1 dormant + 1 live-but-above-corpus + 4 file-size + 1 non-binding traversal + 2 different-class + 5 diagram = 15. 15 + 2 = 17. |
+| Post-fix runtime figures | **CONFIRMED as MEASURED-RUNTIME in the probe:** 411 files / 480 classes / 3,506 methods (also 1,340 functions, 26,114 call edges, 7,004 resolved), against truncated 300 / 449 / 2,844. |
+| `sdlc_pipeline` canary | **CONFIRMED:** 45 files, 0 of 45 analysed today; first `sdlc_pipeline` file at discovery index 304, so the 300-file budget is exhausted five files before the tree begins. |
+| max_paths fired even with the file cap lifted | **CONFIRMED** -- the probe records the warning emitted verbatim on BOTH runs. This is why assertion (C) is load-bearing. |
+| The def-time binding trap | **CONFIRMED, and folded into the AC as assertion (E).** The probe measured that rebinding the module global `MAX_FILES` is a silent no-op (still 300), while the constructor kwarg and `__init__.__defaults__` patching both reach 411. |
+
+### 8b.3 The design choice I made, and why
+
+The ruling said to ground the assertions in the measured figures. I did **not** translate that into
+hardcoded equality assertions (`files_analyzed == 411`), because a legitimately added source file
+would then fail the suite and the natural fix would be to bump the number -- reintroducing a
+maintained constant into the thing that is supposed to prove constants are gone. Instead:
+
+- **(A)** and **(B)** assert **set equality / empty symmetric difference** against an independent
+  enumeration oracle. Exact, growth-safe, and no magic number.
+- **(D)** uses the measured figures as a **floor** (`>= 411`, `>= 480`, `>= 3506`), so growth passes
+  and any regression toward the truncated 300 / 449 / 2,844 fails. The exact 2026-08-01 values are
+  recorded in the test as the documented baseline.
+
+This is a deviation in form from "assert the measured figures" and is flagged as such rather than
+applied silently. If the owner wants literal equality assertions, (D) is the one clause to change.
+
+### 8b.4 Original criterion retained -- confirmation
+
+- **`prd-v2.md`:** the superseding row was **inserted above** the original FR-9a AC row. The
+  original row's **acceptance-criterion cell (column 2) is byte-identical and untouched**. Only its
+  row-label cell (column 1) gained a supersession marker, so a reader cannot encounter the old
+  criterion without also seeing its disposition. Stated precisely because "verbatim" was a
+  requirement: the AC text is verbatim; the label is not.
+- **`SRS.md`:** append-only was honoured strictly. The `| FR-21 |` row in the acceptance-criteria
+  table is untouched -- verified present exactly once by grep after the edit. The revised criterion
+  was appended as a new "Revised Acceptance Criterion for FR-21" block using the rules/44 section 4.2
+  `**AC-21 (Updated 2026-08-01):**` form, matching how AC-9 was handled.
+- **`github_issues.json`:** the four superseded AC strings are retained verbatim as the last four
+  entries of V2-009's `acceptance_criteria` array, each prefixed `SUPERSEDED AC, RETAINED VERBATIM`.
+
+### 8b.5 V2-009 change, and proof nothing else moved
+
+Changed fields on V2-009 only: `acceptance_criteria` (4 items -> 14), `acceptance_criteria_source`,
+and the closing paragraph of `body` (the "OWNER DECISION REQUIRED" block, which is
+acceptance-criteria content) rewritten to "OWNER DECISION TAKEN 2026-08-01".
+
+Machine-verified after the write:
+
+| Check | Result |
+|---|---|
+| Issue count | 37, unchanged |
+| Key order | preserved exactly |
+| `meta` block | unchanged (hash match) |
+| Issues whose content changed | `['V2-009']` -- exactly one |
+| V2-009 `size` / `size_provenance` / `wsjf_as_published` | 5 / SOURCED / 4.6 -- **untouched** |
+| V2-009 `blocked_by` / `labels` / `implements` / `gate` / `batch` / `title` | untouched |
+| Dangling `blocked_by` references across all 37 | none |
+| Non-ASCII characters in file | 0 |
+
+Dependency closure and acyclicity are therefore undisturbed: no `blocked_by` array on any issue was
+read, written, or reordered.
+
+### 8b.6 Judgement on the 5-point size -- FLAGGED, NOT APPLIED
+
+**My judgement: 5 no longer holds.** It was estimated against a two-site constant-change assumption
+-- edit two numbers, retire two dead sites. The strengthened AC adds four things that are
+verification engineering rather than constant edits: a runtime probe harness that builds in-process,
+an independent file-enumeration oracle (which must replicate the builder's own eligibility rules
+without importing them, or the test proves nothing), log capture wired to a specific module logger,
+and a negative test asserting that the def-time binding trap cannot be used to fake a pass. Assertion
+(E) in particular is a test that must demonstrate a *failure mode*, which is strictly more work than
+asserting a success.
+
+I have **not** re-pointed it. `size`, `size_provenance` and `wsjf_as_published` are untouched in the
+JSON, and the flag is recorded in three places (the PRD AC, the SRS AC, and V2-009's own AC array) so
+it cannot be missed. Re-sizing is product-manager-agent's call, consistent with how FR-15 was left
+unsized.
+
+### 8b.7 What I could not verify on this correction
+
+1. **I did not re-run the probe.** Every runtime figure (411 / 480 / 3,506 / 1,340 / 26,114 / 7,004,
+   the truncated 300 / 449 / 2,844, discovery index 304, depths 11 and 7) is read from
+   `docs/phase-5-uml/callgraph_coverage_probe.md` and labelled MEASURED-RUNTIME there. I verified the
+   code paths that produce them and re-verified both binding sites on disk; I did not execute a build.
+2. **The 17-site enumeration is the probe's, not mine.** I checked that its parts sum to 17 and that
+   the binding/non-binding split is internally consistent. I did not independently re-grep the repo
+   for a possible 18th site.
+3. **`hld_v2.md` still carries the superseded four-site framing** in ADR-013's body and its binding
+   clause, per V2-009's own propagation-hazard note. Correcting `hld_v2.md` was not in scope for this
+   pass and remains unowned.
+4. **I did not verify that `test_discovery_covers_every_package` exists.** The superseded AC names it
+   and the new AC assumes it is the test to extend. If it does not exist, the AC describes a test to
+   be written, not extended -- which would push the size estimate further.
+5. **JSON reformatting.** The file was rewritten with `json.dumps(indent=2)`. Object-level hashing
+   confirms all 36 other issues and `meta` are semantically identical, and the original file already
+   used 2-space indentation, but I did not perform a byte-level diff of the unchanged regions.
+
+---
+
 ## 9. Outstanding Obligations Created by This Append
 
 1. **A Change Log row dated to the PreToolUse/PostToolUse deletion PR** must be appended when that PR
