@@ -64,14 +64,14 @@ Sorted alphabetically by policy filename, case-insensitive.
 |---|---|---|---|---|---|---|
 | 1 | `anti-hallucination-enforcement.md` | CONTRADICTED | `langgraph_engine/sdlc_pipeline/architecture/00-prompt-generation/anti_hallucination_enforcement.py:38-133`; zero importers repo-wide | delete | OWNER RULING 2026-08-02, not an evidence finding: implementing a prompt-quality gate is scope creep for v2.0.0's core execution scope. Recorded as a SCOPE decision, not a defect in the policy -- the module is sound and simply unwired. NOTE: the vocabulary has no `defer`, so `delete` is the nearest member; if v2.1 wants this gate the policy must be recovered from git history, which is available since `docs/policies/` is versioned | MEASURED |
 | 2 | `architecture-script-mapping-policy.md` | CONTRADICTED | NONE as runtime code. `docs/policies/architecture-script-mapping-policy.md` is itself the only artifact; a reference document, not code | port-to-plugin | OWNER RULING 2026-08-02: align the tree's mapping with the modern structure rather than delete it. FR-9a keeps that tree alive as a live-but-non-binding cap, so it survives v2.0.0. **PRECONDITION, MEASURED 2026-08-02: the mapping is wrong in BOTH directions -- 0 of the 3 scripts it names exist, and the one script that does exist under `scripts/architecture/` is unlisted. Porting it as written would carry a broken inventory into the plugin; the mapping must be corrected as part of the port.** First and only `port-to-plugin` row in the matrix | CITED |
-| 3 | `automatic-task-breakdown-policy.md` | ENFORCED | `hooks/pre_tool_enforcer/policies/task_breakdown.py:12` `check_task_breakdown_pending`, registered `core.py:455` `_BLOCKING_POLICIES` | demote-to-advisory | OAQ 2 row 6 | CITED |
+| 3 | `automatic-task-breakdown-policy.md` | ENFORCED | `hooks/pre_tool_enforcer/policies/task_breakdown.py:12` `check_task_breakdown_pending`, registered `core.py:455` `_BLOCKING_POLICIES` | demote-to-advisory | OAQ 2 row 6 -- demoted because Step 1's `todo_decomposer` already performs decomposition in-pipeline, so a per-tool-call enforcement point would duplicate it | CITED |
 | 4 | `callgraph-analysis-policy.md` | CONTRADICTED | `langgraph_engine/parsers/call_graph_builder_legacy.py:64` `MAX_FILES=300`, bound at `:76`, enforced `:107` and `:118`; second cap `parsers/graph_model.py:43` | keep-as-is | `prd-v2.md` FR-9a superseding AC (owner ruling, in v2.0.0 scope) + `hld.md` OAQ 4 / ADR-013 repair both binding caps in `langgraph_engine/parsers/`, pipeline code de-hooking does not touch | MEASURED |
 | 5 | `code-graph-analysis-policy.md` | ENFORCED | `langgraph_engine/sdlc_pipeline/architecture/00-code-graph-analysis/code_graph_analyzer.py:340-637` (`build_graph`, `compute_graph_metrics`) | keep-as-is | judged: no hook coupling; enforcement is pipeline code de-hooking does not touch | CITED |
 | 6 | `coding-standards-enforcement-policy.md` | ENFORCED | `langgraph_engine/standards/selector.py:114` `detect_framework`, `:202` `_detect_java_framework` (reach=True) | keep-as-is | judged: no hook coupling; enforcement is pipeline code de-hooking does not touch | CITED |
-| 7 | `common-failures-prevention.md` | PARTIAL | `hooks/pre_tool_enforcer/policies/failure_kb.py:11` `check_failure_kb_hints`, called non-blocking at `core.py:517-523`; Stop-side script absent | port-to-MCP | OAQ 2 row 7 | CITED |
+| 7 | `common-failures-prevention.md` | PARTIAL | `hooks/pre_tool_enforcer/policies/failure_kb.py:11` `check_failure_kb_hints`, called non-blocking at `core.py:517-523`; Stop-side script absent | port-to-MCP | OAQ 2 row 7 -- ported because its `failure-kb.json` data is a lookup table and so a natural deterministic MCP tool; only the PreToolUse side is live today, its Stop-side script being one of FR-21's 7 missing files | CITED |
 | 8 | `common-standards-policy.md` | ENFORCED | `langgraph_engine/standards/selector.py:449` `select_standards`, `:273` `load_custom_standards`, `:358` `load_framework_standards` | keep-as-is | judged: no hook coupling; enforcement is pipeline code de-hooking does not touch | CITED |
-| 9 | `context-management-policy.md` | PARTIAL | `hooks/pre_tool_enforcer/policies/level1_sync.py:15` `check_level1_sync_complete`, registered `core.py:458`; token-budget code not located under this name | demote-to-advisory | OAQ 2 row 8 | CITED |
-| 10 | `context-reading-policy.md` | ENFORCED | `hooks/pre_tool_enforcer/policies/context_read.py:14` `check_context_read_complete`, registered `core.py:457` `_BLOCKING_POLICIES` | demote-to-advisory | OAQ 2 row 9 | MEASURED |
+| 9 | `context-management-policy.md` | PARTIAL | `hooks/pre_tool_enforcer/policies/level1_sync.py:15` `check_level1_sync_complete`, registered `core.py:458`; token-budget code not located under this name | demote-to-advisory | OAQ 2 row 8 -- demoted because the rule is judgement-shaped and its deterministic part already belongs to `mcp-token-optimizer` | CITED |
+| 10 | `context-reading-policy.md` | ENFORCED | `hooks/pre_tool_enforcer/policies/context_read.py:14` `check_context_read_complete`, registered `core.py:457` `_BLOCKING_POLICIES` | demote-to-advisory | OAQ 2 row 9 -- demoted on the same judgement-shaped grounds as `context-management-policy.md`, this being the rule that produced the chunked-read guidance | MEASURED |
 | 11 | `cross-project-patterns-policy.md` | ENFORCED | `langgraph_engine/context_sync/architecture/pattern_detector.py:388` `detect_patterns`, `:525` `scan_all_projects` | keep-as-is | judged: no hook coupling; enforcement is pipeline code de-hooking does not touch | CITED |
 | 12 | `documentation-update-policy.md` | PARTIAL | `langgraph_engine/sdlc_pipeline/nodes/closure_docs_summary_wrapper.py:62` `step7_project_documentation_update`, `:153` `step7_docs_update_node` | keep-as-is | judged: no hook coupling; enforcement is pipeline code de-hooking does not touch | CITED |
 | 13 | `encoding-validation-policy.md` | PARTIAL | `langgraph_engine/preflight_guard/nodes.py:150-237` `node_encoding_validation` (reach=True, cc=17) | keep-as-is | judged: no hook coupling; enforcement is pipeline code de-hooking does not touch | CITED |
@@ -79,16 +79,16 @@ Sorted alphabetically by policy filename, case-insensitive.
 | 15 | `EXECUTION-SYSTEM-FIXES-SUMMARY.md` | DOCUMENTED-ONLY | NONE. Point-in-time changelog, not a policy with a runtime mechanism | delete | `as-built-prd.md` SS 4.2 classifies it a point-in-time changelog, not an ongoing SHALL; ADR-009 scopes `docs/policies/` to the policy corpus the plugin bundles, and git retention makes removal recoverable | CITED |
 | 16 | `file-management-policy.md` | DOCUMENTED-ONLY | NONE found | demote-to-advisory | Its rules are model-judged conduct (temp-file placement, protected paths) with no gate anywhere -- OAQ 2 row 2's stated criterion for the plugin's agent-instruction layer; deleting would drop a live rule under NFR-4 | CITED |
 | 17 | `final-summary-policy.md` | ENFORCED | `langgraph_engine/sdlc_pipeline/nodes/closure_docs_summary_wrapper.py:70` `step8_final_summary_generation`, `:202` `step8_final_summary_node` | keep-as-is | judged: no hook coupling; enforcement is pipeline code de-hooking does not touch | CITED |
-| 18 | `git-auto-commit-policy.md` | CONTRADICTED | `hooks/stop_notifier/core.py:74-96` spawns `scripts/architecture/03-execution-system/09-git-commit/git-auto-commit-policy.py`, which does not exist | delete | OAQ 2 row 10 | MEASURED |
+| 18 | `git-auto-commit-policy.md` | CONTRADICTED | `hooks/stop_notifier/core.py:74-96` spawns `scripts/architecture/03-execution-system/09-git-commit/git-auto-commit-policy.py`, which does not exist | delete | OAQ 2 row 10 -- deleted because the reference is confirmed silently non-functional today, independent of any hook change, its `.exists()` guard targeting a script that was never built, with the capability loss recorded in the NFR-4 ledger rather than dropped | MEASURED |
 | 19 | `github-issues-integration-policy.md` | PARTIAL | `langgraph_engine/sdlc_pipeline/github_lifecycle.py` `Level3GitHubWorkflow.step2_create_issue:125` (reach=False), `.step3_create_branch:294` (reach=False) | keep-as-is | judged: no hook coupling; enforcement is pipeline code de-hooking does not touch | CITED |
-| 20 | `hook-system-policy.md` | ENFORCED | `hooks/pre-tool-enforcer.py` shim into `hooks/pre_tool_enforcer/core.py:453-469` `_BLOCKING_POLICIES` | delete | OAQ 2 row 1 | CITED |
-| 21 | `implementation-execution-policy.md` | PARTIAL | `langgraph_engine/sdlc_pipeline/nodes/implementation_and_review_wrapper.py:84` `step4_implementation_note` (reach=True) | demote-to-advisory | OAQ 2 row 2 | CITED |
+| 20 | `hook-system-policy.md` | ENFORCED | `hooks/pre-tool-enforcer.py` shim into `hooks/pre_tool_enforcer/core.py:453-469` `_BLOCKING_POLICIES` | delete | OAQ 2 row 1 -- deleted because it documents the very hook mechanism FR-4 removes, so shipping it would guarantee a permanent contradiction with shipped behaviour | CITED |
+| 21 | `implementation-execution-policy.md` | PARTIAL | `langgraph_engine/sdlc_pipeline/nodes/implementation_and_review_wrapper.py:84` `step4_implementation_note` (reach=True) | demote-to-advisory | OAQ 2 row 2 -- demoted because it governs Step 4 conduct, which is model-judged and therefore belongs in the plugin's agent-instruction layer rather than in a gate | CITED |
 | 22 | `intelligent-decision-engine-policy.md` | CONTRADICTED | NONE found. Describes an "OpenRouter consolidation" never built; the systems it unifies were deleted in v1.13 | delete | MEASURED 2026-08-02: its named script path `scripts/architecture/03-execution-system/04-model-selection/` and every OpenRouter reference are absent repo-wide, and the 4 systems it unifies went in v1.13 / v1.15.3 -- `prd-v2.md` SS 8's stated delete rationale for a policy governing a step that no longer exists | CITED |
 | 23 | `intelligent-model-selection-policy.md` | STALE-TOPOLOGY | NONE found under this description. One of its 5 inputs (plan-mode decision) was deleted in v1.13, so the retranslated question is unanswerable | demote-to-advisory | ARCHITECT RULING 2026-08-02: stale but not obsolete, so it is retained as guidance rather than deleted or retranslated now. Model selection remains a live concern (`langgraph_engine/version_selector.py` exists, MEASURED), and retranslating its remaining 4 inputs against the 2-provider topology stays available later. No OAQ covers this row; the ruling is the source | CITED |
 | 24 | `INTELLIGENT-PROMPT-GENERATION-UPGRADE.md` | DOCUMENTED-ONLY | NONE. Point-in-time changelog | delete | `as-built-prd.md` SS 4.2 classifies it a point-in-time changelog, not an ongoing SHALL; ADR-009 scopes `docs/policies/` to the policy corpus the plugin bundles, and git retention makes removal recoverable | CITED |
 | 25 | `issue-closure-policy.md` | ENFORCED | `langgraph_engine/sdlc_pipeline/github_lifecycle.py:543` `step6_close_issue`, `:603` `_build_closing_comment` (both reach=True) | keep-as-is | judged: no hook coupling; enforcement is pipeline code de-hooking does not touch | CITED |
 | 26 | `mcp-plugin-discovery-policy.md` | DOCUMENTED-ONLY | `langgraph_engine/state/state_definition.py:184` `mcp_plugins_path` -- a FlowState field only, no discovery logic | delete | ADR-019 replaces auto-discovery with opt-in `register-mcp` and ADR-010 / FR-4 delete the `pre-tool-enforcer` AUTO-ROUTE mode it configures; MEASURED 2026-08-02: the `mcp_plugin_loader` module it imports is absent repo-wide (stale `.pyc` only, zero importers) -- OAQ 2 row 1's criterion for a document of a removed mechanism | CITED |
-| 27 | `metrics-monitoring-policy.md` | PARTIAL | `langgraph_engine/metrics/aggregator.py` `aggregate_sessions:96`, `aggregate_step_performance:191`, `aggregate_llm_usage:307`, `aggregate_tool_usage:408` | port-to-MCP | OAQ 2 row 3 | CITED |
+| 27 | `metrics-monitoring-policy.md` | PARTIAL | `langgraph_engine/metrics/aggregator.py` `aggregate_sessions:96`, `aggregate_step_performance:191`, `aggregate_llm_usage:307`, `aggregate_tool_usage:408` | port-to-MCP | OAQ 2 row 3 -- ported because its rules are deterministic counters, and `metrics_exporter.py` plus `mcp-post-tool-tracker` already provide the tool surface to carry them | CITED |
 | 28 | `parallel-execution-policy.md` | DOCUMENTED-ONLY | NONE found as engine code. Describes calling-agent behaviour, not a pipeline capability | demote-to-advisory | `as-built-prd.md` SS 4.2: calling-agent behaviour, not a pipeline capability, so there is no gate to keep or port -- OAQ 2 row 2's criterion for the plugin's agent-instruction layer | CITED |
 | 29 | `pr-code-review-policy.md` | PARTIAL | `langgraph_engine/sdlc_pipeline/github_code_review.py` `run_code_review:283`, `check_python_best_practices:53` (all reach=False) | keep-as-is | judged: no hook coupling; enforcement is pipeline code de-hooking does not touch | CITED |
 | 30 | `proactive-consultation-policy.md` | DOCUMENTED-ONLY | NONE. Explicitly deprecated by its own text | delete | Its own header declares `Status: DEPRECATED (2026-03-17)` with the reason and the three named replacements; shipping it in the v2.0.0 corpus would carry a rule its own text retired | CITED |
@@ -96,17 +96,17 @@ Sorted alphabetically by policy filename, case-insensitive.
 | 32 | `quality-gate-policy.md` | ENFORCED | `langgraph_engine/sdlc_pipeline/quality_gate.py:637` `evaluate_quality_gate` (reach=True, cc=9), with `_evaluate_sonar_gate:142`, `_evaluate_coverage_gate:248` | keep-as-is | judged: no hook coupling; enforcement is pipeline code de-hooking does not touch | CITED |
 | 33 | `recovery-policy.md` | ENFORCED | `langgraph_engine/preflight_guard/recovery.py:234` `fix_preflight_guard_issues` (reach=True, cc=45) | keep-as-is | judged: no hook coupling; enforcement is pipeline code de-hooking does not touch | CITED |
 | 34 | `session-chaining-policy.md` | PARTIAL | `src/mcp/session_hooks.py`, `src/mcp/session_mcp_server.py` (`session_link`-adjacent surface, module reach=True); `clear-session-handler.py` named by the policy not found | keep-as-is | judged: no hook coupling; enforcement is pipeline code de-hooking does not touch | CITED |
-| 35 | `session-memory-policy.md` | CONTRADICTED | `hooks/stop_notifier/core.py:104-127` spawns `scripts/architecture/01-sync-system/session-management/auto-save-session.py`, which does not exist | delete | OAQ 2 row 11 | MEASURED |
-| 36 | `session-pruning-policy.md` | CONTRADICTED | `hooks/stop_notifier/core.py:131-181` spawns `archive-old-sessions.py` and `session-pruner.py` under `scripts/architecture/01-sync-system/`; neither exists | delete | OAQ 2 row 12 | MEASURED |
-| 37 | `task-phase-enforcement-policy.md` | ENFORCED | `hooks/pre_tool_enforcer/policies/task_breakdown.py:12` `check_task_breakdown_pending` -- same point as row 3 | demote-to-advisory | OAQ 2 row 13 | CITED |
-| 38 | `task-progress-tracking-policy.md` | PARTIAL | `hooks/post_tool_tracker/policies/task_tracking.py`, `.../task_breakdown_clear.py` (both present; reach not individually traced -- LOW confidence) | port-to-MCP | OAQ 2 row 14 | CITED |
+| 35 | `session-memory-policy.md` | CONTRADICTED | `hooks/stop_notifier/core.py:104-127` spawns `scripts/architecture/01-sync-system/session-management/auto-save-session.py`, which does not exist | delete | OAQ 2 row 11 -- deleted on the same root cause and evidence as `git-auto-commit-policy.md`, and independently scored CONTRADICTED as a confirmed no-op, with the capability loss recorded in the NFR-4 ledger | MEASURED |
+| 36 | `session-pruning-policy.md` | CONTRADICTED | `hooks/stop_notifier/core.py:131-181` spawns `archive-old-sessions.py` and `session-pruner.py` under `scripts/architecture/01-sync-system/`; neither exists | delete | OAQ 2 row 12 -- deleted on the same root cause and evidence as the other two Stop-hook maintenance policies, its spawn target being absent repo-wide, with the capability loss recorded in the NFR-4 ledger | MEASURED |
+| 37 | `task-phase-enforcement-policy.md` | ENFORCED | `hooks/pre_tool_enforcer/policies/task_breakdown.py:12` `check_task_breakdown_pending` -- same point as row 3 | demote-to-advisory | OAQ 2 row 13 -- demoted because phase ordering is a planning concern the pipeline already sequences, so enforcing it per tool call was always the wrong altitude | CITED |
+| 38 | `task-progress-tracking-policy.md` | PARTIAL | `hooks/post_tool_tracker/policies/task_tracking.py`, `.../task_breakdown_clear.py` (both present; reach not individually traced -- LOW confidence) | port-to-MCP | OAQ 2 row 14 -- ported because it is OAQ 1's (B) replacement, namely `mcp-post-tool-tracker.increment_progress` called explicitly instead of fired by a hook | CITED |
 | 39 | `test-case-policy.md` | DOCUMENTED-ONLY | NONE found as a distinct gate | demote-to-advisory | `as-built-prd.md` SS 4.2: a behavioural instruction to the calling agent, not a pipeline gate -- OAQ 2 row 2's criterion for the plugin's agent-instruction layer | CITED |
 | 40 | `test-generation-policy.md` | ENFORCED | `langgraph_engine/sdlc_pipeline/test_generator.py` `detect_language:39`, `detect_test_framework:61`, `_generate_python_tests:544` | keep-as-is | judged: no hook coupling; enforcement is pipeline code de-hooking does not touch | CITED |
-| 41 | `tool-optimization-policy.md` | ENFORCED | `hooks/pre_tool_enforcer/policies/read_opt.py:8` `check_read_opt`, `grep_opt.py:8` `check_grep_opt`, registered `core.py:466-467` | port-to-MCP | OAQ 2 row 4 | MEASURED |
-| 42 | `tool-usage-optimization-policy.md` | CONTRADICTED | No distinct point. Shares row 41's registration: `hooks/pre_tool_enforcer/policies/read_opt.py:8` `check_read_opt` and `grep_opt.py:8` `check_grep_opt`, registered once at `hooks/pre_tool_enforcer/core.py:466-467`, while this policy's own text claims "NO DUPLICATION" | delete | OAQ 2 row 15 | MEASURED |
+| 41 | `tool-optimization-policy.md` | ENFORCED | `hooks/pre_tool_enforcer/policies/read_opt.py:8` `check_read_opt`, `grep_opt.py:8` `check_grep_opt`, registered `core.py:466-467` | port-to-MCP | OAQ 2 row 4 -- ported because `mcp-token-optimizer` already implements the deterministic half, with the read-in-chunks guidance demoting to advisory as the judgement-shaped remainder | MEASURED |
+| 42 | `tool-usage-optimization-policy.md` | CONTRADICTED | No distinct point. Shares row 41's registration: `hooks/pre_tool_enforcer/policies/read_opt.py:8` `check_read_opt` and `grep_opt.py:8` `check_grep_opt`, registered once at `hooks/pre_tool_enforcer/core.py:466-467`, while this policy's own text claims "NO DUPLICATION" | delete | OAQ 2 row 15 -- deleted and merged into `tool-optimization-policy.md`'s disposition because it self-claims NO DUPLICATION while sharing that policy's single enforcement point, so keeping both would preserve a documented false claim | MEASURED |
 | 43 | `unicode-fix-policy.md` | ENFORCED | `langgraph_engine/preflight_guard/nodes.py:62-147` `node_unicode_fix`, wired `orchestrator.py:657`, on the `START` edge at `:663` | keep-as-is | judged: no hook coupling; enforcement is pipeline code de-hooking does not touch | MEASURED |
 | 44 | `user-preferences-policy.md` | DOCUMENTED-ONLY | `langgraph_engine/sdlc_pipeline/nodes/pre_nodes.py:191` `result['user_preferences_context']` -- a passthrough state field, not a learning function | port-to-MCP | OWNER RULING 2026-08-02: preference learning is in v2.0.0 scope. Its mechanism is deterministic rather than model-judged -- a 3-occurrence learning threshold -- which is why it ports to a tool surface instead of demoting to advisory like rows 16, 28 and 39. **PRECONDITION, MEASURED 2026-08-02: `track-preference.py` is absent repo-wide, and `pre_nodes.py:191` carries only a passthrough state field, not a learning function. The port is a BUILD, not a move** | CITED |
-| 45 | `version-release-policy.md` | ENFORCED | `hooks/pre_tool_enforcer/policies/push_gate.py:354` `check_push_version`, `:408` `check_push_clean_tree`, registered `core.py:464-465` | port-to-MCP | OAQ 2 row 5 | CITED |
+| 45 | `version-release-policy.md` | ENFORCED | `hooks/pre_tool_enforcer/policies/push_gate.py:354` `check_push_version`, `:408` `check_push_clean_tree`, registered `core.py:464-465` | port-to-MCP | OAQ 2 row 5 -- this is `push_gate.py`, and PRD FR-23 fixes it at MANDATORY `port-to-MCP` plus ADR-017's CI-gate ordering assertion rather than leaving it to generic classification, because once FR-4 deletes the hook the version-push bypass closed by commit 1bb4303 has NEITHER preventive NOR detective cover until both `register-mcp` and that CI assertion exist, and both are DESIGNED, NOT BUILT | CITED |
 | 46 | `windows-path-policy.md` | ENFORCED | `langgraph_engine/preflight_guard/nodes.py:240-323` `node_windows_path_check` (reach=True, cc=17) | keep-as-is | judged: no hook coupling; enforcement is pipeline code de-hooking does not touch | CITED |
 
 ### 1.1 Matrix integrity checks
@@ -147,11 +147,18 @@ Count of names listed: 9. Evidence density is therefore **37/46 (80.4%) real cit
 
 **Provenance split: 15 rows from OAQ 2, 18 from the non-hook-coupled rule, 9 decided at
 V2-005, 4 by owner or architect ruling.** 15 + 18 + 9 + 4 = 46. The `Basis` column makes the
-split machine-readable per row: OAQ-2-sourced rows cite `OAQ 2 row N`, rows from the
-non-hook-coupled rule are prefixed `judged:`, V2-005 rows name the artifact that determined
-them, and the 4 ruling rows are prefixed `OWNER RULING` or `ARCHITECT RULING` with the date.
-That prefix is deliberate: those four are DECISIONS, not evidence findings, and a reader must
-be able to tell the difference.
+split machine-readable per row: OAQ-2-sourced rows **open** with `OAQ 2 row N` followed by a
+one-sentence rationale, rows from the non-hook-coupled rule are prefixed `judged:`, V2-005 rows
+name the artifact that determined them, and the 4 ruling rows are prefixed `OWNER RULING` or
+`ARCHITECT RULING` with the date. That prefix is deliberate: those four are DECISIONS, not
+evidence findings, and a reader must be able to tell the difference.
+
+**Match on the opening, not on a substring search.** MEASURED 2026-08-02: **19** rows contain
+the string `OAQ 2 row` somewhere in `Basis`, but only **15** open with it. The other four are
+rows 16, 26, 28 and 39, which *quote* an OAQ 2 criterion (row 1's or row 2's) as the reasoning
+they borrow while being dispositioned at V2-005, not by OAQ 2. A grep for `OAQ 2` returns 19 and
+would overstate the OAQ-2-sourced set by four; the anchored form `^OAQ 2 row \d+` returns exactly
+the 15. Both figures are enumerable from the matrix above.
 
 **Where a `Basis` cell carries a `MEASURED` tag, that tag qualifies the disposition's
 evidence, not the row's `Verification` value.** No row was upgraded to MEASURED by this
@@ -527,7 +534,28 @@ CITED except where section 3 measured it.
   `session-memory`, `session-pruning`, `task-phase-enforcement`, `task-progress-tracking`,
   `tool-usage-optimization`, `version-release`. Count listed: 11. With the 4 above this is
   the 15-policy hook-coupled set that OAQ 2 dispositions, and it is exactly the 15 rows whose
-  Basis cell cites OAQ 2.
+  Basis cell **opens with** `OAQ 2 row N`. **MEASURED 2026-08-02, derived independently:** the
+  set was re-enumerated from `as-built-prd.md` SS 6.3 (4 self-declaring + 11 undeclared),
+  resolved to corpus filenames, and compared to the 15 anchored-`OAQ 2 row N` rows as a
+  symmetric difference in both directions. **Empty both ways -- the two sets are identical.**
+  Their OAQ 2 row numbers also map one-to-one, and every disposition transcribed here matches
+  OAQ 2's, reproducing its 5 `port-to-MCP` / 5 `demote-to-advisory` / 5 `delete` split.
+- **All 15 now carry a one-sentence rationale alongside the citation.** Before this pass all 15
+  `Basis` cells read the bare token `OAQ 2 row N` and none carried a rationale, so **15 of 15
+  genuinely needed one added**; none was a duplicate of an existing sentence. The rationales are
+  CITED from `hld.md` SS 12 OAQ 2's own `Rationale` column, condensed to one sentence each, not
+  newly reasoned here.
+- **The set is right but the usual shorthand for it is wrong, and the shorthand should not be
+  reused.** These 15 are often described as the policies "whose sole enforcement mechanism is a
+  PreToolUse block". Counted against this matrix's own `Evidence` cells (MEASURED 2026-08-02),
+  only **8** of the 15 are PreToolUse *blocks* (rows 3, 9, 10, 20, 37, 41, 42, 45). Of the
+  remaining 7: row 7 is PreToolUse but its own Evidence records it as called **non-blocking**;
+  rows 18, 35 and 36 are **Stop**-hook coupled; row 38 is **PostToolUse** (`hooks/post_tool_tracker/`);
+  and rows 21 and 27 cite no `hooks/` path at all, their Evidence resolving to pipeline code.
+  8 + 1 + 3 + 1 + 2 = 15. `as-built-prd.md` SS 6.3 itself says "hook-coupled", never "PreToolUse",
+  so the membership of the set is not in doubt -- only the descriptor is. Anyone scoping work
+  from the PreToolUse phrasing rather than from the enumeration will scope it to roughly half
+  the set.
 - **Coupling to a hook is not the same as the hook's target running.** Three of the 15
   (`git-auto-commit`, `session-memory`, `session-pruning`) are genuinely hook-coupled and
   still no-op, because the coupled path spawns a script that is not on disk. MEASURED,
@@ -585,6 +613,19 @@ CITED except where section 3 measured it.
 - **The final 4 cells were closed by ruling on 2026-08-02, not by evidence**, and are
   labelled as such so the distinction survives; section 1.2.2
   names the missing input and the deciding role for each.
+- **All 15 hook-coupled rows now carry a disposition AND a one-sentence rationale.** All 15
+  previously held the bare token `OAQ 2 row N`, so 15 of 15 genuinely needed one; the rationales
+  are condensed from `hld.md` SS 12 OAQ 2's own `Rationale` column, not newly reasoned. The
+  15-row set was re-derived independently from `as-built-prd.md` SS 6.3 and matched the
+  OAQ-2-sourced rows exactly, symmetric difference empty in both directions (section 7).
+- **`push_gate.py`'s row (row 45, `version-release-policy.md`) reads `port-to-MCP`**, fixed
+  there by PRD FR-23 rather than open to generic classification. **It already read `port-to-MCP`
+  before this pass and its value was not changed**; only its rationale was added, recording that
+  after FR-4 the bypass closed by commit 1bb4303 has neither preventive nor detective cover until
+  `register-mcp` and the ADR-017 CI assertion exist, and that both are DESIGNED, NOT BUILT.
+- **"Sole enforcement mechanism is a PreToolUse block" is the wrong descriptor for the 15** --
+  only 8 of them are, by this matrix's own Evidence. The enumeration in `as-built-prd.md` SS 6.3
+  is authoritative; the shorthand is not. Section 7 carries the breakdown.
 - **"46/46 orphan policies" retracted**; real figure 14 of 46, six beyond any SRS fix.
 - **Three maintenance policies are dead paths today**, before any hook change; all three are
   `delete` under OAQ 2.
