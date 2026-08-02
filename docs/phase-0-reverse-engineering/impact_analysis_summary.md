@@ -23,6 +23,34 @@ CHA-unreachable dormant code.
 `post_tool_tracker/core.py`) are both being deleted; `stop_notifier/` (retained) does not
 import it. Its 8 nodes become orphaned as a consequence, though still test-covered.
 
+> **SUPERSEDED CLAIMS CORRECTED 2026-08-02 (owner ruling).** This block is APPENDED, not an edit
+> to the generated analysis above. The do-not-edit banner is read as a directive against altering
+> the analysis, not as a ban on recording that two of its claims were later retracted. The original
+> wording is retained verbatim below so the historical snapshot survives.
+>
+> **1. The NFR-3 claim is retracted.** The blast-radius verdict and the paragraph below both say
+> hook deletion "drops the NFR-3 checkpoint/progress-tracking writer". **`hld.md` SS 12 OAQ 1
+> resolved this: `CheckpointManager` already exists, sits OUTSIDE the deletion set, and is triggered
+> at step boundaries, so CRASH RECOVERY WAS NEVER AT RISK.** Phase 0 conflated two independent
+> systems. What the deletion actually costs is per-tool-call progress *telemetry*, a narrower loss.
+>
+> **2. The capability enumeration below omits `registry.py`.** It reads "14 PreToolUse policy checks
+> ... + the warm-daemon fast path (NFR-1)", which is 15. `capability_loss.md`'s own PreToolUse table
+> carries **16** rows: the 14 gates plus `daemon.py` (line 33, NFR-1) AND `registry.py` (line 34,
+> FR-9, PolicyRegistry ordered fail-open dispatch). With 9 PostToolUse and 2 cross-cutting the total
+> is **27**, not 25 and not 23. This paragraph states no total, which is precisely why the omission
+> went unnoticed: a wrong figure carrying no sum is invisible to every check that compares sums.
+>
+> **Regeneration was considered and rejected.** No script generates this file -- the banner names
+> `impact-analysis-agent`, a library agent. Re-running it would produce a DIFFERENT document rather
+> than a corrected one, discarding analysis that is still accurate. Same treatment as
+> `as-built-prd.md` and `pm_review.json`.
+>
+> **Also recorded:** `langgraph_engine/preflight_guard/nodes.py:40` caps file iteration at 500
+> (`cap: int = 500`, enforced `:53-54`). That is an 18th truncation site, absent from the Phase 5
+> probe's 17-site enumeration because the probe never covered `preflight_guard/`. It does NOT bind
+> today (500 > 411 files), so it is latent rather than active.
+
 ## Capability loss (full list in capability_loss.md)
 14 PreToolUse policy checks (task-breakdown/skill-selection/checkpoint/context-read/
 level1-sync/bash-command/unicode/failure-kb/grep-opt/read-opt/write-edit/agent-persona/
