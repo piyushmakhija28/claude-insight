@@ -1,65 +1,88 @@
-"""Verify V2-008: every capability in the loss ledger carries a decided disposition.
+"""Verify V2-008: every lost capability carries a decided disposition.
 
-Checks ``docs/phase-0-reverse-engineering/capability_loss.md`` against
-``docs/reports/policy-implementation-audit-v2.md`` for the two acceptance
+Checks ``docs/reports/capability-disposition-ledger.md`` against
+``docs/phase-0-reverse-engineering/capability_loss.md`` for the two acceptance
 criteria recorded for V2-008 in ``docs/phase-6-sprint/github_issues.json``,
 which restate PRD NFR-4 and SRS NFR-10.
 
-AC1 Every capability the audit matrix accounts for carries a decided
-    disposition: its accounting row's Post-plugin plan cell is non-empty and is
-    not the literal ``disappeared``. NFR-4 forbids ``disappeared`` because it is
-    the absence of a decision wearing the shape of one. A capability with no
-    accounting row at all is recorded here as not evaluable rather than as a
-    failure, because AC2 owns that condition; folding it in would leave two
-    assertions unable to fail independently, which is how a check becomes
-    untestable.
-AC2 The ledger and the matrix agree, asserted as an empty symmetric difference
-    in both directions rather than as a count of 25. A count check passes
-    whenever two names are simultaneously wrong, which is the defect class this
-    project has caught most often.
-    Direction A is "the ledger names a capability no matrix row accounts for".
-    Under NFR-4 that IS a disappearance: the capability is neither preserved by
-    a kept enforcement point nor explicitly given up by a recorded disposition,
-    and nothing in the matrix carries a decision about it.
-    Direction B is "a matrix row rests its enforcement on a file inside the
-    ledger's own declared scope, but no ledger entry names that file as an
-    owner". The ledger's section headings declare exactly which packages it
-    covers, and it claims one entry per lost capability within them, so a row
-    grounded in a covered file that the ledger never names is a gap in the
-    ledger rather than in the matrix.
+WHY THIS GATE NO LONGER READS THE POLICY AUDIT MATRIX. An earlier revision
+asserted against ``docs/reports/policy-implementation-audit-v2.md``, joining a
+capability to a matrix row through the owner file named in that row's Evidence
+cell. That join left 20 of 27 capabilities unaccounted for, and the obvious
+repair -- adding matrix rows for them -- is structurally impossible: the
+matrix's AC1 asserts row-set identity between its Policy-file column and the
+``.md`` basenames in ``docs/policies/``, and a capability such as ``daemon.py``
+or ``registry.py`` has no policy file at all, so any row added for it fails that
+assertion in both directions. The project owner ruled on 2026-08-02 for a
+second, capability-keyed ledger instead. This gate asserts against that ledger.
+The two sibling gates that do read the matrix are untouched.
+
+AC1 Every ledger row carries a decided disposition: its Disposition cell is
+    non-empty and is not the literal ``disappeared``. NFR-4 forbids
+    ``disappeared`` because it is the absence of a decision wearing the shape of
+    one. This assertion is EXPECTED TO FAIL while rows whose disposition no
+    evidence supports remain deliberately blank, and that failure is the
+    mechanism that surfaces them rather than a defect in the artifact. A
+    non-empty value encoding "undecided" would satisfy the letter of NFR-4 while
+    defeating what it exists to force, so the correct state of an undecided row
+    is empty, and the correct outcome of this gate is a failure naming it.
+AC2 The capability ledger and the disposition ledger name the same capabilities,
+    asserted as an empty symmetric difference in both directions rather than as
+    a count. A count check passes whenever two names are simultaneously wrong,
+    which is the defect class this project has caught most often. Direction A is
+    "``capability_loss.md`` names a capability the disposition ledger has no row
+    for" -- under NFR-4 that IS a disappearance, since nothing anywhere carries a
+    decision about it. Direction B is "the disposition ledger carries a row for a
+    capability ``capability_loss.md`` does not name", which is a fabricated row:
+    ``capability_loss.md`` is machine-generated and is the sole authority on what
+    was lost.
 
 SUP1 is a supporting integrity check, not one of V2-008's acceptance criteria.
-    It compares the capability count CITED by the requirement sources against
-    the count this gate enumerates from the ledger. It is exactly the count
-    check that two simultaneous name errors defeat, so it cannot substitute for
-    AC2 and is reported separately so the two are never confused.
+    It compares the capability count CITED by the requirement sources against the
+    count this gate enumerates from ``capability_loss.md``. It is exactly the
+    count check that two simultaneous name errors defeat, so it cannot substitute
+    for AC2 and is reported separately so the two are never confused.
+SUP2 is a supporting integrity check, not one of V2-008's acceptance criteria.
+    It asserts that every non-empty disposition is drawn from the audit matrix's
+    fixed vocabulary. Without it, AC1 forbids only the single literal
+    ``disappeared``, so ``TBD``, ``deferred`` or ``pending`` would pass -- which
+    is the same trap under a different spelling. It is supporting rather than an
+    AC because V2-008's criterion is stated in terms of ``disappeared``
+    specifically; the vocabulary constraint comes from V2-005 by way of the
+    owner's instruction that both documents use one vocabulary.
 
-THE JOIN, AND WHY IT IS THE OWNER FILE. The ledger is keyed by capability, the
-matrix by policy filename; the two documents share no key. The only mechanical
-correspondence between them is the ledger's ``Owner file`` column against the
-paths the matrix cites in its ``Evidence`` column, so a matrix row accounts for
-a capability when its Evidence names that capability's owner file. Resolving
-the owner cell to a repository path needs the package root, which each section
-heading declares in parentheses -- ``hooks/pre_tool_enforcer/``,
-``hooks/post_tool_tracker/``, ``hooks/policy_tracking_helper.py``. Sections that
-declare no root are out of the ledger's loss scope and are skipped; a table
-inside such a section is an error rather than a silent skip, so a new lost
-section cannot be added without a root and go unread. A looser join -- matching
-a capability to any row citing anything in its package -- was rejected: it would
-let one row's disposition silently discharge fifteen unrelated capabilities,
-which is the reporting failure NFR-4 exists to prevent.
+THE KEY IS THE CAPABILITY NAME, NOT THE OWNER FILE. Both documents are keyed by
+capability, so the join is a direct name comparison and needs no owner-file
+resolution. That matters for the two cross-cutting capabilities, which share a
+single owner file (``policy_tracking_helper.py``) while being distinct
+capabilities: an owner-file join would silently collapse them into one and let a
+single disposition discharge both. Owner files are still parsed and reported,
+because parsing them validates that every ``capability_loss.md`` section
+declares a package root -- a table in a section that declares none is an error
+rather than a silent skip, so a new loss section cannot be added without a root
+and go unread.
 
-The cited count of 25 is CITED from ``prd-v2.md`` section 5's NFR-4 row and
-``SRS.md``'s NFR-10 acceptance row, and is deliberately not treated as ground
-truth. This gate enumerates the ledger itself and reports what it finds. If the
-enumeration disagrees with 25, the citation is what is wrong; do not relax an
-assertion to agree with either number.
+The cited count is READ FROM ``prd-v2.md`` at run time rather than mirrored as a
+constant here, and is deliberately not treated as ground truth. This gate
+enumerates ``capability_loss.md`` itself and reports what it finds; if the two
+disagree, the citation is what is wrong. Do not relax an assertion to agree with
+either number.
 
-Matrix parsing is imported from ``verify_policy_audit_matrix`` rather than
-reimplemented. Two parsers over one artifact drift, and a drifted parser reports
-on a document the other gates are not reading.
+Reading it rather than hardcoding it matters. This gate previously held
+``CITED_CAPABILITY_COUNT = 25`` beside a docstring claiming the value came from
+the PRD. When the PRD was corrected to 27, the constant did not follow, and the
+gate began asserting that the sources cite 25 -- a statement that had become
+false. A mirrored figure is a second place for the same fact to live, and the
+copy always rots first. If the citation cannot be found, that is a FAILURE
+rather than a fallback: a gate that silently substitutes a default when its
+input goes missing reports on a document it never read.
 
-Exit status is 0 only when all three assertions pass; any failure exits 1. The
+Table parsing primitives and the ``Result`` type are imported from
+``verify_policy_audit_matrix`` rather than reimplemented. Two parsers over one
+table format drift, and a drifted parser reports on a document the other gates
+are not reading.
+
+Exit status is 0 only when all four assertions pass; any failure exits 1. The
 script takes no arguments by design, matching its siblings: an overridable input
 path would let a caller point the gate at files other than the artifacts it
 exists to guard.
@@ -72,24 +95,33 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 
-from verify_policy_audit_matrix import (
-    MatrixError,
-    Result,
-    Row,
-    is_table_row,
-    named_paths,
-    parse_matrix,
-    split_cells,
-    strip_cell,
-)
+from verify_policy_audit_matrix import Result, is_table_row, split_cells, strip_cell
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-AUDIT_PATH = REPO_ROOT / "docs" / "reports" / "policy-implementation-audit-v2.md"
-LEDGER_PATH = REPO_ROOT / "docs" / "phase-0-reverse-engineering" / "capability_loss.md"
+LOSS_PATH = REPO_ROOT / "docs" / "phase-0-reverse-engineering" / "capability_loss.md"
+DISPOSITION_PATH = REPO_ROOT / "docs" / "reports" / "capability-disposition-ledger.md"
 
-CITED_CAPABILITY_COUNT = 25
+PRD_PATH = REPO_ROOT / "docs" / "phase-0-requirements" / "prd-v2.md"
+CITED_COUNT_PATTERN = re.compile(r"All (\d+) capabilities named in `capability_loss\.md`")
 DISAPPEARED = "disappeared"
-LEDGER_TABLE_WIDTH = 3
+LOSS_TABLE_WIDTH = 3
+DISPOSITION_HEADER = (
+    "#",
+    "Capability",
+    "Owner file",
+    "Requirement",
+    "Disposition",
+    "Basis",
+    "Verification",
+)
+DISPOSITION_VOCABULARY = (
+    "keep-as-is",
+    "port-to-plugin",
+    "port-to-MCP",
+    "demote-to-advisory",
+    "delete",
+)
+
 SECTION_ROOT = re.compile(r"^##\s+.*?\((?P<root>[A-Za-z0-9_][A-Za-z0-9_./-]*(?:/|\.py))\s*,")
 OWNER_FILE = re.compile(r"^`?([A-Za-z0-9_][A-Za-z0-9_./-]*\.py)`?")
 
@@ -98,12 +130,16 @@ class LedgerError(Exception):
     """Raised when capability_loss.md cannot be parsed unambiguously."""
 
 
+class DispositionError(Exception):
+    """Raised when the disposition ledger cannot be parsed into one table."""
+
+
 @dataclass(frozen=True)
 class Capability:
     """One data row of a capability_loss.md loss table.
 
     Attributes:
-        line_no: 1-based line number of the row within the ledger.
+        line_no: 1-based line number of the row within capability_loss.md.
         root: Package root declared by the section heading that carries the row.
         name: Capability column value, backticks and surrounding space removed.
         owner_cell: Owner file column value as written, including any
@@ -123,7 +159,7 @@ class Capability:
 
 @dataclass(frozen=True)
 class LedgerSection:
-    """One ``## `` section of the ledger that declares a package root.
+    """One ``## `` section of capability_loss.md that declares a package root.
 
     Attributes:
         root: Package root as written in the heading's parenthetical.
@@ -134,6 +170,31 @@ class LedgerSection:
     root: str
     heading_line: int
     entries: list[Capability]
+
+
+@dataclass(frozen=True)
+class DispositionRow:
+    """One data row of the capability disposition ledger.
+
+    Attributes:
+        line_no: 1-based line number of the row within the disposition ledger.
+        index: Value of the leading ``#`` column, as written.
+        capability: Capability column value, the key this gate joins on.
+        owner: Owner file column value.
+        requirement: Requirement column value.
+        disposition: Disposition column value, empty when deliberately undecided.
+        basis: Basis column value.
+        verification: Verification column value.
+    """
+
+    line_no: int
+    index: str
+    capability: str
+    owner: str
+    requirement: str
+    disposition: str
+    basis: str
+    verification: str
 
 
 def _resolve_owner_path(root: str, owner_cell: str, line_no: int) -> str:
@@ -162,7 +223,7 @@ def _resolve_owner_path(root: str, owner_cell: str, line_no: int) -> str:
     return root
 
 
-def parse_ledger(text: str) -> list[LedgerSection]:
+def parse_loss_ledger(text: str) -> list[LedgerSection]:
     """Parse every loss table out of capability_loss.md.
 
     A section is in the ledger's loss scope when its ``## `` heading declares a
@@ -171,7 +232,7 @@ def parse_ledger(text: str) -> list[LedgerSection]:
     would let a new loss section be added without a root and never be read.
 
     Args:
-        text: Full text of the ledger document.
+        text: Full text of capability_loss.md.
 
     Returns:
         The in-scope sections in document order.
@@ -218,11 +279,13 @@ def parse_ledger(text: str) -> list[LedgerSection]:
         seen_roots.add(section_root)
         sections.append(
             LedgerSection(
-                root=section_root, heading_line=section_line, entries=_parse_entries(rows, section_root, section_line)
+                root=section_root,
+                heading_line=section_line,
+                entries=_parse_entries(rows, section_root, section_line),
             )
         )
     if not sections:
-        raise LedgerError(f"no section of {LEDGER_PATH.name} declares a package root")
+        raise LedgerError(f"no section of {LOSS_PATH.name} declares a package root")
     return sections
 
 
@@ -248,8 +311,8 @@ def _parse_entries(rows: list[tuple[int, list[str]]], root: str, heading_line: i
     for line_no, cells in rows:
         if all(set(cell.strip()) <= set("-: ") for cell in cells):
             continue
-        if len(cells) != LEDGER_TABLE_WIDTH:
-            raise LedgerError(f"line {line_no}: expected {LEDGER_TABLE_WIDTH} cells, found {len(cells)}")
+        if len(cells) != LOSS_TABLE_WIDTH:
+            raise LedgerError(f"line {line_no}: expected {LOSS_TABLE_WIDTH} cells, found {len(cells)}")
         name = strip_cell(cells[0])
         if not saw_header:
             if name.lower() != "capability":
@@ -272,101 +335,139 @@ def _parse_entries(rows: list[tuple[int, list[str]]], root: str, heading_line: i
     return entries
 
 
-def accounting_rows(capability: Capability, rows: list[Row]) -> list[Row]:
-    """Find the matrix rows that account for one capability.
+def parse_dispositions(text: str) -> list[DispositionRow]:
+    """Locate the single disposition table in the ledger and parse its rows.
 
-    A row accounts for a capability when its Evidence cell names the
-    capability's owner file exactly. Substring matching is deliberately avoided
-    so that ``core.py`` under one package cannot be credited to another.
+    The table is identified by its exact seven-cell header. Finding zero or more
+    than one such header is an error: a second table would make every downstream
+    correspondence ambiguous, which is the defect class this gate exists to
+    catch. Other tables in the document -- the evidence-label key, the open-items
+    grouping, the change log -- carry different headers and are skipped.
 
     Args:
-        capability: Capability under test.
-        rows: Parsed matrix rows.
+        text: Full text of the disposition ledger.
 
     Returns:
-        Every matrix row whose Evidence names the owner file, in document order.
+        The parsed data rows in document order.
+
+    Raises:
+        DispositionError: If the header is absent, duplicated, or if a data row
+            does not carry exactly seven cells.
     """
-    return [row for row in rows if capability.owner_path in named_paths(row.evidence)]
+    lines = text.split("\n")
+    header_indices = [
+        i
+        for i, line in enumerate(lines)
+        if is_table_row(line) and tuple(strip_cell(c) for c in split_cells(line)) == DISPOSITION_HEADER
+    ]
+    if not header_indices:
+        raise DispositionError(
+            "disposition table header not found; expected a row of " + " | ".join(DISPOSITION_HEADER)
+        )
+    if len(header_indices) > 1:
+        found = ", ".join(str(i + 1) for i in header_indices)
+        raise DispositionError(f"expected exactly one disposition table header, found at lines {found}")
+
+    rows: list[DispositionRow] = []
+    start = header_indices[0] + 1
+    for offset, line in enumerate(lines[start:], start=start):
+        if not is_table_row(line):
+            break
+        cells = split_cells(line)
+        if all(set(c.strip()) <= set("-: ") for c in cells):
+            continue
+        if len(cells) != len(DISPOSITION_HEADER):
+            raise DispositionError(f"line {offset + 1}: expected {len(DISPOSITION_HEADER)} cells, found {len(cells)}")
+        rows.append(
+            DispositionRow(
+                line_no=offset + 1,
+                index=strip_cell(cells[0]),
+                capability=strip_cell(cells[1]),
+                owner=strip_cell(cells[2]),
+                requirement=strip_cell(cells[3]),
+                disposition=strip_cell(cells[4]),
+                basis=cells[5].strip(),
+                verification=strip_cell(cells[6]),
+            )
+        )
+    if not rows:
+        raise DispositionError("disposition table header found but it carries no data rows")
+    return rows
 
 
-def in_ledger_scope(path: str, roots: list[str]) -> bool:
-    """Report whether a cited path falls inside the ledger's declared scope.
+def read_cited_count() -> int | None:
+    """Read the capability count the requirement source cites.
 
-    Args:
-        path: Repository-relative path taken from an Evidence cell.
-        roots: Package roots declared by the ledger's section headings.
+    Reads ``prd-v2.md`` at run time rather than mirroring the figure as a
+    constant. A mirrored count is a second home for the same fact, and the copy
+    rots first -- this gate previously hardcoded 25 and went on asserting it
+    after the PRD was corrected to 27.
 
     Returns:
-        True when the path sits under a directory root or equals a file root.
+        The cited integer, or None when the expected row cannot be found. The
+        caller treats None as a failure rather than substituting a default.
     """
-    return any(path.startswith(root) if root.endswith("/") else path == root for root in roots)
+    if not PRD_PATH.is_file():
+        return None
+    match = CITED_COUNT_PATTERN.search(PRD_PATH.read_text(encoding="utf-8"))
+    return int(match.group(1)) if match else None
 
 
-def check_dispositions_decided(capabilities: list[Capability], rows: list[Row]) -> Result:
-    """Assert every accounted capability carries a decided disposition (AC1).
+def check_dispositions_decided(rows: list[DispositionRow]) -> Result:
+    """Assert every ledger row carries a decided disposition (AC1).
 
     Args:
-        capabilities: Every capability the ledger enumerates.
-        rows: Parsed matrix rows.
+        rows: Parsed disposition rows.
 
     Returns:
-        Result listing every accounting row whose Post-plugin plan cell is empty
-        or reads ``disappeared``, with the per-disposition tally and the
-        not-evaluable set as notes.
+        Result listing every row whose Disposition cell is empty or reads
+        ``disappeared``, with the per-disposition tally as notes.
     """
     failures: list[str] = []
     notes: list[str] = []
     tally: dict[str, int] = {}
-    unaccounted: list[str] = []
-    evaluated = 0
+    empty = 0
 
-    for capability in capabilities:
-        matches = accounting_rows(capability, rows)
-        if not matches:
-            unaccounted.append(capability.owner_path)
+    for row in rows:
+        value = row.disposition
+        if not value:
+            empty += 1
+            failures.append(
+                f"line {row.line_no} (row {row.index}): Disposition cell is empty -- {row.capability[:60]!r}"
+            )
             continue
-        evaluated += 1
-        for row in matches:
-            plan = row.plan.strip()
-            if not plan:
-                failures.append(
-                    f"line {row.line_no} ({row.policy}): Post-plugin plan cell is empty; "
-                    f"ledger line {capability.line_no} names {capability.owner_path} a lost capability"
-                )
-                continue
-            if plan.lower() == DISAPPEARED:
-                failures.append(
-                    f"line {row.line_no} ({row.policy}): Post-plugin plan reads {DISAPPEARED!r}, "
-                    f"which NFR-4 forbids as the absence of a decision"
-                )
-                continue
-            tally[plan] = tally.get(plan, 0) + 1
+        if value.lower() == DISAPPEARED:
+            failures.append(
+                f"line {row.line_no} (row {row.index}): Disposition reads {DISAPPEARED!r}, "
+                f"which NFR-4 forbids as the absence of a decision"
+            )
+            continue
+        tally[value] = tally.get(value, 0) + 1
 
-    notes.append(
-        f"capabilities enumerated: {len(capabilities)}; accounted for by a matrix row: {evaluated}; "
-        f"undecided dispositions: {len(failures)}"
-    )
+    notes.append(f"rows examined: {len(rows)}; decided: {sum(tally.values())}; empty: {empty}")
     for value in sorted(tally):
         notes.append(f"{value}: {tally[value]}")
-    if unaccounted:
-        notes.append(
-            "not evaluable -- no matrix row cites these owner files, AC2 direction A asserts on that: "
-            + ", ".join(sorted(set(unaccounted)))
-        )
-    return Result("AC1", "Disposition decided for every accounted capability", not failures, failures, notes)
+    return Result(
+        "AC1",
+        "Disposition decided for every lost capability",
+        not failures,
+        failures,
+        notes,
+    )
 
 
-def check_capability_correspondence(sections: list[LedgerSection], rows: list[Row]) -> Result:
-    """Assert the ledger and the matrix agree on capabilities, both ways (AC2).
+def check_capability_correspondence(sections: list[LedgerSection], rows: list[DispositionRow]) -> Result:
+    """Assert both documents name the same capabilities, both ways (AC2).
 
-    Three conditions fail this assertion: a capability name repeated inside the
-    ledger, a ledger capability no matrix row accounts for (direction A), and a
-    matrix row grounded in a file inside the ledger's declared scope that no
-    ledger entry owns (direction B). None of them is a count comparison.
+    Four conditions fail this assertion: a capability name repeated inside
+    ``capability_loss.md``, a name repeated inside the disposition ledger, a lost
+    capability with no disposition row (direction A), and a disposition row for a
+    capability ``capability_loss.md`` does not name (direction B). None of them is
+    a count comparison.
 
     Args:
-        sections: Parsed ledger sections.
-        rows: Parsed matrix rows.
+        sections: Parsed capability_loss.md sections.
+        rows: Parsed disposition rows.
 
     Returns:
         Result listing every discrepancy found in either direction.
@@ -374,50 +475,56 @@ def check_capability_correspondence(sections: list[LedgerSection], rows: list[Ro
     failures: list[str] = []
     notes: list[str] = []
     capabilities = [entry for section in sections for entry in section.entries]
-    roots = [section.root for section in sections]
-    owned = {entry.owner_path for entry in capabilities}
-    names = [entry.name for entry in capabilities]
-
-    scoped: dict[str, list[Row]] = {}
-    for row in rows:
-        for path in named_paths(row.evidence):
-            if path.endswith(".py") and in_ledger_scope(path, roots):
-                scoped.setdefault(path, []).append(row)
+    lost_names = [entry.name for entry in capabilities]
+    ledger_names = [row.capability for row in rows]
+    lost_set = set(lost_names)
+    ledger_set = set(ledger_names)
+    by_name = {entry.name: entry for entry in capabilities}
+    row_by_name = {row.capability: row for row in rows}
 
     notes.append(
-        f"ledger roots: {', '.join(roots)}; capabilities: {len(capabilities)}; "
-        f"distinct owner files: {len(owned)}; matrix rows citing an in-scope file: {len(scoped)}"
+        f"capability_loss.md: {len(lost_set)} distinct of {len(lost_names)} rows; "
+        f"disposition ledger: {len(ledger_set)} distinct of {len(ledger_names)} rows"
     )
     notes.append("both directions of the symmetric difference are asserted; no assertion here is a count")
 
-    for name in sorted({n for n in names if names.count(n) > 1}):
-        failures.append(f"the ledger names the capability {name!r} more than once")
-    for capability in capabilities:
-        if not accounting_rows(capability, rows):
-            failures.append(
-                f"direction A -- ledger line {capability.line_no} names {capability.owner_path} "
-                f"but no matrix row cites it, so no disposition accounts for it (NFR-4 disappearance)"
-            )
-    for path in sorted(set(scoped) - owned):
-        carriers = ", ".join(sorted({row.policy for row in scoped[path]}))
+    for name in sorted({n for n in lost_names if lost_names.count(n) > 1}):
+        failures.append(f"capability_loss.md names the capability {name[:60]!r} more than once")
+    for name in sorted({n for n in ledger_names if ledger_names.count(n) > 1}):
+        failures.append(f"the disposition ledger names the capability {name[:60]!r} more than once")
+    for name in sorted(lost_set - ledger_set):
+        entry = by_name[name]
         failures.append(
-            f"direction B -- matrix row(s) {carriers} rest on {path}, which is inside the ledger's "
-            f"declared scope, but no ledger entry names it as an owner file"
+            f"direction A -- capability_loss.md line {entry.line_no} names {name[:60]!r} "
+            f"({entry.owner_path}) but the disposition ledger has no row for it (NFR-4 disappearance)"
         )
-    return Result("AC2", "Ledger capabilities and matrix rows correspond", not failures, failures, notes)
+    for name in sorted(ledger_set - lost_set):
+        row = row_by_name[name]
+        failures.append(
+            f"direction B -- disposition ledger line {row.line_no} carries a row for {name[:60]!r}, "
+            f"which capability_loss.md does not name"
+        )
+    return Result(
+        "AC2",
+        "Lost capabilities and disposition rows correspond",
+        not failures,
+        failures,
+        notes,
+    )
 
 
 def check_cited_count(sections: list[LedgerSection]) -> Result:
     """Assert the cited capability count matches the enumeration (SUP1).
 
-    Supporting check, not a V2-008 acceptance criterion. It compares the count
-    the requirement sources cite against the count enumerated from the ledger,
-    so a failure here is evidence the citation is wrong rather than evidence the
-    matrix is. It is a count comparison and therefore blind to two simultaneous
-    name errors; AC2 is what covers that case.
+    Supporting check, NOT a V2-008 acceptance criterion. It compares the count
+    the requirement sources cite against the count enumerated from
+    ``capability_loss.md``, so a failure here is evidence the citation is wrong
+    rather than evidence either ledger is. It is a count comparison and
+    therefore blind to two simultaneous name errors; AC2 is what covers that
+    case.
 
     Args:
-        sections: Parsed ledger sections.
+        sections: Parsed capability_loss.md sections.
 
     Returns:
         Result comparing the cited count against the enumeration.
@@ -428,51 +535,100 @@ def check_cited_count(sections: list[LedgerSection]) -> Result:
     for section in sections:
         notes.append(f"section at line {section.heading_line} ({section.root}): {len(section.entries)} capabilities")
         total += len(section.entries)
-    notes.append(f"cited by prd-v2.md NFR-4 and SRS.md NFR-10: {CITED_CAPABILITY_COUNT}; enumerated here: {total}")
-    if total != CITED_CAPABILITY_COUNT:
+    cited = read_cited_count()
+    if cited is None:
+        notes.append(f"enumerated here: {total}")
         failures.append(
-            f"the requirement sources cite {CITED_CAPABILITY_COUNT} capabilities but the ledger "
-            f"enumerates {total}; the citation is what disagrees with the artifact"
+            f"could not read the cited count from {PRD_PATH.name}; expected a row matching "
+            f"{CITED_COUNT_PATTERN.pattern!r}. Not defaulting to a constant: a gate that "
+            f"substitutes a value when its input is missing reports on a document it never read"
         )
-    return Result("SUP1", "Cited capability count matches the ledger enumeration", not failures, failures, notes)
+    else:
+        notes.append(f"cited by prd-v2.md NFR-4, read at run time: {cited}; enumerated here: {total}")
+        if total != cited:
+            failures.append(
+                f"the requirement source cites {cited} capabilities but capability_loss.md "
+                f"enumerates {total}; the citation is what disagrees with the artifact"
+            )
+    return Result(
+        "SUP1",
+        "Cited capability count matches the enumeration",
+        not failures,
+        failures,
+        notes,
+    )
+
+
+def check_vocabulary(rows: list[DispositionRow]) -> Result:
+    """Assert every decided disposition is in the fixed vocabulary (SUP2).
+
+    Supporting check, NOT a V2-008 acceptance criterion. AC1 forbids only the
+    single literal ``disappeared``; without this check ``TBD``, ``deferred`` or
+    ``pending`` would satisfy AC1 while encoding the same absence of a decision.
+    Empty cells are AC1's business and are skipped here, so the two assertions
+    fail independently.
+
+    Args:
+        rows: Parsed disposition rows.
+
+    Returns:
+        Result listing every non-empty disposition outside the vocabulary.
+    """
+    failures = [
+        f"line {row.line_no} (row {row.index}): Disposition {row.disposition!r} is outside the fixed vocabulary"
+        for row in rows
+        if row.disposition and row.disposition not in DISPOSITION_VOCABULARY
+    ]
+    notes = [
+        "vocabulary: " + " | ".join(DISPOSITION_VOCABULARY),
+        "empty cells are skipped here; AC1 owns them so the two assertions fail independently",
+    ]
+    return Result(
+        "SUP2",
+        "Decided dispositions are in the fixed vocabulary",
+        not failures,
+        failures,
+        notes,
+    )
 
 
 def main() -> int:
-    """Run all three assertions and print a report.
+    """Run all four assertions and print a report.
 
     Returns:
         0 when every assertion passes, 1 otherwise.
     """
-    print(f"audit file : {AUDIT_PATH}")
-    print(f"ledger file: {LEDGER_PATH}")
-    if not AUDIT_PATH.is_file():
-        print(f"FATAL: audit file not found: {AUDIT_PATH}")
+    print(f"loss file  : {LOSS_PATH}")
+    print(f"ledger file: {DISPOSITION_PATH}")
+    if not LOSS_PATH.is_file():
+        print(f"FATAL: loss file not found: {LOSS_PATH}")
         return 1
-    if not LEDGER_PATH.is_file():
-        print(f"FATAL: ledger file not found: {LEDGER_PATH}")
-        return 1
-
-    try:
-        rows = parse_matrix(AUDIT_PATH.read_text(encoding="utf-8"))
-    except MatrixError as exc:
-        print(f"FATAL: {exc}")
+    if not DISPOSITION_PATH.is_file():
+        print(f"FATAL: ledger file not found: {DISPOSITION_PATH}")
         return 1
 
     try:
-        sections = parse_ledger(LEDGER_PATH.read_text(encoding="utf-8"))
+        sections = parse_loss_ledger(LOSS_PATH.read_text(encoding="utf-8"))
     except LedgerError as exc:
         print(f"FATAL: {exc}")
         return 1
 
+    try:
+        rows = parse_dispositions(DISPOSITION_PATH.read_text(encoding="utf-8"))
+    except DispositionError as exc:
+        print(f"FATAL: {exc}")
+        return 1
+
     capabilities = [entry for section in sections for entry in section.entries]
-    print(f"matrix rows: {len(rows)}")
-    print(f"ledger sections: {len(sections)}; capabilities enumerated: {len(capabilities)}")
+    print(f"loss sections: {len(sections)}; capabilities enumerated: {len(capabilities)}")
+    print(f"disposition rows: {len(rows)}")
     print("")
 
     results = [
-        check_dispositions_decided(capabilities, rows),
+        check_dispositions_decided(rows),
         check_capability_correspondence(sections, rows),
         check_cited_count(sections),
+        check_vocabulary(rows),
     ]
 
     for result in results:
@@ -488,7 +644,7 @@ def main() -> int:
     if failed:
         print("RESULT: FAIL (" + ", ".join(failed) + ")")
         return 1
-    print("RESULT: PASS (AC1, AC2, SUP1)")
+    print("RESULT: PASS (AC1, AC2, SUP1, SUP2)")
     return 0
 
 
