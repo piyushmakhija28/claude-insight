@@ -25,6 +25,52 @@ agents are not registered subagent types; a run spawns a generic subagent with
 the persona block lifted from that path, and a selection that did not record
 the path would not be executable.
 
+**A call ends in one of four named states** (SRS FR-24), reported by
+:attr:`SelectionResult.outcome` so that a caller switches on one field rather
+than pattern-matching a reason string:
+
+``selected``
+    Ranked matches were produced and are safe to dispatch.
+``low_confidence``
+    Candidates were found and every one scored below the floor. They are
+    carried on :attr:`Degraded.near_misses` with their evidence intact, so the
+    caller can widen the search or escalate to a human with something to show,
+    but they are deliberately absent from :attr:`SelectionResult.matches` -- a
+    caller that ignores the outcome cannot dispatch one by accident.
+``no_match``
+    The corpus offered nothing: no scorable query terms, no lexical signal, or
+    no graph edge naming a catalogue agent. There are no near misses because
+    there were no candidates.
+``unavailable``
+    Every candidate domain graph failed to parse. Nothing was looked at, which
+    is a retryable infrastructure failure rather than a verdict on the library.
+
+The distinction between the last three is the point of the requirement.
+Collapsing them into one degraded path discards exactly the information a
+caller needs to choose between retrying, widening and escalating.
+
+**On the floor's value.** It was measured, and the measurement is the reason it
+was left where it is. Top-1 confidence was taken over all 37 sprint issue
+titles and over a set of tasks the library plainly cannot serve. The real
+titles span 0.685 to 0.863; the unservable tasks that produce any candidate at
+all reach 0.714. The populations overlap, so no absolute floor separates them.
+Four alternative discriminators -- query-term coverage, weight-normalised
+coverage, top-to-median margin, and pool spread -- were measured on the same
+two populations and every one of them overlapped more, not less. Most
+unservable tasks are caught earlier and more cleanly, by having no lexical
+overlap with the corpus at all, which is the ``no_match`` path rather than this
+one.
+
+A floor placed just under the real minimum would catch most of the remainder,
+but it would sit 0.035 above nothing at all, measured on one sprint of one
+project, and any vocabulary drift would start degrading real work. The default
+is therefore unchanged and deliberately permissive, the floor actually applied
+is recorded on every degraded result so a rejection can be re-examined, and the
+value is a per-call parameter because the evidence does not pick one number for
+every deployment. What this state guarantees is not that a bad match is always
+caught -- lexical retrieval cannot promise that -- but that when one is caught
+it is never returned as a silent pick.
+
 Windows-safe: ASCII only.
 """
 
@@ -41,6 +87,19 @@ REASON_NO_DOMAIN_SIGNAL = "no_domain_lexical_signal"
 REASON_KG_UNREADABLE = "kg_unreadable_for_every_candidate_domain"
 REASON_NO_KG_EVIDENCE = "no_agent_with_kg_evidence"
 REASON_BELOW_THRESHOLD = "all_candidates_below_confidence_threshold"
+
+OUTCOME_SELECTED = "selected"
+OUTCOME_LOW_CONFIDENCE = "low_confidence"
+OUTCOME_NO_MATCH = "no_match"
+OUTCOME_UNAVAILABLE = "unavailable"
+
+REASON_OUTCOMES: Dict[str, str] = {
+    REASON_NO_QUERY_TERMS: OUTCOME_NO_MATCH,
+    REASON_NO_DOMAIN_SIGNAL: OUTCOME_NO_MATCH,
+    REASON_NO_KG_EVIDENCE: OUTCOME_NO_MATCH,
+    REASON_KG_UNREADABLE: OUTCOME_UNAVAILABLE,
+    REASON_BELOW_THRESHOLD: OUTCOME_LOW_CONFIDENCE,
+}
 
 KIND_AGENT = "agent"
 KIND_SKILL = "skill"
@@ -64,12 +123,52 @@ HIGH_RISK_CONFIDENCE_FLOOR = 0.55
 RISK_HIGH = "high"
 
 
+class UnmappedDegradedReason(KeyError):
+    """Raised when a degraded reason has no declared outcome state.
+
+    Every reason must name the state it belongs to. Defaulting an unrecognised
+    reason to one of the states would silently mislabel it, which is the same
+    class of failure -- an outcome the caller cannot trust -- that this module's
+    state separation exists to remove.
+    """
+
+
+def outcome_for(reason: str) -> str:
+    """Return the caller-facing outcome state that ``reason`` belongs to.
+
+    Args:
+        reason: One of the module-level ``REASON_*`` constants.
+
+    Returns:
+        The matching ``OUTCOME_*`` constant.
+
+    Raises:
+        UnmappedDegradedReason: When ``reason`` is not in
+            :data:`REASON_OUTCOMES`.
+    """
+    try:
+        return REASON_OUTCOMES[reason]
+    except KeyError:
+        raise UnmappedDegradedReason(
+            "degraded reason '{}' declares no outcome state; add it to REASON_OUTCOMES".format(reason)
+        ) from None
+
+
 class ComplexityOutOfRange(ValueError):
     """Raised when the caller passes a complexity outside the 1-25 band.
 
     ``combined_complexity_score`` is on a 1-25 scale. Passing a 1-10 score is a
     silent mis-scaling that would bias every threshold, so it is rejected
     rather than clamped.
+    """
+
+
+class ConfidenceFloorOutOfRange(ValueError):
+    """Raised when the caller passes a confidence floor outside 0-1.
+
+    Confidence is an absolute score in ``[0, 1)``. A floor expressed as a
+    percentage would silently reject every candidate, producing a plausible
+    low-confidence outcome from a unit error rather than from the evidence.
     """
 
 
@@ -140,24 +239,52 @@ class Match:
 
 @dataclass(frozen=True)
 class Degraded:
-    """The explicit no-match outcome.
+    """The explicit fallback outcome: why nothing was selected, and what was near.
+
+    ``outcome`` is the field a caller switches on. ``reason`` narrows it to the
+    specific condition, and the two are kept consistent by :func:`outcome_for`
+    rather than by convention.
+
+    ``near_misses`` is what separates a low-confidence outcome from a no-match
+    outcome in substance rather than only in label. A low-confidence result had
+    candidates and carries them, each with the evidence that earned it, so the
+    caller can widen the search or hand a human something concrete. A no-match
+    result had none to carry. Reading this field is therefore an independent
+    check on the state, which is why the accompanying suite asserts both.
 
     Attributes:
-        reason: One of the module-level reason constants.
+        reason: One of the module-level ``REASON_*`` constants.
         detail: Human-readable elaboration naming what was tried.
         considered_domains: Domains that were read before giving up.
+        outcome: One of the module-level ``OUTCOME_*`` constants.
+        near_misses: Candidates that were found and rejected, best first.
+            Populated only for the low-confidence outcome, and deliberately not
+            surfaced as matches -- a caller that ignores ``outcome`` must not be
+            able to dispatch one of these by accident.
+        best_confidence: Confidence of the best rejected candidate, or ``0.0``
+            when there were no candidates at all.
+        applied_floor: The floor that was in force for this call, recorded so
+            that a rejection can be re-examined without re-deriving it.
     """
 
     reason: str
     detail: str
     considered_domains: Tuple[str, ...] = ()
+    outcome: str = OUTCOME_NO_MATCH
+    near_misses: Tuple[Match, ...] = ()
+    best_confidence: float = 0.0
+    applied_floor: float = 0.0
 
     def to_dict(self) -> Dict[str, Any]:
         """Return the degraded outcome as a serialisable mapping."""
         return {
+            "outcome": self.outcome,
             "reason": self.reason,
             "detail": self.detail,
             "considered_domains": list(self.considered_domains),
+            "near_misses": [match.to_dict() for match in self.near_misses],
+            "best_confidence": round(self.best_confidence, 4),
+            "applied_floor": round(self.applied_floor, 4),
         }
 
 
@@ -169,9 +296,13 @@ class SelectionResult:
     ``matches`` with no ``degraded`` is not a state this module can produce --
     an unexplained empty result is the failure SRS FR-24 exists to forbid.
 
+    :attr:`outcome` names which of the four states the call ended in.
+
     Attributes:
         task: The task description that was scored.
-        matches: Ranked matches, best first.
+        matches: Ranked matches, best first. Empty unless the outcome is
+            ``selected``; rejected candidates live on ``degraded.near_misses``
+            instead, so they cannot be mistaken for a pick.
         degraded: Populated only when nothing was selected.
         considered_domains: Domains ranked in and read.
         parse_errors: Typed adapter failures encountered while reading them.
@@ -187,10 +318,21 @@ class SelectionResult:
     risk: RiskSignal
     library_version: str
 
+    @property
+    def outcome(self) -> str:
+        """Return the state this call ended in, as an ``OUTCOME_*`` constant.
+
+        This is the single field a caller should branch on. A selection that
+        produced matches is ``selected``; anything else reports the degraded
+        outcome's own state, so "nothing came back" is never ambiguous.
+        """
+        return self.degraded.outcome if self.degraded else OUTCOME_SELECTED
+
     def to_dict(self) -> Dict[str, Any]:
         """Return the whole result as a serialisable mapping."""
         return {
             "task": self.task,
+            "outcome": self.outcome,
             "matches": [match.to_dict() for match in self.matches],
             "degraded": self.degraded.to_dict() if self.degraded else None,
             "considered_domains": list(self.considered_domains),
@@ -388,6 +530,7 @@ def select_agents(
     limit: int = DEFAULT_LIMIT,
     domain_fanout: int = DEFAULT_DOMAIN_FANOUT,
     accept_partial_coverage: bool = False,
+    confidence_floor: Optional[float] = None,
 ) -> SelectionResult:
     """Select agents for ``task`` by querying the library knowledge graph.
 
@@ -406,6 +549,11 @@ def select_agents(
         domain_fanout: Number of top-ranked domains to read.
         accept_partial_coverage: Explicit acceptance of a truncated risk
             signal, recorded by the caller rather than inferred here.
+        confidence_floor: Overrides the risk-derived floor below which a
+            candidate is reported as a near miss instead of a match. The
+            default is deployment-independent and conservative; a caller that
+            has measured its own tolerance can raise it, and the floor actually
+            applied is recorded on the result either way.
 
     Returns:
         A :class:`SelectionResult` carrying either ranked matches or an
@@ -413,6 +561,7 @@ def select_agents(
 
     Raises:
         ComplexityOutOfRange: When ``complexity`` is outside 1-25.
+        ConfidenceFloorOutOfRange: When ``confidence_floor`` is outside 0-1.
         TruncatedRiskSignal: When ``risk`` is not coverage-complete and
             ``accept_partial_coverage`` is false.
     """
@@ -422,18 +571,46 @@ def select_agents(
                 complexity, COMPLEXITY_MIN, COMPLEXITY_MAX
             )
         )
+    if confidence_floor is not None and not 0.0 <= confidence_floor <= 1.0:
+        raise ConfidenceFloorOutOfRange(
+            "confidence_floor {} is outside 0.0-1.0; confidence is an absolute score, not a percentage".format(
+                confidence_floor
+            )
+        )
     risk.require_coverage(accept_partial_coverage)
 
     lexicon = lexicon or build_lexicon(catalogue)
     query_terms = tokenize(task)
 
-    def degraded(reason: str, detail: str, domains: Sequence[str] = ()) -> SelectionResult:
+    def degraded(
+        reason: str,
+        detail: str,
+        domains: Sequence[str] = (),
+        *,
+        errors: Sequence[ParseError] = (),
+        near_misses: Sequence[Match] = (),
+        best_confidence: float = 0.0,
+        applied_floor: float = 0.0,
+    ) -> SelectionResult:
+        """Build the one degraded result shape, with its outcome state derived.
+
+        Every degraded exit routes through here so that the outcome can never
+        drift from the reason: it is looked up, not restated at each site.
+        """
         return SelectionResult(
             task=task,
             matches=(),
-            degraded=Degraded(reason, detail, tuple(domains)),
+            degraded=Degraded(
+                reason=reason,
+                detail=detail,
+                considered_domains=tuple(domains),
+                outcome=outcome_for(reason),
+                near_misses=tuple(near_misses),
+                best_confidence=best_confidence,
+                applied_floor=applied_floor,
+            ),
             considered_domains=tuple(domains),
-            parse_errors=(),
+            parse_errors=tuple(errors),
             risk=risk,
             library_version=catalogue.library_version,
         )
@@ -469,25 +646,21 @@ def select_agents(
             parsed_domains.append(result)
 
     if not parsed_domains:
-        return SelectionResult(
-            task=task,
-            matches=(),
-            degraded=Degraded(
-                REASON_KG_UNREADABLE,
-                "every one of {} candidate domains failed to parse: {}".format(
-                    len(parse_errors),
-                    ", ".join("{}={}".format(error.domain, error.failure_kind) for error in parse_errors),
-                ),
-                considered,
+        return degraded(
+            REASON_KG_UNREADABLE,
+            "every one of {} candidate domains failed to parse: {}".format(
+                len(parse_errors),
+                ", ".join("{}={}".format(error.domain, error.failure_kind) for error in parse_errors),
             ),
-            considered_domains=considered,
-            parse_errors=tuple(parse_errors),
-            risk=risk,
-            library_version=catalogue.library_version,
+            considered,
+            errors=parse_errors,
         )
 
     scale = _corpus_scale(lexicon)
-    floor = HIGH_RISK_CONFIDENCE_FLOOR if risk.risk_level == RISK_HIGH else BASE_CONFIDENCE_FLOOR
+    if confidence_floor is not None:
+        floor = confidence_floor
+    else:
+        floor = HIGH_RISK_CONFIDENCE_FLOOR if risk.risk_level == RISK_HIGH else BASE_CONFIDENCE_FLOOR
 
     best: Dict[str, Tuple[float, Match]] = {}
     candidate_count = 0
@@ -513,44 +686,33 @@ def select_agents(
                 best[agent_name] = (raw, match)
 
     if not best:
-        return SelectionResult(
-            task=task,
-            matches=(),
-            degraded=Degraded(
-                REASON_NO_KG_EVIDENCE,
-                "{} domain graphs parsed but named no catalogue agent".format(len(parsed_domains)),
-                considered,
-            ),
-            considered_domains=considered,
-            parse_errors=tuple(parse_errors),
-            risk=risk,
-            library_version=catalogue.library_version,
+        return degraded(
+            REASON_NO_KG_EVIDENCE,
+            "{} domain graphs parsed but named no catalogue agent".format(len(parsed_domains)),
+            considered,
+            errors=parse_errors,
         )
 
     ranked = sorted(best.values(), key=lambda pair: (-pair[0], pair[1].agent))
     matches = tuple(match for _, match in ranked if match.confidence >= floor)[:limit]
 
     if not matches:
-        top = ranked[0][1]
-        return SelectionResult(
-            task=task,
-            matches=(),
-            degraded=Degraded(
-                REASON_BELOW_THRESHOLD,
-                "best of {} candidates scored {:.3f}, below the {:.2f} floor for risk_level={}".format(
-                    candidate_count, top.confidence, floor, risk.risk_level
-                ),
-                considered,
+        near = tuple(match for _, match in ranked)[:limit]
+        _require_edge_paths(near)
+        return degraded(
+            REASON_BELOW_THRESHOLD,
+            "best of {} candidates scored {:.3f}, below the {:.2f} floor for risk_level={}; "
+            "{} near miss(es) carried for widening or escalation, none dispatchable".format(
+                candidate_count, near[0].confidence, floor, risk.risk_level, len(near)
             ),
-            considered_domains=considered,
-            parse_errors=tuple(parse_errors),
-            risk=risk,
-            library_version=catalogue.library_version,
+            considered,
+            errors=parse_errors,
+            near_misses=near,
+            best_confidence=near[0].confidence,
+            applied_floor=floor,
         )
 
-    for match in matches:
-        if not match.edge_path:
-            raise AssertionError("invariant breach: match for '{}' carries an empty edge path".format(match.agent))
+    _require_edge_paths(matches)
 
     return SelectionResult(
         task=task,
@@ -561,6 +723,23 @@ def select_agents(
         risk=risk,
         library_version=catalogue.library_version,
     )
+
+
+def _require_edge_paths(candidates: Sequence[Match]) -> None:
+    """Enforce the non-empty edge path invariant on anything leaving the module.
+
+    Applied to near misses as well as to matches. A rejected candidate is still
+    handed to a caller as the evidence behind an escalation, so one that cited
+    no edge would be exactly as unusable there as it would be as a match.
+
+    Raises:
+        AssertionError: When any candidate carries an empty edge path.
+    """
+    for candidate in candidates:
+        if not candidate.edge_path:
+            raise AssertionError(
+                "invariant breach: candidate for '{}' carries an empty edge path".format(candidate.agent)
+            )
 
 
 def _score_candidate(

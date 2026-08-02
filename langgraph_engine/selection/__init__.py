@@ -27,24 +27,63 @@ Module roles:
     keeps a truncated builder off the selection path.
 ``selector``
     ``select_agents`` -- ranked matches, each carrying the five SRS FR-23
-    explainability fields and a non-empty knowledge-graph edge path.
+    explainability fields and a non-empty knowledge-graph edge path, or one of
+    the three named fallback states SRS FR-24 requires. ``no_match``,
+    ``low_confidence`` and ``unavailable`` stay distinct, because a caller
+    deciding between widening, escalating and retrying needs to know which one
+    it is.
+``explainability``
+    ``emit_selection`` -- the SRS FR-23 audit record. Copies the five fields
+    out of an outcome and refuses, rather than padding, when one is absent.
+    Reads the outcome structurally, so it imports no selector type and carries
+    through outcome states it has never seen.
 
 Windows-safe: ASCII only.
 """
 
 from .catalogue import AgentRecord, CatalogueUnavailable, LibraryCatalogue, SkillRecord, load_catalogue
+from .explainability import (
+    FR23_FIELDS,
+    IncompleteSelectionRecord,
+    SelectionShapeChanged,
+    emit_selection,
+    explain_match,
+    explain_selection,
+)
 from .ids import candidate_refs, normalise_ref
 from .kg_adapter import DomainKgAdapter, KgEdge, Parsed, ParseError
 from .lexicon import Lexicon
 from .risk import RiskSignal, TruncatedRiskSignal, probe_builder_coverage
-from .selector import Degraded, EdgeStep, Match, SelectionResult, select_agents
+from .selector import (
+    OUTCOME_LOW_CONFIDENCE,
+    OUTCOME_NO_MATCH,
+    OUTCOME_SELECTED,
+    OUTCOME_UNAVAILABLE,
+    REASON_OUTCOMES,
+    ConfidenceFloorOutOfRange,
+    Degraded,
+    EdgeStep,
+    Match,
+    SelectionResult,
+    UnmappedDegradedReason,
+    outcome_for,
+    select_agents,
+)
 
 __all__ = [
+    "OUTCOME_LOW_CONFIDENCE",
+    "OUTCOME_NO_MATCH",
+    "OUTCOME_SELECTED",
+    "OUTCOME_UNAVAILABLE",
+    "REASON_OUTCOMES",
     "AgentRecord",
     "CatalogueUnavailable",
+    "ConfidenceFloorOutOfRange",
     "Degraded",
     "DomainKgAdapter",
     "EdgeStep",
+    "FR23_FIELDS",
+    "IncompleteSelectionRecord",
     "KgEdge",
     "LibraryCatalogue",
     "Lexicon",
@@ -53,11 +92,17 @@ __all__ = [
     "ParseError",
     "RiskSignal",
     "SelectionResult",
+    "SelectionShapeChanged",
     "SkillRecord",
     "TruncatedRiskSignal",
+    "UnmappedDegradedReason",
     "candidate_refs",
+    "emit_selection",
+    "explain_match",
+    "explain_selection",
     "load_catalogue",
     "normalise_ref",
+    "outcome_for",
     "probe_builder_coverage",
     "select_agents",
 ]
