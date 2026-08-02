@@ -65,8 +65,8 @@ SPARE_CAPABILITIES = ("Warm-daemon fast path", "PolicyRegistry")
 OPEN_ITEMS_HEADING = "## 2. What is still open"
 
 BASELINE_CAPABILITIES = 27
-BASELINE_EMPTY = 8
-BASELINE_DECIDED = 19
+BASELINE_EMPTY = 0
+BASELINE_DECIDED = 27
 BASELINE_CITED = 27
 
 
@@ -267,25 +267,30 @@ def add_table_to_not_lost(path: Path) -> None:
 
 
 def test_gate_reports_the_current_tree_exactly(sandbox: Path) -> None:
-    """The unmutated tree yields AC1 fail, AC2 pass, SUP1 fail, SUP2 pass.
+    """The unmutated tree yields all four assertions passing.
 
-    This is the finding V2-008 surfaces, not a broken check. Pinning the exact
-    shape means a later edit that decides one of the eight blank dispositions,
-    or that reconciles the cited 25 against the enumerated 27, has to update this
-    test and be seen doing it.
+    Pinning the exact shape means any later edit that leaves a disposition blank,
+    or that puts the cited count back out of step with the enumeration, has to
+    update this test and be seen doing it.
+
+    This pin previously recorded AC1 failing on eight undecided rows, which was
+    the honest state while those decisions were open. They were ruled on
+    2026-08-02 and the pin was rebased. A baseline pin is a record of where the
+    artifact stands, so it is expected to change when the artifact does -- what
+    matters is that changing it is a visible act rather than a silent one.
     """
     status, report = run_gate(sandbox)
-    assert status == 1, report
+    assert status == 0, report
     assert f"capabilities enumerated: {BASELINE_CAPABILITIES}" in report
     assert f"disposition rows: {BASELINE_CAPABILITIES}" in report
-    assert "[FAIL] AC1" in report
+    assert "[PASS] AC1" in report
     assert "[PASS] AC2" in report
     assert "[PASS] SUP1" in report
     assert "[PASS] SUP2" in report
     assert f"decided: {BASELINE_DECIDED}; empty: {BASELINE_EMPTY}" in report
     assert report.count("Disposition cell is empty") == BASELINE_EMPTY
     assert f"read at run time: {BASELINE_CITED}; enumerated here: {BASELINE_CAPABILITIES}" in report
-    assert "RESULT: FAIL (AC1)" in report
+    assert "RESULT: PASS (AC1, AC2, SUP1, SUP2)" in report
 
 
 def test_ac1_fails_when_a_decided_disposition_is_emptied(sandbox: Path) -> None:
@@ -322,8 +327,8 @@ def test_ac1_ignores_an_empty_cell_in_another_table_of_the_same_file(
     """
     add_empty_open_items_row(sandbox / LEDGER_REL)
     status, report = run_gate(sandbox)
-    assert status == 1, report
-    assert "[FAIL] AC1" in report
+    assert status == 0, report
+    assert "[PASS] AC1" in report
     assert report.count("Disposition cell is empty") == BASELINE_EMPTY
     assert f"decided: {BASELINE_DECIDED}; empty: {BASELINE_EMPTY}" in report
 
@@ -352,11 +357,18 @@ def test_ac1_ignores_an_out_of_vocabulary_token_which_sup2_catches(
 def test_sup2_ignores_the_empty_cells_ac1_owns(sandbox: Path) -> None:
     """SPECIFICITY CONTROL: SUP2 skips empty cells so the two fail independently.
 
-    Eight dispositions are blank on the unmutated tree. A SUP2 that treated an
-    empty string as an out-of-vocabulary value would fail on all eight, making it
-    impossible to tell an undecided row from a mis-spelled one.
+    A SUP2 that treated an empty string as an out-of-vocabulary value would fail
+    on every undecided row, making it impossible to tell an undecided row from a
+    mis-spelled one.
+
+    The blank is created here rather than relied upon. Every disposition is now
+    decided, and an earlier version of this test asserted against the eight that
+    happened to be blank at the time -- so it broke the moment they were filled,
+    having pinned a transient state instead of the property it was checking.
     """
+    rewrite_ledger_cell(sandbox / LEDGER_REL, DECIDED_ROW, DISPOSITION_COLUMN, "")
     status, report = run_gate(sandbox)
+    assert status == 1, report
     assert "[FAIL] AC1" in report
     assert "[PASS] SUP2" in report
     assert "is outside the fixed vocabulary" not in report
@@ -404,13 +416,13 @@ def test_ac2_ignores_a_changed_disposition_value(sandbox: Path) -> None:
     the correspondence check into an obstacle to the very edits this ledger
     exists to receive.
     """
-    rewrite_ledger_cell(sandbox / LEDGER_REL, UNDECIDED_ROW, DISPOSITION_COLUMN, "demote-to-advisory")
+    rewrite_ledger_cell(sandbox / LEDGER_REL, DECIDED_ROW, DISPOSITION_COLUMN, "delete")
     status, report = run_gate(sandbox)
-    assert status == 1, report
+    assert status == 0, report
     assert "[PASS] AC2" in report
     assert "direction A --" not in report
     assert "direction B --" not in report
-    assert f"decided: {BASELINE_DECIDED + 1}; empty: {BASELINE_EMPTY - 1}" in report
+    assert f"decided: {BASELINE_DECIDED}; empty: {BASELINE_EMPTY}" in report
 
 
 def test_sup1_passes_while_ac2_still_fails_when_two_names_are_dropped(
