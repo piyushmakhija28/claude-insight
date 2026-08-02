@@ -53,18 +53,18 @@ project's most-caught defect class (corrections #9-13).
 
 **Post-plugin plan vocabulary** is V2-005's set, spelled exactly as V2-005 spells it:
 `keep-as-is` / `port-to-plugin` / `port-to-MCP` / `demote-to-advisory` / `delete`. A value
-outside that set fails V2-005's review, so no other token appears in that column. **13 cells
-are deliberately empty** -- see section 1.2 for why that is the correct outcome rather than a
-gap to be filled.
+outside that set fails V2-005's review, so no other token appears in that column. **4 cells
+remain empty** -- see section 1.2 for why those four, and only those four, are undecidable
+from evidence on disk rather than a gap that could be closed by reaching.
 
 Sorted alphabetically by policy filename, case-insensitive.
 
 | # | Policy file | Status | Evidence | Post-plugin plan | Basis | Verification |
 |---|---|---|---|---|---|---|
-| 1 | `anti-hallucination-enforcement.md` | CONTRADICTED | `langgraph_engine/sdlc_pipeline/architecture/00-prompt-generation/anti_hallucination_enforcement.py:38-133`; zero importers repo-wide |  | Broken independently of de-hooking; the fix/delete/demote choice is a product decision no source makes | MEASURED |
-| 2 | `architecture-script-mapping-policy.md` | CONTRADICTED | NONE as runtime code. `docs/policies/architecture-script-mapping-policy.md` is itself the only artifact; a reference document, not code |  | Broken independently of de-hooking; the fix/delete/demote choice is a product decision no source makes | CITED |
+| 1 | `anti-hallucination-enforcement.md` | CONTRADICTED | `langgraph_engine/sdlc_pipeline/architecture/00-prompt-generation/anti_hallucination_enforcement.py:38-133`; zero importers repo-wide |  | OPEN. The module exists on disk, so wiring it up is as available as deleting it; `as-built-prd.md` SS 4.2 declined to map it to any FR because the mapping would be manufactured. Needs an owner ruling on whether v2.0.0 wants a prompt-quality gate at all | MEASURED |
+| 2 | `architecture-script-mapping-policy.md` | CONTRADICTED | NONE as runtime code. `docs/policies/architecture-script-mapping-policy.md` is itself the only artifact; a reference document, not code |  | OPEN. MEASURED 2026-08-02: 0 of the 3 scripts it maps exist and the one script that does exist under `scripts/architecture/` is unlisted, so correcting the inventory is as available as deleting it. FR-9a keeps that tree alive as site 4 of 17, so nothing schedules its removal. Needs an owner ruling on the tree's fate | CITED |
 | 3 | `automatic-task-breakdown-policy.md` | ENFORCED | `hooks/pre_tool_enforcer/policies/task_breakdown.py:12` `check_task_breakdown_pending`, registered `core.py:455` `_BLOCKING_POLICIES` | demote-to-advisory | OAQ 2 row 6 | CITED |
-| 4 | `callgraph-analysis-policy.md` | CONTRADICTED | `langgraph_engine/parsers/call_graph_builder_legacy.py:64` `MAX_FILES=300`, bound at `:76`, enforced `:107` and `:118`; second cap `parsers/graph_model.py:43` |  | Broken independently of de-hooking; the fix/delete/demote choice is a product decision no source makes | MEASURED |
+| 4 | `callgraph-analysis-policy.md` | CONTRADICTED | `langgraph_engine/parsers/call_graph_builder_legacy.py:64` `MAX_FILES=300`, bound at `:76`, enforced `:107` and `:118`; second cap `parsers/graph_model.py:43` | keep-as-is | `prd-v2.md` FR-9a superseding AC (owner ruling, in v2.0.0 scope) + `hld.md` OAQ 4 / ADR-013 repair both binding caps in `langgraph_engine/parsers/`, pipeline code de-hooking does not touch | MEASURED |
 | 5 | `code-graph-analysis-policy.md` | ENFORCED | `langgraph_engine/sdlc_pipeline/architecture/00-code-graph-analysis/code_graph_analyzer.py:340-637` (`build_graph`, `compute_graph_metrics`) | keep-as-is | judged: no hook coupling; enforcement is pipeline code de-hooking does not touch | CITED |
 | 6 | `coding-standards-enforcement-policy.md` | ENFORCED | `langgraph_engine/standards/selector.py:114` `detect_framework`, `:202` `_detect_java_framework` (reach=True) | keep-as-is | judged: no hook coupling; enforcement is pipeline code de-hooking does not touch | CITED |
 | 7 | `common-failures-prevention.md` | PARTIAL | `hooks/pre_tool_enforcer/policies/failure_kb.py:11` `check_failure_kb_hints`, called non-blocking at `core.py:517-523`; Stop-side script absent | port-to-MCP | OAQ 2 row 7 | CITED |
@@ -75,22 +75,22 @@ Sorted alphabetically by policy filename, case-insensitive.
 | 12 | `documentation-update-policy.md` | PARTIAL | `langgraph_engine/sdlc_pipeline/nodes/closure_docs_summary_wrapper.py:62` `step7_project_documentation_update`, `:153` `step7_docs_update_node` | keep-as-is | judged: no hook coupling; enforcement is pipeline code de-hooking does not touch | CITED |
 | 13 | `encoding-validation-policy.md` | PARTIAL | `langgraph_engine/preflight_guard/nodes.py:150-237` `node_encoding_validation` (reach=True, cc=17) | keep-as-is | judged: no hook coupling; enforcement is pipeline code de-hooking does not touch | CITED |
 | 14 | `error-recovery-policy.md` | PARTIAL | `langgraph_engine/engine_logging/error_logger.py` `ErrorLogger.log_error` (reach=True, cc=3), `log_validation_result` | keep-as-is | judged: no hook coupling; enforcement is pipeline code de-hooking does not touch | CITED |
-| 15 | `EXECUTION-SYSTEM-FIXES-SUMMARY.md` | DOCUMENTED-ONLY | NONE. Point-in-time changelog, not a policy with a runtime mechanism |  | No runtime mechanism to keep, port or delete; retaining it is a product decision no source makes | CITED |
-| 16 | `file-management-policy.md` | DOCUMENTED-ONLY | NONE found |  | No runtime mechanism to keep, port or delete; retaining it is a product decision no source makes | CITED |
+| 15 | `EXECUTION-SYSTEM-FIXES-SUMMARY.md` | DOCUMENTED-ONLY | NONE. Point-in-time changelog, not a policy with a runtime mechanism | delete | `as-built-prd.md` SS 4.2 classifies it a point-in-time changelog, not an ongoing SHALL; ADR-009 scopes `docs/policies/` to the policy corpus the plugin bundles, and git retention makes removal recoverable | CITED |
+| 16 | `file-management-policy.md` | DOCUMENTED-ONLY | NONE found | demote-to-advisory | Its rules are model-judged conduct (temp-file placement, protected paths) with no gate anywhere -- OAQ 2 row 2's stated criterion for the plugin's agent-instruction layer; deleting would drop a live rule under NFR-4 | CITED |
 | 17 | `final-summary-policy.md` | ENFORCED | `langgraph_engine/sdlc_pipeline/nodes/closure_docs_summary_wrapper.py:70` `step8_final_summary_generation`, `:202` `step8_final_summary_node` | keep-as-is | judged: no hook coupling; enforcement is pipeline code de-hooking does not touch | CITED |
 | 18 | `git-auto-commit-policy.md` | CONTRADICTED | `hooks/stop_notifier/core.py:74-96` spawns `scripts/architecture/03-execution-system/09-git-commit/git-auto-commit-policy.py`, which does not exist | delete | OAQ 2 row 10 | MEASURED |
 | 19 | `github-issues-integration-policy.md` | PARTIAL | `langgraph_engine/sdlc_pipeline/github_lifecycle.py` `Level3GitHubWorkflow.step2_create_issue:125` (reach=False), `.step3_create_branch:294` (reach=False) | keep-as-is | judged: no hook coupling; enforcement is pipeline code de-hooking does not touch | CITED |
 | 20 | `hook-system-policy.md` | ENFORCED | `hooks/pre-tool-enforcer.py` shim into `hooks/pre_tool_enforcer/core.py:453-469` `_BLOCKING_POLICIES` | delete | OAQ 2 row 1 | CITED |
 | 21 | `implementation-execution-policy.md` | PARTIAL | `langgraph_engine/sdlc_pipeline/nodes/implementation_and_review_wrapper.py:84` `step4_implementation_note` (reach=True) | demote-to-advisory | OAQ 2 row 2 | CITED |
-| 22 | `intelligent-decision-engine-policy.md` | CONTRADICTED | NONE found. Describes an "OpenRouter consolidation" never built; the systems it unifies were deleted in v1.13 |  | Broken independently of de-hooking; the fix/delete/demote choice is a product decision no source makes | CITED |
-| 23 | `intelligent-model-selection-policy.md` | STALE-TOPOLOGY | NONE found under this description. One of its 5 inputs (plan-mode decision) was deleted in v1.13, so the retranslated question is unanswerable |  | Retranslated question is unanswerable (a v1.13-deleted input); nothing decides its fate | CITED |
-| 24 | `INTELLIGENT-PROMPT-GENERATION-UPGRADE.md` | DOCUMENTED-ONLY | NONE. Point-in-time changelog |  | No runtime mechanism to keep, port or delete; retaining it is a product decision no source makes | CITED |
+| 22 | `intelligent-decision-engine-policy.md` | CONTRADICTED | NONE found. Describes an "OpenRouter consolidation" never built; the systems it unifies were deleted in v1.13 | delete | MEASURED 2026-08-02: its named script path `scripts/architecture/03-execution-system/04-model-selection/` and every OpenRouter reference are absent repo-wide, and the 4 systems it unifies went in v1.13 / v1.15.3 -- `prd-v2.md` SS 8's stated delete rationale for a policy governing a step that no longer exists | CITED |
+| 23 | `intelligent-model-selection-policy.md` | STALE-TOPOLOGY | NONE found under this description. One of its 5 inputs (plan-mode decision) was deleted in v1.13, so the retranslated question is unanswerable |  | OPEN. Model selection is still a live concern (`langgraph_engine/version_selector.py` exists, MEASURED), so the policy is stale rather than obsolete and retranslating its remaining 4 inputs against the 2-provider topology is a real option. Needs an architect ruling; no OAQ covers it | CITED |
+| 24 | `INTELLIGENT-PROMPT-GENERATION-UPGRADE.md` | DOCUMENTED-ONLY | NONE. Point-in-time changelog | delete | `as-built-prd.md` SS 4.2 classifies it a point-in-time changelog, not an ongoing SHALL; ADR-009 scopes `docs/policies/` to the policy corpus the plugin bundles, and git retention makes removal recoverable | CITED |
 | 25 | `issue-closure-policy.md` | ENFORCED | `langgraph_engine/sdlc_pipeline/github_lifecycle.py:543` `step6_close_issue`, `:603` `_build_closing_comment` (both reach=True) | keep-as-is | judged: no hook coupling; enforcement is pipeline code de-hooking does not touch | CITED |
-| 26 | `mcp-plugin-discovery-policy.md` | DOCUMENTED-ONLY | `langgraph_engine/state/state_definition.py:184` `mcp_plugins_path` -- a FlowState field only, no discovery logic |  | No runtime mechanism to keep, port or delete; retaining it is a product decision no source makes | CITED |
+| 26 | `mcp-plugin-discovery-policy.md` | DOCUMENTED-ONLY | `langgraph_engine/state/state_definition.py:184` `mcp_plugins_path` -- a FlowState field only, no discovery logic | delete | ADR-019 replaces auto-discovery with opt-in `register-mcp` and ADR-010 / FR-4 delete the `pre-tool-enforcer` AUTO-ROUTE mode it configures; MEASURED 2026-08-02: the `mcp_plugin_loader` module it imports is absent repo-wide (stale `.pyc` only, zero importers) -- OAQ 2 row 1's criterion for a document of a removed mechanism | CITED |
 | 27 | `metrics-monitoring-policy.md` | PARTIAL | `langgraph_engine/metrics/aggregator.py` `aggregate_sessions:96`, `aggregate_step_performance:191`, `aggregate_llm_usage:307`, `aggregate_tool_usage:408` | port-to-MCP | OAQ 2 row 3 | CITED |
-| 28 | `parallel-execution-policy.md` | DOCUMENTED-ONLY | NONE found as engine code. Describes calling-agent behaviour, not a pipeline capability |  | No runtime mechanism to keep, port or delete; retaining it is a product decision no source makes | CITED |
+| 28 | `parallel-execution-policy.md` | DOCUMENTED-ONLY | NONE found as engine code. Describes calling-agent behaviour, not a pipeline capability | demote-to-advisory | `as-built-prd.md` SS 4.2: calling-agent behaviour, not a pipeline capability, so there is no gate to keep or port -- OAQ 2 row 2's criterion for the plugin's agent-instruction layer | CITED |
 | 29 | `pr-code-review-policy.md` | PARTIAL | `langgraph_engine/sdlc_pipeline/github_code_review.py` `run_code_review:283`, `check_python_best_practices:53` (all reach=False) | keep-as-is | judged: no hook coupling; enforcement is pipeline code de-hooking does not touch | CITED |
-| 30 | `proactive-consultation-policy.md` | DOCUMENTED-ONLY | NONE. Explicitly deprecated by its own text |  | No runtime mechanism to keep, port or delete; retaining it is a product decision no source makes | CITED |
+| 30 | `proactive-consultation-policy.md` | DOCUMENTED-ONLY | NONE. Explicitly deprecated by its own text | delete | Its own header declares `Status: DEPRECATED (2026-03-17)` with the reason and the three named replacements; shipping it in the v2.0.0 corpus would carry a rule its own text retired | CITED |
 | 31 | `prompt-generation-policy.md` | ENFORCED | `langgraph_engine/sdlc_pipeline/architecture/prompt_gen_expert_caller.py:159` `_build_filled_prompt`, `:253` `main` (reach=True) | keep-as-is | judged: no hook coupling; enforcement is pipeline code de-hooking does not touch | CITED |
 | 32 | `quality-gate-policy.md` | ENFORCED | `langgraph_engine/sdlc_pipeline/quality_gate.py:637` `evaluate_quality_gate` (reach=True, cc=9), with `_evaluate_sonar_gate:142`, `_evaluate_coverage_gate:248` | keep-as-is | judged: no hook coupling; enforcement is pipeline code de-hooking does not touch | CITED |
 | 33 | `recovery-policy.md` | ENFORCED | `langgraph_engine/preflight_guard/recovery.py:234` `fix_preflight_guard_issues` (reach=True, cc=45) | keep-as-is | judged: no hook coupling; enforcement is pipeline code de-hooking does not touch | CITED |
@@ -99,12 +99,12 @@ Sorted alphabetically by policy filename, case-insensitive.
 | 36 | `session-pruning-policy.md` | CONTRADICTED | `hooks/stop_notifier/core.py:131-181` spawns `archive-old-sessions.py` and `session-pruner.py` under `scripts/architecture/01-sync-system/`; neither exists | delete | OAQ 2 row 12 | MEASURED |
 | 37 | `task-phase-enforcement-policy.md` | ENFORCED | `hooks/pre_tool_enforcer/policies/task_breakdown.py:12` `check_task_breakdown_pending` -- same point as row 3 | demote-to-advisory | OAQ 2 row 13 | CITED |
 | 38 | `task-progress-tracking-policy.md` | PARTIAL | `hooks/post_tool_tracker/policies/task_tracking.py`, `.../task_breakdown_clear.py` (both present; reach not individually traced -- LOW confidence) | port-to-MCP | OAQ 2 row 14 | CITED |
-| 39 | `test-case-policy.md` | DOCUMENTED-ONLY | NONE found as a distinct gate |  | No runtime mechanism to keep, port or delete; retaining it is a product decision no source makes | CITED |
+| 39 | `test-case-policy.md` | DOCUMENTED-ONLY | NONE found as a distinct gate | demote-to-advisory | `as-built-prd.md` SS 4.2: a behavioural instruction to the calling agent, not a pipeline gate -- OAQ 2 row 2's criterion for the plugin's agent-instruction layer | CITED |
 | 40 | `test-generation-policy.md` | ENFORCED | `langgraph_engine/sdlc_pipeline/test_generator.py` `detect_language:39`, `detect_test_framework:61`, `_generate_python_tests:544` | keep-as-is | judged: no hook coupling; enforcement is pipeline code de-hooking does not touch | CITED |
 | 41 | `tool-optimization-policy.md` | ENFORCED | `hooks/pre_tool_enforcer/policies/read_opt.py:8` `check_read_opt`, `grep_opt.py:8` `check_grep_opt`, registered `core.py:466-467` | port-to-MCP | OAQ 2 row 4 | MEASURED |
 | 42 | `tool-usage-optimization-policy.md` | CONTRADICTED | No distinct point. Shares row 41's registration: `hooks/pre_tool_enforcer/policies/read_opt.py:8` `check_read_opt` and `grep_opt.py:8` `check_grep_opt`, registered once at `hooks/pre_tool_enforcer/core.py:466-467`, while this policy's own text claims "NO DUPLICATION" | delete | OAQ 2 row 15 | MEASURED |
 | 43 | `unicode-fix-policy.md` | ENFORCED | `langgraph_engine/preflight_guard/nodes.py:62-147` `node_unicode_fix`, wired `orchestrator.py:657`, on the `START` edge at `:663` | keep-as-is | judged: no hook coupling; enforcement is pipeline code de-hooking does not touch | MEASURED |
-| 44 | `user-preferences-policy.md` | DOCUMENTED-ONLY | `langgraph_engine/sdlc_pipeline/nodes/pre_nodes.py:191` `result['user_preferences_context']` -- a passthrough state field, not a learning function |  | No runtime mechanism to keep, port or delete; retaining it is a product decision no source makes | CITED |
+| 44 | `user-preferences-policy.md` | DOCUMENTED-ONLY | `langgraph_engine/sdlc_pipeline/nodes/pre_nodes.py:191` `result['user_preferences_context']` -- a passthrough state field, not a learning function |  | OPEN. Unlike the other advisory-shaped rows it specifies a deterministic mechanism (a 3-occurrence learning threshold and a `track-preference.py` that is absent repo-wide, MEASURED), so port-to-MCP and delete are both live. FR-10 names its ad-hoc selection a defect but scopes its own fix elsewhere. Needs a product ruling on whether preference learning is in v2.0.0 scope | CITED |
 | 45 | `version-release-policy.md` | ENFORCED | `hooks/pre_tool_enforcer/policies/push_gate.py:354` `check_push_version`, `:408` `check_push_clean_tree`, registered `core.py:464-465` | port-to-MCP | OAQ 2 row 5 | CITED |
 | 46 | `windows-path-policy.md` | ENFORCED | `langgraph_engine/preflight_guard/nodes.py:240-323` `node_windows_path_check` (reach=True, cc=17) | keep-as-is | judged: no hook coupling; enforcement is pipeline code de-hooking does not touch | CITED |
 
@@ -119,9 +119,9 @@ All MEASURED by re-counting the table above.
 | Evidence citing a real code `file:line` | **37** |
 | Evidence stating an explicit NONE / no runtime mechanism | **9** |
 | Status values summing to the corpus | 18 + 11 + 8 + 8 + 1 + 0 = **46** |
-| Post-plugin plan cells populated | **33 of 46**; **13 deliberately empty** |
+| Post-plugin plan cells populated | **42 of 46**; **4 empty** |
 | Post-plugin values outside V2-005's vocabulary | **0** |
-| Basis cells populated | **46 of 46**, including all 13 empty-plan rows |
+| Basis cells populated | **46 of 46**, including all 4 empty-plan rows |
 | Verification cells populated | **46 of 46** (9 MEASURED, 37 CITED, 0 INFERRED) |
 
 **The 9 rows whose evidence is an explicit NONE** (rows 2, 15, 16, 22, 23, 24, 28, 30, 39):
@@ -132,22 +132,27 @@ All MEASURED by re-counting the table above.
 Count of names listed: 9. Evidence density is therefore **37/46 (80.4%) real citations**.
 "NONE found" is a populated evidence cell under AC2; an empty cell would not be.
 
-### 1.2 Post-plugin plan: distribution, decision rule, and the 13 empty cells
+### 1.2 Post-plugin plan: distribution, decision rules, and the 4 remaining empty cells
 
 | Value | Count | Source |
 |---|---|---|
-| `keep-as-is` | 18 | this pass's judgement, rule below |
+| `keep-as-is` | 19 | 18 from the non-hook-coupled rule below; 1 (row 4) decided at V2-005 |
 | `port-to-plugin` | 0 | no source assigns it; not invented |
 | `port-to-MCP` | 5 | `hld.md` SS 12 OAQ 2 (RESOLVED) |
-| `demote-to-advisory` | 5 | `hld.md` SS 12 OAQ 2 (RESOLVED) |
-| `delete` | 5 | `hld.md` SS 12 OAQ 2 (RESOLVED) |
-| *(empty)* | 13 | no decision derivable; see below |
+| `demote-to-advisory` | 8 | 5 from OAQ 2; 3 decided at V2-005 |
+| `delete` | 10 | 5 from OAQ 2; 5 decided at V2-005 |
+| *(empty)* | 4 | no decision derivable; see 1.2.2 |
 | **Total** | **46** | |
 
-**Provenance split: 15 rows from OAQ 2, 18 from this pass's judgement, 13 left empty.**
-15 + 18 + 13 = 46. The `Basis` column makes the split machine-readable per row: OAQ-2-sourced
-rows cite `OAQ 2 row N`, self-judged rows are prefixed `judged:`, and empty-plan rows carry
-the reason no decision was possible.
+**Provenance split: 15 rows from OAQ 2, 18 from the non-hook-coupled rule, 9 decided at
+V2-005, 4 left empty.** 15 + 18 + 9 + 4 = 46. The `Basis` column makes the split
+machine-readable per row: OAQ-2-sourced rows cite `OAQ 2 row N`, rows from the
+non-hook-coupled rule are prefixed `judged:`, V2-005 rows name the artifact that determined
+them, and the 4 empty-plan rows are prefixed `OPEN.` and name who must decide.
+
+**Where a `Basis` cell carries a `MEASURED` tag, that tag qualifies the disposition's
+evidence, not the row's `Verification` value.** No row was upgraded to MEASURED by this
+pass; the 9 MEASURED / 37 CITED split of section 1.1 is unchanged.
 
 **The 15 OAQ-2 rows are exactly the 15 hook-coupled policies.** MEASURED: filtering
 `policy_enforcement_raw.json` on `hook_coupled_by_implementation == true` returns 15 records,
@@ -156,44 +161,64 @@ generation time, so neither set contains a policy absent from the other. OAQ 2's
 (5 port-to-MCP, 5 demote-to-advisory, 5 delete) reconcile with the per-row values
 transcribed here.
 
-**Decision rule for the remaining 31.** Stated so it can be checked rather than trusted:
+**Rule 1 -- the non-hook-coupled `keep-as-is` rule.** Stated so it can be checked rather
+than trusted:
 
 > A non-hook-coupled policy is assigned `keep-as-is` **only if** it has a live enforcement
 > point in pipeline code (status ENFORCED or PARTIAL). In that case de-hooking provably does
 > not touch it: its enforcement is in `langgraph_engine/` or `src/mcp/`, not in a hook, so it
 > continues to behave exactly as it does today. That is a real decision backed by the
 > Evidence cell, not a neutral filler.
->
-> Every other non-hook-coupled policy gets an **empty** cell.
 
-This yields **18 `keep-as-is`** (12 ENFORCED, 6 PARTIAL) and **13 empty**.
+This yields **18 `keep-as-is`** (12 ENFORCED, 6 PARTIAL). It reaches no CONTRADICTED,
+STALE-TOPOLOGY or DOCUMENTED-ONLY row, which is why 13 cells stood empty until V2-005.
 
-**Why the 13 are empty rather than assigned a value.** Two groups:
+#### 1.2.1 The 9 dispositions decided at V2-005, and the evidence for each
 
-- **5 rows are broken or unanswerable independently of de-hooking** -- 4 CONTRADICTED
-  (`anti-hallucination-enforcement`, `architecture-script-mapping`, `callgraph-analysis`,
-  `intelligent-decision-engine`) and 1 STALE-TOPOLOGY (`intelligent-model-selection`).
-  `keep-as-is` would assert that v2.0.0 is content to ship a known-broken policy unchanged,
-  which is false to the evidence. The real choice is fix / delete / demote, and **no source
-  artifact makes it** -- OAQ 2 scopes itself to the hook-coupled 15 and stops there.
-- **8 rows are DOCUMENTED-ONLY** (`EXECUTION-SYSTEM-FIXES-SUMMARY`,
-  `INTELLIGENT-PROMPT-GENERATION-UPGRADE`, `file-management`, `mcp-plugin-discovery`,
-  `parallel-execution`, `proactive-consultation`, `test-case`, `user-preferences`). There is
-  no runtime mechanism to keep, port or delete. `keep-as-is` here would assert a product
-  decision -- that v2.0.0 retains an unimplemented policy document -- that nothing
-  establishes. `mcp-plugin-discovery` is the sharpest case: v2.0.0 *is* the plugin
-  transformation, so a policy about MCP plugin discovery is plausibly in scope for
-  `port-to-plugin`, but "plausibly" is not evidence and this pass will not manufacture it.
+An earlier revision left all 13 empty on the grounds that no source artifact reached them.
+That was right about OAQ 2, which scopes itself to the hook-coupled 15 and stops -- but it
+was not right that *nothing* on disk reaches them. Nine do resolve, against evidence a
+reviewer can open. Each is derived from a named artifact or from the policy's own text; none
+rests on plausibility.
 
-Count check: 5 + 8 = 13, matching the table above.
+| # | Policy | Plan | Determining evidence |
+|---|---|---|---|
+| 4 | `callgraph-analysis-policy.md` | `keep-as-is` | `prd-v2.md`'s superseding FR-9a AC (owner ruling, in v2.0.0 scope) and `hld.md` OAQ 4 / ADR-013 both repair the two binding caps *in pipeline code*. The row is the one case where `keep-as-is` does **not** mean shipping a known-broken policy unchanged: v2.0.0 has a scoped, runtime-proved fix for its enforcement point, and that point is not in a hook |
+| 15, 24 | the two changelogs | `delete` | `as-built-prd.md` SS 4.2 classifies both as point-in-time changelog entries, "not an ongoing SHALL". ADR-009 scopes `docs/policies/` to the policy corpus the plugin bundles; a changelog carries no capability, so removal writes nothing to the NFR-4 ledger, and `docs/policies/` is under git, so unlike ADR-009b's `~/.claude/` slate the removal is recoverable |
+| 22 | `intelligent-decision-engine-policy.md` | `delete` | MEASURED 2026-08-02: the script path it names (`scripts/architecture/03-execution-system/04-model-selection/`) does not exist, and `OpenRouter` -- its declared and only LLM provider -- has zero references in `langgraph_engine/`, `src/` or `scripts/`. All four systems it claims to unify were removed in v1.13, and the provider chain was cut to two in v1.15.3. This is `prd-v2.md` SS 8's own delete rationale applied to the row it did not reach: porting it forward resurrects governance over a step that no longer exists |
+| 26 | `mcp-plugin-discovery-policy.md` | `delete` | The sharpest case in the earlier revision, and it resolves against ADR-019 rather than for `port-to-plugin`. Its Step 1 imports `MCPPluginLoader` from `mcp_plugin_loader`, which is absent repo-wide with zero importers (MEASURED 2026-08-02; a stale `.pyc` is the only trace). Its AUTO-ROUTE mode configures `pre-tool-enforcer.py`, which ADR-010 and FR-4 delete. Its discovery model -- scan and auto-enable -- is exactly what ADR-019 replaces with explicit opt-in `register-mcp`, guarded refuse-by-default by ADR-020. Keeping it guarantees the permanent contradiction with shipped behaviour that OAQ 2 row 1 gives as its stated reason to delete `hook-system` |
+| 30 | `proactive-consultation-policy.md` | `delete` | The policy's own header: `Status: DEPRECATED (2026-03-17)`, with the reason (`AskUserQuestion` is unavailable in subprocess execution) and three named replacements. No external artifact is needed |
+| 16, 28, 39 | `file-management`, `parallel-execution`, `test-case` | `demote-to-advisory` | All three are model-judged conduct with no gate anywhere in the codebase -- `as-built-prd.md` SS 4.2 says so in as many words for two of them ("calling-agent behavior ... not a pipeline capability"; "a behavioral instruction to the calling agent, not a pipeline gate"). OAQ 2 row 2 states the criterion this pass applies: conduct that is model-judged "belongs in the plugin's agent-instruction layer, not a gate." That criterion is not hook-specific, which is why it transfers; OAQ 2 simply never reached these rows. `keep-as-is` is excluded by Rule 1 (no enforcement point exists to keep), and `delete` would drop live rules with nothing recording the loss |
 
-**These 13 empty cells will fail PRD FR-2 and FR-20 loudly, and that is the intended
-outcome.** FR-2 fails on an empty Post-plugin plan cell and FR-20 demands a non-empty value.
-A placeholder such as "UNDECIDED" would be non-empty while encoding "no decision has been
-made" -- satisfying the letter of both requirements while defeating exactly what they exist
-to force, structurally the same escape hatch NFR-4 closes when it forbids a "disappeared"
-disposition. **13 rows are work someone must do**, and the column says so visibly rather than
-laundering it into a value that passes review.
+**On the transfer in the last row, stated so it can be rejected cleanly.** OAQ 2 row 2's
+criterion is applied to three policies OAQ 2 did not disposition. That is a deliberate
+extension of a stated rule to rows sharing its stated precondition, not a new decision -- but
+it is the weakest link among the nine, and a reviewer who thinks a criterion must not travel
+outside its section's scope should strike these three back to empty rather than to a
+different value.
+
+#### 1.2.2 The 4 that remain empty, and what each is waiting on
+
+`keep-as-is` would assert that v2.0.0 ships a known-broken policy unchanged; a placeholder
+such as "UNDECIDED" would be non-empty while encoding that no decision was made, satisfying
+the letter of FR-2 and FR-20 while defeating exactly what both exist to force -- structurally
+the same escape hatch NFR-4 closes when it forbids a "disappeared" disposition. Neither is
+used. These four rows carry an empty cell because the choice between two genuinely available
+options is a product or architecture ruling, and no artifact on disk makes it.
+
+| # | Policy | What is missing | Who decides |
+|---|---|---|---|
+| 1 | `anti-hallucination-enforcement.md` | Whether v2.0.0 wants a prompt-quality gate at all. The module is on disk with zero importers, so wiring it up costs about what deleting it costs; `as-built-prd.md` SS 4.2 declined to map it to any FR because the mapping would be manufactured | Product owner, as a new FR or an explicit decision not to have one |
+| 2 | `architecture-script-mapping-policy.md` | Whether `scripts/architecture/` survives v2.0.0. MEASURED 2026-08-02: 0 of the 3 scripts it maps exist, and `03-execution-system/00-code-graph-analysis/code-graph-analyzer.py`, which does exist, is unlisted -- the inventory is wrong in both directions, so correcting it is as available as deleting it. FR-9a's 17-site enumeration keeps that file alive as a live-but-non-binding cap, so nothing schedules the tree's removal | Owner, on the tree; the policy's disposition follows mechanically |
+| 23 | `intelligent-model-selection-policy.md` | A retranslation against the current topology. Only one of its five inputs (plan-mode decision) was deleted in v1.13; model selection itself is live (`langgraph_engine/version_selector.py` exists, MEASURED), so the policy is stale rather than obsolete and rewriting it around the remaining four inputs is a real option | Architect. No OAQ covers it; unlike OAQ 4 for row 4, there is no resolved fix to point at |
+| 44 | `user-preferences-policy.md` | Whether preference learning is in v2.0.0 scope. Unlike rows 16/28/39 this policy specifies a *deterministic* mechanism -- a 3-occurrence threshold and a `track-preference.py` that is absent repo-wide (MEASURED 2026-08-02) -- so `port-to-MCP` (OAQ 2 row 7's lookup-table criterion) and `delete` are both live. `prd-v2.md` FR-10 calls its selection ad hoc but scopes its own fix to KG-driven agent/skill selection, not preference persistence | Product owner |
+
+Count check: 9 decided + 4 open = 13, matching the earlier revision's empty set.
+
+**These 4 empty cells still fail PRD FR-2 and FR-20, and that remains the intended outcome.**
+FR-2 fails on an empty Post-plugin plan cell and FR-20 demands a non-empty value for all 14
+orphans, of which rows 1, 2 and 44 are three. **4 rows are work someone must do**, and the
+column says so visibly rather than laundering it into a value that passes review.
 
 ### 1.3 Status counts, unchanged
 
@@ -508,12 +533,14 @@ CITED except where section 3 measured it.
 2. **AC3 is not satisfied.** No line-by-line read of `~/.claude/policies/` was performed by
    this pass, and the underlying analysis read `docs/policies/`. Recorded as open rather than
    asserted. See the header and section 4.
-3. **13 of 46 post-plugin plan cells are empty** because no decision is derivable from the
-   evidence and no source artifact makes one. Enumerated in section 1.2. This is the largest
-   single block of outstanding work the matrix exposes.
+3. **4 of 46 post-plugin plan cells are empty** because the choice between two available
+   options is a product or architecture ruling no artifact on disk makes. Enumerated with
+   the missing input and the deciding role in section 1.2.2.
 4. **`port-to-plugin` is assigned to zero rows.** No source assigns it, and this pass did not
-   infer it -- including for `mcp-plugin-discovery-policy.md`, where it is plausible but
-   unevidenced.
+   infer it. `mcp-plugin-discovery-policy.md` was the candidate and resolved the other way:
+   ADR-019 replaces auto-discovery with opt-in registration, so the row is `delete` on
+   evidence rather than `port-to-plugin` on plausibility (section 1.2.1). A zero count here
+   is a finding, not an omission.
 5. **The 14-of-46 orphan figure is CITED, not re-derived.**
 6. **25 of the 28 shared runtime/repo policy files were not content-compared.** The
    "cosmetic, not semantic" characterisation rests on a 3-file sample.
@@ -542,10 +569,12 @@ CITED except where section 3 measured it.
   citations, 9 explicit NONE.
 - **Status counts unchanged and reconciling: 18 / 11 / 8 / 8 / 1 / 0 = 46.**
 - **Post-plugin plan uses V2-005's vocabulary exactly**, zero out-of-vocabulary values:
-  18 `keep-as-is`, 5 `port-to-MCP`, 5 `demote-to-advisory`, 5 `delete`, 0 `port-to-plugin`,
-  **13 deliberately empty**. Provenance: 15 from OAQ 2, 18 judged, 13 undecidable.
-- **The 13 empty cells fail FR-2 and FR-20 by design.** They mark real outstanding decisions
-  rather than laundering them into a placeholder that passes review.
+  19 `keep-as-is`, 5 `port-to-MCP`, 8 `demote-to-advisory`, 10 `delete`, 0 `port-to-plugin`,
+  **4 empty**. Provenance: 15 from OAQ 2, 18 from the non-hook-coupled rule, 9 decided at
+  V2-005 against named evidence, 4 undecidable.
+- **The 4 remaining empty cells fail FR-2 and FR-20 by design.** They mark real outstanding
+  decisions rather than laundering them into a placeholder that passes review; section 1.2.2
+  names the missing input and the deciding role for each.
 - **"46/46 orphan policies" retracted**; real figure 14 of 46, six beyond any SRS fix.
 - **Three maintenance policies are dead paths today**, before any hook change; all three are
   `delete` under OAQ 2.
