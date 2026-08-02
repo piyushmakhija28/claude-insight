@@ -544,6 +544,179 @@ unsized.
 
 ---
 
+## 8c. Phase 8 Follow-Up -- V2-004 / PRD FR-1 / SRS FR-10 Acceptance Criterion Re-Scoped
+
+Owner ruling, 2026-08-02. AC3 was unsatisfiable as written. Three files touched.
+
+### 8c.1 The unsatisfiability, MEASURED
+
+| Quantity | Value | Method |
+|---|---|---|
+| `docs/policies/*.md` | **46** | Direct enumeration, 2026-08-02 |
+| `~/.claude/policies/**/*.md` files | **44** across 4 subdirectories (`01-sync-system` 11, `02-standards-system` 3, `03-execution-system` 28, `testing` 2) | Direct enumeration |
+| `~/.claude/policies/` distinct basenames | **35** (so 9 basenames are duplicated across subdirectories) | Direct enumeration |
+| Basename overlap | **28** | Set intersection |
+| In `docs/policies/`, absent from `~/.claude/` | **18** | Set difference |
+| In `~/.claude/`, absent from `docs/policies/` | **7** (`README.md` plus the six ADR-009b files) | Set difference |
+
+46 - 28 = 18; 28 + 18 = 46. AC1's 46 rows and AC3's line-by-line read of a tree missing 18 of them
+cannot both be satisfied.
+
+**Corroboration:** the 7 home-only names are exactly `README.md` plus the six files ADR-009b already
+identified as existing only in `~/.claude/policies/` (`recommendations-policy.md`,
+`auto-skill-agent-selection-policy.md`, `core-skills-mandate.md`, `adaptive-skill-registry.md`,
+`auto-plan-mode-suggestion-policy.md`, `github-branch-pr-policy.md`). Two independently derived
+findings agree.
+
+**Figure correction to the ruling as received.** The `~/.claude/` tree was described as holding 32
+policy documents. It holds 44 files resolving to 35 distinct basenames. **The load-bearing conclusion
+is unaffected** -- the 18-absent finding derives from the 28-basename overlap and holds at any tree
+size -- but the number is corrected rather than repeated.
+
+### 8c.2 Authoritative tree and the runtime resolver -- stated, not assumed
+
+`docs/policies/` (46 files, in-repo, version-controlled) is authoritative per ADR-009 and is what the
+46 rows count. `~/.claude/policies/` is a partial mirror and is not the audit's corpus.
+
+`get_policies_dir()` (`src/utils/path_resolver.py:255-261`, module wrapper at `:389-395`) returns
+`{CLAUDE_HOME}/policies`, overridable by `CLAUDE_POLICIES_DIR`. **Executed on 2026-08-02, it resolves
+to `~/.claude/policies` -- the partial mirror -- not to `docs/policies/`.** The ADR-009a four-branch
+resolver that would make `docs/policies/` canonical is PRD FR-19, deferred to v2.1. The re-scoped AC
+therefore does not depend on the runtime resolver at all, and says so explicitly in all three files:
+an implementer must not use `get_policies_dir()` to enumerate the corpus for this issue.
+
+### 8c.3 Vocabulary choice
+
+The ruling proposed `MEASURED | CITED | NOT-VERIFIED`. The audit document already publishes its own
+closed vocabulary at `docs/reports/policy-implementation-audit-v2.md:22-25`:
+**`MEASURED` / `CITED` / `INFERRED`**. I used the document's existing vocabulary rather than
+introducing a fourth value that would have to be reconciled later. `NOT-VERIFIED` is expressible as
+`CITED` (taken from a source artifact, not independently re-checked), which is precisely what the 41
+unverified classifications are. Flagged as a deviation in form, not in intent.
+
+### 8c.4 Original criteria retained -- confirmation
+
+- **`prd-v2.md`:** superseding row inserted **above** the original FR-1 AC row. The original row's
+  criterion cell is byte-identical -- verified by string match after the edit. Only its label cell
+  gained a supersession marker.
+- **`SRS.md`:** append-only honoured. The `| FR-10 |` acceptance-criteria row is untouched, verified
+  present by string match. FR-10's requirement statement in section 3.1 also keeps its
+  now-superseded "line-by-line" wording, with a note beneath recording that it is no longer the
+  standard of done. The revised criterion was appended as `**AC-10 (Updated 2026-08-02):**` per
+  rules/44 section 4.2 -- the same form used for AC-9 and AC-21, both of which remain present.
+- **`github_issues.json`:** all three original criteria retained verbatim as the last three entries
+  of V2-004's `acceptance_criteria`, each labelled, with AC3 additionally marked
+  "NO LONGER IN FORCE" and carrying its retirement reason.
+
+### 8c.5 Second in-place correction: FR-10's stale artifact status
+
+FR-10's status line, appended by me on 2026-08-01, read "DESIGNED, NOT BUILT (verified absent
+2026-08-01)". **That was true when checked and is now false.**
+`docs/reports/policy-implementation-audit-v2.md` exists at 507 lines / 28,780 bytes, commit
+`bf92747`, mtime 2026-08-01 17:21 -- written after my existence check ran. Corrected in place with
+the supersession disclosed inline and in a Change Log row, same method and same justification as the
+`config.py` correction in section 8a.3: content this pass appended, in an uncommitted tree, nothing
+predating 2026-08-01 touched. Left uncorrected, it would have licensed someone to rebuild an artifact
+that already exists.
+
+### 8c.6 V2-005's column AC -- CHECKED, and it does NOT match
+
+**Reported, not fixed -- the instruction was to change only V2-004.**
+
+V2-005's AC requires the `Post-plugin plan` column to be populated from the fixed vocabulary
+`keep-as-is / port-to-plugin / port-to-MCP / demote-to-advisory / delete`, and states "a value
+outside that set fails review". The regeneration in flight uses
+`PORT-TO-MCP | DEMOTE-TO-ADVISORY | DELETE | UNAFFECTED | UNDECIDED`.
+
+| | Count | Values |
+|---|---|---|
+| Shared | 3 | `port-to-MCP`, `demote-to-advisory`, `delete` |
+| In V2-005's AC only | 2 | `keep-as-is`, `port-to-plugin` |
+| In the regeneration only | 2 | `UNAFFECTED`, `UNDECIDED` |
+| Union | 7 | -- |
+
+3 + 2 = 5 per side; 3 + 2 + 2 = 7 union. Two problems, one cosmetic and one substantive:
+
+1. **Case.** The AC's values are lower-hyphen, the regeneration's are upper-hyphen. Trivial if the
+   checker normalises, fatal if it takes "a value outside that set fails review" literally -- which
+   is how it is written. Every row would fail.
+2. **`UNDECIDED` defeats the intent of two separate requirements, and this is the one worth
+   escalating.** PRD FR-2's AC states "a row with an empty Post-plugin plan cell fails this AC", and
+   PRD FR-20 requires "a non-empty Post-plugin plan value" for all 14 orphans. `UNDECIDED` is a
+   non-empty cell that encodes "no decision has been made" -- it satisfies the letter of both while
+   defeating what both were written to force. This is structurally the same escape hatch that NFR-4's
+   AC closes by name when it forbids a "disappeared" disposition value. If `UNDECIDED` is retained,
+   FR-2's and FR-20's ACs need an explicit clause excluding it from counting as populated;
+   otherwise the audit can pass its gate with every hard decision deferred.
+3. **`UNAFFECTED` has no counterpart** in the AC vocabulary. `keep-as-is` is the nearest, but they
+   are not synonyms: `keep-as-is` is a decision to retain, `UNAFFECTED` is an assertion that the
+   change does not touch the policy.
+
+**Recommendation (not applied):** reconcile the two vocabularies in one place before V2-005 is worked,
+and if `UNDECIDED` survives, amend FR-2's and FR-20's ACs to state that it does not count as a
+populated disposition. Owner of that edit is unassigned.
+
+### 8c.7 What the live GitHub issue #260 needs
+
+Not edited -- the `github-api` MCP server exposes no issue-update tool (`github_add_comment` exists;
+no update/edit tool is available). The following should be posted as a comment:
+
+> **AC3 re-scoped and a false premise corrected (2026-08-02, owner ruling).**
+>
+> **1. This issue's premise is wrong.** It asserts
+> `docs/reports/policy-implementation-audit-v2.md` is ABSENT. It EXISTS: 507 lines, 28,780 bytes,
+> commit `bf92747`, written ~20 minutes before this issue was drafted from a plan nobody re-read.
+> The artifact is BUILT and is being RESHAPED. Do not close this issue against the file's current
+> shape and do not treat the artifact as missing. What is actually outstanding: the file does not yet
+> present a single 46-row matrix (it carries several grouped tables) and has no per-row Verification
+> label. That is a reshape, not a rebuild.
+>
+> **2. AC3 was unsatisfiable.** It demanded a line-by-line read of `~/.claude/policies/` while AC1
+> demands 46 rows keyed to `docs/policies/`. MEASURED 2026-08-02: `docs/policies/` = 46 `.md` files;
+> `~/.claude/policies/` = 44 `.md` files across 4 subdirectories, 35 distinct basenames; overlap 28;
+> **18 of the 46 are absent from the `~/.claude/` tree**. No line-by-line read of that tree can
+> evidence 46 rows. Original-AC defect, not a shortfall in work produced.
+>
+> **3. Authoritative corpus:** `docs/policies/` (ADR-009). `~/.claude/policies/` is a partial mirror.
+> **Runtime note:** `get_policies_dir()` (`src/utils/path_resolver.py:255-261`) resolves to
+> `~/.claude/policies`, the partial mirror -- verified by execution. FR-19, which would fix that, is
+> deferred to v2.1. **Do not use `get_policies_dir()` to enumerate the corpus for this issue.**
+>
+> **4. AC3 is replaced by a POLICY-TO-CODE MAPPING VERIFICATION** -- six machine-checkable
+> assertions that test the original intent (a classification is grounded in code, not asserted)
+> without re-auditing 46 policies by hand: (1) row-set identity as a set equality against
+> `docs/policies/`; (2) every row carries a `MEASURED`/`CITED`/`INFERRED` label from the audit's own
+> published vocabulary; (3) `MEASURED` rows carry a resolvable `path:line`; (4) `CITED` rows name an
+> existing source artifact; (5) `NONE` is explicit and never blank, and never `MEASURED`; (6) the
+> reported coverage split equals the split recomputed from the rows. **No minimum MEASURED count is
+> set** -- the audit discloses 41 of 46 remain CITED, so a 46-MEASURED bar would be unsatisfiable in
+> a new way.
+>
+> **5. Size flag.** The 8 points were anchored on the line-by-line read, which no longer exists, and
+> on producing an artifact that already exists. 8 is judged too high. Not re-pointed here --
+> product-manager-agent's call.
+>
+> Full text: `prd-v2.md` section 5 (FR-1 superseding row), `SRS.md` appended AC-10,
+> `docs/phase-6-sprint/github_issues.json` V2-004.
+
+### 8c.8 What I could not verify
+
+1. **I did not verify issue #260's live body text**, only what the local draft says. If the live
+   issue diverges from `github_issues.json`, the comment above addresses the draft's wording.
+2. **I did not inspect the in-flight regeneration.** V2-005's vocabulary mismatch is assessed against
+   the value set as relayed (`PORT-TO-MCP | DEMOTE-TO-ADVISORY | DELETE | UNAFFECTED | UNDECIDED`),
+   not against a produced file. `post-plugin` occurs **0 times** in the current audit -- MEASURED --
+   so there is nothing yet to compare against.
+3. **I did not re-verify the 46 classifications**, which is the whole point of the re-scope. The
+   41-of-46-CITED disclosure is read from the audit at `:460` and `:506`, not re-derived.
+4. **The 9 duplicated basenames** in `~/.claude/policies/` mean a basename-keyed comparison is
+   ambiguous for those files. The 18-absent figure is basename-based; a content-based comparison
+   could differ and was not performed.
+5. **Whether `test`-side tooling exists** to run the six new assertions was not checked; the
+   verification script is DESIGNED, NOT BUILT.
+
+---
+
 ## 9. Outstanding Obligations Created by This Append
 
 1. **A Change Log row dated to the PreToolUse/PostToolUse deletion PR** must be appended when that PR

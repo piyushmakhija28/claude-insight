@@ -172,9 +172,17 @@ documents, each row citing a `file:line` evidence reference or an explicit `NONE
 - Priority: High
 - Source: `docs/phase-0-requirements/prd-v2.md` FR-1 (Deliverable D1)
 - Added: 2026-08-01
-- Status: D1 gate APPROVED 2026-08-01 per `product-sequencing-v2.md` section 0; the required
-  artifact `docs/reports/policy-implementation-audit-v2.md` is DESIGNED, NOT BUILT (verified absent
-  2026-08-01)
+- Status: D1 gate APPROVED 2026-08-01 per `product-sequencing-v2.md` section 0. **Artifact status
+  CORRECTED 2026-08-02, disclosed rather than silently amended:** as first appended on 2026-08-01
+  this line read "DESIGNED, NOT BUILT (verified absent 2026-08-01)". That was true when checked and
+  is now FALSE. `docs/reports/policy-implementation-audit-v2.md` **EXISTS** -- 507 lines, 28,780
+  bytes, commit `bf92747`, written later the same day, after this pass's existence check ran. It is
+  BUILT and is being reshaped to satisfy the re-scoped acceptance criterion (see the appended
+  "Revised Acceptance Criterion for FR-10" in section 4). Anyone reading this entry must not close
+  FR-10 against the artifact's current shape, and must not treat the artifact as absent.
+- Requirement wording superseded 2026-08-02: the phrase "line-by-line read-and-internalise" above is
+  retained as originally written but is NO LONGER the standard of done. It was measured
+  unsatisfiable. See the revised AC-10.
 
 **FR-11:** The system SHALL maintain a policy implementation matrix with 7 populated columns for all
 46 policy rows, including a "Post-plugin plan" column drawn from the fixed vocabulary
@@ -764,6 +772,71 @@ none is currently met, with the single exception of FR-27.
 
 ---
 
+### Revised Acceptance Criterion for FR-10 (APPENDED 2026-08-02, per rules/44 section 4.2)
+
+The `| FR-10 |` row in the table above is retained verbatim and is NOT deleted or edited. So is
+FR-10's requirement statement in section 3.1, including its now-superseded "line-by-line" wording.
+Both are retained because other artifacts still reference them and a reader needs the disposition,
+not an absence.
+
+**Why it was superseded: the original was UNSATISFIABLE, and not because of any shortfall in work
+produced.** The requirement demanded a line-by-line read of `~/.claude/policies/` while the matrix it
+feeds is keyed to `docs/policies/`. MEASURED 2026-08-02: `docs/policies/` holds **46** `.md` files;
+`~/.claude/policies/` holds **44** `.md` files across 4 subdirectories, resolving to **35 distinct
+basenames**; the trees share **28** basenames, so **18 of the 46 are absent from the `~/.claude/`
+tree**. 46 - 28 = 18 and 28 + 18 = 46. No line-by-line read of that tree can produce evidence for 46
+rows. (A figure correction is recorded with this ruling: the `~/.claude/` tree was described as
+holding 32 documents; it holds 44 files / 35 distinct basenames. The 18-absent conclusion derives
+from the 28-basename overlap and is unaffected.)
+
+**Authoritative corpus, stated so no implementer has to guess.** `docs/policies/` -- 46 files,
+in-repo, version-controlled -- is authoritative per ADR-009 and is what the 46 rows count.
+`~/.claude/policies/` is a PARTIAL MIRROR and is not the audit's corpus.
+
+**Runtime resolver, stated rather than assumed.** `get_policies_dir()`
+(`src/utils/path_resolver.py:255-261`, module wrapper at `:389-395`) returns `{CLAUDE_HOME}/policies`,
+overridable by `CLAUDE_POLICIES_DIR`. Executed on 2026-08-02, it resolves to `~/.claude/policies` --
+the partial mirror -- NOT to `docs/policies/`. The ADR-009a four-branch resolver that would make
+`docs/policies/` canonical is PRD FR-19, DEFERRED TO v2.1. **This criterion therefore does not depend
+on the runtime resolver at all**, and an implementer must not use `get_policies_dir()` to enumerate
+the corpus.
+
+**AC-10 (Updated 2026-08-02) -- POLICY-TO-CODE MAPPING VERIFICATION.** The intent of the superseded
+clause was never "read every file"; it was "prove the status classification is grounded in code
+rather than asserted". This criterion tests that intent, is machine-checkable, and requires NO
+re-audit of 46 policies by hand -- the evidence already exists in
+`docs/phase-0-reverse-engineering/policy_enforcement_raw.json` (MEASURED 2026-08-02: `count` field
+46, `records` array 46 entries). A committed verification script SHALL assert:
+
+- **(1) Row-set identity.** The set of Policy cells in the matrix EQUALS the set of `.md` basenames in
+  `docs/policies/` -- empty symmetric difference, checked as a set, not as a count of 46.
+- **(2) Every row carries a Verification label** from the closed set `MEASURED` / `CITED` /
+  `INFERRED`. This is the audit document's OWN already-published vocabulary
+  (`docs/reports/policy-implementation-audit-v2.md:22-25`), not a new one invented here. No empty
+  cell; no value outside the set.
+- **(3) MEASURED rows must resolve.** Every row labelled `MEASURED` carries an Evidence cell with at
+  least one `path:line` reference; the script confirms the path exists in the repository and that the
+  file has at least that many lines. **This is the "grounded in code, not asserted" test**, and it is
+  mechanical.
+- **(4) CITED rows must attribute.** Every row labelled `CITED` names its source artifact and the
+  script confirms that file exists on disk.
+- **(5) `NONE` is explicit, never blank.** A row with no code grounding carries the literal `NONE` in
+  Evidence, and such a row may not be labelled `MEASURED`.
+- **(6) Coverage is reported honestly, and this criterion asserts on the label's PRESENCE AND
+  CORRECTNESS, never on its value.** The matrix header reports the MEASURED/CITED/INFERRED split and
+  the script asserts the reported split equals the split recomputed from the rows. **No minimum
+  number of MEASURED rows is set, deliberately.** The audit's own disclosure (`:460`, `:506`) is that
+  41 of the 46 classifications remain CITED and were not re-verified, 5 having been spot-verified
+  (41 + 5 = 46). An AC demanding 46 MEASURED rows would be unsatisfiable in a new way -- which is the
+  defect being corrected, not a standard to aspire to.
+
+**Artifact status.** `docs/reports/policy-implementation-audit-v2.md` EXISTS (507 lines, 28,780
+bytes, commit `bf92747`). It is BUILT and being reshaped to satisfy this criterion. It does not yet
+contain a single 46-row matrix -- it currently carries several grouped tables -- so this criterion is
+NOT yet satisfied, but the gap is a reshape, not a rebuild.
+
+---
+
 ### Revised Acceptance Criterion for FR-21 (APPENDED 2026-08-01, per rules/44 section 4.2)
 
 The `| FR-21 |` row in the table above is retained verbatim and is NOT deleted or edited. It is
@@ -891,6 +964,7 @@ oversight.
 | 2026-08-01 | 1.21.5 | Add FR-38 -- call-graph resolution correctness (Phase 5 follow-up, `prd-v2.md` FR-9b) | The project owner ruled a newly-found defect IN v2.0.0 scope. Appended SRS FR-38 and its acceptance criterion. Defect: `langgraph_engine/parsers/graph_model.py:265` binds an ambiguous bare method name to `candidates[0]`, so `list.append()` resolves to `JsonlAppender.append` (in-degree 1592), `str.format()` to `ErrorMessages.format` (in-degree 755-756), and `dict.get()`/`set()` to `_MemoryLayer`. 55.5 percent of cross-file resolved edges are collision artifacts. Because `call_graph_analyzer.py:56-67` classifies risk purely by caller count and feeds `danger_zones`/`hot_nodes` into the Step 1 planning template via `prompt_gen_expert_caller.py:204-207`, the planning prompt has been receiving noise as risk signal. Numbered FR-9b in the PRD, not FR-25 (already claimed in `advisory_items.json`). All source claims verified against the working tree by this pass; the runtime edge counts were measured by two other agents and are labelled as not re-derived. FR-21 alone is recorded as INSUFFICIENT. A `resolve_edges()`/`graph.edges` divergence is named as a consumer trap and marked as NOT affecting shipping code. | Done |
 | 2026-08-01 | 1.21.5 | Correct the FR-21 truncation-site citation (Phase 5 follow-up) | IN-PLACE CORRECTION, disclosed rather than silent, and confined strictly to content this same pass appended earlier today -- no content that predates 2026-08-01 was edited. FR-21's status line originally cited `langgraph_engine/parsers/config.py:11` as the binding truncation site, quoting `hld_v2.md` OAQ 4. VERIFIED wrong: that constant is dead code, re-exported by `parsers/__init__.py:22` and read by nothing. The binding cap is `parsers/call_graph_builder_legacy.py:64`, enforced at `:107` and `:118`. The same wrong citation appears in 19 files across every phase; only this document's own line was corrected, and the other 18 are reported as unowned in `docs/phase-5-srs/srs_update_report.md`. Also added to FR-21 a MEASURED scope note: 411 `.py` files and ZERO `.java`/`.ts`/`.tsx`/`.kt` files exist in this repo, so four-language coverage figures describe a capability, not a corpus. Pre-existing four-language claims elsewhere in this document were NOT edited, per rules/44. | Done |
 | 2026-08-01 | 1.21.5 | Supersede FR-21's acceptance criterion; require runtime proof (Phase 6 owner ruling) | Appended a revised AC-21 per rules/44 section 4.2. The original `| FR-21 |` row in the acceptance-criteria table is retained VERBATIM and was neither deleted nor edited. Reason for supersession: the original asserted on four constants, one of which (`parsers/config.py:11`) is dead code, and omitted `parsers/graph_model.py:43` (`DEFAULT_MAX_PATHS`, default 500) -- a cap that binds and survives fixing the file cap, so an implementer working to the original would have passed every assertion and shipped a binding truncation. The revised criterion asserts on the OUTPUT of an in-process build, never on a constant: set-equality discovery oracle, the `langgraph_engine/sdlc_pipeline` 45-file canary (0 of 45 today), a log-capture assertion that no `hit max_paths=... limit; results truncated` record is emitted (load-bearing -- it fired on BOTH probe runs even with the file cap lifted), a regression floor of 411 files / 480 classes / 3,506 methods, and a negative test closing the silent-no-op trap where rebinding the module global does nothing because defaults bind at def-time. 17 truncation sites total, 2 binding, 15 non-binding enumerated. Figures sourced from `docs/phase-5-uml/callgraph_coverage_probe.md` (MEASURED-RUNTIME); both binding sites re-verified on disk here. V2-009's 5-point size is flagged as no longer sufficient and deliberately not re-pointed. | Done |
+| 2026-08-02 | 1.21.5 | Re-scope FR-10's acceptance criterion; correct a stale artifact status (Phase 8 owner ruling) | Appended a revised AC-10 per rules/44 section 4.2. The original `| FR-10 |` row in the acceptance-criteria table and FR-10's requirement statement in section 3.1 are both retained VERBATIM; neither was deleted or reworded. Reason: the original demanded a line-by-line read of `~/.claude/policies/` while the matrix it feeds is keyed to `docs/policies/`. MEASURED 2026-08-02: `docs/policies/` = 46 files, `~/.claude/policies/` = 44 files / 35 distinct basenames, overlap 28, so 18 of the 46 are absent from that tree and the two clauses could not both be satisfied. Replaced with a POLICY-TO-CODE MAPPING VERIFICATION of 6 machine-checkable assertions that test the original intent -- that a classification is grounded in code rather than asserted -- and require no hand re-audit. The criterion asserts on the presence and correctness of a `MEASURED`/`CITED`/`INFERRED` label, never on its value, and sets no minimum MEASURED count, because the audit itself discloses 41 of 46 remain CITED. Records that `docs/policies/` is authoritative and that `get_policies_dir()` resolves to the partial mirror (verified by execution), so the criterion does not depend on the runtime resolver. **Separately, an IN-PLACE CORRECTION confined to content this same author appended on 2026-08-01:** FR-10's status line asserted the audit artifact was "verified absent 2026-08-01". That was true when checked and is now FALSE -- `docs/reports/policy-implementation-audit-v2.md` exists at 507 lines / 28,780 bytes, commit `bf92747`, written later the same day. Corrected in place with the supersession disclosed inline, so nobody closes FR-10 against a false premise of absence. No content predating 2026-08-01 was touched. | Done |
 | PENDING -- date of the PR that deletes PreToolUse/PostToolUse | 2.0.0 | FR-34 completion row (NOT YET ADDED) | `prd-v2.md` FR-22's acceptance criterion requires a Change Log row dated to the PR that deletes `PreToolUse`/`PostToolUse`, referencing the superseding FR by number (SRS FR-34). That PR does not exist as of 2026-08-01, so this row cannot be dated and is recorded here as an explicit outstanding obligation rather than being back-dated or omitted. | OUTSTANDING |
 
 ---
