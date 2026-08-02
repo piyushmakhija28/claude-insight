@@ -1676,7 +1676,8 @@ Phase 5 correction:
 |---|---|---|---|---|
 | DC-1 | `langgraph_engine/build_dependency_resolver/parsers.py:682` | `max_files_scanned = 1000` | `:696` -- `if files_scanned > max_files_scanned: return False` | **Different purpose, same defect class -- and a sharper instance** |
 
-File-count sites 1-4 are call-graph builders whose truncation yields an incomplete *graph*. DC-1 is a
+File-count sites 1-4 in the table above are call-graph builders whose truncation yields an
+incomplete *graph* (only row 1 binds; see the binding clause below). DC-1 is a
 directory *detection* helper that returns a boolean, so its truncation yields `False` -- and
 **`False` from truncation is indistinguishable from `False` because no code files exist**. That is
 precisely the conflation ADR-015 forbids at the KG-read boundary (a limit-induced negative
@@ -1724,11 +1725,50 @@ implementation, the priority order is upside down on coverage:
 - **Recommendation to rules/45's owner (recommendation only, no edit made):** leave SS 6 unchanged;
   add a dated implementation note pointing at FR-9a, to be removed when the cap is lifted.
 
-**Binding on FR-9a:** each of sites 1-4 must reach one of exactly two recorded end states --
-migrated to the ADR-013 coverage-complete contract, or formally retired with the removal recorded.
-"Fixed the one Phase 0 named" is not an acceptable end state, and neither is silently leaving #2 and
-#4 in place because they look unused. The `test_discovery_covers_every_package` assertion surface
-applies to whichever discovery implementations survive.
+**Binding on FR-9a (current, as of Phase 8 -- supersedes the clause preserved below).**
+
+FR-9a's target is the **two binding sites**, not the four file-count rows:
+
+| Site | Obligation |
+|---|---|
+| `parsers/call_graph_builder_legacy.py:64` (enforced `:107`, `:118`) | Migrate to the ADR-013 coverage-complete contract |
+| `parsers/graph_model.py:43` (`DEFAULT_MAX_PATHS = 500`) | Migrate, or make the truncation an explicit, surfaced result. **It survives any fix to the file cap** |
+
+The other file-count rows are **not** FR-9a work and must not be counted as progress:
+`config.py:11` is DEAD CODE (deleting it asserts nothing); `code_graph_analyzer.py:73` is dormant
+(no importers); `code-graph-analyzer.py:68` is live but non-binding (500 > 411 files). Retire or
+clean them as separate, explicitly labelled non-FR-9a work.
+
+**Proof obligation -- aligned to the amended FR-9a acceptance criterion.** The fix is proven by
+**runtime output**, never by inspecting a constant:
+
+1. **Set equality** of discovered files against an **independent oracle** (a walk that does not
+   share code with the builder), not a count comparison.
+2. **Zero `max_paths` truncation records emitted** during the run -- the `graph_model.py:43` half.
+3. A **negative test** proving the check can fail, per the stress-test standard adopted at
+   consensus iteration 3. A check never observed failing is indistinguishable from a no-op.
+4. **Rebinding `MAX_FILES` is explicitly forbidden as proof.** MEASURED: `legacy.MAX_FILES = N` is
+   silently ignored, because `:76` captures the default at function-definition time -- discovery
+   stays at exactly 300 while appearing to have been raised. This is the trap the criterion exists
+   to close.
+
+**This clause is a SUMMARY, not the criterion of record.** The authoritative text is FR-9a's
+acceptance criterion in `docs/phase-0-requirements/prd-v2.md` SS 5, mirrored as `AC-21` in `SRS.md`.
+Implement against those, not against this list. In particular this summary OMITS the regression
+floor the criterion carries -- at least **411 files, 480 classes, 3506 methods** -- and states set
+equality without the criterion's explicit *empty symmetric difference* phrasing. Both omissions are
+deliberate brevity in an ADR, and neither narrows the criterion: a fix satisfying this clause but
+failing the floor has not satisfied FR-9a.
+
+> *Superseded record (frozen -- retained, not deleted, because downstream artifacts were written
+> from it).* The clause previously read: *"each of sites 1-4 must reach one of exactly two recorded
+> end states -- migrated to the ADR-013 coverage-complete contract, or formally retired with the
+> removal recorded. 'Fixed the one Phase 0 named' is not an acceptable end state, and neither is
+> silently leaving #2 and #4 in place because they look unused."* **Wrong in substance:** it
+> instructed work across four sites, three of which cannot bind, and its "sites 1-4" framing
+> includes the dead `config.py:11`. It was written before the Phase 5 runtime probe and was not
+> updated when ADR-013's body and Context were corrected -- a third location of the same
+> correction, 1,283 lines from the first.
 
 ### OAQ 5 -- The plugin extraction boundary -- **RESOLVED, as a plain negative plus a seam**
 
@@ -1907,7 +1947,12 @@ ADR-016 timeout citations (6 application sites + 3 definition sites, including t
 and the `:128` reclassification made at consensus iteration 2),
 `push_gate.py` / `tests/test_push_gate.py` / commit `1bb4303`, and the
 fifth truncator at `parsers.py:682`/`:696` were verified byte-exact; repo-wide sweeps confirmed no
-fifth aliased import and no sixth truncator exist. `plugin_api/` was confirmed **not** to exist and
+fifth aliased import and no sixth truncator exist. **[Scope correction, Phase 8]** that
+"no sixth truncator" finding was scoped to `MAX_FILES`-style **file-count** truncators, and
+remains true within that class. The Phase 5 runtime probe subsequently enumerated **17 truncation
+sites across five classes** -- adding file-size caps, graph-traversal caps, different-class
+truncators and diagram-level truncators, none of which the earlier sweep was looking for. Read the
+record as "no sixth file-count truncator", not "no sixth truncator of any kind". `plugin_api/` was confirmed **not** to exist and
 to be correctly framed as an ADR-014 proposal rather than as existing code. **No fabricated name or
 path was found in any file path or symbol reference examined by these passes** -- which is a
 statement about what was checked, not a guarantee about the whole document; SS 13a's final paragraph
@@ -1961,6 +2006,7 @@ them is marked PROVISIONAL in place.
 |---|---|---|---|
 | 2026-08-01 | 2.0.0-hld-draft-1 | Initial delta HLD for the hook-free plugin architecture. 7 settled ADRs recorded, 8 authored (ADR-011..018). All 6 OAQs answered. Four input contradictions flagged. Prior v1.20.0 HLD preserved at `hld-v1.20.0-superseded.md`. | Superseded by draft-2 |
 | 2026-08-01 | 2.0.0-hld-draft-15 | **Consensus 2.5: ADR-012's HEADING was never updated.** The body, the SS 3 diagram and SS 11's table were all reframed at Phase 2 when FR-14a item 2 measured `CLAUDE_PLUGIN_ROOT` present in `os.environ`; the heading still read "Env Var Advisory Only" and survived three review passes including an author attestation that was otherwise substantively accurate. Heading corrected to "CLAUDE_PLUGIN_ROOT Primary, Manifest-Anchored Ascent as Defence-in-Depth"; original title retained inline for the audit trail. Recorded because the failure mode generalises: a heading is skimmed as a label rather than re-read as a claim, so it is the surface self-review under-weights most -- which is why author attestation was correctly logged as weaker than gate verification. | Phase 2 validated |
+| 2026-08-02 | 2.0.0-hld-draft-16 | **Phase 8: third and final location of the OAQ 4 / ADR-013 correction.** SS 12 OAQ 4's closing "Binding on FR-9a" clause still instructed work across "sites 1-4" including the dead `config.py:11`, 1,283 lines from the corrected ADR-013 body -- so the file said four sites in one place and two in another. Rewritten to name the **two binding sites** (`call_graph_builder_legacy.py:64`, `graph_model.py:43`) with the three non-binding rows explicitly excluded from FR-9a scope, plus the amended acceptance criterion: proof by runtime output, set equality against an independent oracle, zero `max_paths` truncation records, a negative test, and **rebinding `MAX_FILES` forbidden as proof**. Original retained beneath a supersession marker. Two annotations: SS 12's DC-1 contrast now says "only row 1 binds"; SS 13a's "no sixth truncator" record scoped to file-count truncators, since the Phase 5 probe found 17 sites across five classes the earlier sweep was not looking for. **Root cause of the miss:** the clause was cited by line number, and content inserted above it moved it off target -- a correction keyed to a location stops finding what it names as soon as the document grows. | Phase 8 alignment |
 | 2026-08-01 | 2.0.0-hld-draft-14 | **Hallucination gate HIGH: SS 3's C4 Level 2 diagram contradicted ADR-019 in the same document.** The diagram bundled a `.mcp.json` (`MCPJSON`, and the edge `MCPJSON --> MCPS`) that ADR-019 forbids 677 lines later -- the most consequential staleness available, because a C4 diagram is read first and trusted most, and an implementer building from it would bundle an MCP server, causing exactly what ADR-019 and ADR-020 exist to prevent. Fixed: `MCPJSON` replaced by `REGCMD` (register-mcp / unregister-mcp as the mandatory-scope surface, carrying ADR-020's refuse-by-default guard); `NOHOOKS` widened to `NOBUNDLE` covering both prohibitions; `ROOT` updated to ADR-012's reframing (env var primary, ascent defence-in-depth); `MCPS` subgraph relabelled USER SCOPE, never bundled; `MTRACK` relabelled to progress *projection* surface per ADR-011. Node-count basis re-verified programmatically in the same transaction: unchanged at 20 declared / 21 rendered because both substitutions were one-for-one -- the composition changed though the arithmetic did not, which is the case a stale basis would have survived. | Phase 2 validated |
 | 2026-08-01 | 2.0.0-hld-draft-13 | **Phase 2.4 faithfulness: ADR-020 Path C relabelled from measured to INFERRED.** The claim that user-scope `mcpServers` entries survive plugin uninstall was stated as fact; the spike measured that 25 **pre-existing** entries survived byte-for-byte and that plugin-scoped servers are tracked in a **different store** from top-level `mcpServers` -- but no entry written by `register-mcp` existed during that uninstall, because the command does not exist yet. Inference chain now stated explicitly (measured / inferred / not-measured), with the reason the distinction matters: **if the inference is wrong, Path C is the only path with NO available control** -- prevention impossible (Claude Code's command) and detection impossible (the plugin is gone), leaving only ADV-012 and ADR-017. A ~10-minute VERIFICATION TASK is attached for `register-mcp`'s implementer, with the fallback named in advance (promote ADV-012 from proposed to required). ADR-019's second-order uninstall benefit restated as conditional. Cosmetic: `unregister-mcp` "already reads and writes" -> "is designed to read and write". | Phase 2 validated |
 | 2026-08-01 | 2.0.0-hld-draft-12 | **ADR-020 added (17 ADRs): the SS 10 step-5 precondition is no longer documentation-only.** Challenge accepted -- protecting the migration's one unsafe transition with a runbook step repeats the `DOCUMENTED-ONLY` defect this project exists to remove. Interception-point analysis is asymmetric: **Path B (`unregister-mcp`) is plugin-owned and reaches the unsafe state WITHOUT passing through the runbook**, so it gets prevention (refuse by default, explicit override); **Path A (manual `settings.json` edit) has no interception point** -- prevention is genuinely impossible under ADR-010, so it gets detection at next invocation via `doctor` plus a per-command start-up check (NFR-1-safe, since ADR-006 means the plugin runs only when invoked); **Path C (`plugin uninstall`) is safe**, because ADR-019's user-scope registrations survive uninstall -- an unintended benefit of the packaging decision. SS 10's safety property updated to point at the mechanism. ADR/heading counting basis updated 16->17 and 14->15 in the same edit, per ADV-011. | Phase 2 validated |
