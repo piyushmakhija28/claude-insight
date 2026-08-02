@@ -181,7 +181,7 @@ A disposition-plus-rationale ledger over 15 hook-coupled policies. solution-arch
 
 Disposition for 14 orphan policies plus a name-reconciliation script; BA owns the disposition semantics, automation-engineer owns the comparison script.
 
-### V2-008 (#264) - PRD NFR-4 / SRS NFR-10: cross-check all 25 capability_loss.md names against the audit matrix
+### V2-008 (#264) - PRD NFR-4 / SRS NFR-10: cross-check all 27 capability_loss.md names against the audit matrix
 
 | Field | Value |
 |-------|-------|

@@ -55,13 +55,15 @@
       "nfr": "NFR-4",
       "owner": "Workstream A",
       "measurement_method": "Script cross-checks all 25 capability_loss.md names against the audit matrix; fails on any missing or empty disposition",
-      "phase_2_2_change": "Unchanged from Phase 0."
+      "phase_2_2_change": "Unchanged from Phase 0.",
+      "correction_pointer_2026_08_02": "RECORD NOT REWRITTEN. The measurement_method above is retained verbatim as this gate report wrote it. Its figure of 25 has since been measured wrong: capability_loss.md holds three tables with 16 + 9 + 2 = 27 data rows. The 25 counted only the 14 policy gates in the PreToolUse table and dropped two further full rows carrying their own owner and requirement cells -- daemon.py (warm-daemon fast path, NFR-1, ledger line 33) and registry.py (PolicyRegistry ordered fail-open dispatch, FR-9 mechanism, ledger line 34). The PreToolUse table is 16 PreToolUse components (14 policy gates plus the daemon and registry mechanism); that descriptor, not the arithmetic, is what generated the undercount. The correction is applied in SRS.md (revised NFR-10, appended per rules/44 section 4.2), prd-v2.md, product-sequencing-v2.md, hld.md, hld_v2.md, github_issues.json, sprint_plan.md and the routing artifacts -- not here."
     },
     {
       "nfr": "NFR-5",
       "owner": "Workstream D",
       "measurement_method": "3 Gherkin-backed lifecycle tests: install leaves zero overhead + no hook entries; invoke reaches all 25 capabilities with a decided disposition; uninstall leaves no orphaned settings.json or plugin-cache state",
-      "phase_2_2_change": "FR-14a gate is now satisfied (DONE, all 5 items measured 2026-08-01) -- no longer PROVISIONAL. The uninstall test itself is blocked pending business-analyst-agent's FR-18 AC rewrite, since the Phase 0 wording is measured-false against claude plugin uninstall's actual behaviour (item 4 of the spike)."
+      "phase_2_2_change": "FR-14a gate is now satisfied (DONE, all 5 items measured 2026-08-01) -- no longer PROVISIONAL. The uninstall test itself is blocked pending business-analyst-agent's FR-18 AC rewrite, since the Phase 0 wording is measured-false against claude plugin uninstall's actual behaviour (item 4 of the spike).",
+      "correction_pointer_2026_08_02": "RECORD NOT REWRITTEN. The measurement_method above is retained verbatim. Its 'invoke reaches all 25 capabilities' clause carries the same superseded count as the NFR-4 entry: the correct figure is 27 (16 + 9 + 2). See the NFR-4 correction_pointer_2026_08_02 in this file for the full derivation."
     }
   ],
   "critical_path": {

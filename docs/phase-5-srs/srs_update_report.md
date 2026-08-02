@@ -7,6 +7,20 @@
 **Governing rule:** `~/.claude/rules/44-srs-lifecycle.md` section 4 -- SRS is APPEND-ONLY
 **Repo VERSION at time of append:** `1.21.5` (read from `VERSION`)
 
+**CORRECTION POINTER -- added 2026-08-02, owner ruling. This report's text is NOT rewritten.**
+This is a point-in-time Phase 5 record and it faithfully captured what was believed on 2026-08-01.
+One count it carries has since been measured wrong. Section 4.1's NFR-4/NFR-10 row reads
+"Decided disposition for all 25 lost capabilities", and section 8's limitation 2 lists
+"25 lost capabilities" among the counts explicitly quoted-not-re-derived. MEASURED 2026-08-02:
+`docs/phase-0-reverse-engineering/capability_loss.md` holds three tables with **16 + 9 + 2 = 27**
+data rows. The 25 counted only the 14 policy gates in the PreToolUse table and dropped two further
+full rows carrying their own owner and requirement cells -- `daemon.py` (warm-daemon fast path,
+NFR-1) and `registry.py` (PolicyRegistry ordered fail-open dispatch, FR-9 mechanism). The PreToolUse
+table is **16 PreToolUse components (14 policy gates plus the daemon and registry mechanism)**.
+The correction is applied in `SRS.md` (revised NFR-10, appended 2026-08-02 per rules/44 section 4.2)
+and the other LIVE documents, not here. This report's own limitation 2 -- that quoted counts were not
+re-derived -- is the disclosure that made this defect findable, and it stands as written.
+
 ---
 
 ## 1. What Was Appended

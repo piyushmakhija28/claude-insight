@@ -637,6 +637,11 @@ a script that fails if any name is missing or its disposition cell is empty.
 - Added: 2026-08-01
 - Status: DESIGNED, NOT BUILT. Precondition satisfied (the ledger exists and names 25 capabilities);
   none of the 25 yet carries a decided disposition.
+- Count superseded 2026-08-02 (owner ruling): the figure "25" above is retained as originally written
+  but is NO LONGER correct. The ledger enumerates **27** capabilities (16 + 9 + 2), and the PreToolUse
+  table is **16 PreToolUse components (14 policy gates plus the daemon and registry mechanism)**, not
+  14. See the revised NFR-10 in section 4. The "none yet carries a decided disposition" clause is
+  unaffected and still holds.
 
 **NFR-11 (Testability):** The system SHALL have three independent automated lifecycle tests --
 install, invoke and uninstall -- each asserting on plugin-attributable delta only, never on whole-file
@@ -918,6 +923,60 @@ more files. Both must land.
 
 ---
 
+### Revised Acceptance Criterion for NFR-10 (APPENDED 2026-08-02, per rules/44 section 4.2)
+
+The `| NFR-10 |` row in the table above is retained verbatim and is NOT deleted or edited. So is
+NFR-10's requirement statement in section 3.2, including its now-superseded figure of 25. Both are
+retained because other artifacts still reference them and a reader needs the disposition, not an
+absence.
+
+**Why it was superseded: the capability count was WRONG, and the descriptor that produced it was
+wrong in the same way.** MEASURED 2026-08-02 against
+`docs/phase-0-reverse-engineering/capability_loss.md`, which is machine-generated, carries a
+do-not-edit-manually banner, and is itself CORRECT: the ledger holds three tables whose data rows are
+
+| Table | Owner package | Data rows |
+|---|---|---|
+| PreToolUse capabilities lost | `hooks/pre_tool_enforcer/` | 16 |
+| PostToolUse capabilities lost | `hooks/post_tool_tracker/` | 9 |
+| Cross-cutting capability lost | `hooks/policy_tracking_helper.py` | 2 |
+
+16 + 9 + 2 = **27**. The superseded figure computed 14 + 9 + 2 = 25. It counted only the **14 policy
+gates** in the PreToolUse table and dropped two further full table rows that carry their own owner
+and requirement cells:
+
+- `capability_loss.md:33` -- **warm-daemon fast path**, owner `daemon.py`
+  (`ensure_daemon_running`, `run_daemon`, `try_daemon_fast_path`), Requirement **NFR-1
+  (Performance)**.
+- `capability_loss.md:34` -- **PolicyRegistry**, ordered fail-open policy-check dispatch, owner
+  `registry.py`, Requirement **FR-9 (mechanism)**.
+
+The ledger is internally consistent and states the composition in its own prose at `:36`: *"All 14
+policy checks plus the daemon and registry mechanism that runs them go dark together."* The citation
+chain read that "plus 2" as the cross-cutting section and dropped these two rows.
+
+**The descriptor is corrected, not only the total.** Wherever the composition is described it now
+reads **16 PreToolUse components (14 policy gates plus the daemon and registry mechanism)**. The
+phrase "14 PreToolUse gates" is what generated the undercount; correcting 25 to 27 while leaving that
+descriptor standing would regenerate the same error at the next recomputation. A related descriptor
+in `docs/REVIEW-INDEX.md` read "14 PreToolUse gates, 9 PostToolUse capabilities", which totals 23,
+and is corrected by the same ruling.
+
+**NFR-10 (Updated 2026-08-02):** A script cross-checks all **27** capability names against the audit
+matrix and fails if any is missing or carries an empty or "disappeared" disposition. The 27 names are
+the union of the three tables above; the script SHALL derive them by enumerating the ledger's table
+rows, never from a hardcoded total, so that a future row added to `capability_loss.md` cannot pass
+unnoticed.
+
+**Gate status, stated so nobody misreads this correction as a completion.**
+`scripts/verify_policy_capability_dispositions.py` already derives 27 by enumeration and correctly
+FAILS on the 25 citation; it was not edited by this ruling, because changing a gate to agree with a
+document is backwards. It exits 1 today and continues to exit 1 after this correction: the
+capabilities still lacking a decided disposition are a separate owner decision and are NOT part of
+this count correction.
+
+---
+
 ## 5. Out of Scope
 
 Explicitly excluded, to prevent scope creep:
@@ -965,6 +1024,7 @@ oversight.
 | 2026-08-01 | 1.21.5 | Correct the FR-21 truncation-site citation (Phase 5 follow-up) | IN-PLACE CORRECTION, disclosed rather than silent, and confined strictly to content this same pass appended earlier today -- no content that predates 2026-08-01 was edited. FR-21's status line originally cited `langgraph_engine/parsers/config.py:11` as the binding truncation site, quoting `hld_v2.md` OAQ 4. VERIFIED wrong: that constant is dead code, re-exported by `parsers/__init__.py:22` and read by nothing. The binding cap is `parsers/call_graph_builder_legacy.py:64`, enforced at `:107` and `:118`. The same wrong citation appears in 19 files across every phase; only this document's own line was corrected, and the other 18 are reported as unowned in `docs/phase-5-srs/srs_update_report.md`. Also added to FR-21 a MEASURED scope note: 411 `.py` files and ZERO `.java`/`.ts`/`.tsx`/`.kt` files exist in this repo, so four-language coverage figures describe a capability, not a corpus. Pre-existing four-language claims elsewhere in this document were NOT edited, per rules/44. | Done |
 | 2026-08-01 | 1.21.5 | Supersede FR-21's acceptance criterion; require runtime proof (Phase 6 owner ruling) | Appended a revised AC-21 per rules/44 section 4.2. The original `| FR-21 |` row in the acceptance-criteria table is retained VERBATIM and was neither deleted nor edited. Reason for supersession: the original asserted on four constants, one of which (`parsers/config.py:11`) is dead code, and omitted `parsers/graph_model.py:43` (`DEFAULT_MAX_PATHS`, default 500) -- a cap that binds and survives fixing the file cap, so an implementer working to the original would have passed every assertion and shipped a binding truncation. The revised criterion asserts on the OUTPUT of an in-process build, never on a constant: set-equality discovery oracle, the `langgraph_engine/sdlc_pipeline` 45-file canary (0 of 45 today), a log-capture assertion that no `hit max_paths=... limit; results truncated` record is emitted (load-bearing -- it fired on BOTH probe runs even with the file cap lifted), a regression floor of 411 files / 480 classes / 3,506 methods, and a negative test closing the silent-no-op trap where rebinding the module global does nothing because defaults bind at def-time. 17 truncation sites total, 2 binding, 15 non-binding enumerated. Figures sourced from `docs/phase-5-uml/callgraph_coverage_probe.md` (MEASURED-RUNTIME); both binding sites re-verified on disk here. V2-009's 5-point size is flagged as no longer sufficient and deliberately not re-pointed. | Done |
 | 2026-08-02 | 1.21.5 | Re-scope FR-10's acceptance criterion; correct a stale artifact status (Phase 8 owner ruling) | Appended a revised AC-10 per rules/44 section 4.2. The original `| FR-10 |` row in the acceptance-criteria table and FR-10's requirement statement in section 3.1 are both retained VERBATIM; neither was deleted or reworded. Reason: the original demanded a line-by-line read of `~/.claude/policies/` while the matrix it feeds is keyed to `docs/policies/`. MEASURED 2026-08-02: `docs/policies/` = 46 files, `~/.claude/policies/` = 44 files / 35 distinct basenames, overlap 28, so 18 of the 46 are absent from that tree and the two clauses could not both be satisfied. Replaced with a POLICY-TO-CODE MAPPING VERIFICATION of 6 machine-checkable assertions that test the original intent -- that a classification is grounded in code rather than asserted -- and require no hand re-audit. The criterion asserts on the presence and correctness of a `MEASURED`/`CITED`/`INFERRED` label, never on its value, and sets no minimum MEASURED count, because the audit itself discloses 41 of 46 remain CITED. Records that `docs/policies/` is authoritative and that `get_policies_dir()` resolves to the partial mirror (verified by execution), so the criterion does not depend on the runtime resolver. **Separately, an IN-PLACE CORRECTION confined to content this same author appended on 2026-08-01:** FR-10's status line asserted the audit artifact was "verified absent 2026-08-01". That was true when checked and is now FALSE -- `docs/reports/policy-implementation-audit-v2.md` exists at 507 lines / 28,780 bytes, commit `bf92747`, written later the same day. Corrected in place with the supersession disclosed inline, so nobody closes FR-10 against a false premise of absence. No content predating 2026-08-01 was touched. | Done |
+| 2026-08-02 | 1.21.5 | Correct the capability count from 25 to 27, and the descriptor that produced the error (Phase 8 owner ruling) | Appended a revised NFR-10 per rules/44 section 4.2. The original `| NFR-10 |` row in the acceptance-criteria table and NFR-10's requirement statement in section 3.2 are both retained VERBATIM; neither was deleted or reworded, and a dated supersession pointer was appended beneath the requirement's Status bullet. Reason: MEASURED 2026-08-02 against `docs/phase-0-reverse-engineering/capability_loss.md`, the ledger's three tables hold 16 + 9 + 2 = **27** data rows, not 25. The 25 figure computed 14 + 9 + 2 -- it counted only the 14 policy gates in the PreToolUse table and dropped two further full rows carrying their own owner and requirement cells: `daemon.py` (warm-daemon fast path, NFR-1, ledger line 33) and `registry.py` (PolicyRegistry ordered fail-open dispatch, FR-9 mechanism, ledger line 34). The ledger states the composition correctly in its own prose at line 36 and was NOT edited -- it is machine-generated, carries a do-not-edit-manually banner, and is the source that proves 27. **The descriptor was corrected alongside the total, which is the load-bearing half of this ruling:** "14 PreToolUse gates" is what generated the undercount, so every document describing the composition now reads "16 PreToolUse components (14 policy gates plus the daemon and registry mechanism)"; correcting the total alone would regenerate the error on the next recomputation. A related descriptor in `docs/REVIEW-INDEX.md` totalling 23 was corrected by the same ruling. `scripts/verify_policy_capability_dispositions.py` was NOT edited -- it already derives 27 by enumeration and correctly fails on the 25 citation; it exits 1 before and after, because the capabilities still lacking a decided disposition are a separate owner decision outside this correction. | Done |
 | PENDING -- date of the PR that deletes PreToolUse/PostToolUse | 2.0.0 | FR-34 completion row (NOT YET ADDED) | `prd-v2.md` FR-22's acceptance criterion requires a Change Log row dated to the PR that deletes `PreToolUse`/`PostToolUse`, referencing the superseding FR by number (SRS FR-34). That PR does not exist as of 2026-08-01, so this row cannot be dated and is recorded here as an explicit outstanding obligation rather than being back-dated or omitted. | OUTSTANDING |
 
 ---

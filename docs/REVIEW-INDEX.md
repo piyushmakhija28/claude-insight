@@ -45,11 +45,10 @@ Carried forward deliberately. Not settled to make the documents look finished.
 | **`audit_surface.json` counts** | **LOWER BOUNDS** | Its AST scan missed 4 aliased subprocess imports. The same blind spot may affect its 62 credential sites and 17 settings.json writers — nobody has checked. |
 | **Push gate after FR-4** | **UNPROTECTED, BOTH WAYS** | Protected *today* only because FR-4 has not run and the live PreToolUse hook still fires. After FR-4 it has neither preventive nor detective cover unless **both** `register-mcp` and the ADR-017 CI assertion are built. Both are **designed, not built**. This is a sequencing constraint on implementation, not a doc fix. (Phase 2) |
 | **WSJF inputs behind the MVP boundary** | **UNVALIDATED JUDGEMENT** | The arithmetic over them is exact and verified. The integers themselves are the PM's single-pass estimates, entered once, never cross-checked by a second party. Normal for WSJF and not a defect — but the MVP line is softer than the precision of the numbers implies. (Phase 2, consensus iteration 3) |
-
-**FR-14a is a spike, not a doc question.** Four of the above resolve in under an hour by building a throwaway plugin and measuring. That must happen before the packaging design freezes.
-
 | **FR-25 / FR-26 have no owner** | **PROPOSED ONLY — YOUR DECISION** | The two anti-defect checks (arithmetic recomputation; cross-file backward-propagation) exist only as proposals in `advisory_items.json`. `prd-v2.md` stops at FR-24. Each was **narrowed three times in three passes** as new instances outgrew its scope, and FR-25's own file records that a recomputation check "would have PASSED both before and after the fix while the diagram was actively contradicting an ADR." **Accept into the PRD, defer to v2.1, or drop.** Not decided. (Phase 2) |
 | **`VERSION` vs `CLAUDE.md`** | **CONTRADICTION, pre-existing** | `VERSION` reads **1.21.5**; `CLAUDE.md` and both phase-0 docs say **1.21.4**. Rule 11 makes `VERSION` the single source of truth, so `CLAUDE.md` is stale. Unowned and predates this project. Trivial to fix, but nobody has. |
+
+**FR-14a is a spike, not a doc question.** Four of the above resolve in under an hour by building a throwaway plugin and measuring. That must happen before the packaging design freezes.
 
 **The push-gate item is the one to read twice.** It is the only open item where the *order* of implementation determines whether a live protection lapses.
 
@@ -222,7 +221,7 @@ convention makes that work *enumerable* rather than a judgement call over prose.
 
 | File | What it tells you |
 |------|-------------------|
-| `phase-0-reverse-engineering/capability_loss.md` | What stops working when hooks are deleted — 14 PreToolUse gates, 9 PostToolUse capabilities, by name |
+| `phase-0-reverse-engineering/capability_loss.md` | What stops working when hooks are deleted — 27 capabilities by name: 16 PreToolUse components (14 policy gates plus the daemon and registry mechanism), 9 PostToolUse capabilities, 2 cross-cutting. Descriptor corrected 2026-08-02; it previously read "14 PreToolUse gates, 9 PostToolUse capabilities", which totals 23 and is what the 25 undercount was reconciled against |
 | `phase-0-reverse-engineering/builder_divergence.md` | Root cause of `MAX_FILES=300`, with the real invocation that proved it |
 | `phase-0-reverse-engineering/path_violations.md` | Every `~/.claude/` reference and unencoded `open()`, by file:line |
 | `phase-0-reverse-engineering/claude_md_drift.md` | Where CLAUDE.md disagrees with the filesystem |

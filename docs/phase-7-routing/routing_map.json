@@ -246,7 +246,7 @@
    "issue_number": 264,
    "batch": "A",
    "gate": "D1",
-   "title": "PRD NFR-4 / SRS NFR-10: cross-check all 25 capability_loss.md names against the audit matrix",
+   "title": "PRD NFR-4 / SRS NFR-10: cross-check all 27 capability_loss.md names against the audit matrix",
    "primary_agent": "automation-engineer",
    "primary_agent_md_path": "agents/automation-engineer/agent.md",
    "primary_agent_md_abs_path": "C:/Users/techd/Documents/workspace-spring-tool-suite-4-4.27.0-new/claude-global-library/agents/automation-engineer/agent.md",

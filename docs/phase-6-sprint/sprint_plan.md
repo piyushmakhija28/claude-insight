@@ -137,7 +137,7 @@ size, FR-15 carries none.
 | PRD FR-2 audit matrix, 7 columns x 46 rows | 3 | Mechanical once FR-1's read exists; the vocabulary is fixed and the row set is known. |
 | PRD FR-3 dispositions for 15 hook-coupled policies | 3 | 15 judgement calls with a written rationale each, one of which (push_gate) is pre-decided. |
 | PRD FR-20 dispositions for 14 orphan policies | 2 | 14 judgement calls, no new evidence gathering, list already enumerated. |
-| PRD NFR-4 25-capability cross-check script | 2 | One script over two existing lists. |
+| PRD NFR-4 27-capability cross-check script | 2 | One script over two existing lists. Count corrected 2026-08-02 (was 25); the size estimate is unaffected -- 2 more names in the same list. |
 | PRD FR-9b resolver fix | 5 | One-line source fix at `graph_model.py:265` is trivial; the cost is the two-field confidence reporting at 6 named consumption points plus a committed collision check plus a unit test. |
 | PRD FR-17 encoding= remediation | 2 | 19 confirmed mechanical sites plus one scan with an exemption list. |
 | PRD FR-24 uninstall-residue runbook | 1 | One document, paths already measured and enumerated. Same shape as the anchor. |
@@ -332,7 +332,7 @@ start today.
 | V2-005 | PRD FR-2 / SRS FR-11 -- 7-column audit matrix, 46 rows | 3 ASSUMED |
 | V2-006 | PRD FR-3 / SRS FR-12 -- dispositions for the 15 hook-coupled policies | 3 ASSUMED |
 | V2-007 | PRD FR-20 / SRS FR-32 -- dispositions for the 14 orphan policies | 2 ASSUMED |
-| V2-008 | PRD NFR-4 / SRS NFR-10 -- 25-capability disposition cross-check | 2 ASSUMED |
+| V2-008 | PRD NFR-4 / SRS NFR-10 -- 27-capability disposition cross-check | 2 ASSUMED |
 
 **V2-003 caveat, stated rather than hidden:** the harness can be *built* with no dependency, but its
 acceptance criterion measures a session with the plugin installed. The issue therefore carries a

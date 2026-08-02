@@ -16,6 +16,26 @@ in memory/ingestion (both values preserved as sibling keys); the on-disk artifac
 with `.malformed.bak` as the pre-repair backup. This is a data-quality event in the input pipeline,
 not a system defect.
 
+**CORRECTION POINTER -- added 2026-08-02, owner ruling. This document's text is NOT rewritten.**
+This is a point-in-time Phase C.3 record and it faithfully captured what was believed on 2026-08-01.
+Two figures it carries have since been measured wrong, and are corrected in the LIVE documents
+(`SRS.md` revised NFR-10, `prd-v2.md`, `hld.md`/`hld_v2.md`, `github_issues.json`) rather than here:
+
+- **Capability count.** Section 8's FR-3 and NFR-4 rows state `14 + 9 + 2 = 25 capabilities` and
+  `25 named capabilities`. MEASURED 2026-08-02: `capability_loss.md` holds three tables with
+  **16 + 9 + 2 = 27** data rows. The 25 counted only the 14 policy gates in the PreToolUse table and
+  dropped two further full rows carrying their own owner and requirement cells -- `daemon.py`
+  (warm-daemon fast path, NFR-1, ledger line 33) and `registry.py` (PolicyRegistry ordered fail-open
+  dispatch, FR-9 mechanism, ledger line 34).
+- **Composition descriptor.** Section 8's FR-4 row states `14 + 9 capabilities live`. The PreToolUse
+  side is **16 PreToolUse components (14 policy gates plus the daemon and registry mechanism)**. This
+  descriptor, not the arithmetic, is what generated the undercount.
+
+Section 5's phrase "the way the 14 PreToolUse policies were traced" is NOT affected -- there are
+exactly 14 policy gates, and that sentence is about the policies, not the table total.
+`capability_loss.md` itself was correct throughout and states the composition in its own prose at
+line 36; it is machine-generated and was not edited.
+
 ---
 
 ## 1. System Context (C4 Level 1)

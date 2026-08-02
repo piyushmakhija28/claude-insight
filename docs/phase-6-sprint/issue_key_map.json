@@ -149,7 +149,7 @@
       "canonical": true,
       "batch": "A",
       "gate": "D1",
-      "title": "PRD NFR-4 / SRS NFR-10: cross-check all 25 capability_loss.md names against the audit matrix",
+      "title": "PRD NFR-4 / SRS NFR-10: cross-check all 27 capability_loss.md names against the audit matrix",
       "size": 2,
       "size_provenance": "ASSUMED",
       "implements_prd": "NFR-4",
