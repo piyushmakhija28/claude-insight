@@ -403,11 +403,19 @@ counting headings will get 15; the 17 above counts the decisions themselves.
 
 #### ADR-013: Coverage-Complete Discovery Replaces the Silent Cap
 
-- **Context:** `langgraph_engine/parsers/config.py:11` sets `MAX_FILES = 300` against 411 Python
-  files (411 independently re-counted this pass, excluding `.venv`/`__pycache__`; matches
-  `orchestration_prompt.md` FR-9a). Discovery is alphabetical-by-subpackage, so the budget is
-  exhausted before `s*` and `langgraph_engine/sdlc_pipeline/` (45/45 files) is dropped whole, while
-  `tests/` consumes 75 of the 300 (FR-9a; Resolution 1).
+- **Context (current state, as of Phase 5 -- MEASURED at runtime).** The builder discovers only
+  **300 of 411** Python files. **The binding cap is
+  `langgraph_engine/parsers/call_graph_builder_legacy.py:64`** (`MAX_FILES = 300`), bound as the
+  default at `:76` and enforced at **`:107`** and **`:118`**. Discovery is
+  `project_root.glob("**/*.py")` with a running counter, so the budget is exhausted **five files
+  before the `sdlc_pipeline` tree begins** -- `langgraph_engine/sdlc_pipeline/` 45 of 45 absent,
+  `hooks/` 38 of 45 absent, `state/` 5 of 5 absent, while `tests/` consumes 75 of the 300. A
+  **second cap binds independently**: `langgraph_engine/parsers/graph_model.py:43`
+  (`DEFAULT_MAX_PATHS = 500`) truncates path enumeration and **survives any fix to the file cap**.
+  *Correction record (frozen).* This Context previously cited `parsers/config.py:11` as the cap.
+  **That constant is DEAD CODE, read by nothing** -- its only importer re-exports it. It is retained
+  and relabelled in SS 12 OAQ 4, not deleted, because other artifacts still point at it. Editing it
+  changes no behaviour.
 - **Chosen:** four-phase discovery. ENUMERATE (uncapped full walk, partitioned by package) ->
   ALLOCATE (per-package budget with a non-zero floor, deterministic within package) -> RECONCILE
   (emit a `DiscoveryManifest` asserting `analysed_n + dropped_n == discovered_n` per package) ->
@@ -433,14 +441,37 @@ counting headings will get 15; the 17 above counts the decisions themselves.
 - **Implementation note (`dsa-core` M9):** a directory walk is graph DFS, O(V+E) over files+links,
   recursion space O(h). The skill names unbounded recursion depth on worst-case input as an
   anti-pattern; discovery must use an explicit stack rather than recursion.
-- **[NEW-P1] The defect exists at FOUR independent sites, not one.** `parsers/config.py:11` is the
-  only one Phase 0 names. The other three are `parsers/call_graph_builder_legacy.py:64` (300), and
-  `MAX_FILES = 500` with its own truncating walk in BOTH
-  `langgraph_engine/sdlc_pipeline/architecture/00-code-graph-analysis/code_graph_analyzer.py:73`
-  and `scripts/architecture/03-execution-system/00-code-graph-analysis/code-graph-analyzer.py:68`.
-  **Every site is enumerated with its walk lines in SS 12 OAQ 4**, which is the authoritative table
-  for FR-9a's scope. Each of the four must be migrated to this ADR's contract or formally retired;
-  fixing only the named one reproduces the defect elsewhere.
+- **[CORRECTED Phase 5] 17 truncation sites exist; exactly TWO bind. The prior "four independent
+  sites" framing was wrong in substance, not only in attribution.**
+  *Correction record (frozen).* This clause previously read *"the defect exists at FOUR independent
+  sites... `parsers/config.py:11` is the only one Phase 0 names"* -- which reads as **start there**,
+  and the site it named is dead code.
+  *Current state (MEASURED, `docs/phase-5-uml/callgraph_coverage_probe.md`).* 17 distinct truncation
+  sites: 4 file-count, 4 file-size, 2 graph-traversal, 2 different-class, 5 diagram-level.
+  **Only two bind today:**
+
+| Binding site | What it truncates | Measured effect |
+|---|---|---|
+| `parsers/call_graph_builder_legacy.py:64` (enforced `:107`, `:118`) | File discovery | 411 -> 300 files; 27% of the codebase invisible |
+| `parsers/graph_model.py:43` (`DEFAULT_MAX_PATHS = 500`) | Path enumeration | Every sequence/interaction diagram truncated at 500 paths, **regardless of files ingested** |
+
+  The other 15 are inert: 4 file-size caps at measured-zero impact (no file exceeds 100 KB),
+  `config.py:11` dead, `code_graph_analyzer.py:73` dormant (no importers),
+  `code-graph-analyzer.py:68` live but non-binding (500 > 411 files), 2 different-class truncators
+  outside call-graph construction, and 5 post-discovery diagram truncators governed by rules/45.
+
+  **A work list padded with inert sites invites a fix aimed at the wrong target** -- which is
+  precisely how the original citation error would have played out: an implementer changes a dead
+  constant, the diff matches the requirement, review passes, and discovery still stops at 300.
+  Migrate the **two binding sites** to this ADR's contract; retire or clean the rest as separate,
+  explicitly non-FR-9a work. **SS 12 OAQ 4 remains the authoritative table.**
+- **Binding on the FR-9a fix (aligned to the strengthened acceptance criterion).** The fix must be
+  proven by **runtime output**, not by inspection of a constant: set equality of discovered files
+  against an independent oracle, zero `max_paths` truncation records emitted, and a negative test
+  proving the check can fail. **Proving the fix by rebinding `MAX_FILES` is explicitly forbidden** --
+  MEASURED: `legacy.MAX_FILES = N` is silently ignored, because `:76` captures the default at
+  function-definition time, and discovery stays at exactly 300 while appearing to have been raised.
+  Deleting `config.py:11` asserts nothing and does not satisfy any part of this criterion.
 
 #### ADR-014: Facade Over the Monolith -- No Module Extraction in v2.0.0
 
