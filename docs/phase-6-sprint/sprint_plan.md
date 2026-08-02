@@ -4,6 +4,10 @@
 **Author:** scrum-master-agent
 **Date:** 2026-08-01 (revised 2026-08-02 by product-manager-agent -- V2-009 re-pointed 5 -> 8; see
 sections 2.4, 3 batch B, 4, 5.2 and 7. One issue re-sized; no dependency, ordering or scope change.)
+(revised again 2026-08-02 by scrum-master-agent -- mechanical consistency pass: ASSUMPTION A3
+corrected 74 -> 69 to agree with A5; section 5.2's propagation paragraph re-verified against disk and
+corrected, two of its three claims were false; V2-009's WSJF recomputed in new section 2.5. No size,
+dependency, ordering or scope change in this pass.)
 **Target:** `claude-workflow-engine` v1.21.5 -> v2.0.0
 **Status of this document:** DRAFT. Nothing in it has been created on GitHub. `github_issues.json`
 in this directory holds 37 issue drafts, none created.
@@ -49,7 +53,7 @@ not capacity boundaries, so they survive any velocity value.
 |---|---|---|
 | A1 | Relative point sizes are comparable across issues drawn from `product-sequencing-v2.md` and issues sized by this document. | The former are the product manager's single-pass Fibonacci estimates; the latter are this document's. Neither has ever been calibrated against a completed item, because no item has completed. |
 | A2 | A batch is workable by one person or a small team without further decomposition. | No team size is on record. If the work is parallelised across more than one person, batches B, E and G contain issues that can proceed concurrently; batches A, D and F contain serial chains that cannot. |
-| A3 | The 34 ASSUMED points added by this document (section 2) are of the same currency as the 74 sourced points. | They were sized against the same anchor, but by a different estimator in a different pass. Treat the two totals separately until one completed item calibrates them. |
+| A3 | The 34 ASSUMED points added by this document (section 2) are of the same currency as the 69 SOURCED points. | They were sized against the same anchor, but by a different estimator in a different pass. Treat the two totals separately until one completed item calibrates them. **Corrected 2026-08-02:** this row read "74 sourced points" until then. 74 predated V2-009's re-point and contradicted A5 directly beneath it, which already read 69. 69 is correct: V2-009's original 5 left the SOURCED bucket when it moved to RE-ESTIMATED, so SOURCED went 74 -> 69 while the total went 108 -> 111. |
 | A4 | No batch contains hidden work discovered only on contact. | Contradicted in advance for at least two items -- PRD FR-15 is explicitly unsizable until an AST re-derivation runs, and PRD FR-9a's written acceptance criterion was known to be both padded and incomplete (section 5.2; the AC has since been amended and V2-009 re-pointed, section 2.4). Both are named rather than absorbed. A third is now named: the cost of an unbounded path enumeration on a 26,114-edge graph is INFERRED, not measured (section 2.4). |
 | A5 | The 8 RE-ESTIMATED points (section 2.4) are of the same currency as the 69 SOURCED and the 34 ASSUMED. | Added 2026-08-02. This is A3's problem one degree worse. The re-estimate was set against the same anchor, but by a **third** estimator in a **third** pass, and like the other two it has never been calibrated against a completed item, because no item has completed. A re-estimate is ASSUMED in kind. Treat all three totals separately. |
 
@@ -101,7 +105,7 @@ time interpretation at all until a velocity measurement exists.
 | PRD FR-6 ADR-006 doc | SS 2 | 1 | 12.00 |
 | PRD FR-9 library KG drift | SS 2 | 2 | 6.00 |
 | PRD NFR-1 measurement harness | SS 2a | 2 | 10.50 |
-| ~~PRD FR-9a CallGraph discovery fix~~ **WITHDRAWN, see 2.4** | SS 2 | ~~5~~ | 4.60 |
+| ~~PRD FR-9a CallGraph discovery fix~~ **WITHDRAWN, see 2.4** | SS 2 | ~~5~~ | ~~4.60~~ **2.875, recomputed -- see 2.5** |
 | PRD FR-10..FR-13 KG selector (set) | SS 2 | 13 | 1.69 |
 | PRD FR-14 plugin skeleton | SS 2 | 8 | 2.38 |
 | ADR-019 register-mcp / unregister-mcp | SS 2c | 5 | 3.80 |
@@ -200,6 +204,60 @@ paths from every entry point, and the cost of an unbounded run has **not been me
 not terminate acceptably, the fix becomes an algorithmic change and 8 will not hold. This is named
 rather than absorbed into the estimate, per ASSUMPTION A4. **Do not read 8 as covering an
 algorithmic redesign of path enumeration.**
+
+### 2.5 WSJF consequence of the V2-009 re-point (recomputed here 2026-08-02, not adopted)
+
+The re-point changed V2-009's size, and WSJF = CoD / size, so its published 4.60 went stale the
+moment the size moved. It was not recomputed at the time. **Recomputed here from the published
+cost-of-delay inputs rather than adopted from any summary**, because a figure carried across from a
+summary without re-derivation is the failure mode this project has been bitten by repeatedly.
+
+**Inputs, read from `product-sequencing-v2.md` SS 2 line 187 (not from memory):** UBV 6, TC 9,
+RROE 8, size was 5.
+
+```
+CoD  = UBV + TC + RROE = 6 + 9 + 8 = 23        (unchanged -- the re-point moved size, not CoD)
+WSJF(before) = 23 / 5 = 4.60
+WSJF(after)  = 23 / 8 = 2.875                  -> 2.88 at two decimal places
+```
+
+**Does it match the 2.88 reported to this pass? Yes, at the reported precision.** The exact quotient
+is **2.875**; 2.88 is that value rounded to two decimals, the same convention every other row in
+SS 2 uses. No discrepancy to report. This document carries **2.875** where precision matters and
+2.88 where it is quoting the source's convention.
+
+**An exact tie the recomputation surfaces, worth naming.** PRD NFR-2 (V2-035) also scores 23 / 8 =
+2.875, reached from a *different* component split -- UBV 8, TC 8, RROE 7 (SS 2a line 215) versus
+V2-009's 6, 9, 8. Two units with materially different value, urgency and risk profiles now score
+identically. That is a fair illustration of ASSUMPTION A1 and section 5.6: WSJF compresses three
+single-pass integers into one number, and equal outputs do not imply comparable work.
+
+**Rank movement, enumerated over the 17 WSJF-bearing units in section 2.1.** V2-009 moves from
+**10th to joint 13th/14th**, a drop of four places:
+
+| Position | Before | After |
+|---|---|---|
+| 10 | **FR-9a 4.60** | FR-7 4.20 |
+| 11 | FR-7 4.20 | register-mcp 3.80 |
+| 12 | register-mcp 3.80 | FR-18+NFR-5 3.20 |
+| 13 | FR-18+NFR-5 3.20 | NFR-2 2.875 (joint) |
+| 14 | NFR-2 2.88 | **FR-9a 2.875 (joint)** |
+
+Positions 1-9 and 15-17 are unchanged. Four units rise exactly one place (FR-7, register-mcp,
+FR-18+NFR-5, NFR-2); nothing else moves.
+
+**This rank change reorders nothing, and must not be read as licence to reorder anything.** No batch
+boundary and no intra-batch ordering in this plan derives from WSJF -- every one derives from a
+dependency, a fixed D1-D7 gate, or a correctness constraint (section 5.6). V2-009 remains first in
+batch B because V2-010 has a hard `blocked_by` on it, and batch B remains ahead of batch C because
+both must land before the selector starts. A WSJF rank is reported here for continuity with the
+source document and sequences nothing.
+
+**Carried forward, not laundered.** Recomputing this score makes it *arithmetically consistent* with
+the new size. It does not make it *calibrated*. The CoD integers behind it (6, 9, 8) are the product
+manager's single-pass estimates, entered once and never cross-checked against a completed item
+(`docs/REVIEW-INDEX.md` section 2, UNVALIDATED JUDGEMENT). A recomputed ratio over unvalidated inputs
+is still an unvalidated ratio.
 
 ---
 
@@ -469,9 +527,28 @@ trap. The superseded AC is retained verbatim at the end of that array. The issue
 sourced 5. V2-009 is re-pointed to **8 RE-ESTIMATED**; see section 2.4 for the enumeration behind the
 number. Batch B moves 10 -> 13 and the selector chain 25 -> 28 (section 4).
 
-**Still open:** the AC amendment did not propagate to `prd-v2.md` section 5, `SRS.md:736`, or the
-ADR-013 bodies at `hld_v2.md:406`, `:436-443` and `:1696-1700`, which continue to carry the
-superseded four-site framing. See the propagation hazard recorded in V2-009's issue body.
+**Propagation status, re-verified against disk 2026-08-02. Two of three targets propagated; one
+residual clause remains.** This paragraph previously asserted that the amendment had propagated to
+none of its three targets. That was false when written, and it was written *by the correction commit
+that performed the propagation* -- the sharpest instance of the backward-propagation class
+(`docs/REVIEW-INDEX.md` correction #14) this plan has recorded, because the claim was stale at the
+instant it was authored. Each target re-checked individually:
+
+| Target | Claim as written | State MEASURED on disk 2026-08-02 |
+|---|---|---|
+| `prd-v2.md` section 5 | did not propagate | **FALSE -- it propagated.** A superseding FR-9a row carrying the runtime-proof AC sits at `:137`; the four-site row is retained verbatim beneath it at `:138`, explicitly labelled SUPERSEDED; the RTM row at `:176` is re-pointed to the two binding sites with the prior target retained inline; the change log records it at `:482`. |
+| `SRS.md:736` | did not propagate | **FALSE -- it propagated, by append.** `SRS.md:767` carries "Revised Acceptance Criterion for FR-21 (APPENDED 2026-08-01, per rules/44 section 4.2)". The old four-site row at `SRS.md:740` does still read four sites, but that is **required, not stale**: `SRS.md:769` states it "is retained verbatim and is NOT deleted or edited", because rules/44 makes the SRS append-only. Append is the only legal propagation mechanism there, and it was used. |
+| ADR-013 bodies, `hld_v2.md:406` / `:436-443` / `:1696-1700` | did not propagate | **PARTLY TRUE, and the cited line numbers are themselves stale.** ADR-013's Context (now `:405-415`) is corrected and names `call_graph_builder_legacy.py:64` as the binding cap, with a frozen correction record at `:415`. Its site enumeration (now `:444-474`) is corrected to "17 truncation sites exist; exactly TWO bind". **But one clause was missed:** the binding clause formerly at `:1696-1700` now sits at **`hld_v2.md:1727`** and still reads "each of sites 1-4 must reach one of exactly two recorded end states", with no supersession marker and no pointer to the Phase 5 correction. |
+
+**The one genuinely open item, stated precisely:** `hld_v2.md:1727` contradicts ADR-013's own
+corrected body at `:444` in the same file, contradicts `prd-v2.md`'s superseding row, and contradicts
+V2-009's amended AC. An implementer who reaches OAQ 4's closing binding clause rather than ADR-013's
+body still gets the four-site instruction, including the dead `config.py:11` site.
+
+**Not fixed here, and why.** `hld_v2.md` is not this document's to edit -- it is owned by
+`solution-architect`, and correcting a binding clause in an approved HLD is that owner's call, not a
+sprint planner's. Recorded so it is routed rather than absorbed. V2-009 (#265) retains its
+`needs-decision` label for exactly this hazard, which is therefore **not** discharged.
 
 **5.3 `product-sequencing-v2.md`'s sequencing risk #3 is stale and is not carried forward.** That
 document states three times (SS 6, SS 7, SS 8) that `hld_v2.md` SS 10's migration runbook has "NOT
@@ -509,9 +586,16 @@ delta, it says so:
 - **ADR-019 `register-mcp` (3.80) versus PRD FR-18/NFR-5 (3.20) versus PRD FR-16 (2.80).** All three
   sit inside D5, all three within 1.0 WSJF of each other. Their relative order in this plan is set
   entirely by `blocked_by`, never by WSJF.
+- **PRD FR-9a (2.875, recomputed 2026-08-02) versus PRD NFR-2 (2.875).** An exact tie, reached from
+  different CoD splits (6/9/8 versus 8/8/7). See section 2.5. V2-009 dropped four rank places when it
+  was re-pointed 5 -> 8. **Nothing was reordered as a result**, and nothing should be: V2-009 sits in
+  batch B ahead of batch C because V2-010 hard-blocks on it and the selector hard-blocks on both, not
+  because of any score.
 - **Where WSJF IS load-bearing in this plan:** nowhere. Every batch boundary and every intra-batch
   order in this document is derived from a dependency, a gate, or a correctness constraint. WSJF is
-  reported in section 2.1 for continuity with the source, and is not used to sequence anything.
+  reported in section 2.1 for continuity with the source, and is not used to sequence anything. A
+  WSJF rank change therefore has **no** ordering consequence here by construction, which is why the
+  V2-009 recomputation above is recorded rather than acted on.
 
 ---
 

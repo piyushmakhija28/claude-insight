@@ -5,7 +5,7 @@
     "source": "docs/phase-6-sprint/github_issues.json",
     "source_sha256_prefix": "115834ee06fab2da55ba93d848bebb18",
     "date": "2026-08-01",
-    "status": "COMPLETE -- all 37 drafts created",
+    "status": "COMPLETE -- all 37 drafts created; V2-009 size corrected 2026-08-02",
     "drafts_total": 37,
     "created_and_retained": 37,
     "created_then_closed_as_duplicate": 1,
@@ -14,7 +14,17 @@
     "verification_method": "Per-batch label listings from GitHub AFTER creation (batch:A=9, batch:B=2, batch:C=4, batch:D=3, batch:E=6, batch:F=3, batch:G=9, batch:H=2; sum 38). Each listing returned fewer rows than the observed page cap, so each is complete. Counts are from GitHub listings, never from counting successful tool calls.",
     "page_cap_finding": "github_list_issues returns at most 25 rows. A state=all listing filtered by the v2.0.0 label returned exactly 25 (issues 269-293) while 38 carry that label. A caller trusting that single listing would have concluded 25 issues exist. Per-batch listings were used instead precisely because each stays under the cap.",
     "duplicate_summary": "Exactly one duplicate pair, from the first create call before the root cause was known. No duplicate occurred in the 36 subsequent creates, each of which was verified immediately after creation by a narrow label listing.",
-    "duplicate_root_cause": "mcp-github-api/base/clients.py:338 returned Github(token) with PyGithub defaults. PyGithub GithubRetry adds POST to urllib3 allowed_methods; urllib3 omits POST by design because retrying a non-idempotent write duplicates the resource. With timeout=15 and a status_forcelist covering 500-599 plus 403, a POST that GitHub accepts but answers slowly is retried and creates the record twice. Fixed in commit 33af037 on branch fix/non-idempotent-post-retry. THE FIX WAS NOT LIVE DURING THIS RUN -- it requires an MCP server restart that did not happen. Every write in this run was made under the unfixed client."
+    "duplicate_root_cause": "mcp-github-api/base/clients.py:338 returned Github(token) with PyGithub defaults. PyGithub GithubRetry adds POST to urllib3 allowed_methods; urllib3 omits POST by design because retrying a non-idempotent write duplicates the resource. With timeout=15 and a status_forcelist covering 500-599 plus 403, a POST that GitHub accepts but answers slowly is retried and creates the record twice. Fixed in commit 33af037 on branch fix/non-idempotent-post-retry. THE FIX WAS NOT LIVE DURING THIS RUN -- it requires an MCP server restart that did not happen. Every write in this run was made under the unfixed client.",
+    "size_totals": {
+      "ASSUMED": 34,
+      "RE_ESTIMATED": 8,
+      "SOURCED": 45,
+      "SOURCED_SET_SPLIT": 24,
+      "TOTAL": 111,
+      "unsized_entries": 1,
+      "note": "Computed by summing the map entries themselves, not copied from sprint_plan.md. SOURCED_SET_SPLIT entries are per-issue splits whose set totals are SOURCED; they are counted here under their own label so the arithmetic is transparent."
+    },
+    "correction_2026_08_02": "V2-009 held size 5 / SOURCED, stale after the 2026-08-02 re-point. It was the ONLY stale size entry of the 37: verified by enumerating all 37 entries, not sampled. Corrected to 8 / RE_ESTIMATED. Map total moved 108 -> 111."
   },
   "labels": {
     "path_taken": "github_create_issue AUTO-CREATED every missing label. No github_create_label call was made at any point.",
@@ -153,10 +163,11 @@
       "batch": "B",
       "gate": "D4",
       "title": "PRD FR-9a / SRS FR-21: fix call-graph DISCOVERY truncation",
-      "size": 5,
-      "size_provenance": "SOURCED",
+      "size": 8,
+      "size_provenance": "RE_ESTIMATED",
       "implements_prd": "FR-9a",
-      "implements_srs": "FR-21"
+      "implements_srs": "FR-21",
+      "size_note": "Re-pointed 5 -> 8 on 2026-08-02 by product-manager-agent after the owner ruling of 2026-08-01 replaced FR-9a acceptance criterion with a 14-item runtime-proof AC. RE_ESTIMATED is a distinct bucket from SOURCED and ASSUMED: the source figure no longer describes the work, and a prior figure existed and was displaced rather than being absent. See sprint_plan.md section 2.4."
     },
     {
       "key": "V2-010",
