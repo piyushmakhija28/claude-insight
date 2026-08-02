@@ -20,10 +20,13 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 # compute_call_paths() previously hard-coded max_depth=15 and max_paths=200
 # which silently truncated analysis of any call chain longer than 15 hops.
-# Issue #207 raised the defaults and made both configurable via env vars so
-# operators can tune per project without editing source.
+# Issue #207 raised the defaults and made both configurable via env vars.
+# Issue #265: max_paths=500 still bound in production -- it truncated path
+# traversal on every run regardless of how many files were ingested, so the
+# shipping default is now unbounded and only an explicit operator setting
+# reintroduces a cap.
 #   CLAUDE_CG_MAX_DEPTH  (default 30) -- deeper covers most real codebases
-#   CLAUDE_CG_MAX_PATHS  (default 500) -- permits wider fanout capture
+#   CLAUDE_CG_MAX_PATHS  (default unbounded) -- set to a positive integer to cap
 # Callers may also pass explicit max_depth / max_paths kwargs which override
 # the env defaults for a single call.
 
@@ -39,8 +42,25 @@ def _env_int(name, default):
         return default
 
 
+def _env_positive_int_or_none(name):
+    """Read an optional positive-integer cap from the environment.
+
+    Returns None (meaning "no cap") when the variable is unset, blank,
+    unparseable, or non-positive, so a malformed value can never silently
+    truncate traversal.
+    """
+    raw = os.environ.get(name)
+    if not raw:
+        return None
+    try:
+        value = int(raw)
+    except (ValueError, TypeError):
+        return None
+    return value if value > 0 else None
+
+
 DEFAULT_MAX_DEPTH = _env_int("CLAUDE_CG_MAX_DEPTH", 30)
-DEFAULT_MAX_PATHS = _env_int("CLAUDE_CG_MAX_PATHS", 500)
+DEFAULT_MAX_PATHS = _env_positive_int_or_none("CLAUDE_CG_MAX_PATHS")
 
 # =========================================================================
 # Node / Edge factory helpers
@@ -298,18 +318,20 @@ class CallGraph:
             max_depth: Maximum path depth to explore. Defaults to
                 DEFAULT_MAX_DEPTH (30, overridable via CLAUDE_CG_MAX_DEPTH
                 env var). Paths longer than this are truncated.
-            max_paths: Maximum number of paths to emit. Defaults to
-                DEFAULT_MAX_PATHS (500, overridable via CLAUDE_CG_MAX_PATHS
-                env var). Emission stops once this many paths have been
-                collected and a warning is logged.
+            max_paths: Maximum number of paths to emit, or None for no cap.
+                Defaults to DEFAULT_MAX_PATHS (unbounded, overridable via
+                CLAUDE_CG_MAX_PATHS env var). When a cap is in force,
+                emission stops once that many paths have been collected and
+                a warning is logged.
 
         Returns list of path dicts:
         [{"id": "path_N", "path": [fqn1, fqn2, ...], "depth": N,
           "total_complexity": N}]
 
         Previously hard-coded at max_depth=15, max_paths=200 -- issue #207
-        raised the defaults and made them configurable so deep call chains
-        in larger codebases are no longer silently truncated.
+        raised the defaults and made them configurable, and issue #265
+        removed the remaining max_paths cap that still truncated every
+        production run.
         """
         if self._call_paths is not None:
             return self._call_paths
@@ -351,10 +373,10 @@ class CallGraph:
         paths = []
         path_id = 0
         for entry in entry_points:
-            if path_id >= max_paths:
+            if max_paths is not None and path_id >= max_paths:
                 break
             stack = [(entry, [entry], 0)]
-            while stack and path_id < max_paths:
+            while stack and (max_paths is None or path_id < max_paths):
                 current, path, depth = stack.pop()
                 if depth >= max_depth:
                     continue
@@ -385,7 +407,7 @@ class CallGraph:
         # Emit a warning when exploration hit a hard cap so operators know
         # their results may be truncated. Keeps silent truncation visible
         # without changing the return shape.
-        if path_id >= max_paths:
+        if max_paths is not None and path_id >= max_paths:
             logger.warning(
                 "compute_call_paths: hit max_paths=%d limit; results truncated. "
                 "Increase via CLAUDE_CG_MAX_PATHS env var or pass max_paths kwarg.",
