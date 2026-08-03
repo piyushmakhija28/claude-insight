@@ -2,7 +2,7 @@
 
 **Project:** Claude Workflow Engine
 **Version:** 1.21.5
-**Date:** 2026-08-02
+**Date:** 2026-08-03
 **Author:** Claude Workflow Engine Team
 
 ---
@@ -381,8 +381,12 @@ site, including the mode-less `open(path)` form, across the 19 confirmed sites.
 - Priority: Medium
 - Source: `docs/phase-0-requirements/prd-v2.md` FR-17 (Deliverable D5)
 - Added: 2026-08-01
-- Status: DESIGNED, NOT BUILT. The 19-site count is quoted from `prd-v2.md`; this SRS pass did not
-  re-run the scan.
+- Status: BUILT and MEASURED 2026-08-03 (V2-019, #275). The 19-site count is no longer quoted: an
+  AST scan re-derived it repository-wide -- wider than the scope the figure was originally taken at
+  -- and returned exactly 19, matching the enumerated list in
+  `docs/phase-0-reverse-engineering/path_violations.md` one for one. All 19 now pass `encoding=`.
+  `scripts/verify_open_encoding.py` enforces this and is wired into CI; it reports UNDECIDABLE
+  rather than passing silently on a dynamic mode or `**kwargs`.
 
 **FR-31:** The system SHALL leave zero plugin-attributable functional residue after
 `claude plugin uninstall` -- no MCP tool the plugin registered remains callable in a fresh session.
@@ -1184,7 +1188,7 @@ User Prompt
 
 ---
 
-**Last Updated:** 2026-08-02
+**Last Updated:** 2026-08-03
 **Next Review:** 2026-06-21
 
 ---

@@ -54,7 +54,7 @@ class PreFlightChecker:
             if not flow_trace.exists():
                 continue
             try:
-                with open(flow_trace) as f:
+                with open(flow_trace, encoding="utf-8") as f:
                     data = json.load(f)
                 pipeline = data.get("pipeline", [])
                 if len(pipeline) > 0:
@@ -70,7 +70,7 @@ class PreFlightChecker:
         flow_trace = latest_session / "flow-trace.json"
 
         try:
-            with open(flow_trace) as f:
+            with open(flow_trace, encoding="utf-8") as f:
                 data = json.load(f)
 
             pipeline = data.get("pipeline", [])
@@ -111,7 +111,7 @@ class PreFlightChecker:
         progress_file = self.logs_dir / "session-progress.json"
         if progress_file.exists():
             try:
-                with open(progress_file) as f:
+                with open(progress_file, encoding="utf-8") as f:
                     data = json.load(f)
                 self.check("session-progress.json", True, f"Tasks created: {data.get('tasks_created', 0)}")
             except Exception as e:

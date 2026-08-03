@@ -32,6 +32,14 @@ jobs:
         with:
           python-version: "3.11"
 
+      # ADR-007 / SRS FR-29. A dev-mode build resolves the library from a live
+      # workspace checkout instead of the pinned snapshot, so an artefact
+      # published from such an environment carries a machine-specific path that
+      # exists on no user's machine. Runs before any build step, so a dev-mode
+      # environment cannot reach the upload.
+      - name: Refuse to publish from a dev-mode environment
+        run: python scripts/build_library_snapshot.py --check-dev-mode
+
       - name: Install build tools
         run: pip install build twine
 

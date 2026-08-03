@@ -307,6 +307,28 @@ states this in the same terms. Treat clean scores as bounded by their stated sco
 | 29 | **"17 pre-existing settings.json writers" is the wrong noun, and Phase 8 blessed it.** The source field is `audit_surface.json:406` `settings_json_touch_sites_count` — *string-literal mention sites*, 17 of them across **5 modules**, of which exactly **one** (`setup_wizard.py`) writes. `premise_scan_bh.json` marked the claim `MEASURED` / "ACCURATE AGAINST ITS SOURCE" by checking that the declared 17 matched the array's 17. **That check cannot catch a noun mismatch** — the count was right and the word for what it counted was wrong | V2-016's author, re-measuring a figure the brief told it not to trust |
 | 30 | **Two settings.json writers were never in any count**, because every scan was Python-only. `scripts/setup/setup-global-claude.ps1:127,140` (`Copy-Item -Force`) and `setup-global-claude.sh:161,167` (`cp`) **replace the user's entire `settings.json` with a template** whenever it lacks the string `3-level-flow`. That is strictly worse than the read-modify-write ADV-008 does document, and it appears in neither HLD SS 8.4 nor ADV-008's `minimum_fix` | V2-016's author; confirmed at source by the orchestrator |
 
+| 31 | **A negative control eroded until it broke, and the comment above it asserted that could not happen.** `test_call_graph_discovery_coverage.py`'s constants block claimed "these are floors, not equalities, so **adding source files cannot fail the suite**". False. The floor *assertions* do get safer as the tree grows — but the negative control asserts the *opposite* direction, that a 300-file capped build stays BELOW the floor, and growth erodes exactly that. Measured margin: **+662 methods on 2026-08-01, +10 on 2026-08-03**, then negative when one test file landed. It failed while nothing it guards had regressed | V2-021's author, which isolated it by moving its own file in and out rather than accepting the orchestrator's "pre-existing" guess |
+| 32 | **The orchestrator called #31 "pre-existing" on reasoning that could not have been right.** I argued batch E's growth caused it, from my own green run at `88bb5e9`. V2-019 had called it pre-existing after stashing its changes — but a stash cannot remove *siblings'* untracked files, so its control was contaminated by the very concurrency it had itself flagged. Both of us were guessing at an attribution one measurement settles | V2-021's author, by measuring capped-build methods with and without its file |
+
+| 33 | **The engine's own Level 0 auto-fix corrupted source code.** Its "Windows path handling" check flagged `tests\test_open_encoding_gate.py`, ran unattended in hook context, and rewrote `\n` to `/n` **inside string literals** — a newline escape is not a path separator. Two tests then failed with `SyntaxError: invalid syntax` on a snippet that no longer parsed. It corrupted some occurrences and not others in the same string, so the damage looked like an authoring typo rather than a tool | The orchestrator, tracing a `SyntaxError` in a file no human had edited |
+| 34 | **The orchestrator destroyed a node's work while tidying.** V2-019 recorded its measurement in `SRS.md`'s FR-30 status block. I ran `git restore SRS.md` to drop the hook's date-stamp churn and took the FR-30 update with it. `git restore` on a file with two unrelated sources of change discards both | The orchestrator, when the surviving diff turned out to be nothing but date stamps |
+
+**#33 and #34 are the same shape as #31 — an automatic process degrading work nobody was watching.**
+#33 is the more serious: an auto-fix that runs unattended and rewrites string literals can silently
+break any file it touches, and it fires on a check whose premise (backslash means path) is wrong for
+Python source. **#34's lesson is narrower and mine: never `git restore` a whole file to drop
+generated churn when a real edit is also in it** — inspect the diff and revert only the hunks that
+are noise.
+
+**#31 and #32 close the loop on the rule this project keeps relearning: a check is only as good as its
+ability to fail, and that ability can decay silently.** The control was correct when written and
+became vacuous-then-broken without anyone touching it. It is now anchored to the complete build of
+the same run, so it cannot erode again — and, proven at the time of the fix, it still fails when the
+cap is raised above the file count. **Measured 2026-08-03: complete build 452 files / 4448 methods
+against floors of 411 / 3506 — a build could lose 942 methods and still clear the floor.** The
+literals were deliberately NOT re-baselined, because `phase-5-uml/callgraph_coverage_probe.md` cites
+them and moving them silently would break that provenance.
+
 **#29 and #30 are one lesson from two directions: a number can be verified against its source and
 still be false.** #29's count matched its array exactly and was still wrong about *what it counted*;
 #30's scan was internally consistent and still blind to two files because it only read one language.

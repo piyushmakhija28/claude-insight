@@ -115,8 +115,39 @@ def sync_version(new_version):
         print("[WARN] sync-version.py failed: %s" % str(e))
 
 
+def assert_not_dev_mode():
+    """Refuse to release when CLAUDE_PLUGIN_DEV_MODE is set (ADR-007, SRS FR-29).
+
+    A dev-mode build resolves the library from a live workspace checkout rather
+    than the pinned snapshot, so releasing one would publish an artefact whose
+    routing data came from a machine-specific path that exists on no user's
+    machine. ADR-007 buys reproducibility, and reproducibility is worth nothing
+    if the flag that bypasses it can be left on by accident.
+
+    The check delegates to ``scripts/build_library_snapshot.py`` rather than
+    reimplementing the predicate, so the rule for what counts as "set" lives in
+    exactly one place. The import is deferred into the function body because it
+    needs a sys.path entry that must not run at module import time.
+
+    Raises:
+        SystemExit: With status 1 when the flag is set.
+    """
+    scripts_dir = str(PROJECT_ROOT / "scripts")
+    if scripts_dir not in sys.path:
+        sys.path.insert(0, scripts_dir)
+    from build_library_snapshot import DevModeRelease
+    from build_library_snapshot import assert_not_dev_mode as _assert
+
+    try:
+        _assert(action="release")
+    except DevModeRelease as exc:
+        print("[BLOCKED] %s" % exc)
+        sys.exit(1)
+
+
 def main():
     """Entry point for release automation."""
+    assert_not_dev_mode()
     dry_run = "--dry-run" in sys.argv
     args = [a for a in sys.argv[1:] if not a.startswith("--")]
 

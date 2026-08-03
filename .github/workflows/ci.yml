@@ -147,6 +147,16 @@ jobs:
       - name: Policy orphan dispositions (gate)
         run: python scripts/verify_policy_orphan_dispositions.py
 
+      # SRS FR-30: no text-mode open() may rely on the platform default codepage.
+      # cp1252 on the Windows dev machine, UTF-8 on this runner -- the same file
+      # read on both yields different bytes, so this is a correctness gate and
+      # not a style one. It is an AST pass rather than a grep because the
+      # baseline it replaced was a grep, and that grep undercounted by seven by
+      # requiring an explicit mode string: open(path) with no mode is already
+      # text mode. Undecidable call sites fail rather than pass quietly.
+      - name: Text-mode open() encoding (gate)
+        run: python scripts/verify_open_encoding.py
+
       - name: Install production dependencies
         run: uv pip install -r requirements.txt --system
 

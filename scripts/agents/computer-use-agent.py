@@ -405,7 +405,7 @@ class ComputerUseAgent:
 
         # Save report
         report_file = self.screenshots_dir / "test-report.json"
-        with open(report_file, "w") as f:
+        with open(report_file, "w", encoding="utf-8") as f:
             json.dump(report, f, indent=2)
 
         print("=" * 80)

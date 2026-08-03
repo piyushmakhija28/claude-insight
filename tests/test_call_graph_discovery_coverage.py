@@ -46,9 +46,23 @@ CANARY_PREFIX = "langgraph_engine/sdlc_pipeline/"
 # MEASURED 2026-08-01 by docs/phase-5-uml/callgraph_coverage_probe.md section 2,
 # with the file cap lifted: files_analyzed=411, total_classes=480,
 # total_methods=3506, functions=1340, call_edges=26114, resolved_edges=7004.
-# The shipping truncated build produced 300 / 449 / 2844. These are floors, not
-# equalities, so adding source files cannot fail the suite while any regression
-# toward the truncated figures does.
+# The shipping truncated build produced 300 / 449 / 2844.
+#
+# CORRECTED 2026-08-03. This block previously claimed "these are floors, not
+# equalities, so adding source files cannot fail the suite". That was FALSE and
+# a measurement refuted it. The floor ASSERTIONS do only get safer as the tree
+# grows -- but the negative control asserted the opposite direction, that a
+# capped build stays BELOW the floor, and growth erodes that. Measured margin
+# below FLOOR_METHODS for a 300-file capped build: +662 on 2026-08-01, +10 on
+# 2026-08-03, then negative once a single new test file landed. That control is
+# now anchored to the complete build of the same run instead of to these
+# literals, so it cannot erode again.
+#
+# These literals remain a dated probe measurement and are deliberately NOT
+# re-baselined here: they are cited by docs/phase-5-uml/callgraph_coverage_probe.md
+# and silently moving them would break that provenance. Note the consequence
+# while they stand -- a floor taken on a 411-file tree discriminates weakly
+# against truncation once the tree is materially larger.
 FLOOR_FILES = 411
 FLOOR_CLASSES = 480
 FLOOR_METHODS = 3506
@@ -416,12 +430,23 @@ class TestChecksCanFail:
 
         assert expected ^ analysed, "capped build must break the canary, otherwise (B) proves nothing"
 
-    def test_regression_floor_fails_on_a_capped_build(self):
-        """The floor rejects a build truncated to the shipping 300 files."""
+    def test_a_capped_build_is_detectably_smaller_than_a_complete_one(self, default_build):
+        """Truncation is detectable, measured against this same run's complete build.
+
+        This control was previously anchored to the frozen FLOOR_* literals, and
+        that anchoring eroded as the repository grew: the first
+        TRUNCATED_BASELINE_FILES discovered files accumulate methods until a
+        capped build clears a floor measured on a smaller tree. Its margin fell
+        from 662 methods on 2026-08-01 to 30 BELOW zero on 2026-08-03, at which
+        point the control failed while nothing it guards had regressed.
+
+        Anchoring both sides to the same run removes the erosion entirely: a
+        capped build is smaller than a complete one at every repository size.
+        """
         capped = run_captured_build(PROJECT_ROOT, max_files=TRUNCATED_BASELINE_FILES)
 
-        assert capped.stats["files_analyzed"] < FLOOR_FILES
-        assert capped.stats["total_methods"] < FLOOR_METHODS
+        assert capped.stats["files_analyzed"] < default_build.stats["files_analyzed"]
+        assert capped.stats["total_methods"] < default_build.stats["total_methods"]
 
     def test_def_time_binding_is_still_demonstrably_a_silent_no_op(self, monkeypatch):
         """Reproduce the pre-fix binding and watch the rebind be ignored.

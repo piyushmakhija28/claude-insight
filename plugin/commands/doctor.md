@@ -24,6 +24,30 @@ Add `--strict` to make it exit non-zero when no local version-push gate is in
 place. Without it the command always exits zero, because a diagnostic that fails
 the session it is diagnosing is not useful.
 
+Then report the pinned library snapshot's state:
+
+```
+python "${CLAUDE_PLUGIN_ROOT}/scripts/snapshot_status.py"
+```
+
+## The snapshot line
+
+The snapshot is the pinned copy of the library's routing registries and agent
+personas that this plugin carries (ADR-007). It is why the plugin works on a
+machine with no `claude-global-library` checkout.
+
+Report the status line as-is, and read it correctly:
+
+- `CURRENT` or `NO_LIBRARY` -- nothing is wrong. `NO_LIBRARY` is the **expected**
+  state on an ordinary machine: there is no library checkout to compare against,
+  so the plugin runs on its pinned snapshot exactly as intended. Do not present
+  it as a problem, and do not suggest cloning the library to "fix" it.
+- `STALE` -- the snapshot and a live library checkout disagree on version. This
+  only ever appears on a machine that has both. It means a rebuild is due; it
+  does not mean the plugin is broken.
+- `NO_SNAPSHOT` or `UNREADABLE` -- the plugin cannot resolve agents or skills at
+  all. This one is a real fault. Say so plainly.
+
 ## The one line that matters
 
 When neither the `PreToolUse` hook nor the version-push-gate MCP server is
