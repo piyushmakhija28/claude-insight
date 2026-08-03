@@ -78,6 +78,52 @@ def _generate_issue_title(user_message: str, task_type: str, complexity: int) ->
     return clean
 
 
+GITHUB_ISSUE_EFFECT_NAME = "github_issue"
+
+
+def _create_issue_once(state: FlowState, create_fn) -> Dict[str, Any]:
+    """Create the GitHub issue at most once per session-and-step.
+
+    Issue creation is a non-idempotent external effect: a resumed or retried
+    Step 2 that calls it again produces a second issue for one logical task.
+    This repository has already shipped that exact duplicate. The effect ledger
+    keys the creation on the step's checkpoint identity, so a replay returns the
+    recorded issue instead of POSTing again.
+
+    When the ledger is unavailable the creation proceeds unguarded rather than
+    failing the step, because losing the guard is recoverable and blocking issue
+    creation outright is not.
+
+    Args:
+        state: Current FlowState, used for the session identity.
+        create_fn: Zero-argument callable performing the actual creation.
+
+    Returns:
+        The creation result dict, either freshly produced or replayed.
+    """
+    session_id = state.get("session_id", "") or os.environ.get("CURRENT_SESSION_ID", "")
+    if not session_id:
+        logger.warning("Step 8: no session_id available; issue creation runs without replay guard")
+        return create_fn()
+
+    try:
+        from ...effect_ledger import EffectLedger
+    except ImportError as exc:
+        logger.warning("Step 8: effect ledger unavailable ({}); creating issue unguarded", exc)
+        return create_fn()
+
+    ledger = EffectLedger(session_id)
+    key = ledger.effect_key(step=2, effect_name=GITHUB_ISSUE_EFFECT_NAME)
+    effect, replayed = ledger.run_once(
+        key,
+        create_fn,
+        commit_predicate=lambda r: bool(isinstance(r, dict) and r.get("success")),
+    )
+    if replayed:
+        logger.info("Step 8: replayed existing issue for {} -- no duplicate created", key)
+    return effect
+
+
 def _slugify_title(title: str, max_len: int = 50) -> str:
     """Convert a title to a branch-name-safe slug."""
     slug = title.lower().strip()
@@ -180,11 +226,14 @@ def step2_github_issue_creation(state: FlowState) -> Dict[str, Any]:
         if Level3GitHubWorkflow is not None:
             try:
                 workflow = Level3GitHubWorkflow(session_dir=session_path or ".", repo_path=project_root)
-                result = workflow.step2_create_issue(
-                    title=title,
-                    description=body,
-                    task_summary=user_msg,
-                    implementation_plan=plan_text,
+                result = _create_issue_once(
+                    state,
+                    lambda: workflow.step2_create_issue(
+                        title=title,
+                        description=body,
+                        task_summary=user_msg,
+                        implementation_plan=plan_text,
+                    ),
                 )
                 if result.get("success"):
                     return {

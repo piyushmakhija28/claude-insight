@@ -379,16 +379,28 @@ def _run_step(
                 logger.warning(f"[v2] Metrics record failed: {me}")
 
         # Checkpoint: merge state + result then save (success_status=True)
+        checkpoint_degraded = False
         if cp:
             try:
                 merged = {**dict(state), **(result or {})}
-                cp.save_checkpoint(
+                saved = cp.save_checkpoint(
                     step_number,
                     merged,
                     success_status=True,
                 )
+                if not saved:
+                    checkpoint_degraded = True
+                    logger.error(
+                        f"[v2] Checkpoint save for step {step_number} did not land; "
+                        f"session marked degraded and resume will refuse it"
+                    )
             except Exception as ce:
-                logger.warning(f"[v2] Checkpoint save failed: {ce}")
+                checkpoint_degraded = True
+                logger.error(f"[v2] Checkpoint save raised for step {step_number}: {ce}")
+                try:
+                    cp.mark_degraded(step_number, "%s: %s" % (type(ce).__name__, ce))
+                except Exception as mark_exc:
+                    logger.error(f"[v2] Could not record degraded marker: {mark_exc}")
 
         print(f"[STEP {step_number:02d}] {step_label} - OK ({duration*1000:.0f}ms)", file=sys.stderr)
         logger.info(f"[STEP {step_number:02d}] {step_label} - OK ({duration*1000:.0f}ms)")
@@ -399,26 +411,26 @@ def _run_step(
         # Write telemetry entry (non-blocking)
         _write_telemetry(state, step_number, step_label, "OK", duration * 1000, result)
 
-        # Save workflow memory for resume support (non-blocking)
-        try:
-            import json as _json
+        # Progress surface: projected from the checkpoint record, never written
+        # independently of it (a second writer could report a step the checkpoint
+        # does not carry, and the resume path reads this file).
+        if cp:
+            try:
+                from ..checkpoint_manager import write_progress_projection
 
-            session_dir = state.get("session_dir", "")
-            if session_dir:
-                mem_path = Path(session_dir) / "workflow-memory.json"
-                mem_data = {
-                    "last_step": step_number,
-                    "last_step_label": step_label,
-                    "last_step_status": "SUCCESS",
-                    "timestamp": datetime.now().isoformat(),
-                    "session_id": state.get("session_id", ""),
-                }
-                mem_path.write_text(_json.dumps(mem_data, indent=2), encoding="utf-8")
-        except OSError as exc:
-            logger.debug(f"[subgraph] workflow memory write skipped: {exc}")
+                write_progress_projection(
+                    cp,
+                    step_number,
+                    state.get("session_dir", ""),
+                    step_label,
+                )
+            except Exception as exc:
+                logger.debug(f"[subgraph] progress projection skipped: {exc}")
 
         if result is not None:
             result[f"step{step_number}_execution_time_ms"] = duration * 1000
+            if checkpoint_degraded:
+                result["checkpoint_degraded"] = True
 
         # Add total pipeline execution time when Step 8 (Final Telemetry & Summary) completes
         if step_number == 8 and result is not None:
@@ -433,7 +445,10 @@ def _run_step(
             except Exception as exc:
                 logger.debug(f"[subgraph] total execution-time calc skipped: {exc}")
 
-        return result or {}
+        final_result = result or {}
+        if checkpoint_degraded:
+            final_result["checkpoint_degraded"] = True
+        return final_result
 
     except Exception as exc:
         duration = time.time() - step_start
@@ -471,17 +486,29 @@ def _run_step(
                 logger.debug(f"[subgraph] failure metric record skipped: {metric_exc}")
 
         # Save failed checkpoint (success_status=False, include error message)
+        checkpoint_degraded = False
         if cp:
             try:
                 merged = {**dict(state), **(fallback_result or {})}
-                cp.save_checkpoint(
+                saved = cp.save_checkpoint(
                     step_number,
                     merged,
                     success_status=False,
                     error_message=f"{type(exc).__name__}: {str(exc)[:200]}",
                 )
+                if not saved:
+                    checkpoint_degraded = True
+                    logger.error(
+                        f"[v2] Failure checkpoint for step {step_number} did not land; "
+                        f"session marked degraded and resume will refuse it"
+                    )
             except Exception as ce:
-                logger.warning(f"[v2] Failed checkpoint save after error: {ce}")
+                checkpoint_degraded = True
+                logger.error(f"[v2] Failure checkpoint save raised for step {step_number}: {ce}")
+                try:
+                    cp.mark_degraded(step_number, "%s: %s" % (type(ce).__name__, ce))
+                except Exception as mark_exc:
+                    logger.error(f"[v2] Could not record degraded marker: {mark_exc}")
 
         print(f"[STEP {step_number:02d}] {step_label} - FAILED: {exc}", file=sys.stderr)
         logger.error(f"[STEP {step_number:02d}] {step_label} - FAILED: {exc}")
@@ -497,6 +524,8 @@ def _run_step(
             error_key: str(exc),
             f"step{step_number}_execution_time_ms": duration * 1000,
         }
+        if checkpoint_degraded:
+            base["checkpoint_degraded"] = True
 
         if fallback_result:
             return {**fallback_result, **base}
