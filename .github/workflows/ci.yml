@@ -157,6 +157,14 @@ jobs:
       - name: Text-mode open() encoding (gate)
         run: python scripts/verify_open_encoding.py
 
+      # Home-directory literals in CODE (FR-15 / SRS FR-28). Landed with V2-018
+      # and left unwired until V2-025's audit found it -- the same defect class
+      # this repository had already found once, when three policy gates existed
+      # and nothing executed any of them. Classification is by enclosing node,
+      # so a path inside a docstring is documentation and does not fail.
+      - name: Home-directory path literals (gate)
+        run: python scripts/verify_home_paths.py
+
       - name: Install production dependencies
         run: uv pip install -r requirements.txt --system
 

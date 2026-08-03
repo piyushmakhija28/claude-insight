@@ -341,6 +341,17 @@ measurement was already designed; what was undecided was which outcome the proje
 > **can still fail**. The narrowing is requirement-side scoping; the host cannot tell a safety gate
 > from an operational tool and never will.
 
+| 38 | **The orchestrator's brief asserted a fact about three files that was true of one.** I told V2-025 that all three settings files "currently DO carry a live PreToolUse registration", and built a design instruction on it. Measured: only `~/.claude/settings.json` does; `~/.claude/settings.local.json` and the tracked `.claude/settings.local.json` both have an **empty `hooks` block**. The agent measured it, contradicted the brief, and **changed its default settings target because of it** — defaulting to the user-scope file would have parked the gate in the passing half of its own truth table and flipped whenever the owner edited a file CI cannot see | V2-025's author, refusing to take the brief's premise on trust |
+| 39 | **I landed a gate and never wired it.** `scripts/verify_home_paths.py` shipped with V2-018 and appeared in no workflow and no pre-commit hook — found by a repo-wide search across `*.yml/*.yaml/*.py/*.toml/*.cfg/*.md/*.sh`. **This is the same defect class this record already holds**, from when three policy gates existed and nothing executed any of them. I had written that finding myself and then reproduced it. Now wired into `ci.yml` | V2-025's author, auditing what actually invokes the gates |
+
+**#38 and #39 are both mine and both are process failures rather than knowledge failures.** #38 is
+correction 27's rule again — a fact restated from working memory when one command would have settled
+it — except this time it was *inside a brief*, where a wrong premise steers an agent's design rather
+than merely misinforming a reader. **The agent's refusal to accept it is what saved the design**, and
+that only worked because the brief also told it to re-measure everything. #39 is worse in a quiet
+way: I found the unwired-gate defect, wrote it into this record, and then committed a gate without
+wiring it. **Recording a lesson is not the same as having learned it.**
+
 **#35 is the more uncomfortable of the two, because half of it is mine.** I rewrote the Level 0 path
 scanner, wrote its docstring, added nine tests and reported it fixed — and it still only recognises
 one of the two ways a Windows drive path is written. The tests I wrote all used the backslash form,
