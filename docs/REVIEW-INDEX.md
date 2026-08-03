@@ -318,11 +318,28 @@ states this in the same terms. Treat clean scores as bounded by their stated sco
 
 | 37 | **NOT an error but a live REQUIREMENTS CONFLICT: two accepted criteria demand opposite outcomes from the same one-shot measurement.** ADR-020 Path C's PASS is that `claude plugin uninstall` **does NOT remove** the `register-mcp`-written `mcpServers` entry — that is how the push gate outlives the plugin (`adr-020-path-c-verification.md:246`, verified). PRD FR-18 / SRS FR-31 (a)'s PASS is that **no MCP tool the plugin registered remains callable** — the entry is gone. **One install-then-uninstall cycle settles both, and they cannot both pass.** Both procedures are written, both are blocked on the same owner ruling, and neither document referenced the other | V2-022's author, reading both procedures against each other |
 
-**#37 needs a decision before either cycle is authorised, and it is the only item in this record that
-cannot be resolved by measuring harder.** The measurement is already designed; what is undecided is
-which outcome the project wants. If the push gate is meant to survive uninstall, FR-31 (a) is
-mis-stated; if uninstall is meant to leave nothing, ADR-020's Path C control does not exist and
-ADV-012's pre-push hook moves from proposed to required.
+**#37 was the only item in this record that could not be resolved by measuring harder** — the
+measurement was already designed; what was undecided was which outcome the project wanted.
+
+> **RESOLVED by owner ruling, 2026-08-03. ADR-020 Path C wins.** The version push gate is a safety
+> net against un-gated pushes, so a `register-mcp`-written entry **persists in user-scope settings
+> across plugin uninstall** unless the user explicitly removed it. **FR-31 (a) is therefore
+> scope-limited to plugin-specific *operational* tools and does not reach safety-enforcement gates**;
+> non-essential residue (caches, ephemeral state) is still purged.
+>
+> Consequences that follow and are NOT yet done: `prd-v2.md` FR-18 and `SRS.md` FR-31 both still
+> carry the unnarrowed wording, and `adr-020-path-c-verification.md` and
+> `fr31-uninstall-residue-verification.md` SS 6 both still present Path C as an open question rather
+> than a settled requirement. The blocked cycle, when authorised, now has ONE expected outcome
+> instead of two contradictory ones — which is what makes it worth running.
+>
+> **But the ruling does NOT unblock the cycle yet, and this was measured rather than assumed.**
+> `claude plugin uninstall` is capability-blind, and `push-gate` is marked `not_built_yet` in
+> `plugin/mcp-registry.json` because V2-024 owns it. So the **only** entry `register-mcp` can write
+> today is the progress writer — an *operational* tool, which the narrowing explicitly does **not**
+> exempt. A cycle run before V2-024 lands still resolves against an operational entry, and FR-31 (a)
+> **can still fail**. The narrowing is requirement-side scoping; the host cannot tell a safety gate
+> from an operational tool and never will.
 
 **#35 is the more uncomfortable of the two, because half of it is mine.** I rewrote the Level 0 path
 scanner, wrote its docstring, added nine tests and reported it fixed — and it still only recognises
