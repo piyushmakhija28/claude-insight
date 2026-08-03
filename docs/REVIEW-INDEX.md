@@ -316,6 +316,14 @@ states this in the same terms. Treat clean scores as bounded by their stated sco
 | 35 | **"0 absolute path literals" was false, and both the census and my own Level 0 rewrite missed the same form.** `scripts/tools/create_mcp_repos.py:25` hardcoded `Path("C:/Users/techd/Documents/workspace-...")` — a real absolute path carrying the machine owner's username. The census's regex checked the **backslash** drive form only. So does the AST scanner I wrote for the Level 0 guard two commits earlier and vouched for: its pattern requires a backslash, so `C:/` passes it untouched. Two independent checks with the same blind spot | V2-018's author found the literal; the orchestrator confirmed its own scanner shares the gap |
 | 36 | **2 of the census's 13 "code-level" home-directory sites are docstring `Example::` blocks** (`src/mcp/base/persistence.py:44` and `:199`). Remediating them would have rewritten documentation — the precise thing FR-15's own AC forbids. So the 13 was 11 genuine plus 2 false positives, **and 22 real CODE sites it never saw** | V2-018's author, classifying by enclosing node |
 
+| 37 | **NOT an error but a live REQUIREMENTS CONFLICT: two accepted criteria demand opposite outcomes from the same one-shot measurement.** ADR-020 Path C's PASS is that `claude plugin uninstall` **does NOT remove** the `register-mcp`-written `mcpServers` entry — that is how the push gate outlives the plugin (`adr-020-path-c-verification.md:246`, verified). PRD FR-18 / SRS FR-31 (a)'s PASS is that **no MCP tool the plugin registered remains callable** — the entry is gone. **One install-then-uninstall cycle settles both, and they cannot both pass.** Both procedures are written, both are blocked on the same owner ruling, and neither document referenced the other | V2-022's author, reading both procedures against each other |
+
+**#37 needs a decision before either cycle is authorised, and it is the only item in this record that
+cannot be resolved by measuring harder.** The measurement is already designed; what is undecided is
+which outcome the project wants. If the push gate is meant to survive uninstall, FR-31 (a) is
+mis-stated; if uninstall is meant to leave nothing, ADR-020's Path C control does not exist and
+ADV-012's pre-push hook moves from proposed to required.
+
 **#35 is the more uncomfortable of the two, because half of it is mine.** I rewrote the Level 0 path
 scanner, wrote its docstring, added nine tests and reported it fixed — and it still only recognises
 one of the two ways a Windows drive path is written. The tests I wrote all used the backslash form,
