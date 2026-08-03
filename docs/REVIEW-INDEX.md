@@ -313,6 +313,18 @@ states this in the same terms. Treat clean scores as bounded by their stated sco
 | 33 | **The engine's own Level 0 auto-fix corrupted source code.** Its "Windows path handling" check flagged `tests\test_open_encoding_gate.py`, ran unattended in hook context, and rewrote `\n` to `/n` **inside string literals** — a newline escape is not a path separator. Two tests then failed with `SyntaxError: invalid syntax` on a snippet that no longer parsed. It corrupted some occurrences and not others in the same string, so the damage looked like an authoring typo rather than a tool | The orchestrator, tracing a `SyntaxError` in a file no human had edited |
 | 34 | **The orchestrator destroyed a node's work while tidying.** V2-019 recorded its measurement in `SRS.md`'s FR-30 status block. I ran `git restore SRS.md` to drop the hook's date-stamp churn and took the FR-30 update with it. `git restore` on a file with two unrelated sources of change discards both | The orchestrator, when the surviving diff turned out to be nothing but date stamps |
 
+| 35 | **"0 absolute path literals" was false, and both the census and my own Level 0 rewrite missed the same form.** `scripts/tools/create_mcp_repos.py:25` hardcoded `Path("C:/Users/techd/Documents/workspace-...")` — a real absolute path carrying the machine owner's username. The census's regex checked the **backslash** drive form only. So does the AST scanner I wrote for the Level 0 guard two commits earlier and vouched for: its pattern requires a backslash, so `C:/` passes it untouched. Two independent checks with the same blind spot | V2-018's author found the literal; the orchestrator confirmed its own scanner shares the gap |
+| 36 | **2 of the census's 13 "code-level" home-directory sites are docstring `Example::` blocks** (`src/mcp/base/persistence.py:44` and `:199`). Remediating them would have rewritten documentation — the precise thing FR-15's own AC forbids. So the 13 was 11 genuine plus 2 false positives, **and 22 real CODE sites it never saw** | V2-018's author, classifying by enclosing node |
+
+**#35 is the more uncomfortable of the two, because half of it is mine.** I rewrote the Level 0 path
+scanner, wrote its docstring, added nine tests and reported it fixed — and it still only recognises
+one of the two ways a Windows drive path is written. The tests I wrote all used the backslash form,
+so every one of them passed while the gap sat untouched. **A test suite written by the same person
+who wrote the pattern inherits that person's blind spot**; the forward-slash form was found by a
+different agent solving a different problem. `verify_home_paths` now covers this repository for that
+class, so the hole is contained rather than closed — the Level 0 check itself is still half-blind and
+that is recorded, not fixed.
+
 **#33 and #34 are the same shape as #31 — an automatic process degrading work nobody was watching.**
 #33 is the more serious: an auto-fix that runs unattended and rewrites string literals can silently
 break any file it touches, and it fires on a check whose premise (backslash means path) is wrong for

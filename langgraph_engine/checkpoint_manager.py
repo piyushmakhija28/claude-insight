@@ -41,6 +41,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
+from langgraph_engine.core.claude_paths import get_claude_logs_dir
+
 try:
     from loguru import logger
 except ImportError:
@@ -82,7 +84,21 @@ def _serialize_state(state: Dict[str, Any]) -> Dict[str, Any]:
 class CheckpointManager:
     """Save and restore FlowState checkpoints per session."""
 
-    CHECKPOINT_DIR_TEMPLATE = "~/.claude/logs/sessions/{session_id}/checkpoints"
+    @staticmethod
+    def default_checkpoint_dir(session_id: str) -> Path:
+        """Build the default checkpoint directory for a session.
+
+        Replaces a module-level template string that spelled the Claude logs
+        root inline. The root now comes from path_resolver, so a relocated
+        layout moves this directory with it.
+
+        Args:
+            session_id: Unique identifier for this execution session.
+
+        Returns:
+            Path: Absolute checkpoint directory for the session.
+        """
+        return get_claude_logs_dir() / "sessions" / session_id / "checkpoints"
 
     def __init__(self, session_id: str, base_dir: Optional[str] = None):
         """
@@ -97,7 +113,7 @@ class CheckpointManager:
         if base_dir:
             self.checkpoint_dir = Path(base_dir).expanduser() / session_id / "checkpoints"
         else:
-            self.checkpoint_dir = Path(self.CHECKPOINT_DIR_TEMPLATE.format(session_id=session_id)).expanduser()
+            self.checkpoint_dir = self.default_checkpoint_dir(session_id)
 
         self.checkpoint_dir.mkdir(parents=True, exist_ok=True)
         logger.debug(f"CheckpointManager ready: {self.checkpoint_dir}")

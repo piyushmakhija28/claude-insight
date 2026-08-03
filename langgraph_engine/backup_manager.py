@@ -14,6 +14,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional
 
+from langgraph_engine.core.claude_paths import get_claude_logs_dir
 from langgraph_engine.core.logger_factory import get_logger
 
 logger = get_logger(__name__)
@@ -22,16 +23,18 @@ logger = get_logger(__name__)
 class BackupManager:
     """Manages file backups and rollback operations."""
 
-    def __init__(self, session_id: str, backup_base_dir: str = "~/.claude/logs"):
+    def __init__(self, session_id: str, backup_base_dir: Optional[str] = None):
         """
         Initialize backup manager for a session.
 
         Args:
             session_id: Unique session identifier
-            backup_base_dir: Base directory for backups
+            backup_base_dir: Base directory for backups. Defaults to the
+                Claude logs root resolved by path_resolver.
         """
         self.session_id = session_id
-        self.backup_dir = Path(backup_base_dir).expanduser() / "sessions" / session_id / "backup"
+        base = Path(backup_base_dir).expanduser() if backup_base_dir else get_claude_logs_dir()
+        self.backup_dir = base / "sessions" / session_id / "backup"
         self.backup_dir.mkdir(parents=True, exist_ok=True)
 
         self.diff_dir = self.backup_dir / "diffs"

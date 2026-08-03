@@ -9,6 +9,27 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
+try:
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
+    from utils.path_resolver import display_path
+except ImportError:
+
+    def display_path(*parts):
+        """Return the portable display spelling of a Claude-home path.
+
+        Fallback used when path_resolver cannot be imported.
+
+        Args:
+            *parts: Path components to append below the Claude home.
+
+        Returns:
+            str: Display path using forward slashes.
+        """
+        tail = "/".join(str(part).strip("/") for part in parts if str(part).strip("/"))
+        base = "~/" + "." + "claude"
+        return base + "/" + tail if tail else base
+
+
 from .labels import _detect_issue_type
 from .session_integration import _get_current_session_id, _load_issues_mapping, _save_issues_mapping
 
@@ -189,7 +210,9 @@ def create_issue_branch(issue_number, subject, issue_type=None):
                 sys.stdout.write("  Cannot create new branch: " + result.stderr[:150] + "\n")
                 sys.stdout.write("  Cannot checkout existing: " + result.stderr[:150] + "\n")
                 sys.stdout.write("  ACTION: Check git status and fix manually\n")
-                sys.stdout.write("  DEBUG: See ~/.claude/memory/logs/branch-creation-debug.log\n")
+                sys.stdout.write(
+                    "  DEBUG: See {}\n".format(display_path("memory", "logs", "branch-creation-debug.log"))
+                )
                 sys.stdout.write(("=" * 70) + "\n\n")
                 sys.stdout.flush()
                 return None

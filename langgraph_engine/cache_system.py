@@ -46,6 +46,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, Optional, Tuple
 
+from langgraph_engine.core.claude_paths import get_claude_logs_dir
+
 try:
     from loguru import logger
 except ImportError:
@@ -66,7 +68,7 @@ _SKILL_DEFS_TTL_SECONDS: int = 604800  # 7 days
 _MEMORY_MAX_ENTRIES: int = int(os.environ.get("CACHE_MEM_MAX", "512"))
 
 # Base directory for on-disk cache
-_DEFAULT_CACHE_BASE: str = os.environ.get("CACHE_BASE_DIR", "~/.claude/logs/cache")
+_DEFAULT_CACHE_BASE: str = os.environ.get("CACHE_BASE_DIR", str(get_claude_logs_dir() / "cache"))
 
 
 # ---------------------------------------------------------------------------

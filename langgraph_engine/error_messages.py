@@ -38,6 +38,11 @@ import os
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 
+from langgraph_engine.core.claude_paths import display_path
+
+_SKILLS_DISPLAY = display_path("skills")
+_AGENTS_DISPLAY = display_path("agents")
+
 # GitHub owner for help/troubleshooting links (configurable via env var)
 _GITHUB_OWNER = os.environ.get("CLAUDE_GITHUB_OWNER", "techdeveloper-org")
 
@@ -378,21 +383,24 @@ class _ErrorCatalog:
                 ),
                 recovery_steps=[
                     (
-                        f"Check if the skill file exists: 'ls ~/.claude/skills/**/{skill}*'"
+                        f"Check if the skill file exists: 'ls {_SKILLS_DISPLAY}/**/{skill}*'"
                         if skill
-                        else "Check the skills directory: 'ls ~/.claude/skills/'"
+                        else f"Check the skills directory: 'ls {_SKILLS_DISPLAY}/'"
                     ),
                     "Download missing skills from the claude-global-library repository",
                     "If the skill was recently added, run: 'python auto_task_launcher.sh' to sync",
-                    "Verify the skills directory structure: skills should be at ~/.claude/skills/<domain>/<skill-name>/skill.md",
+                    (
+                        "Verify the skills directory structure: skills should be at "
+                        f"{_SKILLS_DISPLAY}/<domain>/<skill-name>/skill.md"
+                    ),
                     "The pipeline will continue using general capabilities if the skill is unavailable",
                 ],
                 troubleshooting_links=[
                     f"https://github.com/{_GITHUB_OWNER}/claude-global-library - Skill definitions repository",
                 ],
                 help_commands=[
-                    "ls ~/.claude/skills/",
-                    "ls ~/.claude/agents/",
+                    f"ls {_SKILLS_DISPLAY}/",
+                    f"ls {_AGENTS_DISPLAY}/",
                 ],
                 severity="WARNING",
                 is_recoverable=True,
@@ -673,7 +681,7 @@ def format_exception(
 # Help text blocks
 # ---------------------------------------------------------------------------
 
-_GENERAL_HELP = """
+_GENERAL_HELP = f"""
 Claude Workflow Engine Pipeline - Help
 
 The pipeline runs in 8 active steps to process your request:
@@ -684,7 +692,7 @@ The pipeline runs in 8 active steps to process your request:
 Common issues:
   - LLM provider unavailable -> check LLM_PROVIDER or ANTHROPIC_API_KEY
   - GitHub auth failed       -> set GITHUB_TOKEN environment variable
-  - Skills missing           -> check ~/.claude/skills/ directory
+  - Skills missing           -> check {_SKILLS_DISPLAY}/ directory
 
 Enable debug output:
   set CLAUDE_DEBUG=1    (Windows)
@@ -750,21 +758,21 @@ Skills Management Help
 Skills are Markdown files that teach the AI how to handle specific task types.
 
 Skill directory structure:
-   ~/.claude/skills/<domain>/<skill-name>/skill.md
+   {_SKILLS_DISPLAY}/<domain>/<skill-name>/skill.md
 
 List available skills:
-   ls ~/.claude/skills/
+   ls {_SKILLS_DISPLAY}/
 
 Download skills from the global library:
    Visit: https://github.com/{_GITHUB_OWNER}/claude-global-library
 
 To add a new skill manually:
-   1. Create directory: mkdir -p ~/.claude/skills/backend/my-skill
+   1. Create directory: mkdir -p {_SKILLS_DISPLAY}/backend/my-skill
    2. Create skill.md with capabilities, patterns, and tools
    3. The pipeline will auto-discover it on next run
 
 Agents work the same way:
-   ~/.claude/agents/<agent-name>/agent.md
+   {_AGENTS_DISPLAY}/<agent-name>/agent.md
 """
 
 # ---------------------------------------------------------------------------

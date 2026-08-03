@@ -36,6 +36,8 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+from langgraph_engine.core.claude_paths import get_claude_logs_dir
+
 logger = logging.getLogger(__name__)
 
 # Cache validity window
@@ -188,12 +190,13 @@ class ContextCache:
     - Detailed miss reason categorisation for diagnostics
     """
 
-    def __init__(self, cache_base_dir: str = "~/.claude/logs/cache"):
+    def __init__(self, cache_base_dir=None):
         """
         Args:
             cache_base_dir: Directory where .json cache files are stored.
+                Defaults to the cache subtree of the path_resolver logs root.
         """
-        self.cache_dir = Path(cache_base_dir).expanduser()
+        self.cache_dir = Path(cache_base_dir).expanduser() if cache_base_dir else get_claude_logs_dir() / "cache"
         self._stats_file = self.cache_dir / "cache_stats.json"
         try:
             self.cache_dir.mkdir(parents=True, exist_ok=True)

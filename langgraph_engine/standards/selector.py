@@ -35,11 +35,13 @@ try:
     import sys as _sys
 
     _sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent / "src"))
-    from utils.path_resolver import get_claude_home, get_policies_dir
+    from utils.path_resolver import display_path, get_claude_home, get_policies_dir
 
     _STANDARD_SELECTOR_POLICIES_DIR = get_policies_dir()
     _STANDARD_SELECTOR_CLAUDE_HOME = get_claude_home()
 except ImportError:
+    from langgraph_engine.core.claude_paths import display_path
+
     _STANDARD_SELECTOR_POLICIES_DIR = Path.home() / ".claude" / "policies"
     _STANDARD_SELECTOR_CLAUDE_HOME = Path.home() / ".claude"
 
@@ -524,7 +526,10 @@ def select_standards(project_path: str, session_id: str = "default") -> Dict[str
             "source": "team_standards",
             "priority": PRIORITY_TEAM,
             "loaded": len(team_loaded),
-            "locations": ["~/.claude/policies/02-standards-system/**/*.md", "~/.claude/standards/*.md"],
+            "locations": [
+                display_path("policies", "02-standards-system") + "/**/*.md",
+                display_path("standards") + "/*.md",
+            ],
         }
     )
 

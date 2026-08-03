@@ -19,11 +19,33 @@ Prerequisites:
 import shlex
 import shutil
 import subprocess
+import sys
 from pathlib import Path
 
+try:
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
+    from utils.path_resolver import display_path
+except ImportError:
+
+    def display_path(*parts):
+        """Return the portable display spelling of a Claude-home path.
+
+        Fallback used when path_resolver cannot be imported.
+
+        Args:
+            *parts: Path components to append below the Claude home.
+
+        Returns:
+            str: Display path using forward slashes.
+        """
+        tail = "/".join(str(part).strip("/") for part in parts if str(part).strip("/"))
+        base = "~/" + "." + "claude"
+        return base + "/" + tail if tail else base
+
+
 # -- Paths ---------------------------------------------------------------------
-WORKSPACE = Path("C:/Users/techd/Documents/workspace-spring-tool-suite-4-4.27.0-new")
-ENGINE_ROOT = WORKSPACE / "claude-workflow-engine"
+ENGINE_ROOT = Path(__file__).resolve().parents[2]
+WORKSPACE = ENGINE_ROOT.parent
 MCP_SRC = ENGINE_ROOT / "src" / "mcp"
 BASE_SRC = MCP_SRC / "base"
 ORG = "techdeveloper-org"
@@ -46,7 +68,7 @@ SERVERS = [
             ("reset_enforcer_flags", "Reset all enforcement flags for a new task cycle"),
         ],
         "env_vars": [
-            ("CLAUDE_SESSION_DIR", "Path to session storage directory (default: ~/.claude/sessions)"),
+            ("CLAUDE_SESSION_DIR", "Path to session storage directory (default: {})".format(display_path("sessions"))),
             ("CLAUDE_POLICIES_DIR", "Path to policies directory (default: auto-detected)"),
         ],
         "benefits": [
@@ -158,7 +180,7 @@ SERVERS = [
         "env_vars": [
             ("CLAUDE_SESSION_DIR", "Session storage directory"),
             ("CLAUDE_POLICIES_DIR", "Policies directory (default: policies/)"),
-            ("CLAUDE_MCP_CONFIG", "Path to MCP config JSON (default: ~/.claude/settings.json)"),
+            ("CLAUDE_MCP_CONFIG", "Path to MCP config JSON (default: {})".format(display_path("settings.json"))),
         ],
         "benefits": [
             "Parallel MCP health checks complete in <2s (concurrent.futures ThreadPool)",
@@ -310,7 +332,7 @@ SERVERS = [
             ("session_export_summary", "Export full session summary as structured JSON"),
         ],
         "env_vars": [
-            ("CLAUDE_SESSION_DIR", "Session storage directory (default: ~/.claude/sessions)"),
+            ("CLAUDE_SESSION_DIR", "Session storage directory (default: {})".format(display_path("sessions"))),
             ("CLAUDE_SESSION_ID", "Current session ID (auto-generated if not set)"),
             ("CLAUDE_PROJECT", "Project identifier for session grouping"),
         ],
@@ -453,6 +475,7 @@ def make_readme(server):
     env_table = "\n".join(f"| `{var}` | {desc} |" for var, desc in server["env_vars"])
     benefits_list = "\n".join(f"- {b}" for b in server["benefits"])
     pip_deps_str = " ".join(server["pip_deps"])
+    settings_display = display_path("settings.json")
 
     engine_note_block = ""
     if server.get("engine_dep"):
@@ -528,7 +551,7 @@ cp .env.example .env
 
 ## Usage in Claude Code
 
-Add to your `~/.claude/settings.json`:
+Add to your `{settings_display}`:
 
 ```json
 {{
