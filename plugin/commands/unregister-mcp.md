@@ -9,6 +9,17 @@ that `register-mcp` wrote, and only those - provenance comes from the plugin's
 own ledger, never from guessing which entries in `settings.json` look like ours.
 A server the user registered by any other route is never touched.
 
+## Start-up check (run this first)
+
+```
+python "${CLAUDE_PLUGIN_ROOT}/scripts/mcp_registration.py" precondition
+```
+
+It prints one line when no local version-push gate is in place, and prints
+nothing at all otherwise. If a line appears, relay it verbatim before doing
+anything else, then continue - it reports a state, it does not block this
+command. Silence means the gate is in place; do not invent reassurance for it.
+
 ## Run it
 
 ```

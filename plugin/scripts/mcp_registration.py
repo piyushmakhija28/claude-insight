@@ -22,17 +22,39 @@ THREE SEPARATE CLAIMS, KEPT SEPARATE
   in bytes after a round trip even though it is equal as an object. Use
   ``--verify-round-trip`` to see both comparisons reported separately.
 
-ADR-020 LAYER 1
----------------
+ADR-020 LAYER 1 -- PREVENT
+--------------------------
 ``unregister`` refuses by default when ``PreToolUse`` is absent from the
-settings file's hooks block, because that combination leaves no local
-version-push gate at all. The refusal names the consequence and both ways
+settings file's hooks block. The refusal names the consequence and both ways
 forward. It can be overridden with ``--acknowledge-no-push-gate``: the action
 stays possible, but never by accident.
+
+The refusal text branches on the measured state. Only when the version-push-gate
+MCP server is actually registered and about to be removed does this command take
+a gate away; when no gate is registered, saying so would be false, so it says
+what is true instead. The trigger stays PreToolUse absence, per the acceptance
+criterion.
+
+ADR-020 LAYER 2 -- DETECT
+-------------------------
+``doctor`` diagnoses the plugin-side state, and ``precondition`` is the cheap
+start-up check every command runs first. Both emit ONE line, and only when no
+local version-push gate is in place -- neither the PreToolUse hook nor the
+version-push-gate MCP server. In the safe state they say nothing about it,
+because a detector that speaks every time is one its reader learns to skip.
+
+Neither spawns a process. Registration state is pure configuration, so the
+question "will a gate run in a future session" is answered by reading the
+settings file, never by starting a server.
+
+Layer 3 -- ADV-012's git pre-push hook -- is NAMED, NOT ADOPTED, and is not
+implemented here. It belongs to whoever owns PRD FR-23.
 
 USAGE
     python mcp_registration.py status
     python mcp_registration.py status --one-line
+    python mcp_registration.py doctor
+    python mcp_registration.py precondition
     python mcp_registration.py register --server-root <dir>
     python mcp_registration.py unregister
 """
@@ -57,6 +79,7 @@ from settings_store import (  # noqa: E402
 REGISTRY_FILE_NAME = "mcp-registry.json"
 LEDGER_FILE_NAME = "cwe-mcp-registrations.json"
 MANIFEST_MARKER = Path(".claude-plugin") / "plugin.json"
+PUSH_GATE_CAPABILITY = "version-push-gate"
 
 EXIT_OK = 0
 EXIT_FAILED = 1
@@ -302,6 +325,91 @@ def pre_tool_use_present(settings):
     return bool(hooks.get("PreToolUse"))
 
 
+def push_gate_server_id(servers):
+    """Return the catalogue id of the version-push-gate server.
+
+    Keyed off the capability rather than a hardcoded id so the catalogue stays
+    the single source of truth for which server carries the gate.
+
+    Args:
+        servers: Catalogue server descriptors.
+
+    Returns:
+        str or None: The server id, or None when the catalogue declares no
+        push-gate server.
+    """
+    for server in servers:
+        if server.get("capability") == PUSH_GATE_CAPABILITY:
+            return server.get("id")
+    return None
+
+
+def local_push_gate_state(settings, servers, removing=()):
+    """Describe which local version-push gates exist, before and after a removal.
+
+    Two independent mechanisms can enforce the version-push rule on this
+    machine: the PreToolUse hook, and the version-push-gate MCP server once it
+    is registered. The state ADR-020 exists to detect is neither being present.
+
+    Both flags are read from configuration alone. Nothing here inspects a
+    running process, because whether a gate will run in a future session is
+    decided entirely by what the settings file says.
+
+    Args:
+        settings: Parsed settings dictionary.
+        servers: Catalogue server descriptors.
+        removing: Server ids the caller is about to unregister.
+
+    Returns:
+        dict: hook_gate, mcp_gate_before, mcp_gate_after, unsafe_before and
+        unsafe_after flags.
+    """
+    gate_id = push_gate_server_id(servers)
+    registered = registered_names(settings)
+    hook_gate = pre_tool_use_present(settings)
+    mcp_before = bool(gate_id) and gate_id in registered
+    mcp_after = mcp_before and gate_id not in set(removing)
+    return {
+        "hook_gate": hook_gate,
+        "mcp_gate_before": mcp_before,
+        "mcp_gate_after": mcp_after,
+        "unsafe_before": (not hook_gate) and (not mcp_before),
+        "unsafe_after": (not hook_gate) and (not mcp_after),
+    }
+
+
+def push_gate_precondition_line(settings, servers, settings_path):
+    """Render the single ADR-020 layer-2 line, or None when the state is safe.
+
+    Returning None in the safe state is the point of this function rather than
+    an omission. A detector that speaks on every invocation trains its reader
+    to skip it, which would cost exactly the one case it exists to announce.
+
+    The consequence named here is what ``push_gate.py`` measurably enforces: a
+    VERSION change somewhere on the branch, and no uncommitted changes to
+    tracked files. It deliberately does not claim branch protection, which that
+    policy does not implement.
+
+    Args:
+        settings: Parsed settings dictionary.
+        servers: Catalogue server descriptors.
+        settings_path: Path of the settings file, named in the line.
+
+    Returns:
+        str or None: One line when no local push gate is in place, else None.
+    """
+    state = local_push_gate_state(settings, servers)
+    if not state["unsafe_after"]:
+        return None
+    return (
+        "[UNSAFE] No local version-push gate: PreToolUse is absent from {0} and the "
+        "version-push-gate MCP server is not registered, so nothing on this machine "
+        "checks that a branch carries a VERSION bump or that tracked changes are "
+        "committed before a push -- CI still catches it, but only after the push has "
+        "landed. Restore the PreToolUse entry, or run register-mcp.".format(Path(settings_path).as_posix())
+    )
+
+
 def capability_report(servers, settings, server_root=None):
     """Describe every catalogued capability and whether it is reachable.
 
@@ -514,10 +622,24 @@ def do_unregister(args, plugin_root, settings_path, ledger_path):
         print("Nothing to unregister; this command has no recorded registrations to reverse.")
         return EXIT_OK
 
-    if not pre_tool_use_present(settings) and not args.acknowledge_no_push_gate:
-        print("REFUSED: unregistering would leave no local version-push gate.")
-        print("  PreToolUse is absent from {0}, so the hook-side gate is not".format(Path(settings_path).as_posix()))
-        print("  running, and removing the MCP-side gate would leave neither.")
+    gate = local_push_gate_state(settings, servers, removable)
+    if not gate["hook_gate"] and not args.acknowledge_no_push_gate:
+        removes_the_gate = gate["mcp_gate_before"] and not gate["mcp_gate_after"]
+        if removes_the_gate:
+            print("REFUSED: unregistering would remove the last local version-push gate.")
+            print(
+                "  PreToolUse is absent from {0}, so the hook-side gate is not".format(Path(settings_path).as_posix())
+            )
+            print("  running, and this command would remove the MCP-side gate too,")
+            print("  leaving neither.")
+        else:
+            print("REFUSED: there is no local version-push gate in place.")
+            print(
+                "  PreToolUse is absent from {0} and the version-push-gate MCP".format(Path(settings_path).as_posix())
+            )
+            print("  server is not registered, so nothing on this machine checks a push.")
+            print("  This removal does not itself take a gate away; it is refused so the")
+            print("  unsafe configuration is surfaced before more capability is given up.")
         print("  Two ways forward:")
         print("    1. Restore the PreToolUse entry in the settings file, then re-run.")
         print("    2. Re-run with --acknowledge-no-push-gate to proceed anyway.")
@@ -567,7 +689,11 @@ def do_unregister(args, plugin_root, settings_path, ledger_path):
     print("settings: {0}".format(Path(settings_path).as_posix()))
     print("write:    {0} (attempt {1})".format(result.note, result.attempts))
     print("digest:   {0} -> {1}".format(result.digest_before, result.digest_after))
-    print(one_line_precondition(capability_report(servers, read_settings(settings_path))))
+    final_settings = read_settings(settings_path)
+    print(one_line_precondition(capability_report(servers, final_settings)))
+    gate_line = push_gate_precondition_line(final_settings, servers, settings_path)
+    if gate_line:
+        print(gate_line)
     return EXIT_OK
 
 
@@ -616,6 +742,83 @@ def do_status(args, plugin_root, settings_path, ledger_path):
         state = "REACHABLE" if row["reachable"] else "UNREACHABLE"
         print("  {0:<12} {1:<22} {2}".format(state, row["capability"], row["detail"]))
     print(one_line_precondition(rows))
+    return EXIT_OK
+
+
+def do_precondition(args, plugin_root, settings_path, ledger_path):
+    """Emit the ADR-020 layer-2 line when no local push gate is in place.
+
+    This is the cheap start-up check every plugin command runs first. It reads
+    two JSON files and returns; it starts no process, opens no socket and
+    performs no MCP handshake, so an idle session's process count is untouched
+    by its presence (SRS NFR-7).
+
+    It exits zero in every state, including the unsafe one. A start-up check
+    that could block the command it precedes would be the involuntary blocking
+    ADR-020 rejected outright; its job is to speak, not to stop.
+
+    Args:
+        args: Parsed command-line arguments.
+        plugin_root: Path of the plugin root.
+        settings_path: Path of the settings file to inspect.
+        ledger_path: Unused; present for handler-signature symmetry.
+
+    Returns:
+        int: Always EXIT_OK.
+    """
+    try:
+        servers = load_registry(plugin_root)
+        settings = read_settings(settings_path)
+    except (RegistrationError, SettingsUnreadable):
+        return EXIT_OK
+
+    line = push_gate_precondition_line(settings, servers, settings_path)
+    if line:
+        print(line)
+    return EXIT_OK
+
+
+def do_doctor(args, plugin_root, settings_path, ledger_path):
+    """Diagnose the plugin-side configuration state.
+
+    The engine has its own doctor at ``scripts/cli.py``, which is not a
+    substitute: it is not reachable from an installed plugin, whose files live
+    in the plugin manager's cache with no relationship to this repository. This
+    one is plugin-side and self-contained.
+
+    Args:
+        args: Parsed command-line arguments.
+        plugin_root: Path of the plugin root.
+        settings_path: Path of the settings file to inspect.
+        ledger_path: Path of the provenance ledger.
+
+    Returns:
+        int: EXIT_OK, or EXIT_FAILED under --strict when the state is unsafe.
+    """
+    servers = load_registry(plugin_root)
+    settings = read_settings(settings_path)
+    state = local_push_gate_state(settings, servers)
+    rows = capability_report(servers, settings)
+
+    print("settings: {0}".format(Path(settings_path).as_posix()))
+    print("digest:   {0}".format(sha256_of(settings_path)))
+    print("ledger:   {0}".format(Path(ledger_path).as_posix()))
+    print("")
+    print("Local version-push gate")
+    print("  PreToolUse hook        : {0}".format("present" if state["hook_gate"] else "ABSENT"))
+    print("  version-push-gate MCP  : {0}".format("registered" if state["mcp_gate_before"] else "not registered"))
+    print("")
+    print("Capabilities")
+    for row in rows:
+        marker = "REACHABLE" if row["reachable"] else "UNREACHABLE"
+        print("  {0:<12} {1:<22} {2}".format(marker, row["capability"], row["detail"]))
+    print("")
+
+    line = push_gate_precondition_line(settings, servers, settings_path)
+    if line:
+        print(line)
+        return EXIT_FAILED if args.strict else EXIT_OK
+    print("OK: a local version-push gate is in place.")
     return EXIT_OK
 
 
@@ -685,6 +888,18 @@ def _parse_args(argv):
         help="Take ownership of an entry registered by another route.",
     )
 
+    doctor = sub.add_parser("doctor", help="Diagnose the plugin-side configuration state.")
+    doctor.add_argument(
+        "--strict",
+        action="store_true",
+        help="Exit non-zero when no local version-push gate is in place.",
+    )
+
+    sub.add_parser(
+        "precondition",
+        help="Emit the start-up line when no local version-push gate is in place.",
+    )
+
     unregister = sub.add_parser("unregister", help="Reverse registrations made by this command.")
     unregister.add_argument(
         "--capability",
@@ -718,6 +933,8 @@ def main(argv=None):
             "status": do_status,
             "register": do_register,
             "unregister": do_unregister,
+            "doctor": do_doctor,
+            "precondition": do_precondition,
         }
         return handlers[args.action](args, plugin_root, settings_path, ledger_path)
     except SettingsUnreadable as exc:

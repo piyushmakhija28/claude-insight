@@ -9,6 +9,17 @@ exists until this command runs. Registration is a configuration write only - it
 starts no process. A stdio server is spawned by a *later* session, and only when
 that session actually needs it.
 
+## Start-up check (run this first)
+
+```
+python "${CLAUDE_PLUGIN_ROOT}/scripts/mcp_registration.py" precondition
+```
+
+It prints one line when no local version-push gate is in place, and prints
+nothing at all otherwise. If a line appears, relay it verbatim before doing
+anything else, then continue - it reports a state, it does not block this
+command. Silence means the gate is in place; do not invent reassurance for it.
+
 ## Run it
 
 Run the registration script from the plugin's own root. Never use a path

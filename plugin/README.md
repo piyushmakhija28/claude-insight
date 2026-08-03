@@ -29,9 +29,12 @@ writer become reachable only after the separate `register-mcp` command writes
 user-scope MCP registrations, which the user runs once, by choice.
 `unregister-mcp` reverses it.
 
-`register-mcp` is not part of this build. Until it ships, the MCP-backed
-capabilities are unreachable, and any command that needs one says so rather than
-failing quietly.
+`register-mcp` ships in this build. What it can register is bounded by what
+exists: the progress writer is registrable today, and the version push gate is
+catalogued but not yet built, so `register-mcp` reports that capability as
+unavailable rather than writing an entry pointing at a file that does not exist.
+Any command needing an unregistered capability says so rather than failing
+quietly, and `doctor` reports the whole picture in one place.
 
 ## Layout
 

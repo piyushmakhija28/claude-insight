@@ -9,6 +9,17 @@ plugin tree rather than restating them from memory, and resolve every path from
 `${CLAUDE_PLUGIN_ROOT}` so the report is correct wherever the plugin manager
 placed these files.
 
+## Start-up check (run this first)
+
+```
+python "${CLAUDE_PLUGIN_ROOT}/scripts/mcp_registration.py" precondition
+```
+
+It prints one line when no local version-push gate is in place, and prints
+nothing at all otherwise. If a line appears, relay it verbatim before the report
+below, then continue - it reports a state, it does not block this command.
+Silence means the gate is in place; do not invent reassurance for it.
+
 ## What to report
 
 1. **Identity** - read `${CLAUDE_PLUGIN_ROOT}/.claude-plugin/plugin.json` and
