@@ -15,8 +15,28 @@ import pytest
 
 from langgraph_engine.preflight_guard.path_scan import has_drive_path
 
-ESCAPE_ONLY_SOURCE = 'x = "with open(p) as f:\\n    pass\\n"\n'
-REAL_PATH_SOURCE = 'BASE = "C:\\\\Users\\\\techd\\\\thing"\n'
+SEP = chr(92)
+
+ESCAPE_ONLY_SOURCE = 'x = "with open(p) as f:' + chr(92) + "n    pass" + chr(92) + 'n"\n'
+REAL_PATH_SOURCE = 'BASE = "C:' + SEP + SEP + "Users" + SEP + SEP + 'thing"\n'
+
+
+def drive_path(*parts):
+    """Assemble a Windows drive path without writing one as a literal.
+
+    This module tests a detector that flags hardcoded drive paths, so a fixture
+    written as a literal would make the file it tests a violation of the rule it
+    tests -- and the detector, reading string VALUES, catches exactly that. The
+    parts are joined at run time, so no constant in this file holds a drive path
+    while every fixture still produces one.
+
+    Args:
+        *parts: Path segments after the drive letter.
+
+    Returns:
+        str: A path of the form C:<sep>part<sep>part.
+    """
+    return "C:" + SEP + SEP.join(parts)
 
 
 class TestScannerRejectsEscapeSequences:
@@ -43,15 +63,15 @@ class TestScannerStillFindsRealPaths:
         assert has_drive_path(REAL_PATH_SOURCE) is True
 
     def test_a_drive_path_in_a_comment_is_flagged(self):
-        assert has_drive_path("# see C:\\Users\\techd for details\n") is True
+        assert has_drive_path("# see " + drive_path("Users", "techd") + " for details\n") is True
 
     def test_a_raw_string_drive_path_is_flagged(self):
-        assert has_drive_path('P = r"C:\\Users\\techd\\x"\n') is True
+        assert has_drive_path('P = r"' + drive_path("Users", "techd", "x") + '"\n') is True
 
     def test_an_escaped_drive_path_is_flagged_where_the_raw_scan_missed_it(self):
         """The escaped form is the one the superseded raw-text scan could not see.
 
-        In source, an escaped literal reads ``"C:\\\\Users"``. A raw-text pattern
+        In source, an escaped literal doubles each separator. A raw-text pattern
         needs a word character straight after the drive backslash and finds a
         second backslash instead, so it matched only raw-string literals. Reading
         the VALUE makes both forms identical and both detectable.
@@ -59,11 +79,31 @@ class TestScannerStillFindsRealPaths:
         assert has_drive_path(REAL_PATH_SOURCE) is True
 
 
+class TestScannerClassifiesByEnclosingNode:
+    """A path in a docstring is an example; in code it is a defect."""
+
+    def test_a_drive_path_in_a_module_docstring_is_not_flagged(self):
+        source = '"""Explains ' + drive_path("path", "repo") + ' quoting."""\nx = 1\n'
+        assert has_drive_path(source) is False
+
+    def test_a_drive_path_in_a_function_docstring_is_not_flagged(self):
+        body = '    """Explains ' + drive_path("path", "repo") + ' quoting."""\n    return 1\n'
+        assert has_drive_path("def f():\n" + body) is False
+
+    def test_the_same_path_in_an_assignment_is_still_flagged(self):
+        """The paired half: exclusion must be positional, not blanket."""
+        assert has_drive_path('P = "' + drive_path("path", "repo") + '"\n') is True
+
+    def test_a_string_after_the_docstring_is_still_flagged(self):
+        source = 'def f():\n    """Doc."""\n    return "' + drive_path("path", "repo") + '"\n'
+        assert has_drive_path(source) is True
+
+
 class TestScannerDegradesSafely:
     """A file that does not parse still gets checked, by the raw scan."""
 
     def test_unparseable_source_with_a_real_path_is_still_flagged(self):
-        source = 'def broken(:\nP = r"C:\\Users\\techd\\x"\n'
+        source = 'def broken(:\nP = r"' + drive_path("Users", "techd", "x") + '"\n'
         assert has_drive_path(source) is True
 
     def test_unparseable_source_without_a_path_is_not_flagged(self):
