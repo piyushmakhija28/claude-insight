@@ -444,30 +444,64 @@ class TestFreshInstallSurface:
         ]
         assert found == [], found
 
-    def test_register_mcp_is_not_stubbed_by_this_issue(self):
-        """V2-016 owns register-mcp; this issue must not fake it.
+    def test_register_mcp_and_its_inverse_are_present(self):
+        """V2-016 landed the real command pair, so the anti-stub guard retires.
 
-        A stub command would make AC 4(b) appear satisfiable while delivering no
-        registration, which is worse than the criterion being openly unmet.
+        The predecessor of this test asserted register-mcp was ABSENT, to stop
+        V2-015 faking V2-016's deliverable with a stub. The real pair now ships,
+        which is the intended reason for that guard's removal. Reachability of
+        what these commands write is measured in tests/test_register_mcp.py; all
+        that is asserted here is that the plugin surface exposes both halves,
+        because a register with no inverse is not reversible.
         """
         command_names = {p.stem for p in (PLUGIN_ROOT / "commands").glob("*.md")}
-        assert "register-mcp" not in command_names
-        assert "unregister-mcp" not in command_names
+        assert "register-mcp" in command_names
+        assert "unregister-mcp" in command_names
 
-    def test_plugin_ships_no_python_and_therefore_no_unanchored_paths(self):
-        """There is no bundled executable code to audit for path resolution yet.
+    def test_shipped_executable_code_never_resolves_a_path_from_the_cwd(self):
+        """The path-resolution audit its predecessor said would become required.
 
-        Stated as an assertion rather than left implicit: the moment this fails,
-        a path-resolution audit against CLAUDE_PLUGIN_ROOT becomes required and
-        this test is the reminder.
+        The earlier form of this test asserted the plugin shipped no executable
+        code at all, and said in its own docstring that the moment that failed,
+        a path-resolution audit against CLAUDE_PLUGIN_ROOT became required. It
+        has failed, so this is that audit. After a real install the plugin's
+        files sit under the plugin manager's cache while the working directory
+        is whatever project the user is in, so a cwd-relative path passes every
+        test the author runs and fails for essentially every installed user.
         """
-        code = [
-            os.path.join(dirpath, name)
+        forbidden = ("Path.cwd(", "os.getcwd(", "os.curdir", 'Path(".")', "Path('.')")
+        offenders = []
+        for dirpath, _dirs, files in os.walk(str(PLUGIN_ROOT)):
+            for name in files:
+                if not name.endswith((".py", ".sh", ".ps1", ".js")):
+                    continue
+                path = Path(dirpath) / name
+                text = path.read_text(encoding="utf-8")
+                for token in forbidden:
+                    if token in text:
+                        offenders.append("{0}: {1}".format(path, token))
+        assert offenders == [], offenders
+
+    def test_shipped_executable_code_anchors_itself_to_the_manifest(self):
+        """Every shipped executable must be able to find its own plugin root.
+
+        The plugin surface skill names two acceptable mechanisms: the
+        CLAUDE_PLUGIN_ROOT environment variable, and an ascent to the directory
+        containing the manifest. A shipped script that references neither has no
+        correct way to locate the files it ships alongside.
+        """
+        scripts = [
+            Path(dirpath) / name
             for dirpath, _dirs, files in os.walk(str(PLUGIN_ROOT))
             for name in files
             if name.endswith((".py", ".sh", ".ps1", ".js"))
         ]
-        assert code == [], code
+        assert scripts, "no shipped executable code found; this audit has nothing to check"
+        entry_points = [p for p in scripts if "__main__" in p.read_text(encoding="utf-8")]
+        assert entry_points, "no shipped entry point found"
+        for path in entry_points:
+            text = path.read_text(encoding="utf-8")
+            assert "CLAUDE_PLUGIN_ROOT" in text or "find_plugin_root" in text, path
 
 
 class TestCiWiring:

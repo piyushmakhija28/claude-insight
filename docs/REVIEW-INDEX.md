@@ -304,6 +304,15 @@ states this in the same terms. Treat clean scores as bounded by their stated sco
 
 | 28 | **Line citations into `hld_v2.md` have drifted wholesale.** V2-015's author found `hld_v2.md:759` wrong; measuring the rest showed it is not a typo but one systematic cause — the file grew, and *nothing re-anchored the citations*. Three of four checked were off by **exactly +31** (759→790, 738→769, 773→804) and the fourth by +77 (1934→2011). **36 such citations exist across 6 documents**; spot-resolving them lands several on blank lines and one on a table separator | V2-015's author found the first; the orchestrator measured the scope |
 
+| 29 | **"17 pre-existing settings.json writers" is the wrong noun, and Phase 8 blessed it.** The source field is `audit_surface.json:406` `settings_json_touch_sites_count` — *string-literal mention sites*, 17 of them across **5 modules**, of which exactly **one** (`setup_wizard.py`) writes. `premise_scan_bh.json` marked the claim `MEASURED` / "ACCURATE AGAINST ITS SOURCE" by checking that the declared 17 matched the array's 17. **That check cannot catch a noun mismatch** — the count was right and the word for what it counted was wrong | V2-016's author, re-measuring a figure the brief told it not to trust |
+| 30 | **Two settings.json writers were never in any count**, because every scan was Python-only. `scripts/setup/setup-global-claude.ps1:127,140` (`Copy-Item -Force`) and `setup-global-claude.sh:161,167` (`cp`) **replace the user's entire `settings.json` with a template** whenever it lacks the string `3-level-flow`. That is strictly worse than the read-modify-write ADV-008 does document, and it appears in neither HLD SS 8.4 nor ADV-008's `minimum_fix` | V2-016's author; confirmed at source by the orchestrator |
+
+**#29 and #30 are one lesson from two directions: a number can be verified against its source and
+still be false.** #29's count matched its array exactly and was still wrong about *what it counted*;
+#30's scan was internally consistent and still blind to two files because it only read one language.
+Both survived a phase whose explicit job was premise-checking. **Verifying a figure against the
+document it came from is not verification — only re-deriving it from the artefact is.**
+
 **#28 is the defect class already recorded at #23-25 — citation drift from document growth — but this
 is the first time it was measured as a *population* rather than found one at a time.** Only the four
 that batch D's next agent will actually read were re-anchored; **the other 32 are recorded and left**,

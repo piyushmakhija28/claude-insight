@@ -38,9 +38,17 @@ placed these files.
    version-push gate and the progress writer, are **not** available from this
    install alone. They require user-scope MCP registration performed by the
    separate `register-mcp` command, which the user runs once, by choice.
-   If `register-mcp` is not present in this build, say so plainly and say that
-   the MCP-backed capabilities are unavailable until it ships. Never present a
-   missing capability as a working one.
+   Do not restate their status from memory. Determine it by running:
+
+   ```
+   python "${CLAUDE_PLUGIN_ROOT}/scripts/mcp_registration.py" status --one-line
+   ```
+
+   Report that line verbatim. It names any capability that is not reachable and
+   names `register-mcp` as the fix. If the script itself is absent from this
+   build, say so plainly and say that the MCP-backed capabilities are
+   unavailable until it ships. Never present a missing capability as a working
+   one.
 
 ## Output shape
 
