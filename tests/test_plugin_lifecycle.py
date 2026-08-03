@@ -58,12 +58,15 @@ the unnarrowed "no MCP tool the plugin registered remains callable" wording, and
 question with no verdict. This module follows the OWNER RULING, not those texts.
 Those documents are stale against it and fixing them is not this issue's scope.
 
-One consequence is recorded here rather than discovered during a live run: the
-catalogue currently declares the push gate as ``not_built_yet`` (V2-024), so the
-only entry ``register-mcp`` can write today is the OPERATIONAL progress writer.
-A live uninstall therefore resolves the tension against an operational entry,
-where the narrowing does not exempt it, and criterion (a) can still fail. That
-is a real outcome of the ruling, not a defect in this test.
+One consequence was recorded here rather than discovered during a live run: while
+the catalogue declared the push gate ``not_built_yet``, the only entry
+``register-mcp`` could write was the OPERATIONAL progress writer, so a live
+uninstall resolved the tension against an entry the narrowing does not exempt and
+criterion (a) could still fail. V2-024 has since landed and removed that marker,
+so a live cycle can now register a safety-enforcement entry and exercise the
+ruling on the case it was written for. The operational entry is still registrable
+alongside it, so criterion (a) can still fail on that one -- the host is
+capability-blind and the narrowing is requirement-side scoping only.
 
 THREE CLAIMS ABOUT THE ROUND TRIP, KEPT SEPARATE
 ------------------------------------------------
@@ -833,24 +836,37 @@ class TestInvokeReachesCapabilityOnlyAfterTheSecondStep:
         with pytest.raises(AssertionError):
             register_tests._capability_reachable(settings_file, "progress-writer")
 
-    def test_the_push_gate_half_of_criterion_b_is_not_satisfiable_yet(self, settings_file, server_root, ledger_file):
-        """FR-26 (b) asks for TWO capabilities to flip; only one can today.
+    def test_the_push_gate_half_of_criterion_b_now_flips_too(self, settings_file, server_root, ledger_file):
+        """FR-26 (b) asks for TWO capabilities to flip, and both now can.
 
-        The criterion says "the push gate AND the progress writer become
-        reachable" after ``register-mcp``. The catalogue marks the push-gate
-        server ``not_built_yet`` (V2-024), so ``register-mcp`` writes no entry
-        for it and it stays unreachable after step two. That is measured here
-        rather than left for a reader to assume the criterion is fully met.
+        The predecessor of this test measured the opposite and said so: the
+        catalogue marked the push-gate server ``not_built_yet`` (V2-024 owned
+        it), so ``register-mcp`` wrote no entry for it and the criterion was
+        only half satisfiable. V2-024 has landed, so the same measurement is
+        re-run with the opposite expectation rather than deleted.
+
+        The real server is copied into this test's own scratch root instead of
+        into the shared fixture, because every other test in this module counts
+        on that fixture registering exactly the progress writer.
         """
-        register_tests._run_cli(["register", "--server-root", str(server_root)], settings_file, ledger_file)
-        settings = json.loads(settings_file.read_text(encoding="utf-8"))
         servers = registration.load_registry(PLUGIN_ROOT)
         gate_id = registration.push_gate_server_id(servers)
-
-        assert gate_id is not None
-        assert gate_id not in settings.get(MCP_BLOCK, {})
         gate = next(server for server in servers if server["id"] == gate_id)
-        assert gate.get("not_built_yet"), "the catalogue no longer explains why the push gate cannot flip"
+        assert gate_id is not None
+        assert "not_built_yet" not in gate, "V2-024 has landed; the catalogue must stop reporting it unavailable"
+
+        source = REPO_ROOT / Path(gate["entry"]).parent
+        target = server_root / gate["repo"] / Path(gate["entry"]).parent
+        target.mkdir(parents=True)
+        for name in ("server.py", "push_gate_policy.py", "__init__.py"):
+            (target / name).write_text((source / name).read_text(encoding="utf-8"), encoding="utf-8")
+
+        assert register_tests._capability_reachable(settings_file, gate["capability"]) is False
+
+        register_tests._run_cli(["register", "--server-root", str(server_root)], settings_file, ledger_file)
+
+        assert gate_id in json.loads(settings_file.read_text(encoding="utf-8")).get(MCP_BLOCK, {})
+        assert register_tests._capability_reachable(settings_file, gate["capability"]) is True
 
     def test_negative_the_no_bundled_route_precondition_can_fail(self, scratch_plugin):
         """NEGATIVE: step one's guarantee rests on a check that can fail.

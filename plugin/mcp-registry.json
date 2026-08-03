@@ -13,11 +13,10 @@
     {
       "id": "push-gate",
       "capability": "version-push-gate",
-      "description": "Local version-push gate. Ports the PreToolUse push_gate policy to an MCP tool so the guarantee survives hook deletion.",
-      "repo": "mcp-push-gate",
-      "entry": "server.py",
-      "interpreter": "python",
-      "not_built_yet": "V2-024 owns this server. Until it lands, register-mcp reports this capability as unavailable rather than writing an entry that points at a file which does not exist."
+      "description": "Local version-push gate, exposing the tool check_push_allowed. Ports the PreToolUse push_gate policy to an MCP tool so the guarantee survives hook deletion (PRD FR-4). Unlike the other entries this one is NOT an mcp-* checkout: it lives inside the engine repository, which is a sibling of the mcp-* checkouts under the same server root. It is engine governance rather than a reusable integration, it needs no dependency at all, and keeping it here is what lets the engine's own test suite prove the tool path on a fresh clone. ADR-019 is unaffected - the plugin tree still bundles nothing.",
+      "repo": "claude-workflow-engine",
+      "entry": "src/mcp/push_gate/server.py",
+      "interpreter": "python"
     }
   ]
 }

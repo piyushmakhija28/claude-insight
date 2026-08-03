@@ -394,10 +394,12 @@ class TestLayer1MessageAccuracy:
     """The refusal must not assert a consequence that is false.
 
     The landed V2-016 text said "removing the MCP-side gate would leave
-    neither" in every refusal. Measured against the real catalogue, the
-    version-push-gate server is ``not_built_yet`` (V2-024 owns it), so in every
-    refusal reachable today no MCP-side gate is being removed and that sentence
-    is false. The trigger is unchanged; the claim is now state-dependent.
+    neither" in every refusal. When that was measured the version-push-gate
+    server was ``not_built_yet``, so no refusal reachable then was removing an
+    MCP-side gate and the sentence was false in every case. V2-024 has landed,
+    so the sentence is now true in exactly the state these tests construct and
+    false in the others -- which is why the claim had to be made
+    state-dependent rather than merely corrected. The trigger is unchanged.
     """
 
     def test_says_a_gate_is_removed_only_when_one_actually_is(self, tmp_path, capsys):
