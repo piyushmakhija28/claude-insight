@@ -373,14 +373,23 @@ checkpoint writer" and pointed at the wrong one. The genuinely durable writer is
 followed the citation instead of resolving it, the crash-resume test would have exercised an
 in-memory saver and passed, certifying durability that does not exist.**
 
-> **ESCALATED 2026-08-04, and the escalation is the whole point.** V2-033 recorded the PR modules as
-> *absent*. **`run_pr_workflow` is not absent.** It is at `scripts/github_pr_workflow/versioning.py:264`
-> (verified), and its own docstring enumerates: *"3. Create PR ... 5. **Merge PR** ... 7. Version bump
-> + CHANGELOG on main"*, with *"Called from stop-notifier.py when `.session-work-done` flag exists."*
-> The import fails **only because `core.py:14-15` puts `hooks/stop_notifier/` on `sys.path` instead of
-> `scripts/`.** So the barrier is a **one-line search-path bug**, not a missing file — and what it
-> holds back is not merely opening a PR but **opening it, merging it, and bumping the version on
-> `main`, once per response turn.** A developer "fixing" that import would arm all of it.
+> **ESCALATED 2026-08-04.** V2-033 recorded the PR modules as *absent*. **`run_pr_workflow` is not
+> absent.** It is at `scripts/github_pr_workflow/versioning.py:264` (verified), and its own docstring
+> enumerates: *"3. Create PR ... 5. **Merge PR** ... 7. Version bump + CHANGELOG on main"*, with
+> *"Called from stop-notifier.py when `.session-work-done` flag exists."*
+>
+> **DE-ESCALATED IN PART, SAME DAY, AND THE CORRECTION IS THE ORCHESTRATOR'S.** I wrote that the
+> barrier was "a **one-line** search-path bug" and that fixing it "would arm all of it". **That
+> overstates the risk.** `scripts/github_pr_workflow/__init__.py` re-exports **only `main`** (verified),
+> so `github_pr_workflow.run_pr_workflow` raises `AttributeError` regardless of `sys.path`. **Two
+> independent things must change, not one.** The hazard is real and the severity was wrong.
+>
+> **The call-site citations also drifted, inside this session, in the direction nobody watches for.**
+> I cited `core.py:319, :363, :483`; they are now `:128, :172, :292`, and the file is 315 lines. Those
+> citations were **correct when written** — verified against `463451e`, where `core.py` was 506 lines
+> and the calls sat exactly there. V2-034 then retired 7 dead references and the file **shrank**.
+> Correction 28 recorded citation drift from documents *growing*; this is the same defect from a file
+> **shrinking**, over a few hours, in a record whose entire purpose is to stay checkable.
 
 **#40 is the most dangerous finding in this record and it was found incidentally.** The issue asked
 only for a spawn census; the hazard surfaced because the author traced what the hook actually reaches
