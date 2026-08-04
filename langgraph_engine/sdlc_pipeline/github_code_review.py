@@ -202,7 +202,7 @@ def run_simplify_review(diff_text: str) -> List[str]:
 
     logger.info("[Simplify] Running LLM-powered code review...")
 
-    response = llm_call(prompt, model="balanced", temperature=0.1, timeout=30)
+    response = llm_call(prompt, model="balanced", temperature=0.1)
     if not response:
         logger.warning("[Simplify] LLM review returned no response, skipping")
         return []

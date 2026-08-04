@@ -153,3 +153,77 @@ a group rather than eight separate ones.
 | Date | Change |
 |---|---|
 | 2026-08-02 | Created. 27 rows enumerated from `capability_loss.md`; 7 cross-referenced to their owning audit-matrix row, 12 decided from evidence on disk, 8 left deliberately blank with their missing evidence and decider named |
+| 2026-08-04 | V2-034 added section 4, a separate table for the seven Stop-hook script references retired from `hooks/stop_notifier/core.py`. Section 1 is untouched |
+
+---
+
+## 4. V2-034 -- Stop-hook retired script references (FR-21 / SRS FR-33)
+
+### Why this is a separate table rather than seven more rows in section 1
+
+Section 1's row set is not free. `scripts/verify_policy_capability_dispositions.py` AC2 asserts an
+**empty symmetric difference in both directions** between section 1 and `capability_loss.md`. A row
+added to section 1 for a Stop-hook capability fails that assertion in direction B -- "the disposition
+ledger carries a row for a capability `capability_loss.md` does not name" -- because
+`capability_loss.md` is machine-generated, carries a do-not-edit banner, and scopes itself to
+`hooks/pre_tool_enforcer/`, `hooks/post_tool_tracker/` and `hooks/policy_tracking_helper.py`
+(MEASURED: its three `## ` section roots). `hooks/stop_notifier/` is not among them.
+
+This is the same structural argument this document already makes one level up, where adding rows to
+`policy-implementation-audit-v2.md` was found impossible for the same reason. The gate identifies
+section 1's table by its exact seven-cell header and skips every other table in this file, so the
+five-cell table below is invisible to it by construction, not by luck. **Verified both ways: the gate
+passes with this section present, and section 1 still parses as exactly 27 rows.**
+
+### Correction to this document's own section on empty cells
+
+The passage above beginning "Empty Disposition cells are deliberate" states that AC1 is **EXPECTED TO
+FAIL** while eight rows remain blank, and the section 1 preamble states "Decided: 19 of 27 ... Eight
+left blank". **Both are stale as of 2026-08-04.** The blanks were filled by owner ruling and the gate
+now reports `AC1 ... rows examined: 27; decided: 27; empty: 0` and `RESULT: PASS (AC1, AC2, SUP1,
+SUP2)` (MEASURED, this pass). The preamble's own instruction to "prefer the gate output over these
+two sentences whenever they disagree" is the correct reading. Recorded here rather than by rewriting
+those passages, which belong to their authors.
+
+### Scope: why seven and not V2-033's nine
+
+V2-033 censused **nine** referenced scripts across `hooks/stop_notifier/`. This issue names **seven**.
+Neither figure is stale; they are scoped differently, and the difference is exactly `core.py`.
+Criterion 1 speaks of references "removed from `hooks/stop_notifier/core.py`", and `core.py` carried
+exactly seven script references (MEASURED at lines 76, 105, 133, 158, 191, 219, 235 of the pre-change
+file). The other two of the nine -- `sync-version.py` at `post_impl.py:284` and `voice-notifier.py` at
+`helpers.py:142` -- are in different files and are **out of this issue's scope and untouched**.
+
+**Option (a) was unreachable for all seven.** No file with any of these seven basenames exists
+anywhere in the repository (MEASURED, `find` by basename across the whole tree), so no guard could be
+made to evaluate true and no resolution fix could reach one. Every row below is therefore option (b).
+**None of the seven is on the PR-creation path**, which runs through the `github_pr_workflow` module
+import and `github_create_pr`, neither of which is a script-file reference; those are untouched.
+
+| Script | Capability given up | Disposition | Basis | Verification |
+|---|---|---|---|---|
+| `git-auto-commit-policy.py` | End-of-turn auto-commit enforcement, three retries | delete | No successor anywhere; the capability is genuinely given up and that is recorded rather than softened. **Arming it would have been actively harmful**: it ran `--enforce` on every Stop event, so a working target would auto-commit once per response turn without prompting. Retirement is the safe direction here, not merely the available one | MEASURED |
+| `auto-save-session.py` | Per-turn session state auto-save | port-to-MCP | Destination exists today: `src/mcp/session_mcp_server.py:159` defines `session_save`, and the `session-mgr` MCP server exposes it. What dies is the hook-side call site, not the mechanism -- the same shape rows 17 and 26 use | MEASURED |
+| `archive-old-sessions.py` | Archive sessions older than 30 days, keep last 10 | port-to-MCP | Destination exists today: `src/mcp/session_mcp_server.py:305` defines `session_archive(days_old=30)`, matching the retired script's stated policy | MEASURED |
+| `session-pruner.py` | Prune session logs, `--max-age 30 --keep-min 10` | delete | Delete the superseded hook-side spawn and name the live replacement, the idiom rows 24 and 25 establish. Replacement is engine-side: `langgraph_engine/context_sync/architecture/session_pruner.py`, loaded at `langgraph_engine/context_sync/session_loader.py:182`, whose module docstring declares the **same** 30-day / keep-10 policy the retired invocation passed. Capability preserved; only the duplicate trigger is lost | MEASURED |
+| `common-failures-prevention.py` | Failure-pattern analysis (`--analyze`), learning from session errors | delete | **Asymmetric, and the asymmetry is stated rather than glossed.** The LOOKUP half survives: `policies/03-execution-system/failure-prevention/failure-kb.json` is present and read by `hooks/pre_tool_enforcer/policies/failure_kb.py`, which ledger row 8 disposes port-to-MCP. The LEARNING half does not: `failure_kb.py` defines exactly one function, `check_failure_kb_hints` at `:11`, and nothing anywhere writes the KB. Retiring this reference gives up KB enrichment, leaving a knowledge base that is read but never updated | MEASURED |
+| `preference-auto-tracker.py` | Auto-detect user preferences from session history | delete | Delete the superseded spawn and name the live replacement, per the row 24/25 idiom. Replacement is engine-side: `langgraph_engine/context_sync/architecture/preference_tracker.py`, invoked at `langgraph_engine/context_sync/session_loader.py:205-209` via `track_preferences`. Capability preserved; only the duplicate trigger is lost | MEASURED |
+| `plan-session-archiver.py` | Archive the session's plan file into its session folder | delete | **No successor anywhere in the repository** -- searched for `plan_archiv`, `plan-archiv` and `archive_plan` across all Python sources, zero hits. This is the one row of the seven with a genuinely unreplaced loss and no engine-side or MCP-side counterpart, and it is recorded as such rather than assigned an optimistic token. Plan archival, if wanted, must be rebuilt | MEASURED |
+
+### Findings recorded here for their owners, not acted on
+
+1. **`run_pr_workflow` exists.** V2-033 section 7 states the `github_pr_workflow` module does not
+   exist. **MEASURED 2026-08-04: it does.** `scripts/github_pr_workflow/versioning.py:264` defines
+   `run_pr_workflow(session_id=None)`, whose own docstring reads "Called from stop-notifier.py when
+   `.session-work-done` flag exists" and whose numbered steps include "Create PR", "Merge PR" and a
+   version bump on `main`. The import fails only because `core.py` inserts `hooks/stop_notifier/` on
+   `sys.path` rather than `scripts/`. This makes REVIEW-INDEX 40 **materially more urgent than
+   recorded**: the barrier is a search-path bug, not an absent module. Untouched by V2-034.
+2. **`voice-notifier.py` exists too**, at `scripts/tools/voice-notifier.py`. V2-033 resolved it to
+   `~/.claude/memory/current/voice-notifier.py`, which is absent. Option (a) is therefore genuinely
+   reachable for that reference by repointing it -- but it is in `helpers.py:142`, outside this
+   issue's scope, and is left alone.
+3. **`sync-version.py` exists** at `scripts/tools/sync-version.py`, confirming V2-033. Also out of
+   scope, also left alone.
+4. **`hooks/metrics_emitter.py` still does not exist**, confirming V2-033's tenth dead reference;
+   `emit_hook_execution` remains a no-op and `core.py`'s computed duration is still discarded.

@@ -153,13 +153,21 @@ class TestAttributionUsesMeasuredEvidence:
 class TestCensusMatchesCarriedForwardFigures:
     """Re-measurement of every figure the acceptance criterion carries forward."""
 
-    def test_seventeen_call_sites_split_eleven_five_one(self):
+    def test_ten_call_sites_split_four_five_one(self):
+        """Re-measured after V2-034 retired seven dead spawns from core.py.
+
+        V2-033 measured 17 call sites split 11/5/1/0. V2-034 removed the seven
+        ``core.py`` spawns whose targets existed nowhere on disk, so the census is
+        now 10, split 4/5/1/0. The change is in ``core.py`` only, and the delta is
+        exactly seven -- both asserted below rather than merely restated, so this
+        test still fails if some other file's count moves.
+        """
         census = instrument.census_call_sites()
-        assert len(census["core.py"]) == 11
+        assert len(census["core.py"]) == 4
         assert len(census["post_impl.py"]) == 5
         assert len(census["voice.py"]) == 1
         assert len(census["helpers.py"]) == 0
-        assert sum(len(sites) for sites in census.values() if sites) == 17
+        assert sum(len(sites) for sites in census.values() if sites) == 10
 
     def test_carried_forward_line_numbers_are_call_sites(self):
         census = instrument.census_call_sites()

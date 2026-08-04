@@ -31,20 +31,22 @@ import json
 import logging
 import os
 import shutil
-import subprocess
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple
+
+from ..liveness import BreakerOpen, NoProgress, env_optional_seconds, run_supervised
 
 logger = logging.getLogger(__name__)
 
 CallerFn = Callable[[str], Tuple[Optional[str], Optional[str]]]
 
-# 300s matches STEP1_ORCHESTRATOR_TIMEOUT's default in orchestrator_agent_caller.py --
-# this call sends a comparably large prompt (full rubric + diff summary), and a real
-# measured run took 84.6s. 60s (copied from the smaller prompt_gen_expert_caller.py
-# budget without recalibrating) was too tight and hit the fail-open timeout path on
-# ordinary latency, not just genuine hangs.
-_TIMEOUT = int(os.getenv("FAITHFULNESS_GATE_TIMEOUT", "300"))
+# This constant used to be a 300-second deadline, and its own history is the
+# argument against the construct: it started at 60s, a real measured run took
+# 84.6s, and the gate fail-opened on ORDINARY LATENCY rather than on a hang. The
+# fix at the time was to raise the number, which ADR-016 names as the same defect
+# at a different scale. Silence, not duration, is what distinguishes a stuck call
+# from a slow one, and the default is now no bound at all.
+_SILENCE_ENV_VAR = "FAITHFULNESS_GATE_SILENCE"
 _MAX_FILE_PREVIEW_LINES = 40
 _RUBRIC_SKILL_NAME = "hallucination-detection-core"
 _VALID_VERDICTS = ("pass", "flag", "block", "uncertain")
@@ -250,14 +252,12 @@ def _default_caller(prompt: str) -> Tuple[Optional[str], Optional[str]]:
         return None, "claude CLI binary not found in PATH"
 
     try:
-        result = subprocess.run(
+        result = run_supervised(
             [claude_path, "-p"],
             input=prompt,
-            capture_output=True,
-            text=True,
-            timeout=_TIMEOUT,
-            encoding="utf-8",
-            errors="replace",
+            lease_interval=env_optional_seconds(_SILENCE_ENV_VAR),
+            lease_name="faithfulness_gate_claude_cli",
+            breaker_name="claude_cli",
         )
 
         if result.returncode != 0 and not result.stdout:
@@ -269,8 +269,10 @@ def _default_caller(prompt: str) -> Tuple[Optional[str], Optional[str]]:
             return response_text, None
         return None, "claude CLI returned empty response"
 
-    except subprocess.TimeoutExpired:
-        return None, "claude CLI timed out after %ds" % _TIMEOUT
+    except BreakerOpen as exc:
+        return None, "claude CLI circuit breaker open, call not attempted: %s" % exc
+    except NoProgress as exc:
+        return None, "claude CLI made no progress: %s" % exc
     except Exception as exc:
         return None, "claude CLI call failed: %s" % exc
 

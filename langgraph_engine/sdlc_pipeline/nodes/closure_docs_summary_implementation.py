@@ -24,6 +24,8 @@ import sys
 from pathlib import Path
 from typing import Any, Dict
 
+from ...liveness import NoProgress, env_optional_seconds, run_supervised
+
 try:
     from loguru import logger
 except ImportError:
@@ -299,7 +301,6 @@ def step8_final_summary_generation(state: FlowState) -> Dict[str, Any]:
     Returns step8_* keys including summary, summary_saved, voice_sent, and status.
     """
     import datetime as _dt
-    import subprocess
 
     try:
         task_type = state.get("step1_task_type", "Unknown")
@@ -361,16 +362,16 @@ def step8_final_summary_generation(state: FlowState) -> Dict[str, Any]:
                 Path(__file__).resolve().parent.parent.parent.parent / "scripts" / "tools" / "voice-notifier.py"
             )
             if voice_script.exists():
-                result = subprocess.run(
+                result = run_supervised(
                     [sys.executable, str(voice_script), voice_msg],
-                    timeout=60,
-                    capture_output=True,
+                    lease_interval=env_optional_seconds("VOICE_NOTIFIER_SILENCE"),
+                    lease_name="voice_notifier",
                 )
                 voice_sent = result.returncode == 0
                 if not voice_sent:
                     logger.debug("Voice exited with code {}", result.returncode)
-        except subprocess.TimeoutExpired:
-            logger.debug("Voice notification timed out (60s)")
+        except NoProgress as voice_stall:
+            logger.debug("Voice notification made no progress: {}", voice_stall)
         except Exception as voice_err:
             logger.debug("Voice notification skipped: {}", voice_err)
 

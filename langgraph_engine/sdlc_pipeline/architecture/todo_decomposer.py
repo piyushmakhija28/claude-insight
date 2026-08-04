@@ -10,14 +10,18 @@ Invoked by: call_execution_script("todo_decomposer", args)
 Output: JSON with keys: status, todo_list, error
 
 Environment:
-  STEP1_TODO_DECOMPOSER_TIMEOUT  max seconds for claude CLI (default: 90)
+  STEP1_TODO_DECOMPOSER_SILENCE  seconds of claude CLI silence tolerated before
+                                 the child is treated as stuck (default: unbounded)
+
+The former STEP1_TODO_DECOMPOSER_TIMEOUT killed the claude CLI after a fixed 90
+seconds whether or not it was working. Its replacement measures silence rather
+than duration and defaults to no bound at all, per NFR-2 / ADR-016.
 """
 
 import json
 import logging
 import os
 import shutil
-import subprocess
 import sys
 from pathlib import Path
 
@@ -34,7 +38,7 @@ if str(_SCRIPTS_DIR) not in sys.path:
 # Constants
 # ---------------------------------------------------------------------------
 DEBUG = os.getenv("CLAUDE_DEBUG") == "1"
-_TIMEOUT = int(os.getenv("STEP1_TODO_DECOMPOSER_TIMEOUT", "90"))
+_SILENCE_ENV_VAR = "STEP1_TODO_DECOMPOSER_SILENCE"
 
 _DECOMPOSE_TEMPLATE = (
     "You are a TODO decomposer. Below is an orchestration prompt for a "
@@ -130,7 +134,14 @@ def _build_decompose_prompt(orchestration_prompt, complexity_score):
 
 
 def _call_claude_cli(prompt):
-    """Call claude CLI in headless print mode via stdin. Returns (response_text, error)."""
+    """Call claude CLI in headless print mode via stdin. Returns (response_text, error).
+
+    Bounded by progress, not by elapsed time: the CLI runs for as long as it keeps
+    producing output, and the circuit breaker -- not a deadline -- is what stops a
+    systemically failing CLI from being called again.
+    """
+    from langgraph_engine.liveness import BreakerOpen, NoProgress, env_optional_seconds, run_supervised
+
     claude_path = shutil.which("claude")
     if not claude_path:
         return None, "claude CLI binary not found in PATH"
@@ -139,14 +150,12 @@ def _call_claude_cli(prompt):
         print("[todo_decomposer] Running: claude CLI -p", file=sys.stderr, flush=True)
 
     try:
-        result = subprocess.run(
+        result = run_supervised(
             [claude_path, "-p"],
             input=prompt,
-            capture_output=True,
-            text=True,
-            timeout=_TIMEOUT,
-            encoding="utf-8",
-            errors="replace",
+            lease_interval=env_optional_seconds(_SILENCE_ENV_VAR),
+            lease_name="todo_decomposer_claude_cli",
+            breaker_name="claude_cli",
         )
 
         if result.returncode != 0 and not result.stdout:
@@ -158,8 +167,10 @@ def _call_claude_cli(prompt):
             return response_text, None
         return None, "claude CLI returned empty response"
 
-    except subprocess.TimeoutExpired:
-        return None, "claude CLI timed out after %ds" % _TIMEOUT
+    except BreakerOpen as exc:
+        return None, "claude CLI circuit breaker open, call not attempted: " + str(exc)
+    except NoProgress as exc:
+        return None, "claude CLI made no progress: " + str(exc)
     except Exception as exc:
         return None, "claude CLI call failed: " + str(exc)
 

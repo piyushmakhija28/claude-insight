@@ -4,6 +4,7 @@ Windows-safe: ASCII only.
 
 import json
 import os
+import subprocess
 import sys
 import time
 from datetime import datetime
@@ -32,7 +33,6 @@ from .helpers import (  # noqa: E402
 from .post_impl import _create_pr_from_pipeline_data, _run_post_implementation_steps  # noqa: E402
 from .voice import (  # noqa: E402
     _get_session_issues_file,
-    get_current_session_id,
     get_session_start_default,
     get_session_summary_for_voice,
     get_task_complete_default,
@@ -42,223 +42,32 @@ from .voice import (  # noqa: E402
 
 
 def main():
-    """Stop hook entry point - run session maintenance then trigger voice notifications.
+    """Stop hook entry point - trigger voice notifications and post-implementation steps.
 
     Executed by Claude Code after every AI response (Stop event).  The function:
-      1. Loads and runs auto-commit-enforcer.py with up to 3 retries.
-      2. Runs auto-save-session.py, archive-old-sessions.py, and
-         failure-detector.py for end-of-response session maintenance.
-      3. Resolves PID-isolated voice flag files in priority order:
+      1. Resolves PID-isolated voice flag files in priority order:
            a. .session-start-voice-{PID}  -> new session greeting
            b. .task-complete-voice-{PID}  -> task completion notification
            c. .session-work-done-{PID}    -> all work done wrap-up
-      4. Falls back to legacy shared flag paths for backward compatibility.
-      5. Generates voice messages via static defaults.
-      6. Launches voice-notifier.py as a detached background process.
+      2. Falls back to legacy shared flag paths for backward compatibility.
+      3. Generates voice messages via static defaults.
+      4. Launches voice-notifier.py as a detached background process.
+      5. Runs the post-implementation steps and PR auto-creation paths.
+
+    Seven end-of-response maintenance spawns were retired here by V2-034 because
+    none of their targets existed anywhere on disk, so every one was already inert
+    behind an ``.exists()`` guard that could never return True.  The capability
+    given up by each is recorded with a disposition in
+    ``docs/reports/capability-disposition-ledger.md`` section 4, as NFR-10 requires.
 
     Always exits 0.  Errors in any phase are caught and logged to
     stop-notifier.log without disrupting subsequent phases.
     """
-    # Bind the session before anything else runs: the maintenance subprocesses
-    # spawned below inherit CLAUDE_SESSION_ID from this process, so they must
-    # not start until the payload's session is published.
+    # Bind the session before anything else runs: the subprocesses spawned below
+    # inherit CLAUDE_SESSION_ID from this process, and the session-scoped lookups
+    # in the voice and post-implementation paths read it, so neither may start
+    # until the payload's session is published.
     bind_session(read_hook_stdin())
-
-    # INTEGRATION: Load git commit policies from scripts/architecture/
-    # Retry up to 3 times per policy script. Warn on failure (Stop hook
-    # should not hard-break; it runs AFTER the response is sent).
-    try:
-        import subprocess
-        from pathlib import Path
-
-        _scripts_dir = Path(__file__).resolve().parent.parent.parent / "scripts"
-        git_commit_script = (
-            _scripts_dir / "architecture" / "03-execution-system" / "09-git-commit" / "git-auto-commit-policy.py"
-        )
-        if git_commit_script.exists():
-            _commit_ok = False
-            for _attempt in range(1, 4):
-                try:
-                    _r = subprocess.run(
-                        [sys.executable, str(git_commit_script), "--enforce"], timeout=60, capture_output=True
-                    )
-                    if _r.returncode == 0:
-                        _commit_ok = True
-                        break
-                    if _attempt < 3:
-                        log_s("[RETRY " + str(_attempt) + "/3] auto-commit-enforcer failed, retrying...")
-                except Exception:
-                    if _attempt < 3:
-                        log_s("[RETRY " + str(_attempt) + "/3] auto-commit-enforcer error, retrying...")
-            if not _commit_ok:
-                log_s("[POLICY-WARN] auto-commit-enforcer failed after 3 retries")
-    except Exception:
-        pass
-
-    # =========================================================================
-    # SESSION END MAINTENANCE (non-blocking, before voice)
-    # Architecture scripts: auto-save-session, archive-old-sessions, failure-detector
-    # =========================================================================
-    # 1. Auto-save session state before cleanup (3 retries)
-    # Architecture: 01-sync-system/session-management/auto-save-session.py
-    try:
-        save_script = _scripts_dir / "architecture" / "01-sync-system" / "session-management" / "auto-save-session.py"
-        if save_script.exists():
-            project_name = Path.cwd().name
-            _save_ok = False
-            for _attempt in range(1, 4):
-                try:
-                    _r = subprocess.run(
-                        [sys.executable, str(save_script), "--project", project_name], timeout=10, capture_output=True
-                    )
-                    if _r.returncode == 0:
-                        _save_ok = True
-                        break
-                    if _attempt < 3:
-                        log_s("[RETRY " + str(_attempt) + "/3] auto-save-session failed, retrying...")
-                except Exception:
-                    if _attempt < 3:
-                        log_s("[RETRY " + str(_attempt) + "/3] auto-save-session error, retrying...")
-            if _save_ok:
-                log_s("[SESSION-SAVE] Auto-saved session for: " + project_name)
-            else:
-                log_s("[POLICY-WARN] auto-save-session failed after 3 retries")
-    except Exception as e:
-        log_s("[SESSION-SAVE] Skipped: " + str(e))
-
-    # 2. Archive old sessions - keep last 10, archive >30 days (3 retries)
-    # Architecture: 01-sync-system/session-management/archive-old-sessions.py
-    try:
-        archive_script = (
-            _scripts_dir / "architecture" / "01-sync-system" / "session-management" / "archive-old-sessions.py"
-        )
-        if archive_script.exists():
-            _arch_ok = False
-            for _attempt in range(1, 4):
-                try:
-                    _r = subprocess.run([sys.executable, str(archive_script)], timeout=10, capture_output=True)
-                    if _r.returncode == 0:
-                        _arch_ok = True
-                        break
-                    if _attempt < 3:
-                        log_s("[RETRY " + str(_attempt) + "/3] archive-old-sessions failed, retrying...")
-                except Exception:
-                    if _attempt < 3:
-                        log_s("[RETRY " + str(_attempt) + "/3] archive-old-sessions error, retrying...")
-            if _arch_ok:
-                log_s("[SESSION-ARCHIVE] Old sessions archived")
-            else:
-                log_s("[POLICY-WARN] archive-old-sessions failed after 3 retries")
-    except Exception as e:
-        log_s("[SESSION-ARCHIVE] Skipped: " + str(e))
-
-    # 2b. Session log pruning - prune old sessions (30-day max, keep 10)
-    # Architecture: 01-sync-system/session-pruner.py
-    try:
-        pruner_script = _scripts_dir / "architecture" / "01-sync-system" / "session-pruner.py"
-        if pruner_script.exists():
-            _prune_ok = False
-            for _attempt in range(1, 4):
-                try:
-                    _r = subprocess.run(
-                        [sys.executable, str(pruner_script), "--max-age", "30", "--keep-min", "10"],
-                        timeout=15,
-                        capture_output=True,
-                    )
-                    if _r.returncode == 0:
-                        _prune_ok = True
-                        break
-                    if _attempt < 3:
-                        log_s("[RETRY " + str(_attempt) + "/3] session-pruner failed, retrying...")
-                except Exception:
-                    if _attempt < 3:
-                        log_s("[RETRY " + str(_attempt) + "/3] session-pruner error, retrying...")
-            if _prune_ok:
-                log_s("[SESSION-PRUNE] Old session logs pruned")
-            else:
-                log_s("[POLICY-WARN] session-pruner failed after 3 retries")
-    except Exception as e:
-        log_s("[SESSION-PRUNE] Skipped: " + str(e))
-
-    # 3. Failure detection analysis - learn from errors (3 retries)
-    # Architecture: 03-execution-system/failure-prevention/common-failures-prevention.py --analyze
-    try:
-        failure_script = (
-            _scripts_dir
-            / "architecture"
-            / "03-execution-system"
-            / "failure-prevention"
-            / "common-failures-prevention.py"
-        )
-        if failure_script.exists():
-            _fail_ok = False
-            for _attempt in range(1, 4):
-                try:
-                    _r = subprocess.run(
-                        [sys.executable, str(failure_script), "--analyze"], timeout=10, capture_output=True
-                    )
-                    if _r.returncode == 0:
-                        _fail_ok = True
-                        break
-                    if _attempt < 3:
-                        log_s("[RETRY " + str(_attempt) + "/3] failure-detector failed, retrying...")
-                except Exception:
-                    if _attempt < 3:
-                        log_s("[RETRY " + str(_attempt) + "/3] failure-detector error, retrying...")
-            if _fail_ok:
-                log_s("[FAILURE-DETECT] Failure patterns analyzed")
-            else:
-                log_s("[POLICY-WARN] failure-detector failed after 3 retries")
-    except Exception as e:
-        log_s("[FAILURE-DETECT] Skipped: " + str(e))
-
-    # 4. Preference auto-detection - learn user preferences from session
-    # Architecture: 01-sync-system/user-preferences/preference-auto-tracker.py
-    try:
-        pref_script = (
-            _scripts_dir / "architecture" / "01-sync-system" / "user-preferences" / "preference-auto-tracker.py"
-        )
-        if pref_script.exists():
-            _r = subprocess.run([sys.executable, str(pref_script)], timeout=10, capture_output=True)
-            if _r.returncode == 0:
-                log_s("[PREFERENCES] Auto-detected from session")
-            else:
-                log_s("[PREFERENCES] Detection skipped (no new patterns)")
-    except Exception:
-        pass
-
-    # 4. Archive plan file to session folder (if plan mode was used this session)
-    # Policy: 03-execution-system/02-plan-mode/auto-plan-mode-suggestion-policy.md (v2.0)
-    # Script: 03-execution-system/02-plan-mode/plan-session-archiver.py
-    try:
-        plan_archiver_script = (
-            _scripts_dir / "architecture" / "03-execution-system" / "02-plan-mode" / "plan-session-archiver.py"
-        )
-        if plan_archiver_script.exists():
-            _plan_session_id = get_current_session_id()
-            if _plan_session_id:
-                _plan_ok = False
-                for _attempt in range(1, 4):
-                    try:
-                        _r = subprocess.run(
-                            [sys.executable, str(plan_archiver_script), "--archive", _plan_session_id],
-                            timeout=10,
-                            capture_output=True,
-                        )
-                        if _r.returncode == 0:
-                            _plan_ok = True
-                            break
-                        if _attempt < 3:
-                            log_s("[RETRY " + str(_attempt) + "/3] plan-session-archiver failed, retrying...")
-                    except Exception:
-                        if _attempt < 3:
-                            log_s("[RETRY " + str(_attempt) + "/3] plan-session-archiver error, retrying...")
-                if _plan_ok:
-                    log_s("[PLAN-ARCHIVE] Plan checked/archived for session: " + _plan_session_id)
-                else:
-                    log_s("[POLICY-WARN] plan-session-archiver failed after 3 retries")
-    except Exception as e:
-        log_s("[PLAN-ARCHIVE] Skipped: " + str(e))
 
     spoke_something = False
 

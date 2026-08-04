@@ -257,7 +257,7 @@ class TestExecuteTodoList:
         state = self._make_state(tmp_path)
         todo_list = [{"id": "todo_001", "prompt": "do something"}]
 
-        with patch("langgraph_engine.sdlc_pipeline.architecture.todo_executor.subprocess.run") as mock_run:
+        with patch("langgraph_engine.sdlc_pipeline.architecture.todo_executor.run_supervised") as mock_run:
             results = execute_todo_list(state, todo_list)
 
         mock_run.assert_not_called()
@@ -272,7 +272,7 @@ class TestExecuteTodoList:
         fake_proc = self._make_proc(returncode=0, stdout=self._FAKE_SUCCESS_STDOUT)
 
         with patch(
-            "langgraph_engine.sdlc_pipeline.architecture.todo_executor.subprocess.run",
+            "langgraph_engine.sdlc_pipeline.architecture.todo_executor.run_supervised",
             return_value=fake_proc,
         ):
             results = execute_todo_list(state, todo_list)
@@ -288,7 +288,7 @@ class TestExecuteTodoList:
         fake_proc = self._make_proc(returncode=1, stdout="", stderr="some error message")
 
         with patch(
-            "langgraph_engine.sdlc_pipeline.architecture.todo_executor.subprocess.run",
+            "langgraph_engine.sdlc_pipeline.architecture.todo_executor.run_supervised",
             return_value=fake_proc,
         ):
             results = execute_todo_list(state, todo_list)
@@ -302,7 +302,7 @@ class TestExecuteTodoList:
         todo_list = [{"id": "todo_004", "prompt": "do something dangerous"}]
 
         with patch(
-            "langgraph_engine.sdlc_pipeline.architecture.todo_executor.subprocess.run",
+            "langgraph_engine.sdlc_pipeline.architecture.todo_executor.run_supervised",
             side_effect=RuntimeError("unexpected subprocess failure"),
         ):
             results = execute_todo_list(state, todo_list)
@@ -318,7 +318,7 @@ class TestExecuteTodoList:
         fake_proc = self._make_proc(returncode=0, stdout=self._FAKE_SUCCESS_STDOUT)
 
         with patch(
-            "langgraph_engine.sdlc_pipeline.architecture.todo_executor.subprocess.run",
+            "langgraph_engine.sdlc_pipeline.architecture.todo_executor.run_supervised",
             return_value=fake_proc,
         ):
             execute_todo_list(state, todo_list)

@@ -347,6 +347,15 @@ measurement was already designed; what was undecided was which outcome the proje
 | 40 | **The Stop hook tries to open a pull request on every response turn, and only a missing import stops it.** Verified at source: `hooks/stop_notifier/core.py:319`, `:363` and `:483` call `github_pr_workflow.run_pr_workflow()`, and `post_impl.py:166` calls `github_create_pr(...)`. Both modules are absent — 276 and 72 live-log occurrences of the resulting failure. **Restoring either module without first revisiting the trigger conditions would make the hook open real PRs unprompted, once per turn, on any feature branch.** The Stop hook is one of the two hooks explicitly RETAINED across the plugin migration | V2-033's author, instrumenting the hook it was asked only to count spawns in |
 | 41 | **The spawn floor is 7, not the enumerated 4 — and the criterion's own line citations were wrong.** Measured identically across 20 runs. The enumerated-four model assumed the two unconditional `git rev-parse` calls return early; that holds only on a default branch, and this one is **64 commits ahead of `main`** (verified), so each continues into a `git rev-list` and branch detection adds three more. Separately: `voice.py:144` is cited as the spawn launch and is a **docstring line** — the only `subprocess.Popen` in that file is at **164** (verified); and the claim that both guarded targets "resolve as a sibling" is false, since the voice notifier resolves to a different directory entirely | V2-033's author; both citations confirmed at source by the orchestrator |
 
+| 44 | **The v1.20 step renumbering silently voided the per-step timeout table, and nothing noticed for the whole era.** `timeout_wrapper.STEP_TIMEOUTS` was keyed `{0,8,9,10,11,12,13,14}` — verified at HEAD — which was the **pre-v1.20** numbering. The live wrapped steps are `{2,3,4,5,6,7,8}`. **Intersection: `{8}`.** So six of seven wrapped steps ran with **no deadline at all**, and the seventh — now *Final Telemetry & Summary* — inherited the **900-second** budget written for *GitHub Issue Creation*. The table's own comment (*"v1.15.2: removed dead entries for steps 1,2,3,4,5,6,7"*) was correct under the old scheme and became actively misleading under the new one. A test, `TestStepTimeout`, was **pinning the stale table and passing** | V2-035's author, resolving the call sites from the AST instead of reading the dict |
+| 45 | **`run_pr_workflow` is not absent — see the escalation on #40.** Recorded separately here because it changes that entry's severity rather than adding a new defect | V2-034's author |
+
+**#44 is the renumbering-drift class at its most expensive.** The v1.20 rename is documented in
+`CLAUDE.md` as a deliberate, tracked, domain-driven renumbering — and it still left a live control
+table keyed to the old scheme, guarded by a test that asserted the old scheme too. **Both the code
+and its test agreed with each other and neither agreed with the pipeline.** That is why the fix came
+from resolving the actual `_run_step` call sites rather than reading either.
+
 | 42 | **The durable checkpointer does not exist at runtime, and asking for it silently returns a non-durable one.** Verified: `langgraph.checkpoint.sqlite` and `langgraph_checkpoint_sqlite` both raise `ModuleNotFoundError`; `_SQLITE_SAVER_AVAILABLE` is `False`; and `CheckpointerManager.get_default_checkpointer(use_sqlite=True)` returns **`langgraph.checkpoint.memory.InMemorySaver`**. `requirements.txt:31` declares `langgraph-checkpoint-sqlite>=1.0.0` (absent) and `:7` pins `langgraph<1.0.0` while 1.1.6 is installed. The degradation is **triple-silent**: `checkpointer.py:126` catches `(ImportError, Exception)` and falls back with no log, and `orchestrator.py:786,850` catch `Exception` and compile the graph with **no checkpointer at all** | V2-031's author; reproduced independently by the orchestrator |
 | 43 | **V2-026's checkpointer finding was half right, and the half that was wrong is the half that mattered.** It reported `SqliteSaver` configured with `thread_id` as the session id. The **configuration** is real (`checkpointer.py:253` does set `thread_id`); the **object** is not. A configuration check confirmed a durability claim that the runtime does not honour — the same shape as #29, where a count matched its source and the noun was wrong | V2-031's author, resolving the import rather than reading the config |
 
@@ -355,6 +364,15 @@ checkpoint writer" and pointed at the wrong one. The genuinely durable writer is
 (file/JSON) — the same component OAQ 1 named as owning crash recovery in entry 26. **Had the author
 followed the citation instead of resolving it, the crash-resume test would have exercised an
 in-memory saver and passed, certifying durability that does not exist.**
+
+> **ESCALATED 2026-08-04, and the escalation is the whole point.** V2-033 recorded the PR modules as
+> *absent*. **`run_pr_workflow` is not absent.** It is at `scripts/github_pr_workflow/versioning.py:264`
+> (verified), and its own docstring enumerates: *"3. Create PR ... 5. **Merge PR** ... 7. Version bump
+> + CHANGELOG on main"*, with *"Called from stop-notifier.py when `.session-work-done` flag exists."*
+> The import fails **only because `core.py:14-15` puts `hooks/stop_notifier/` on `sys.path` instead of
+> `scripts/`.** So the barrier is a **one-line search-path bug**, not a missing file — and what it
+> holds back is not merely opening a PR but **opening it, merging it, and bumping the version on
+> `main`, once per response turn.** A developer "fixing" that import would arm all of it.
 
 **#40 is the most dangerous finding in this record and it was found incidentally.** The issue asked
 only for a spawn census; the hazard surfaced because the author traced what the hook actually reaches

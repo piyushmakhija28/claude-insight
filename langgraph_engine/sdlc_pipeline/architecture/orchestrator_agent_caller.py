@@ -10,14 +10,20 @@ Invoked by: call_streaming_script("orchestrator_agent_caller", args)
 Output: JSON with keys: status, agent_output, llm_response, error (on failure)
 
 Environment:
-  STEP1_ORCHESTRATOR_TIMEOUT  max seconds to wait for claude CLI (default: 300)
+  STEP1_ORCHESTRATOR_SILENCE  seconds of claude CLI stdout silence tolerated
+                              before the child is treated as stuck (default: unbounded)
+
+The former STEP1_ORCHESTRATOR_TIMEOUT killed the agent after a fixed 300 seconds.
+Its replacement measures silence, not duration, and defaults to no bound. This
+caller inherits stderr so the user sees live progress, which means stdout is its
+only progress evidence -- a narrower channel, and a further reason its default is
+unbounded rather than merely large.
 """
 
 import json
 import logging
 import os
 import shutil
-import subprocess
 import sys
 from pathlib import Path
 
@@ -47,7 +53,7 @@ def _verify_result_schema(result):
 # Constants
 # ---------------------------------------------------------------------------
 DEBUG = os.getenv("CLAUDE_DEBUG") == "1"
-_TIMEOUT = int(os.getenv("STEP1_ORCHESTRATOR_TIMEOUT", "300"))
+_SILENCE_ENV_VAR = "STEP1_ORCHESTRATOR_SILENCE"
 
 
 # ---------------------------------------------------------------------------
@@ -118,7 +124,12 @@ def _call_claude_cli(prompt):
     """Call claude CLI in headless print mode with stderr inherited (live streaming).
 
     Returns (response_text, error).
+
+    stderr is inherited rather than piped so a long agent run stays visible, so the
+    lease renews on stdout alone. Bounded by silence, never by duration.
     """
+    from langgraph_engine.liveness import BreakerOpen, NoProgress, env_optional_seconds, run_supervised
+
     claude_path = shutil.which("claude")
     if not claude_path:
         return None, "claude CLI binary not found in PATH"
@@ -127,16 +138,13 @@ def _call_claude_cli(prompt):
         print("[orchestrator_agent_caller] Running: claude CLI -p", file=sys.stderr, flush=True)
 
     try:
-        # stderr=None inherits parent stderr -- user sees real-time progress
-        result = subprocess.run(
+        result = run_supervised(
             [claude_path, "-p"],
             input=prompt,
-            stdout=subprocess.PIPE,
-            stderr=None,  # Inherit: live output visible in terminal
-            text=True,
-            timeout=_TIMEOUT,
-            encoding="utf-8",
-            errors="replace",
+            capture_stderr=False,
+            lease_interval=env_optional_seconds(_SILENCE_ENV_VAR),
+            lease_name="orchestrator_claude_cli",
+            breaker_name="claude_cli",
         )
 
         if result.returncode != 0 and not result.stdout:
@@ -147,8 +155,10 @@ def _call_claude_cli(prompt):
             return response_text, None
         return None, "claude CLI returned empty response"
 
-    except subprocess.TimeoutExpired:
-        return None, "claude CLI timed out after %ds" % _TIMEOUT
+    except BreakerOpen as exc:
+        return None, "claude CLI circuit breaker open, call not attempted: " + str(exc)
+    except NoProgress as exc:
+        return None, "claude CLI made no progress: " + str(exc)
     except Exception as exc:
         return None, "claude CLI call failed: " + str(exc)
 

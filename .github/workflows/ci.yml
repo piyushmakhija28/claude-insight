@@ -165,6 +165,17 @@ jobs:
       - name: Home-directory path literals (gate)
         run: python scripts/verify_home_paths.py
 
+      # Fixed wall-clock timeouts on the long-running pipeline path (NFR-2 /
+      # SRS NFR-8 / ADR-016). A timeout there is a temporal proxy for "is this
+      # making progress", and it answers that question wrongly in both
+      # directions. Detection is an AST pass, not a grep, because "timeout=" is
+      # ordinary prose in docstrings and comments; classification records
+      # whether the value is unbounded, configurable, or a fixed default, and
+      # the one permitted socket-level exception is an enumerated entry whose
+      # COUNT the gate itself enforces.
+      - name: Fixed pipeline timeouts (gate)
+        run: python scripts/verify_no_fixed_timeouts.py
+
       - name: Install production dependencies
         run: uv pip install -r requirements.txt --system
 

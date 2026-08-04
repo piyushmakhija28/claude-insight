@@ -64,7 +64,7 @@ def _generate_issue_title(user_message: str, task_type: str, complexity: int) ->
     try:
         from langgraph_engine.llm_call import llm_call
 
-        llm_title = llm_call(prompt, model="fast", temperature=0.3, timeout=30)
+        llm_title = llm_call(prompt, model="fast", temperature=0.3)
         if llm_title:
             llm_title = llm_title.strip().strip('"').strip("'").split("\n")[0].strip()
             if llm_title and len(llm_title) > 5:
