@@ -143,6 +143,10 @@ COMMAND_PLANS = {
 
 REFUSED_TASK_PREFIXES = ("/", "!")
 
+INVOCATION_FLAG = "--invoked-by"
+
+INVOCATION_PREFIX = INVOCATION_FLAG + "="
+
 
 class PipelineEntryError(Exception):
     """An entry point could not reach its pipeline steps as asked."""
@@ -312,6 +316,14 @@ def validate_task(task):
 def build_dispatch(command, task, engine_root, session_id=None, project_root=None):
     """Build the exact process invocation one entry point performs.
 
+    THE DECLARATION IS NOT DECORATION. ``--invoked-by=<command>`` is what the
+    engine entry point requires before it will start the pipeline at all (PRD
+    FR-5 / SRS FR-15, ``scripts/pipeline_invocation.py``). Without it the engine
+    refuses, which is the property that makes "pipeline execution begins only
+    from an explicit FR-17 command" a rule rather than a habit. It is passed as
+    an argument rather than an environment variable so the engine's own ``claude``
+    CLI subprocesses do not inherit an authorization nobody made.
+
     Args:
         command: Entry-point name.
         task: Task text passed to the engine.
@@ -324,7 +336,7 @@ def build_dispatch(command, task, engine_root, session_id=None, project_root=Non
     """
     plan = plan_for(command)
     entry = Path(engine_root) / ENGINE_ENTRY
-    argv = [sys.executable, str(entry), "--message={0}".format(task)]
+    argv = [sys.executable, str(entry), "{0}{1}".format(INVOCATION_PREFIX, command), "--message={0}".format(task)]
     if plan["dry_run"]:
         argv.append("--dry-run")
     if session_id:

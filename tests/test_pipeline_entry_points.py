@@ -814,7 +814,7 @@ class TestTheDispatchMatchesThePlan:
 
         assert completed.returncode == pipeline.EXIT_OK, completed.stdout + completed.stderr
         payload = json.loads(record.read_text(encoding="utf-8"))
-        assert payload["argv"] == ["--message=a scratch task"]
+        assert payload["argv"] == ["--invoked-by=run-pipeline", "--message=a scratch task"]
         assert payload["hook_mode"] == "0"
         assert payload["dry_run_env"] is None
 

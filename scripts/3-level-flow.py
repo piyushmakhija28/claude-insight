@@ -48,6 +48,20 @@ if str(_project_root) not in sys.path:
     sys.path.insert(0, str(_project_root))
 
 # ============================================================================
+# INVOCATION GATE - PRD FR-5 / SRS FR-15: only an explicit FR-17 command starts
+# the pipeline. Placed here, ahead of the config loader and the LangGraph
+# import, because a run nobody asked for must not pay for either. See
+# scripts/pipeline_invocation.py for why there is no way around it.
+# ============================================================================
+from pipeline_invocation import (  # noqa: E402
+    discarded_message_lines,
+    discarded_message_prefix,
+    enforce_explicit_invocation,
+)
+
+enforce_explicit_invocation(sys.argv[1:])
+
+# ============================================================================
 # CONFIG LOADER - JSON config -> os.environ (before any imports that read env)
 # ============================================================================
 try:
@@ -510,9 +524,10 @@ def main():
         if not user_message:
             user_message = _capture_user_message()
 
-        # Skip workflow for slash commands (/commit, /clear, /skill-name, etc.)
-        # and shell commands (! git status), these don't need pipeline processing
-        if user_message.startswith("/") or user_message.startswith("!"):
+        discarded_prefix = discarded_message_prefix(user_message)
+        if discarded_prefix is not None:
+            for line in discarded_message_lines(discarded_prefix):
+                print(line, file=sys.stderr)
             sys.exit(0)
 
         print("[DEBUG] Before run_langgraph_engine:", file=sys.stderr)
