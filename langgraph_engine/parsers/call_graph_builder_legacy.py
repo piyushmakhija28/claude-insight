@@ -61,8 +61,36 @@ EXCLUDED_DIRS = {
     ".ruff_cache",
 }
 
-MAX_FILES = 300
+
+def _env_file_cap(name):
+    """Read an optional positive-integer file cap from the environment.
+
+    Returns None (meaning "no cap") when the variable is unset, blank,
+    unparseable, or non-positive, so a malformed value can never silently
+    truncate discovery. Issue #265: the shipping default is now uncapped.
+    """
+    raw = os.environ.get(name)
+    if not raw:
+        return None
+    try:
+        value = int(raw)
+    except (ValueError, TypeError):
+        return None
+    return value if value > 0 else None
+
+
+# Discovery is coverage-complete by default: None means "ingest every eligible
+# file". Issue #265 -- the previous value of 300 truncated discovery at 300 of
+# 411 files, hiding the whole langgraph_engine/sdlc_pipeline/ tree. Operators
+# who need a bounded scan set CLAUDE_CG_MAX_FILES; nothing bounds it otherwise.
+MAX_FILES = _env_file_cap("CLAUDE_CG_MAX_FILES")
 MAX_FILE_SIZE_KB = 100
+
+# Sentinel distinguishing "caller passed no max_files" from "caller passed
+# None". Without it, max_files=MAX_FILES would bind the module global at
+# function-definition time, which made rebinding CallGraphBuilder.MAX_FILES a
+# silent no-op -- the exact trap issue #265 exists to close.
+_MODULE_DEFAULT = object()
 
 
 class CallGraphBuilder:
@@ -70,13 +98,20 @@ class CallGraphBuilder:
 
     Args:
         project_root: Path to project root directory.
-        max_files: Maximum number of files to analyze.
+        max_files: Maximum number of files to analyze, or None for no cap.
+            Omit the argument to resolve the module-level MAX_FILES at
+            construction time rather than at function-definition time.
     """
 
-    def __init__(self, project_root, max_files=MAX_FILES):
-        """Store the project root and the max-files scan cap."""
+    def __init__(self, project_root, max_files=_MODULE_DEFAULT):
+        """Store the project root and resolve the max-files scan cap.
+
+        The cap is read from the module global at call time, so tests and
+        operators that rebind MAX_FILES observe the change instead of it
+        being silently ignored.
+        """
         self.project_root = Path(project_root)
-        self.max_files = max_files
+        self.max_files = MAX_FILES if max_files is _MODULE_DEFAULT else max_files
 
     def build(self):
         """Build the complete call graph.
@@ -98,15 +133,22 @@ class CallGraphBuilder:
         return graph
 
     def _discover_files(self):
-        """Find source files to analyze (Python, Java, TypeScript, Kotlin)."""
+        """Find source files to analyze (Python, Java, TypeScript, Kotlin).
+
+        Eligibility rules, in order: the suffix is one of the five supported
+        extensions; no path component is an excluded directory; the file is
+        readable and at most MAX_FILE_SIZE_KB. When self.max_files is None the
+        result is coverage-complete -- every eligible file is returned.
+        """
+        cap = self.max_files
         found = []
         extensions = [".py", ".java", ".ts", ".tsx", ".kt"]
         for ext in extensions:
             pattern = "**/*" + ext
             for src_file in self.project_root.glob(pattern):
-                if len(found) >= self.max_files:
+                if cap is not None and len(found) >= cap:
                     break
-                if any(part in EXCLUDED_DIRS for part in src_file.parts):
+                if any(part in EXCLUDED_DIRS for part in self._relative_parts(src_file)):
                     continue
                 try:
                     size_kb = src_file.stat().st_size / 1024
@@ -115,9 +157,23 @@ class CallGraphBuilder:
                 except OSError:
                     continue
                 found.append(src_file)
-            if len(found) >= self.max_files:
+            if cap is not None and len(found) >= cap:
                 break
         return found
+
+    def _relative_parts(self, src_file):
+        """Return the path components of src_file below the project root.
+
+        The exclusion check must not see components of the absolute path
+        above the root: a checkout living under a directory literally named
+        "build" or "dist" would otherwise match EXCLUDED_DIRS and discover
+        zero files. Falls back to the full parts when src_file is somehow
+        outside the root, which keeps the previous conservative behaviour.
+        """
+        try:
+            return src_file.relative_to(self.project_root).parts
+        except ValueError:
+            return src_file.parts
 
     def _analyze_file(self, src_file):
         """Route a source file to the correct language parser.

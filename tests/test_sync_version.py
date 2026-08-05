@@ -25,6 +25,41 @@ RELEASE_SCRIPT = REPO_ROOT / "scripts" / "tools" / "release.py"
 VERSION_FILE = REPO_ROOT / "VERSION"
 
 SEMVER_RE = re.compile(r"^\d+\.\d+\.\d+$")
+STRICT_SEMVER_RE = re.compile(r"\d+\.\d+\.\d+")
+
+
+def _version_format_findings(raw):
+    """Report every way ``raw`` violates rules/11 section 2's VERSION contract.
+
+    The rule requires a single line of valid ``MAJOR.MINOR.PATCH`` semver with no
+    trailing whitespace and no extra lines. This inspects bytes rather than a
+    stripped string, because stripping is precisely what hides three of the four
+    violations. One trailing LF is the terminator of that single line, not an extra
+    line, so it is removed before the body is examined.
+
+    ``STRICT_SEMVER_RE`` is matched with ``fullmatch`` rather than reusing
+    ``SEMVER_RE.match``: the ``$`` anchor also matches immediately before a trailing
+    newline, which would re-admit the shapes this function exists to reject.
+
+    Args:
+        raw: Raw file contents as read with ``read_bytes``.
+
+    Returns:
+        list: Finding labels, empty when ``raw`` is well formed.
+    """
+    findings = []
+    if raw == b"":
+        return ["empty"]
+    if b"\r" in raw:
+        findings.append("carriage return")
+    body = raw[:-1] if raw.endswith(b"\n") else raw
+    if b"\n" in body:
+        findings.append("extra lines")
+    if body != body.strip():
+        findings.append("surrounding whitespace")
+    if not STRICT_SEMVER_RE.fullmatch(body.decode("utf-8", "replace")):
+        findings.append("not semver")
+    return findings
 
 
 def _run(*args):
@@ -149,6 +184,78 @@ class TestVersionConsistency:
             match = re.search(pattern, text)
             assert match is not None, "no version reference found in {}".format(name)
             assert match.group(1) == version, "{} says {}, VERSION says {}".format(name, match.group(1), version)
+
+
+class TestVersionFileFormat:
+    """rules/11 section 2 governs the VERSION file's bytes, not its stripped value.
+
+    ``TestVersionConsistency`` strips before matching semver, so a file carrying a
+    trailing space, a leading space, a blank second line or CRLF terminators passes
+    it while violating the rule. These tests assert on the raw bytes instead.
+
+    A single trailing LF is accepted, not merely tolerated: ``set_version`` in
+    ``scripts/tools/sync-version.py`` writes ``(new_version + "\\n")``, and rules/11
+    section 7's own check pipes the file through ``grep``, which is line-oriented.
+    Both treat the terminator as part of a well-formed single-line file.
+    """
+
+    def test_repo_version_file_is_a_single_clean_semver_line(self):
+        """The four assertions rules/11 section 2 makes, against the real file."""
+        assert _version_format_findings(VERSION_FILE.read_bytes()) == []
+
+    @pytest.mark.parametrize(
+        "raw,expected",
+        [
+            (b"1.21.5 \n", "surrounding whitespace"),
+            (b" 1.21.5\n", "surrounding whitespace"),
+            (b"1.21.5\t\n", "surrounding whitespace"),
+            (b"1.21.5\n\n", "extra lines"),
+            (b"1.21.5\n2.0.0\n", "extra lines"),
+            (b"\n1.21.5\n", "extra lines"),
+            (b"1.21.5\r\n", "carriage return"),
+            (b"v1.21.5\n", "not semver"),
+            (b"version: 1.7.0\n", "not semver"),
+            (b"1.7.0 (stable)\n", "not semver"),
+            (b"1.21\n", "not semver"),
+            (b"1.21.5-rc.1\n", "not semver"),
+            (b"", "empty"),
+        ],
+    )
+    def test_each_malformed_shape_is_rejected(self, raw, expected):
+        """Every shape rules/11 section 2 forbids is rejected, for the stated reason."""
+        findings = _version_format_findings(raw)
+        assert findings != [], "accepted a malformed VERSION: {0!r}".format(raw)
+        assert expected in findings, "{0!r} gave {1}, expected {2!r}".format(raw, findings, expected)
+
+    @pytest.mark.parametrize(
+        "raw",
+        [
+            b"1.21.5\n",
+            b"1.21.5",
+            b"2.0.0\n",
+            b"0.0.0\n",
+            b"10.20.30\n",
+            b"999.999.999\n",
+        ],
+    )
+    def test_well_formed_shapes_are_accepted(self, raw):
+        """Specificity control: a checker that rejects everything is not a checker.
+
+        ``2.0.0`` is listed deliberately -- it is the value the in-flight release bump
+        writes, and this gate must not stand in its way.
+        """
+        assert _version_format_findings(raw) == [], "rejected a valid VERSION: {0!r}".format(raw)
+
+    def test_the_existing_stripped_check_would_miss_these(self):
+        """Proves this class is not redundant with ``TestVersionConsistency``.
+
+        Each shape below satisfies the older stripped-then-match check while
+        violating rules/11 section 2, which is the gap this class closes.
+        """
+        missed = (b"1.21.5 \n", b" 1.21.5\n", b"1.21.5\n\n", b"1.21.5\r\n")
+        for raw in missed:
+            assert SEMVER_RE.match(raw.decode("utf-8").strip()), "fixture no longer models the gap"
+            assert _version_format_findings(raw) != [], "gap not closed for {0!r}".format(raw)
 
 
 def test_dead_bump_version_shell_script_is_gone():

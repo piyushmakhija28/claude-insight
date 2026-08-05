@@ -1,0 +1,140 @@
+{
+  "document": "Phase 8 premise-staleness scan, batches B through H",
+  "generated": "2026-08-02",
+  "author": "architecture-conformance-auditor",
+  "mode": "READ-ONLY. No sprint artifact was written by this pass.",
+  "hunted_class": "An issue whose body or acceptance criterion rests on a state claim that was true when written and is false now.",
+  "method": "For every state claim found, the path was opened, the grep run, or the thing counted. No claim was accepted by reasoning about whether it was probably still true.",
+  "scope": {
+    "issues_expected": 29,
+    "issues_examined": 29,
+    "keys": "V2-009 through V2-037",
+    "issue_numbers": "265-293, contiguous, no gaps",
+    "batch_counts_verified": {"B": 2, "C": 4, "D": 3, "E": 6, "F": 3, "G": 9, "H": 2},
+    "batch_count_sum": 29,
+    "verification": "MEASURED by grouping github_issues.json by batch and cross-joining issue_key_map.json. The claimed split B2 C4 D3 E6 F3 G9 H2 sums to 29 and matches the file exactly."
+  },
+  "evidence_labels": {
+    "MEASURED": "Checked against disk, git or a parser by this pass, now.",
+    "CITED": "Read from an artifact; not independently re-derived.",
+    "INFERRED": "Derived by reasoning over MEASURED inputs; derivation stated."
+  },
+  "findings": [
+    {
+      "id": "S-01",
+      "type": "STALE_PREMISE",
+      "severity": "HIGH",
+      "issue_key": "V2-009",
+      "issue_number": 265,
+      "batch": "B",
+      "claim_as_written": "PROPAGATION HAZARD: the supersession is recorded in hld_v2.md section 12 OAQ 4, but ADR-013's own body (hld_v2.md:406 and :436-443) and the binding clause at hld_v2.md:1696-1700 still carry the superseded four-site framing with no pointer to the correction.",
+      "what_is_actually_true_now": "All three named sites carry the CORRECTED framing. MEASURED: hld_v2.md:406 now reads '**Context (current state, as of Phase 5 -- MEASURED at runtime).** The builder discovers only **300 of 411** Python files. **The binding cap is langgraph_engine/parsers/call_graph_builder_legacy.py:64**' -- a single binding cap, no four-site framing. hld_v2.md:444-445 reads '**[CORRECTED Phase 5] 17 truncation sites exist; exactly TWO bind. The prior \"four independent sites\" framing was wrong in substance, not only in attribution.**' hld_v2.md:1696 is the rules/45 data-source inversion note and names call_graph_builder_legacy.py, not a four-site list.",
+      "when_it_flipped": "CORRECTED 2026-08-02: two commits, not one. 14f742a at 07:50:31 +0530 ('docs(adr-013): correct the binding target, and add a contested-fact check') took hld_v2.md from 1945 to 1976 lines, +31. b2246af at 10:13 ('docs(adr-013): close the last four-site clause and mark it a summary') took it from 1976 to 2022, +46. The +77 total was wrongly attributed to 14f742a alone in the first pass. The issue was drafted at 7b29820 on 2026-08-01 17:08:00, so the claim was true when written and was falsified in two stages.",
+      "exact_shape_match_to_V2_004": true,
+      "what_it_blocks": "Nothing mechanically -- the paragraph is advisory. But it sends an implementer of the highest-risk call-graph issue to three locations to fix a defect already fixed, and its presence implies the correction did not land when it did.",
+      "evidence": "MEASURED"
+    },
+    {
+      "id": "S-02",
+      "type": "STALE_PREMISE",
+      "severity": "LOW",
+      "issue_key": "V2-020",
+      "issue_number": 276,
+      "batch": "E",
+      "claim_as_written": "The design is a pinned build-time snapshot (ADR-007) of the routing registries plus only the personas for DISPATCHABLE agents -- not all 505 agent directories.",
+      "what_is_actually_true_now": "MEASURED: 508 agents and 996 skills. knowledge-graph/_master/agents_all.json holds 508 entries and skills_all.json holds 996; the on-disk directory counts agree exactly (508 agents/*/ and 996 skills/*/). The library moved 505 -> 508 and 992 -> 996 when three agents and four skills were added.",
+      "what_it_blocks": "Nothing. The figure appears in a scoping parenthetical, and none of V2-020's three acceptance criteria references a count. An implementer sizing the snapshot against 505 would be 3 directories short.",
+      "note": "MEASURED: 505 is the ONLY stale library count in any B-H issue. Searching all 29 bodies and ACs for 505, 508, 992 and 996 returns exactly one hit, this one. No issue cites 992.",
+      "evidence": "MEASURED"
+    },
+    {
+      "id": "S-03",
+      "type": "STALE_PREMISE",
+      "severity": "MEDIUM",
+      "issue_key": "V2-009, V2-010, V2-012, V2-016, V2-025, V2-030, V2-036",
+      "issue_number": [265, 266, 268, 272, 281, 286, 292],
+      "batch": "B, C, D, F, G, H",
+      "claim_as_written": "Eighteen file:line citations into the requirements and architecture documents, e.g. V2-030's 'recorded at SRS.md:808 as an explicit OUTSTANDING obligation' and V2-036's 'register-mcp is step 2 (hld_v2.md:1318) and the FR-23 reachability verification is step 3 (hld_v2.md:1319)'.",
+      "what_is_actually_true_now": "The cited documents grew after the issues were drafted, so the line numbers no longer resolve. MEASURED line counts (wc -l) at draft commit 7b29820 versus now: SRS.md 974 -> 1130 (+156), hld_v2.md 1945 -> 2022 (+77), hld.md 1945 -> 2022 (+77), prd-v2.md 506 -> 510 (+4), product-sequencing-v2.md 759 -> 759 (unchanged), REVIEW-INDEX.md 324 -> 324 (unchanged). FIGURE CORRECTION 2026-08-02: the absolute counts were each one higher in the first pass because they came from len(text.split(chr(10))), which counts a phantom element after the trailing newline; they are now wc -l. Every delta was and remains correct, because the off-by-one cancels in a subtraction -- which is why it survived unnoticed. 17 of the 18 citations point into a document that changed length. A sample of 16 was resolved line-by-line; 8 are confirmed wrong: SRS.md:296 and SRS.md:307 now land on BLANK LINES; SRS.md:808 lands on FR-11 verification prose while the OUTSTANDING Change Log obligation it names is now at SRS.md:968; SRS.md:749 lands on the FR-22 row; hld_v2.md:661 and :683 land on circuit-breaker and message-queue content unrelated to the ADR-017 CI assertion V2-025 cites them for; hld_v2.md:1318 and :1319 land on the NFR cross-interaction table while SS 10's migration runbook now begins at hld_v2.md:1342. The remaining 8 sampled citations still resolve to relevant content because they sit above the insertion points.",
+      "what_it_blocks": "Nothing hard. Each cited fact still exists somewhere in its document, so the substance survives; only the pointers rot. It costs an implementer a search, and two citations landing on blank lines read as a deleted section.",
+      "probe_limitation": "16 of 18 citations were resolved individually; the other 2 were counted but not opened. The 8-confirmed-wrong figure is therefore a floor, not a total.",
+      "evidence": "MEASURED"
+    },
+    {
+      "id": "U-01",
+      "type": "INCOHERENT_AC",
+      "severity": "MEDIUM",
+      "issue_key": "V2-033",
+      "issue_number": 289,
+      "batch": "G",
+      "claim_as_written": "AC2: 'The reduced design's regression test asserts the per-turn spawn count is at most 2 (the two scripts confirmed to exist) unless a named exception is documented with a rationale.' The body of the same issue says: 'The true floor is approximately 2 -- the unconditional git rev-parse calls.'",
+      "what_is_actually_true_now": "The body and the AC attribute the same bound of 2 to two DIFFERENT and non-overlapping sets. MEASURED: hooks/stop_notifier/ contains 17 subprocess spawn sites across core.py, post_impl.py and voice.py. Exactly 2 are git rev-parse calls, both in post_impl.py at :56 and :209. Separately, the 2 scripts confirmed to exist are sync-version.py (spawned at post_impl.py via subprocess.run([sys.executable, str(sync_script)])) and voice-notifier.py (spawned via subprocess.Popen in voice.py). Those are four distinct spawn opportunities, not two. A test asserting 'at most 2' cannot be written without deciding which set the bound covers, and the issue supplies both answers.",
+      "what_it_blocks": "V2-033's AC2 directly. An implementer instrumenting 20 real invocations and measuring 3 or 4 cannot tell whether that is a pass with a documented exception or a failure.",
+      "note": "This is the same shape as V2-004's AC3: an AC that reads as rigour but cannot be evaluated as written. It is weaker than AC3's case because it is resolvable by an owner ruling rather than being self-contradictory on its face.",
+      "evidence": "MEASURED"
+    },
+    {
+      "id": "U-02",
+      "type": "STALE_OR_AMBIGUOUS_PREMISE",
+      "severity": "MEDIUM",
+      "issue_key": "V2-017",
+      "issue_number": 273,
+      "batch": "D",
+      "claim_as_written": "build_status: 'DESIGNED, NOT BUILT. ADR-020's layers are written in prescriptive voice throughout; the HLD states no build status for any of them. No doctor command and no commands/ directory exist on disk (verified absent 2026-08-01).'",
+      "what_is_actually_true_now": "Half true, and the false half is checkable in one grep. MEASURED: there is no commands/ directory anywhere in the repo -- that part holds. But a doctor command DOES exist: scripts/cli.py:209 defines cmd_doctor(args) and scripts/cli.py:340 registers it as 'cwe doctor' with help text 'Diagnose common issues'. What does not exist is a PLUGIN doctor command implementing ADR-020's DETECT layer, which is what the issue means.",
+      "what_it_blocks": "Nothing hard, but it cuts both ways: an implementer grepping for 'doctor' finds a live command and may conclude the DETECT layer is partly built, or may extend the engine CLI rather than building the plugin command ADR-020 specifies.",
+      "what_unblocks_it": "Reword to 'no PLUGIN doctor command exists; the unrelated cwe doctor at scripts/cli.py:209 is not the ADR-020 DETECT layer'.",
+      "evidence": "MEASURED"
+    }
+  ],
+  "verified_accurate": [
+    {"issue_key": "V2-034", "issue_number": 290, "claim": "hooks/stop-notifier.py references 9 scripts; 7 do not exist on disk; only sync-version.py and voice-notifier.py exist.", "result": "ACCURATE. MEASURED: all 7 named scripts (archive-old-sessions, auto-save-session, common-failures-prevention, git-auto-commit-policy, plan-session-archiver, preference-auto-tracker, session-pruner) return nothing from a repo-wide find AND nothing under ~/.claude. All 7 are referenced from hooks/stop_notifier/core.py. sync-version.py and voice-notifier.py both exist at scripts/tools/. 7 + 2 = 9, enumerated.", "evidence": "MEASURED"},
+    {"issue_key": "V2-035", "issue_number": 291, "claim": "6 timeout= APPLICATION sites across 5 files plus 3 DEFINITION sites, 9 total, with task_orchestration.py:160 composing to a 75-second fixed wall-clock timeout.", "result": "ACCURATE AT EVERY LINE. MEASURED: all 9 file:line pairs resolve to the claimed construct. prompt_gen_expert_caller.py:228, todo_decomposer.py:147, orchestrator_agent_caller.py:137 each read 'timeout=_TIMEOUT,'; todo_executor.py:114 reads 'timeout=_TODO_EXEC_TIMEOUT,'; task_orchestration.py:160 reads 'timeout=_pg_inner_timeout + 15,' and :217 reads 'timeout=_env_int(\"STEP1_TODO_DECOMPOSER_TIMEOUT\", 90) + 15,'. Definitions: prompt_gen_expert_caller.py:54 default 60, todo_decomposer.py:37 default 90, task_orchestration.py:128 _pg_inner_timeout = 60. The 75-second composition (60 + 15) is confirmed.", "evidence": "MEASURED"},
+    {"issue_key": "V2-019", "issue_number": 275, "claim": "19 confirmed sites of text-mode open() lacking encoding=, corrected up from an earlier 12-count grep that missed the mode-less open(path) form. 0 absolute path literals.", "result": "ACCURATE, INDEPENDENTLY REPRODUCED. An AST scan of langgraph_engine/, hooks/, scripts/ and src/ built by this pass -- classifying by ast.Call on the builtin open, excluding binary mode and keyword encoding -- returned exactly 19 sites. 7 of the 19 are the mode-less form (mode=None), which is precisely the class the issue warns detection tooling must catch.", "evidence": "MEASURED"},
+    {"issue_key": "V2-031", "issue_number": 287, "claim": "Defect 1 at step_decorator.py:169 swallows a checkpoint-save failure with a warning; CheckpointManager survives FR-4; resume path is orchestrator.py::resume_flow -> quality/recovery_handler.py::resume_from_checkpoint.", "result": "ACCURATE. MEASURED: the except Exception on save_checkpoint in langgraph_engine/core/step_decorator.py whose body is 'logger.warning(\"[step_decorator] Checkpoint save failed: %s\" % exc)' (line 169) -- the swallow described. 'def resume_flow' is in langgraph_engine/orchestrator.py (line 941) and 'def resume_from_checkpoint' in langgraph_engine/quality/recovery_handler.py (line 462). The full path is load-bearing: langgraph_engine/recovery_handler.py is a 15-line backward-compat shim that re-exports resume_from_checkpoint, so a bare-basename citation resolves to the wrong file. CheckpointManager lives at langgraph_engine/checkpoint_manager.py, outside all three deleted hook packages.", "evidence": "MEASURED"},
+    {"issue_key": "V2-027, V2-029", "issue_number": [283, 285], "claim": "135 of 2,218 nodes (6.09 percent) go dark; FR-4 plus FR-5 remove roughly 6 of 116 spawn sites; hooks/stop_notifier/ retains 17 spawn sites.", "result": "ACCURATE, AND THE 116 RECONCILES. MEASURED: impact_analysis_graph.json holds exactly 135 affected_nodes and its metadata cites 2,218; 135/2218 = 6.086 percent, matching 6.09. audit_surface.json declares subprocess_spawn_sites_count 112 and its array holds 112 -- the apparent conflict with 116 resolves because correction #7 records that the AST scan misses 4 aliased subprocess imports, so 112 + 4 = 116. Independently, a grep for subprocess.run/Popen/call/check_output across hooks/stop_notifier/ returns 17, matching the retained-sites figure.", "evidence": "MEASURED"},
+    {"issue_key": "V2-021", "issue_number": 277, "claim": "docs/guides/uninstall-residue.md verified ABSENT on disk 2026-08-01.", "result": "STILL TRUE. MEASURED: the file does not exist; docs/guides/ holds 14 other .md files and none is uninstall-residue.md.", "evidence": "MEASURED"},
+    {"issue_key": "V2-015", "issue_number": 271, "claim": ".claude-plugin/plugin.json verified ABSENT on disk 2026-08-01.", "result": "STILL TRUE. MEASURED: neither the file nor the .claude-plugin/ directory exists.", "evidence": "MEASURED"},
+    {"issue_key": "V2-026", "issue_number": 282, "claim": "No slash-command layer exists; no commands/ directory exists on disk.", "result": "STILL TRUE. MEASURED: no commands/ directory at any depth outside .git.", "evidence": "MEASURED"},
+    {"issue_key": "V2-028", "issue_number": 284, "claim": "scripts/3-level-flow.py remains the registered entry point, 120s timeout, unchanged.", "result": "STILL TRUE. MEASURED from ~/.claude/settings.json: the UserPromptSubmit hook command ends in scripts\\3-level-flow.py with timeout 120.", "evidence": "MEASURED"},
+    {"issue_key": "V2-014", "issue_number": 270, "claim": "The rule exists and is live at ~/.claude/rules/model-fallback.md, global-only, no repo-relative copy.", "result": "STILL TRUE. MEASURED: the file exists at that path and a repo-wide find for model-fallback.md returns no in-repo copy.", "evidence": "MEASURED"},
+    {"issue_key": "V2-016, V2-022", "issue_number": [272, 278], "claim": "17 pre-existing settings.json writers are known (a LOWER BOUND).", "result": "ACCURATE AGAINST ITS SOURCE, AND CORRECTLY HEDGED. MEASURED: audit_surface.json declares settings_json_touch_sites_count 17 and its array holds exactly 17 -- summary matches enumeration. Its two sibling counts also match (credential_access_sites 62/62, subprocess_spawn_sites 112/112). Both issues label 17 a lower bound, which is the correct treatment given correction #7's AST blind spot. setup_wizard.py, cited by V2-016 for its full-file read-modify-write, exists at scripts/setup/setup_wizard.py.", "evidence": "MEASURED"},
+    {"issue_key": "V2-036", "issue_number": 292, "claim": "STALENESS NOTE: product-sequencing-v2.md states three times that the SS 10 runbook has 'NOT YET' been updated to insert register-mcp. That statement is STALE. Do not re-open it.", "result": "THE STALENESS NOTE IS ITSELF CORRECT -- an issue correctly handling a stale premise rather than inheriting it. MEASURED: product-sequencing-v2.md still carries the unrevised statement at :348, :606, :617, :714 and :722 (it has not been touched since 7699e89 on 2026-08-01 16:41). And it IS stale: hld_v2.md's own change log at :2013 records 'register-mcp inserted as step 2; sequence renumbered to 8 steps' under BA FIND-10, and SS 10 begins at hld_v2.md:1342.", "probe_correction": "A first probe used a case-sensitive grep for 'NOT YET' and returned 2, which would have contradicted the issue. Re-run case-insensitively it returns 13, of which 5 concern the runbook. The case-sensitive result was discarded, not reported.", "evidence": "MEASURED"},
+    {"issue_key": "V2-037", "issue_number": 293, "claim": "VERSION reads 1.21.5; CLAUDE.md:4 reads **Version:** 1.21.4.", "result": "STILL TRUE. MEASURED: VERSION contains 1.21.5; CLAUDE.md:4 contains '**Version:** 1.21.4'.", "evidence": "MEASURED"},
+    {"issue_key": "V2-018", "issue_number": 274, "claim": "The 13-versus-95 home-directory dispute stands unreconciled; this issue carries no point value deliberately.", "result": "CORRECTLY CONSTRUCTED, NOT STALE. The issue asserts no figure as fact and its AC6 explicitly requires the total and the CODE/DOCSTRING/COMMENT split to be 'reported as MEASURED values, never asserted against a pre-committed number.' This is the one issue in the set immunised by construction against the defect class being hunted.", "evidence": "CITED"}
+  ],
+  "clean_checks_no_finding": [
+    {"check": "Does any B-H issue assert the policy audit file is missing or non-conformant?", "method": "Searched all 29 bodies and ACs for policy-implementation-audit, audit matrix, 46-row, 46 polic. MEASURED: the only hits are V2-024 and V2-027 referencing the disposition ledger as a dependency, and V2-034 referencing the FR-12/NFR-10 ledger. None asserts the artifact is absent or non-conformant.", "result": "CLEAN. The reshape at e520b5e did not strand a stale premise anywhere in B-H. Independently confirmed: the file is now 556 lines with a 7-column matrix headed '| # | Policy file | Status | Evidence | Post-plugin plan | Basis | Verification |' holding exactly 46 data rows, status tally 18/11/8/8/1."},
+    {"check": "Does any B-H issue assume the audited corpus and the runtime corpus are equivalent?", "method": "Searched all 29 bodies and ACs for get_policies_dir, ~/.claude/policies and docs/policies. MEASURED: zero hits.", "result": "CLEAN. No B-H issue makes any claim about which policy tree is read, so the corpus divergence does not propagate into this batch range. It remains a batch A problem."},
+    {"check": "Does any B-H issue name parsers/config.py as a fix target?", "method": "Searched all 29 for config.py. MEASURED: one hit, V2-009, which names it only to say it is dead code read by nothing and to record that the amended AC DROPS it.", "result": "CLEAN. The correction landed correctly; no issue directs an implementer at the dead constant."},
+    {"check": "Is any B-H issue scoped or sized as a 17-site or 4-site job?", "method": "Searched all 29 for '17 truncation', '17 sites', 'four sites', '4 sites', '4 named sites'. MEASURED: hits only in V2-009, which uses the four-site framing to describe what the superseded AC said before recording the owner amendment to the two binding sites.", "result": "CLEAN as a work-list defect. V2-009's own acceptance criteria assert on the two binding sites and require runtime proof."},
+    {"check": "Does any B-H issue still carry V2-009 at 5 points?", "method": "Searched all 29 for '5 points' and 'size 5'. MEASURED: the only hits are inside V2-009 itself, already recorded as B-12 in the Phase 8 gate.", "result": "CLEAN for B-H generally. No OTHER issue inherited the stale size."},
+    {"check": "Does any B-H issue rely on the two fixed MCP defects?", "method": "Searched all 29 for non-idempotent, POST retry, duplicate issue, 25 row, 25-row, page cap, listing cap. MEASURED: zero hits.", "result": "CLEAN. The MCP defects were tooling faults recorded in issue_key_map.json; no issue body depends on either."},
+    {"check": "Are batches C and H clean of stale premises?", "method": "All 6 issues (V2-011..V2-014, V2-036, V2-037) examined individually.", "result": "CLEAN of the hunted class. C's four issues are all build-from-scratch items whose build_status is 'no code exists to assess' -- a claim that cannot go stale by something being built elsewhere, and MEASURED still true (no commands/, no selector code). H's two are correct: V2-037's version contradiction still holds MEASURED, and V2-036's staleness note is itself accurate. Their only defect is line-citation drift (S-03), which affects V2-012 and V2-036."}
+  ],
+  "discrepancy_with_brief": {
+    "item": "The brief states '10 of the 18 ENFORCED policies are absent from the tree get_policies_dir() actually reads.'",
+    "measured": "9, not 10.",
+    "method": "Parsed the 46-row matrix in the reshaped audit file, took the 18 rows with Status ENFORCED, and tested each policy filename against the set of .md basenames found by os.walk over ~/.claude/policies.",
+    "enumeration": ["final-summary-policy.md", "hook-system-policy.md", "issue-closure-policy.md", "quality-gate-policy.md", "recovery-policy.md", "test-generation-policy.md", "tool-optimization-policy.md", "unicode-fix-policy.md", "windows-path-policy.md"],
+    "count_of_enumeration": 9,
+    "surrounding_figures_confirmed": "18 of 46 audited policies are absent from the live tree in total (9 ENFORCED, 5 PARTIAL, 2 CONTRADICTED, 1 DOCUMENTED-ONLY, 0 STALE-TOPOLOGY -- sums to 17, plus mcp-plugin-discovery-policy.md DOCUMENTED-ONLY = 18). docs/policies holds 46 .md; ~/.claude/policies holds 35 unique .md basenames. The brief's 46 / 35 figures are confirmed MEASURED.",
+    "note": "Reported rather than silently adopted. Three of the absent names have near-miss neighbours in the live tree that a loose matcher would count as present -- tool-optimization-policy.md versus the live tool-usage-optimization-policy.md, test-generation-policy.md versus test-case-policy.md, issue-closure-policy.md versus github-issues-integration-policy.md. A matcher doing prefix or fuzzy comparison would report 6, not 9. Exact-basename matching gives 9."
+  },
+  "could_not_verify": [
+    "The live GitHub issue bodies for #265-#293. The github-api MCP server exposes no get_issue and no list_comments tool. All findings are against docs/phase-6-sprint/github_issues.json, the recorded source the bodies were created from. If scrum-master-agent has amended that file concurrently, findings may already be addressed.",
+    "Whether the 2 rev-parse calls and the 2 surviving script spawns in hooks/stop_notifier/ actually fire on the same turn. Determining U-01's real per-turn floor requires running the Stop hook with instrumentation, which is exactly the work V2-033 exists to do. The 17-site and 2-rev-parse figures are static counts.",
+    "2 of the 18 md line citations were counted but not individually resolved, so the 8-confirmed-wrong figure for S-03 is a floor.",
+    "Whether hld.md carries the same corrections as hld_v2.md. Commits 14f742a and b2246af each touched both files with identical line deltas (+31 then +46, giving +77 each), which is consistent with them being byte-identical, but this pass verified the corrected text in hld_v2.md only.",
+    "The acceptance criteria of V2-011, V2-012 and V2-013 were read but their subject matter (a KG-driven selector that does not exist yet) offers no present-state claim to check against disk beyond the absence of the code, which was confirmed.",
+    "Whether any B-H issue's ACs are unsatisfiable for reasons other than an internal contradiction -- for example an AC requiring a measurement that cannot be taken. Only V2-033's AC2 and V2-017's build_status surfaced under the tests applied."
+  ],
+  "self_correction": {
+    "note": "Two probes by this pass produced wrong results and were discarded rather than reported.",
+    "items": [
+      "A path-existence probe resolved bare basenames (graph_model.py, sequencing_risks.md) against the repo root and reported 44 of 74 asserted paths as MISSING. Nearly all were relative or partial references that resolve elsewhere. The probe was discarded; no path-absence finding is reported from it.",
+      "A case-sensitive grep for 'NOT YET' in product-sequencing-v2.md returned 2 and appeared to contradict V2-036's staleness note. Re-run case-insensitively it returns 13. V2-036 is recorded as accurate."
+    ],
+    "own_prior_citations_now_stale": "RESOLVED 2026-08-02. The Phase 8 readiness report cited SRS.md:1048, :740 and :736. SRS.md grew from 1056 to 1130 lines (wc -l; commits 92a9a5d then f26940d). All citations in readiness_report.md and blockers.json have since been re-opened and re-keyed to stable anchors: the dead-constant row is now addressed as the '| Large codebase exceeds CallGraph limits |' row of '## Risks & Mitigation' (line 1122), the FR-21 four-site AC as the '| FR-21 |' row of '### Acceptance Criteria for the v2.0.0 Requirements' (line 748), and FR-17 as the '| FR-17 |' row of the same table (line 744). Recorded because this pass audits exactly that failure mode, and exempting itself would be the defect."
+  }
+}

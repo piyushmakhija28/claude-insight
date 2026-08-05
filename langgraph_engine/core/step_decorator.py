@@ -87,6 +87,7 @@ class StepExecutionContext:
         self.state = state
         self.start_time: float = time.time()
         self.infra: Dict[str, Any] = get_infra(state)
+        self.checkpoint_degraded: bool = False
 
     # ------------------------------------------------------------------
     # Convenience properties
@@ -155,36 +156,85 @@ class StepExecutionContext:
     # Checkpoint helpers
     # ------------------------------------------------------------------
 
-    def save_success_checkpoint(self, result: Dict[str, Any]) -> None:
-        """Merge state + result and save a success checkpoint."""
-        if self.checkpoint:
-            try:
-                merged = {**dict(self.state), **(result or {})}
-                self.checkpoint.save_checkpoint(
-                    self.step_number,
-                    merged,
-                    success_status=True,
+    def _mark_degraded(self, reason: str) -> None:
+        """Record that this step's checkpoint did not land, durably where possible."""
+        self.checkpoint_degraded = True
+        try:
+            self.checkpoint.mark_degraded(self.step_number, reason)
+        except Exception as exc:
+            logger.error("[step_decorator] Could not record degraded marker: %s" % exc)
+
+    def save_success_checkpoint(self, result: Dict[str, Any]) -> bool:
+        """Merge state + result and save a success checkpoint.
+
+        A checkpoint that does not land cannot back a resume guarantee, so a
+        failed write is not absorbed here. The session is marked degraded and
+        the resume path refuses it rather than resuming from a chain with a hole
+        it cannot distinguish from a step that never ran.
+
+        Args:
+            result: Step result dict merged over the current state.
+
+        Returns:
+            True when the checkpoint landed, False when the session degraded.
+        """
+        if not self.checkpoint:
+            return True
+        try:
+            merged = {**dict(self.state), **(result or {})}
+            saved = self.checkpoint.save_checkpoint(
+                self.step_number,
+                merged,
+                success_status=True,
+            )
+            if not saved:
+                self.checkpoint_degraded = True
+                logger.error(
+                    "[step_decorator] Checkpoint for step %d did not land; session marked degraded" % self.step_number
                 )
-            except Exception as exc:
-                logger.warning("[step_decorator] Checkpoint save failed: %s" % exc)
+                return False
+            return True
+        except Exception as exc:
+            logger.error("[step_decorator] Checkpoint save raised for step %d: %s" % (self.step_number, exc))
+            self._mark_degraded("%s: %s" % (type(exc).__name__, exc))
+            return False
 
     def save_failure_checkpoint(
         self,
         fallback: Optional[Dict[str, Any]],
         exc: Exception,
-    ) -> None:
-        """Save a failure checkpoint with error metadata."""
-        if self.checkpoint:
-            try:
-                merged = {**dict(self.state), **(fallback or {})}
-                self.checkpoint.save_checkpoint(
-                    self.step_number,
-                    merged,
-                    success_status=False,
-                    error_message="%s: %s" % (type(exc).__name__, str(exc)[:200]),
+    ) -> bool:
+        """Save a failure checkpoint with error metadata.
+
+        Args:
+            fallback: Fallback result dict merged over the current state.
+            exc: Exception that caused the step to fail.
+
+        Returns:
+            True when the checkpoint landed, False when the session degraded.
+        """
+        if not self.checkpoint:
+            return True
+        try:
+            merged = {**dict(self.state), **(fallback or {})}
+            saved = self.checkpoint.save_checkpoint(
+                self.step_number,
+                merged,
+                success_status=False,
+                error_message="%s: %s" % (type(exc).__name__, str(exc)[:200]),
+            )
+            if not saved:
+                self.checkpoint_degraded = True
+                logger.error(
+                    "[step_decorator] Failure checkpoint for step %d did not land; session marked degraded"
+                    % self.step_number
                 )
-            except Exception as ce:
-                logger.warning("[step_decorator] Failed checkpoint save after error: %s" % ce)
+                return False
+            return True
+        except Exception as ce:
+            logger.error("[step_decorator] Failure checkpoint save raised for step %d: %s" % (self.step_number, ce))
+            self._mark_degraded("%s: %s" % (type(ce).__name__, ce))
+            return False
 
     # ------------------------------------------------------------------
     # Error logger helper
@@ -250,28 +300,30 @@ class StepExecutionContext:
     # ------------------------------------------------------------------
 
     def save_workflow_memory(self, status: str) -> None:
-        """Write workflow-memory.json to the session directory.
+        """Project the progress surface from this step's checkpoint record.
 
-        Used for resume support.  Non-blocking.
+        The progress surface is read by the resume path, so it must never be a
+        second writer of how far the session got. Every field is derived from the
+        checkpoint record; when no record exists nothing is written, which keeps
+        the surface from advancing past what is durably recorded.
+
+        Args:
+            status: Retained for call-site compatibility. The status written is
+                derived from the checkpoint record, not from this argument.
         """
+        if not self.checkpoint:
+            return
         try:
-            session_dir = self.state.get("session_dir", "") or ""
-            if not session_dir:
-                return
-            mem = {
-                "last_step": self.step_number,
-                "last_step_label": self.step_label,
-                "last_step_status": status,
-                "timestamp": datetime.now().isoformat(),
-                "session_id": self.state.get("session_id", ""),
-            }
-            mem_path = Path(session_dir) / "workflow-memory.json"
-            mem_path.write_text(
-                json.dumps(mem, indent=2),
-                encoding="utf-8",
+            from ..checkpoint_manager import write_progress_projection
+
+            write_progress_projection(
+                self.checkpoint,
+                self.step_number,
+                self.state.get("session_dir", "") or "",
+                self.step_label,
             )
         except Exception as exc:
-            logger.debug("[step_decorator] workflow memory write skipped: %s" % exc)
+            logger.debug("[step_decorator] progress projection skipped: %s" % exc)
 
 
 # ---------------------------------------------------------------------------
@@ -351,6 +403,8 @@ def _execute_step_with_infra(
         if result is None:
             result = {}
         result["step%d_execution_time_ms" % n] = duration_s * 1000
+        if ctx.checkpoint_degraded:
+            result["checkpoint_degraded"] = True
 
         return result
 
@@ -380,6 +434,8 @@ def _execute_step_with_infra(
             "step%d_error" % n: str(exc),
             "step%d_execution_time_ms" % n: duration_s * 1000,
         }
+        if ctx.checkpoint_degraded:
+            base["checkpoint_degraded"] = True
         if fallback_result:
             return {**fallback_result, **base}
         return base

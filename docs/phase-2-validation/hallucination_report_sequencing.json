@@ -1,0 +1,138 @@
+{
+  "gate": "phase-2.5-sequencing-first-examination",
+  "artifact": "docs/phase-0-requirements/product-sequencing-v2.md",
+  "artifact_lines": 726,
+  "coverage": "FULL -- entire 726-line document read this pass (never previously gate-examined). Addendum items 1 and 4 prioritized per coordinator instruction; item 6 (critical path) and item 2 (Kano) verified via full-document grep sweep rather than exhaustive prose re-read of every section for those two items specifically.",
+  "ground_truth_used": ["skills/product-management-core/SKILL.md SS M1 (WSJF formula) and SS 13 (Kano prohibition) -- read directly", "hld.md, prd-v2.md, plugin_schema_spike.md -- referenced from prior-pass familiarity, not re-read line-by-line this pass (budget)"],
+
+  "item1_wsjf_arithmetic": {
+    "formula_verified": "WSJF = CoD/size, CoD = UBV+TC+RROE, per skills/product-management-core/SKILL.md SS M1 (Reinertsen 2009), correctly cited by the document (not hand-derived, not re-proved)",
+    "rows_recomputed": [
+      {"unit": "NFR-1 measurement harness", "UBV": 9, "TC": 7, "RROE": 5, "CoD_stated": 21, "CoD_computed": 21, "size": 2, "WSJF_stated": 10.50, "WSJF_computed": 10.50, "pass": true},
+      {"unit": "FR-4/FR-5 hook deletion", "UBV": 8, "TC": 8, "RROE": 4, "CoD_stated": 20, "CoD_computed": 20, "size": 3, "WSJF_stated": 6.67, "WSJF_computed": 6.667, "pass": true},
+      {"unit": "NFR-3 CheckpointManager contract", "UBV": 5, "TC": 5, "RROE": 9, "CoD_stated": 19, "CoD_computed": 19, "size": 3, "WSJF_stated": 6.33, "WSJF_computed": 6.333, "pass": true},
+      {"unit": "NFR-2 timeout-removal engineering", "UBV": 8, "TC": 8, "RROE": 7, "CoD_stated": 23, "CoD_computed": 23, "size": 8, "WSJF_stated": 2.88, "WSJF_computed": 2.875, "pass": true},
+      {"unit": "ADR-019 register-mcp/unregister-mcp", "UBV": 7, "TC": 6, "RROE": 6, "CoD_stated": 19, "CoD_computed": 19, "size": 5, "WSJF_stated": 3.80, "WSJF_computed": 3.80, "pass": true},
+      {"unit": "FR-18a (struck, historical only)", "UBV": 4, "TC": 5, "RROE": 4, "CoD_stated": 13, "CoD_computed": 13, "size": 2, "WSJF_stated": 6.50, "WSJF_computed": 6.50, "pass": true, "note": "Correctly struck through and explicitly retired at zero elsewhere; this row's arithmetic is still internally correct as a HISTORICAL figure"}
+    ],
+    "additional_phase0_baseline_rows_spot_checked": [
+      {"unit": "FR-22", "CoD": 13, "size": 1, "WSJF": 13.00, "pass": true},
+      {"unit": "FR-6", "CoD": 12, "size": 1, "WSJF": 12.00, "pass": true},
+      {"unit": "FR-23", "CoD": 23, "size": 3, "WSJF": 7.67, "pass": true},
+      {"unit": "FR-9", "CoD": 12, "size": 2, "WSJF": 6.00, "pass": true},
+      {"unit": "FR-15/FR-17", "CoD": 14, "size": 3, "WSJF": 4.67, "pass": true},
+      {"unit": "FR-7", "CoD": 21, "size": 5, "WSJF": 4.20, "pass": true},
+      {"unit": "FR-9a", "CoD": 23, "size": 5, "WSJF": 4.60, "pass": true},
+      {"unit": "FR-16", "CoD": 14, "size": 5, "WSJF": 2.80, "pass": true},
+      {"unit": "FR-18/NFR-5", "CoD": 16, "size": 5, "WSJF": 3.20, "pass": true},
+      {"unit": "FR-14", "CoD": 19, "size": 8, "WSJF": 2.38, "pass": true},
+      {"unit": "FR-10..FR-13", "CoD": 22, "size": 13, "WSJF": 1.69, "pass": true},
+      {"unit": "FR-8a decision+instrumentation", "CoD": 18, "size": 3, "WSJF": 6.00, "pass": true},
+      {"unit": "Migration guide/CHANGELOG/VERSION", "CoD": 11, "size": 2, "WSJF": 5.50, "pass": true}
+    ],
+    "verdict": "ALL 19 recomputed rows (6 targeted + 13 spot-checked) match their stated WSJF to the printed precision. Zero arithmetic defects found. This is the strongest-verified section of the document."
+  },
+
+  "item2_kano_absence": {
+    "instruction": "Kano must be absent as a framework; mentions only as a rejection record; any surviving classification (must-be/delighter/indifferent/KIPI/M-P-A-I) is HIGH.",
+    "method": "Full-document grep for 'Kano', 'must-be', 'delighter', 'indifferent', 'KIPI', 'M-P-A-I' (case-insensitive)",
+    "result": "Kano appears exactly 6 times, all as the rejection record (SS0's correction note, SS3's header parenthetical 'Kano rejected, see SS 0', SS8's rework-note restatement). Zero occurrences of must-be, delighter, indifferent, KIPI, or M-P-A-I vocabulary anywhere in the document. SS0's correction note is unusually rigorous: it quotes the skill's prohibition verbatim, explains WHY a proper survey is structurally impossible for a one-user project, and explicitly rejects even a relabeled/softened version ('inferred heuristic') of the same M/P/A/I vocabulary as still being the same defect under a disclaimer.",
+    "surviving_classification_found": "NONE",
+    "verdict": "CLEAN. No HIGH finding here -- this is the best-handled item in the document."
+  },
+
+  "item3_present_tense_nonexistent_claims": {
+    "instruction": "register-mcp, unregister-mcp, doctor, ADV-012's pre-push hook, FR-25/FR-26 are all proposals with no code. Check whether present-tense-as-existing framing leaked into this document (already found in pm_review.json 'already covers' and sa_defence.json 'already reads and writes').",
+    "method": "Full-document grep for 'already covers', 'already reads', 'already provides', 'already checks', 'already implements', 'doctor', 'FR-25', 'FR-26'; manual scan of every register-mcp/unregister-mcp mention for tense",
+    "finding_HIGH": {
+      "location": "Line 721 (SS8, 'Direct answers to the coordinator's third round')",
+      "text": "'Not re-scoped as pre-uninstall preparation (a) -- unregister-mcp already covers the only genuine pre-uninstall opportunity (the plugin's own MCP registrations)...'",
+      "problem": "Asserts unregister-mcp 'already covers' something -- present tense, as an existing, functioning capability. unregister-mcp is a PROPOSED ADR-019 command with zero lines of code (confirmed by this document's OWN correct hedge 60 lines earlier).",
+      "contradicting_correct_hedge_in_same_document": "Line 403-404 (SS2d, the earlier and more careful statement of the identical conclusion): 'unregister-mcp (SS 2c, sized at size 5 / WSJF 3.80 -- PROPOSED by ADR-019, not built; zero lines of code exist) is designed to reach those in full, once it exists.' This is the correct framing -- future/conditional tense, explicit non-existence disclosure.",
+      "severity": "HIGH",
+      "hallucination_type": "intrinsic (self-contradiction within the same document: SS2d hedges the claim correctly, SS8's restatement of the same conclusion drops the hedge)",
+      "matches_coordinator_pattern": "Exact match to the 'already covers' / 'already reads and writes' pattern independently found in pm_review.json and sa_defence.json this same review cycle -- confirms this is a systemic drafting habit across the Phase 2 document set, not an isolated incident.",
+      "recommended_fix": "Change line 721 to 'unregister-mcp, once built, is designed to cover the only genuine pre-uninstall opportunity...' to match SS2d's own correct phrasing."
+    },
+    "doctor_FR25_FR26_mentions": "None of 'doctor', 'FR-25', or 'FR-26' appear anywhere in this document -- those proposals (from hld.md/ADR-020 and advisory_items.json ADV-011) are out of this document's scope and were not imported, correctly.",
+    "adv012_check": "ADV-012 (git pre-push hook) is mentioned 3 times (lines 341, 576, 700-701), consistently and correctly described as 'named', 'proposed', 'filed as', 'not adopted' -- never as an existing control. No defect.",
+    "other_register_mcp_mentions_checked": "Approximately 20 other register-mcp/unregister-mcp mentions across the document were spot-checked; all others use correctly hedged language (PROPOSED, sized, NEW, not built, once it exists, before it can be built). Line 721 is the single exception found."
+  },
+
+  "item4_stale_positions_and_ss2b_marking": {
+    "instruction_original": "Check for surviving positions superseded elsewhere -- bundled .mcp.json 'minimum viable set' (ADR-018, superseded by ADR-019), FR-18a as a buildable cleanup command.",
+    "instruction_addendum": "Sharpened: confirm SS2b is marked as a superseded record rather than live guidance, confirm no WSJF row's CoD/size still rests on a pre-ADR-019 assumption, confirm FR-18a's 6.50 does not survive as a live figure.",
+    "ss2b_marking_check": {
+      "location": "Line 232-234, SS2b's own section header",
+      "text": "'## 2b. NFR-1 / Bundled-MCP-Server Options (DECIDED 2026-08-01 -- option (a), ADR-019. Sizing below is the original Phase 2.2 sizing, kept intact as the record of what was handed to solution-architect as cost data; see SS 2c for the decision, its consequences, and the new work it creates.)'",
+      "verdict": "ADEQUATELY MARKED. The header itself states the decision, names the winning option, and explicitly frames the table body as a historical record ('kept intact as the record of'), not current guidance. SS2b's own body additionally repeats 'Outcome (recorded here, decided in SS 2c below): solution-architect chose option (a), not (b)' at its close (line 254). A reader cannot mistake SS2b for live guidance."
+    },
+    "minimum_viable_bundle_sweep": {
+      "method": "Full-document grep for 'minimum viable', 'minimum-viable', '.mcp.json' + bundl*",
+      "occurrences_found": 4,
+      "all_occurrences_classified": [
+        {"line": 116, "context": "SS0a item 6, describing the SPIKE's finding about bundled servers in general (motivation for why the question needed deciding) -- historical/motivational, not a live bundling claim", "verdict": "OK"},
+        {"line": 245, "context": "SS2b option (b)'s own description table -- inside the already-confirmed-superseded record", "verdict": "OK, correctly scoped to the record"},
+        {"line": 302, "context": "SS2c CoD reasoning, past-conditional tense: 'the sole path to functionality ADR-018's minimum-viable bundle would otherwise have delivered by default'", "verdict": "OK, explicitly counterfactual"},
+        {"line": 320, "context": "SS2c favourable-side-effect paragraph, referencing 'ADR-018's finding that even a minimum-viable bundle spawns on enable' as historical justification for the current re-score standing", "verdict": "OK, explicitly historical"}
+      ],
+      "verdict": "NO live/current-guidance assertion of plugin-bundled MCP servers found anywhere. Every occurrence is either inside the marked-superseded SS2b record or explicitly past/counterfactual tense elsewhere. This document handled the propagation correctly, in contrast to the leak the coordinator found in ba_review.json/sa_defence.json."
+    },
+    "fr18a_survival_check": {
+      "method": "Full-document search for '6.50' and every FR-18a mention",
+      "result": "FR-18a's row appears struck-through with all its figures struck (line 214: '~~4~~ ~~5~~ ~~4~~ ~~13~~ ~~2~~ ~~6.50~~'). SS2d (lines 375-429) provides a full, dedicated correction: 'Size: retired at zero, not carried at 6.50 or any other figure ... an honest zero is the correct number.' SS8's return-value summary restates this correctly at lines 646-656: 'Size: retired at zero, not carried at 6.50.' No location found where 6.50 is asserted as FR-18a's current/live size.",
+      "verdict": "CLEAN. FR-18a's 6.50 does not survive as a live figure anywhere."
+    },
+    "wsjf_rows_resting_on_invalidated_assumptions": {
+      "method": "Checked every non-struck WSJF row's CoD/size justification against ADR-019",
+      "result": "FR-4/FR-5's row (SS2a) carries a caveat ('necessary but NOT sufficient for NFR-1, per ADR-018') that predates ADR-019 -- but SS2c explicitly revisits this exact row and states the caveat 'is now resolved favourably under ADR-019 at zero additional engineering cost' while correctly leaving the row's own CoD/size unchanged (UBV/TC/RROE describe the hook-deletion work itself, not the packaging context, so they did not need to change). This is the CORRECT handling, not a leak: the document explains why the row's numbers don't need to move even though the surrounding context did.",
+      "verdict": "NO row found whose CoD/size is silently wrong due to an unrevisited ADR-019 assumption."
+    },
+    "overall_item4_verdict": "PASS. This is the best-defended area of the document against the addendum's specific concern -- SS2b is clearly marked, no stale bundling assumption survives as live guidance, and FR-18a's 6.50 is consistently retired everywhere it is mentioned."
+  },
+
+  "item5_count_vs_enumeration": {
+    "checks": [
+      {"claim": "'Section 9 ... fixes 7 gates' (line 150) / 'the critical path through the remaining 6 gates' (line 544)", "method": "Counted D1-D7 table rows", "result": "7 rows (D1-D7); 7-1(D1 done)=6 remaining. CONSISTENT."},
+      {"claim": "'Top-3 Sequencing Risks' (SS7 header) contains exactly 3 numbered risks, with a 4th and 5th explicitly called out as NOT in the top-3", "method": "Counted table rows + prose", "result": "Exactly 3 rows in the table; 'Fourth risk noted but not ranked' and 'Fifth item, tracked but not ranked' both explicitly disclaim top-3 membership. CONSISTENT, correctly disambiguated."},
+      {"claim": "'solution-architect ... (9/9 answered)' (line 378)", "method": "Attempted cross-check against pm_review.json's findings array from a prior pass (recalled: 3 CRITICAL + 3 MAJOR + 2 ADVISORY = 8 entries in the 'findings' array)", "result": "UNVERIFIED, not confirmed wrong. 8 (recalled findings-array count) vs 9 (this document's claim) do not obviously match, but 'this document's own Phase 2.2 findings' may use a different enumeration basis than pm_review.json's 'findings' array alone (e.g. could include the build_order_matches.critical_defect item as a 9th). Re-opening and precisely re-enumerating pm_review.json against sa_defence.json's actual response list was out of this pass's budget.", "severity": "NOT SCORED -- flagged as unverified, not as a defect"},
+      {"claim": "'FR-14a plugin-schema spike (4 unknowns)' (line 184, struck-through Phase-0-baseline label) vs '5/5 items measured' everywhere else", "method": "Cross-checked against SS0a item 6's own text", "result": "NOT a defect. The struck row preserves the ORIGINAL Phase 0 sizing basis (4 known unknowns); item 5 (the NFR-1/MCP spawn question) was added later per SS0a item 6 ('NEW, unsized in the prior revision'). The struck-through '4' is a correctly-preserved historical figure, consistent with the document's own append-and-correct convention."}
+    ],
+    "verdict": "No confirmed count-vs-enumeration defect found in this pass (unlike the prior two passes, which found 2-3 such defects each). One item (9/9) is flagged unverified rather than cleared, for lack of budget to fully reconcile against the source JSON."
+  },
+
+  "item6_critical_path_consistency": {
+    "claims_checked": ["FR-9a precedes FR-10..13", "FR-23 precedes FR-4/FR-5", "new D5 dependency: FR-14 skeleton -> register-mcp build -> NFR-5 4th round-trip test"],
+    "occurrences_found": "FR-9a->FR-10..13 stated consistently at lines 159, 187, 548, 687. FR-23->FR-4/FR-5 stated consistently at lines 161, 180, 211, 339-340, 503-504, 552, 689, 699. The D5 chain stated consistently at lines 331-336, 550-551, 583-588, 687-689, 712-714.",
+    "verdict": "CONSISTENT everywhere it appears. No contradiction or drift found across the 6-8 restatements of each claim throughout the document's revision layers (SS0/SS2a/SS2c/SS6/SS7/SS8)."
+  },
+
+  "pm_preemptive_flag_check": {
+    "instruction": "Coordinator told PM to flag any SS2b/2c/2d figure it was less than confident about. Check whether PM flagged anything, and weight accordingly; absence of a flag is itself information.",
+    "search_method": "Searched SS2b/2c/2d for hedging language (uncertain, low confidence, rough, approximate, not fully validated, best guess)",
+    "result": "PM flagged NOTHING as low-confidence in SS2b/2c/2d. The closest hedged language found is SS2b's option (a)/(c) job sizes explicitly marked '~5 pts' and '~8+ pts, high uncertainty' -- but these are the REJECTED options (a chosen historically... wait, (a) is the CHOSEN option), and the '~5 pts' rough estimate for option (a) predates the decision and is superseded by SS2c's precise register-mcp sizing (size 5, WSJF 3.80, with full UBV/TC/RROE reasoning given). SS2c and SS2d's actual live figures (register-mcp's 3.80, FR-18a's retirement-at-zero) are both presented with full, unhedged reasoning chains -- no confidence caveat attached to either.",
+    "interpretation": "Per the coordinator's own framing ('if it flagged nothing, that is itself information'): PM's confidence in SS2c/SS2d's arithmetic is corroborated by this pass's independent recomputation (item 1) finding zero arithmetic defects in exactly those rows. The absence of a pre-emptive flag appears justified in retrospect -- the WSJF numbers hold up. The one defect this pass DID find (the 'already covers' present-tense slip, item 3) is a wording/tense issue, not a sizing or arithmetic issue, and would not be the kind of thing PM's own confidence-flagging exercise (aimed at 'figures... derived under budget pressure') would have caught."
+  },
+
+  "aggregate_scores": {
+    "claims_scored": 9,
+    "claims_supported": 8,
+    "claims_with_defect": 1,
+    "defect_list": ["Line 721 'unregister-mcp already covers' -- present-tense claim about a proposed, unbuilt command (HIGH)"],
+    "NLI_faithfulness_audited_scope": 0.89,
+    "FactScore_audited_scope": 0.89,
+    "note": "One HIGH-severity intrinsic hallucination (present-tense existence claim, self-contradicted 60 lines earlier in the same document) found in an otherwise unusually clean document. WSJF arithmetic (19/19 rows), Kano absence, SS2b superseded-marking, and critical-path consistency all score as fully supported. Gate requires exactly 1.0 on both axes with no partial credit, so one HIGH finding is sufficient for RETRY regardless of how clean the remainder is."
+  },
+
+  "gate_requirement": "NLI = 1.0 AND FactScore = 1.0, no partial credit",
+  "gate_verdict": "RETRY",
+  "gate_reason": "One HIGH-severity finding: line 721 asserts 'unregister-mcp already covers' a capability in present tense, when unregister-mcp is a proposed ADR-019 command with zero lines of code -- the exact same 'already covers'/'already reads and writes' pattern independently found in pm_review.json and sa_defence.json this cycle, now confirmed present in product-sequencing-v2.md as well, in direct self-contradiction with this document's own correct hedge 60 lines earlier (line 403-404). Everything else audited this pass -- 19 recomputed WSJF rows, Kano's absence, SS2b's supersession marking, FR-18a's consistent zero-retirement, and critical-path consistency -- passed cleanly.",
+
+  "not_examined_this_pass": [
+    "prd-v2.md and hld.md were not re-read line-by-line this pass; cross-references to them relied on prior-pass familiarity, per the coordinator's 'same budget' constraint and the addendum's explicit priority ordering (items 1 and 4 over the rest)",
+    "orchestration_prompt.md SS 1.2/1.4/3.3 were not re-read this pass despite being named ground truth -- product-sequencing-v2.md's own citations of them were taken as accurate based on their internal consistency with the rest of the document, not independently re-verified against the source",
+    "The '9/9 answered' claim (line 378) was not fully reconciled against pm_review.json/sa_defence.json's exact response ledger -- flagged unverified rather than cleared or refuted",
+    "FR-8a's 5-candidate rebuild-cost reasoning (SS3) was read but not independently cross-checked against capability_loss.md or the audit matrix it references",
+    "No independent recomputation of the D1-D7 gate table's FR-to-gate assignments against v2.0.0-plugin-transformation-requirements.md SS9 was performed this pass (relied on the document's own citation)"
+  ]
+}

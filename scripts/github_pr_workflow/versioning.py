@@ -31,7 +31,7 @@ def _bump_version_and_changelog(repo_root, session_summary, issue_numbers):
     """
     try:
         version_file = Path(repo_root) / "VERSION"
-        changelog_file = Path(repo_root) / "docs" / "CHANGELOG-SYSTEM.md"
+        changelog_file = Path(repo_root) / "CHANGELOG.md"
 
         if not version_file.exists():
             _log("No VERSION file found - skipping version bump")
@@ -52,16 +52,17 @@ def _bump_version_and_changelog(repo_root, session_summary, issue_numbers):
         version_file.write_text(new_version + "\n", encoding="utf-8")
         _log(f"VERSION bumped: {current_version} -> {new_version}")
 
-        # Build changelog entry from session summary
+        # Build changelog entry from session summary, in the Keep a Changelog
+        # section shape that rules/11 mandates for every versioned entry.
         today = datetime.now().strftime("%Y-%m-%d")
-        entry_lines = [f"- v{new_version} ({today}): "]
+        entry_lines = [f"## [{new_version}] - {today}", "", "### Changed", "", "- "]
 
         if session_summary:
             types = session_summary.get("task_types", [])
             if types:
-                entry_lines[0] += ", ".join(types[:3])
+                entry_lines[-1] += ", ".join(types[:3])
             else:
-                entry_lines[0] += "Session updates"
+                entry_lines[-1] += "Session updates"
 
             requests = session_summary.get("requests", [])
             for req in requests[:5]:
@@ -69,7 +70,7 @@ def _bump_version_and_changelog(repo_root, session_summary, issue_numbers):
                 if prompt:
                     entry_lines.append(f"  - {prompt}")
         else:
-            entry_lines[0] += "Session updates"
+            entry_lines[-1] += "Session updates"
 
         if issue_numbers:
             closes_str = ", ".join(f"#{n}" for n in issue_numbers)
@@ -84,7 +85,7 @@ def _bump_version_and_changelog(repo_root, session_summary, issue_numbers):
             sep_idx = content.find("---\n")
             if sep_idx >= 0:
                 insert_pos = sep_idx + 4  # After "---\n"
-                new_content = content[:insert_pos] + "\n" + entry_text + content[insert_pos:]
+                new_content = content[:insert_pos] + "\n" + entry_text + "\n" + content[insert_pos:]
                 changelog_file.write_text(new_content, encoding="utf-8")
                 _log(f"CHANGELOG updated with v{new_version} entry")
             else:
@@ -221,9 +222,7 @@ def _bump_and_push_on_main(repo_root: str, session_summary: dict, issue_numbers:
         new_ver = version_file.read_text(encoding="utf-8").strip()
 
         # Stage VERSION + CHANGELOG
-        subprocess.run(
-            ["git", "add", "VERSION", "docs/CHANGELOG-SYSTEM.md"], capture_output=True, timeout=10, cwd=repo_root
-        )
+        subprocess.run(["git", "add", "VERSION", "CHANGELOG.md"], capture_output=True, timeout=10, cwd=repo_root)
 
         # Commit on main
         commit_msg = f"bump: v{old_ver} -> v{new_ver}"

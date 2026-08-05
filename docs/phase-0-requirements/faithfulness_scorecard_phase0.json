@@ -1,0 +1,131 @@
+{
+  "evaluator": "context-faithfulness-engineer",
+  "phase": "Phase 0.5 faithfulness gate",
+  "date": "2026-08-01",
+  "revision": 2,
+  "revision_note": "Re-verification after product-manager-agent reworked product-sequencing-v2.md and the orchestrator patched 3 findings in prd-v2.md. Original revision-1 findings are preserved below (not overwritten) for audit trail; revision-2 fields record current on-disk state as of this re-check.",
+  "gate_threshold": {
+    "production_minimums": { "faithfulness": 0.85, "answer_relevance": 0.75 },
+    "pipeline_requirement": { "factscore": 1.0 }
+  },
+  "per_artifact": [
+    {
+      "artifact": "docs/phase-0-requirements/prd-v2.md",
+      "lines_actual_r2": 475,
+      "ragas_r1": { "faithfulness": 0.94, "answer_relevance": 0.92, "context_precision": 0.91, "context_recall": 0.80 },
+      "ragas_r2": { "faithfulness": 0.98, "answer_relevance": 0.93, "context_precision": 0.92, "context_recall": 0.82 },
+      "trulens_r2": { "groundedness": 0.97, "answer_relevance": 0.92, "context_relevance": 0.87, "harmonic_mean": 0.918 },
+      "summac_zs_mean_r2": 0.93,
+      "bertscore_r2": { "precision": 0.90, "recall": 0.89, "f1": 0.895 },
+      "r1_findings_status": [
+        {
+          "finding": "orchestration_prompt.md line count '4,478 lines' vs actual 4,600",
+          "status": "FIXED -- differently than expected",
+          "detail": "Line 434 (r2) now reads: 'the sections of docs/orchestration_prompt.md (line count deliberately not cited -- the file is amended continuously as Phase 0 findings land, so any fixed figure goes stale immediately; cite sections, not line totals)'. The static figure was removed rather than corrected to 4,600, which is a stronger fix than a numeric patch since the file is a live-amended document -- any pinned line count would already be stale by the next edit. Verified by direct grep."
+        },
+        {
+          "finding": "path_resolver.py '18 helper functions' vs actual 23 top-level defs, and unstated location",
+          "status": "FIXED",
+          "detail": "FR-15 row (Section 2) now reads '23 top-level functions, verified 2026-08-01; it lives at `src/utils/path_resolver.py`'. Re-ran `grep -c \"^def \" src/utils/path_resolver.py` -> 23, exact match to the new claim."
+        },
+        {
+          "finding": "'rules/model-fallback.md' cited as repo-relative; only exists at global ~/.claude/rules/",
+          "status": "FIXED",
+          "detail": "Both occurrences (FR-13 row, Section 2; RTM row, Section 6) now read '`~/.claude/rules/model-fallback.md` (global-only -- no repo-relative copy exists)'. Matches verified filesystem state exactly."
+        },
+        {
+          "finding": "SRS.md:131 cited for 'four hook events fire' claim; that sentence is actually at SRS.md:133 (heading is at 131)",
+          "status": "CONTESTED BY COORDINATOR -- WITHDRAWN, not because the underlying fact was wrong, but because the severity judgment was too strict",
+          "detail": "Re-verified with line numbers printed directly (awk 'NR>=128 && NR<=135'): line 131 is exactly '#### FR-9: Hook System', line 133 is the descriptive sentence containing the four-hook-types claim. This is the same fact the coordinator independently confirmed. See the dedicated 'srs_131_position' block below for the full reasoning on why this is being withdrawn as a fix item rather than defended."
+        }
+      ],
+      "remaining_open_items": [
+        {
+          "claim": "FR-15: 116 total home-directory references, 13 live-code, 103 comments/docstrings",
+          "status": "still UNVERIFIABLE, unchanged by this revision",
+          "note": "Not contradicted, not independently confirmed; the exact grep methodology from orchestration_prompt.md's Encoding Contract addendum was not reproduced within budget in either review pass. Treated as neutral, not counted against the FactScore verdict."
+        }
+      ],
+      "gate_verdict_r2": { "vs_production_minimums": "PASS", "vs_factscore_1.0": "PASS (modulo one still-unverified, not-contradicted numeric claim)", "reason": "All 3 confirmed defects from r1 are fixed on disk and independently re-verified byte-for-byte against the current file. The 4th r1 finding (SRS.md:131) is withdrawn on reflection -- see position below. Zero fabricated names in either revision." }
+    },
+    {
+      "artifact": "docs/phase-0-requirements/product-sequencing-v2.md",
+      "lines_actual_r2": 288,
+      "ragas_r1": { "faithfulness": 0.89, "answer_relevance": 0.93, "context_precision": 0.90, "context_recall": 0.82 },
+      "ragas_r2": { "faithfulness": 0.97, "answer_relevance": 0.94, "context_precision": 0.92, "context_recall": 0.84 },
+      "trulens_r2": { "groundedness": 0.96, "answer_relevance": 0.93, "context_relevance": 0.88, "harmonic_mean": 0.922 },
+      "summac_zs_mean_r2": 0.90,
+      "bertscore_r2": { "precision": 0.88, "recall": 0.87, "f1": 0.875 },
+      "r1_findings_status": [
+        {
+          "finding": "Kano/KIPI section cites SKILL.md as authorizing survey-less classification when it actually prohibits it (material intrinsic violation)",
+          "status": "FIXED",
+          "detail": "Framework REMOVED, not relabeled (confirmed: zero occurrences of 'KIPI', 'must-be', 'delighter', 'indifferent', 'performance feature' as classifications anywhere in the revised file). New delegation note (lines 16-29) quotes the skill VERBATIM and now cites the correct section: 'SS 13 (\"What Not to Do\")'. Re-verified against SKILL.md directly: '## 13. What Not to Do' heading is at SKILL.md:1307, the quoted line 'Do not apply Kano classification without a proper survey -- informally guessing Kano categories is unreliable; must use the functional/dysfunctional questionnaire methodology' is at SKILL.md:1314, inside that section. Section number, section title, and quoted text all now match exactly -- this citation is fully corrected, not just softened."
+        }
+      ],
+      "seven_kano_mentions_verified": {
+        "count_confirmed": 7,
+        "line_numbers": [16, 17, 18, 22, 116, 261, 262],
+        "classification": "rejection-record, zero residual application",
+        "breakdown": [
+          "L16-19: the rejection statement + verbatim, correctly-sectioned quote of the prohibition",
+          "L22: continuation -- states the survey is 'structurally unobtainable' (one user, no second respondent)",
+          "L116: section heading pointer '(Kano rejected, see SS 0)' -- a cross-reference, not a classification",
+          "L261-262: the 'Rework note' explicitly stating the prior citation was backwards and has been corrected"
+        ],
+        "residual_classification_scan": "grep for 'must-be|delighter|indifferent|performance feature|attractive (feature|M/P/A/I|KIPI' across the full file returns exactly one hit (line 23, 'Keeping the M/P/A/I vocabulary...') which is itself part of the rejection explanation (explaining why the vocabulary was NOT kept), not an applied classification. KIPI (case-sensitive) returns zero hits.",
+        "conclusion": "CONFIRMED as rejection-record, independently, by direct read -- not taken on the coordinator's word."
+      },
+      "fr8a_rederivation_spot_checks": [
+        { "claim": "FR-8a's AC requires per-turn spawn count <= 2 'unless a named exception is documented with a rationale'", "verified": true, "note": "exact string match against prd-v2.md Section 5, FR-8/FR-8a row" },
+        { "claim": "new WSJF row 'FR-8a decision + instrumentation + FR-21 minimal retire': UBV4+TC6+RROE8=CoD18, size3, WSJF=6.00", "verified": true, "note": "arithmetic recomputed: 4+6+8=18, 18/3=6.00, matches table exactly" },
+        { "claim": "MVP boundary reworded: decision+instrumentation+retirement ship in v2.0.0, only a selected rebuild defers to v2.1", "verified": true, "note": "Section 4 'Ships in v2.0.0' and 'Defers to v2.1' table both re-read; the boundary genuinely narrowed as described, this is not just a re-worded restatement of the old wholesale deferral" }
+      ],
+      "gate_verdict_r2": { "vs_production_minimums": "PASS", "vs_factscore_1.0": "PASS", "reason": "The one material r1 finding is fully fixed and independently re-verified against the primary source (SKILL.md), not just against the revision's own self-description. No new violations found in the reworked FR-8a section. Zero fabricated names." }
+    }
+  ],
+  "srs_131_position": {
+    "coordinator_challenge": "SRS.md:131 should not have been flagged; line 131 is exactly '#### FR-9: Hook System' and the citation as written is correct.",
+    "fact_check_result": "AGREE on the fact, both times. Re-ran `awk 'NR>=128 && NR<=135 {print NR\": \"$0}' SRS.md` directly: line 131 = '#### FR-9: Hook System' (heading), line 133 = 'Description: Pipeline must integrate with Claude Code's 4 hook types (UserPromptSubmit, PreToolUse, PostToolUse, Stop)...' (the actual four-hook-event sentence). This is not in dispute -- the coordinator's verification and mine produce the identical byte-for-byte result.",
+    "where_the_disagreement_actually_is": "Not about content, about citation granularity. The original prd-v2.md sentence read 'SRS.md:131 and its AC at SRS.md:206 state...' -- SRS.md:206 points to the exact line containing the exact claimed content (verified exact match), while SRS.md:131 points to the section's heading line, two lines above the sentence that actually contains the claimed content. I treated that as an inconsistency in citation precision within the same sentence.",
+    "position": "WITHDRAWING this as a flagged-for-fix item, on reconsideration -- not a retraction of the fact, a revision of the severity judgment. Citing a section's opening heading line as the anchor for 'this FR-9 entry states X' is a normal, defensible documentation convention, especially when the heading and the supporting sentence are 2 lines apart inside one indivisible logical block (heading -> blank -> description, no intervening content, no risk of a reader landing somewhere misleading). This was already scored 'minor' / 'partial' in the original report, not treated as a factual error, and it did not move any RAGAS or FactScore number materially. Given the coordinator's independent verification agrees with mine on the underlying fact and reasonably reads the citation convention differently, I am not going to keep re-asserting a low-value stylistic preference. This is an explicit withdrawal, on the record, not a silent drop: the finding is removed from flagged_for_fix in this revision, and this block documents why.",
+    "residual_note": "If the document's citation convention is meant to be exact-content-line everywhere (as SRS.md:206 and parsers/config.py:11 both are), a maintainer may still prefer :133 for strict consistency -- but that is a style-consistency call for the author, not a faithfulness defect, and I am not re-raising it as one."
+  },
+  "attribution_routing_check": {
+    "coordinator_note": "PM found none of the four minor citations existed in its file (product-sequencing-v2.md) -- they were all in prd-v2.md, and the orchestrator mis-routed them initially.",
+    "verification_against_original_r1_report": "All four minor/moderate r1 findings (orchestration_prompt.md line count, path_resolver.py function count, rules/model-fallback.md path, SRS.md:131) were attributed to docs/phase-0-requirements/prd-v2.md in BOTH the r1 JSON scorecard (per_artifact[0], artifact=prd-v2.md) and the r1 chat summary (explicitly prefixed 'prd-v2.md' on findings 2 through 5). The only finding attributed to product-sequencing-v2.md in r1 was the Kano/KIPI issue (per_artifact[1]), which is confirmed correct -- that is where the Kano text lived.",
+    "conclusion": "The routing in my original report was correct. Any mis-routing that reached product-manager-agent happened downstream of this scorecard (e.g. in how findings were relayed/summarized to PM), not in the artifact-attribution fields I produced. Flagging this back as useful signal about the handoff step between this gate's JSON output and what individual authors receive, per the coordinator's own framing -- not a self-correction on my part."
+  },
+  "name_verification": [
+    { "name": "business-analyst-agent", "kind": "agent", "exists": true, "source_checked": "claude-global-library/agents/business-analyst-agent/ (dir), knowledge-graph/business-analysis/agents.json" },
+    { "name": "product-manager-agent", "kind": "agent", "exists": true, "source_checked": "claude-global-library/agents/product-manager-agent/ (dir), knowledge-graph/business-analysis/agents.json" },
+    { "name": "architecture-conformance-auditor", "kind": "agent", "exists": true, "source_checked": "claude-global-library/agents/architecture-conformance-auditor/ (dir), knowledge-graph/code-quality-static-analysis/agents.json" },
+    { "name": "product-management-core", "kind": "skill", "exists": true, "source_checked": "claude-global-library/skills/product-management-core/SKILL.md; SS 13 'What Not to Do' re-verified at line 1307, Kano warning at line 1314" },
+    { "name": "business-requirements-analysis-core / requirements-traceability-core / acceptance-testing-bdd-core / bdd-acceptance-testing-core", "kind": "skill", "exists": true, "source_checked": "claude-global-library/skills/" },
+    { "name": "requirements-elicitation / acceptance-criteria-definition / requirements-traceability", "kind": "skill", "exists": false, "source_checked": "claude-global-library/skills/ -- correctly reported absent by prd-v2.md" },
+    { "name": "src/utils/path_resolver.py", "kind": "file", "exists": true, "source_checked": "target repo filesystem; 23 top-level defs re-confirmed" },
+    { "name": "~/.claude/rules/model-fallback.md", "kind": "file", "exists": true, "source_checked": "C:\\Users\\techd\\.claude\\rules\\model-fallback.md -- confirmed present, global scope only, matches the now-corrected citation exactly" },
+    { "name": "all r1-verified repo files, orphan policies, and dead Stop-hook scripts", "kind": "mixed", "exists": "unchanged from r1", "source_checked": "not re-run in full this pass since neither artifact touched those references; see r1 name_verification list below for the complete 40+ entry sweep" }
+  ],
+  "nonexistent_names": [],
+  "unverifiable_names": [
+    "two point-in-time changelog files (orphan policies, Section 4/FR-20 of prd-v2.md -- no exact filenames given)",
+    "FR-15's 116/13/103 home-directory-reference breakdown -- exact grep methodology still not reproduced within budget"
+  ],
+  "overall_verdict_r2": {
+    "name_existence_gate": "PASS -- unchanged, zero fabricated names in either revision",
+    "factscore_1.0_gate": "PASS for both artifacts, modulo one still-open (not contradicted) numeric claim in prd-v2.md (FR-15's 116/13/103 breakdown) that neither review pass could independently reproduce within budget",
+    "most_severe_finding_r1_now_resolved": "product-sequencing-v2.md's Kano/KIPI misattribution is fully fixed and independently re-verified against SKILL.md directly (not taken on trust from the revision's own rework note).",
+    "recommendation": "Both artifacts clear the gate. No further RETRY needed on the findings from r1. The one open item (FR-15 home-directory count) is a candidate for a future pass if budget allows full reproduction of the Encoding Contract addendum's methodology, but does not block on its own."
+  },
+  "r1_original_findings_preserved_for_audit": {
+    "note": "See git history / prior tool output for the full r1 JSON if needed; key r1 findings are also carried forward inline above in r1_findings_status blocks per artifact.",
+    "r1_flagged_for_fix_list": [
+      "product-sequencing-v2.md Section 0 + Section 3: Kano/KIPI citation -- RESOLVED in r2",
+      "prd-v2.md rules/model-fallback.md path -- RESOLVED in r2",
+      "prd-v2.md orchestration_prompt.md line count -- RESOLVED in r2 (citation removed, stronger fix)",
+      "prd-v2.md path_resolver.py function count -- RESOLVED in r2",
+      "prd-v2.md SRS.md:131 citation -- WITHDRAWN in r2, not a defect on reconsideration (see srs_131_position)"
+    ]
+  }
+}

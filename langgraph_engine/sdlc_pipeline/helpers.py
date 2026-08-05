@@ -3,11 +3,11 @@ Level 3 Execution - Shared helpers, module-level constants, and script runner.
 """
 
 import json
-import subprocess
 import sys
 from pathlib import Path
 
 from ..core.logger_factory import get_logger
+from ..liveness import NoProgress, env_optional_seconds, run_supervised
 
 logger = get_logger(__name__)
 
@@ -36,24 +36,27 @@ except ImportError:
 # ============================================================================
 
 
-def call_execution_script(script_name: str, args: list = None, model_tier: str = None, timeout: int = None) -> dict:
+def call_execution_script(
+    script_name: str, args: list = None, model_tier: str = None, silence_interval: float = None
+) -> dict:
     """Call a Level 3 execution script and return parsed output.
+
+    The former ``timeout`` parameter defaulted to 30 seconds, which capped every
+    caller that did not think to override it -- including inner LLM budgets far
+    larger than 30 seconds. It is replaced by a silence interval defaulting to
+    None (unbounded): the child runs for as long as it keeps producing output, and
+    only an operator who has configured an interval can end it for going quiet.
 
     Args:
         script_name: Name of the script (without .py) in architecture/03-execution-system/
         args: Command-line arguments to pass
         model_tier: Optional model tier ('fast', 'balanced', 'quality') passed via MODEL_TIER env var
-        timeout: Seconds to wait for the subprocess before raising TimeoutExpired.
-                 Defaults to 30 when not supplied. Callers with a larger inner LLM
-                 budget (Step 0 prompt-gen / todo-decomposer) pass their own value so
-                 the outer subprocess timeout never caps the documented STEP0_* budget.
+        silence_interval: Seconds of child silence tolerated before the child is
+            treated as stuck. None, the default, means unbounded.
     """
     import os
 
     DEBUG = os.getenv("CLAUDE_DEBUG") == "1"
-
-    if timeout is None:
-        timeout = 30
 
     try:
         scripts_dir = Path(__file__).parent.parent.parent / "scripts"
@@ -93,15 +96,12 @@ def call_execution_script(script_name: str, args: list = None, model_tier: str =
         if model_tier:
             env["MODEL_TIER"] = model_tier
 
-        result = subprocess.run(
+        result = run_supervised(
             cmd,
-            capture_output=True,
-            text=True,
-            encoding="utf-8",
-            errors="replace",
-            timeout=timeout,
-            cwd=scripts_dir,
+            lease_interval=silence_interval,
+            lease_name="exec_%s" % script_name,
             env=env,
+            cwd=scripts_dir,
         )
 
         if DEBUG:
@@ -116,13 +116,13 @@ def call_execution_script(script_name: str, args: list = None, model_tier: str =
 
         return {"status": "SUCCESS" if result.returncode == 0 else "FAILED", "exit_code": result.returncode}
 
-    except subprocess.TimeoutExpired:
-        return {"status": "TIMEOUT"}
+    except NoProgress as e:
+        return {"status": "NO_PROGRESS", "error": str(e)}
     except Exception as e:
         return {"status": "ERROR", "error": str(e)}
 
 
-def call_streaming_script(script_name: str, args: list = None, timeout: int = None) -> dict:
+def call_streaming_script(script_name: str, args: list = None, silence_interval: float = None) -> dict:
     """Call a Level 3 execution script with stderr streamed live to the terminal.
 
     Unlike call_execution_script(), stderr is NOT captured -- it is inherited from
@@ -133,8 +133,10 @@ def call_streaming_script(script_name: str, args: list = None, timeout: int = No
     Args:
         script_name: Name of the script (without .py) in architecture/03-execution-system/
         args: Command-line arguments to pass
-        timeout: Seconds to wait before raising TimeoutExpired.
-                 Reads STEP1_ORCHESTRATOR_TIMEOUT env var as default (fallback: 300).
+        silence_interval: Seconds of child silence tolerated before the child is
+            treated as stuck. Defaults to STEP1_ORCHESTRATOR_SILENCE, and to
+            unbounded when that is unset -- this caller inherits stderr, so the
+            user can see for themselves whether the child is still working.
 
     Returns:
         Parsed JSON dict from stdout, or an error dict with keys
@@ -145,8 +147,8 @@ def call_streaming_script(script_name: str, args: list = None, timeout: int = No
 
     DEBUG = os.getenv("CLAUDE_DEBUG") == "1"
 
-    if timeout is None:
-        timeout = int(os.getenv("STEP1_ORCHESTRATOR_TIMEOUT", "300"))
+    if silence_interval is None:
+        silence_interval = env_optional_seconds("STEP1_ORCHESTRATOR_SILENCE")
 
     try:
         scripts_dir = Path(__file__).parent.parent.parent / "scripts"
@@ -175,18 +177,15 @@ def call_streaming_script(script_name: str, args: list = None, timeout: int = No
         env["PYTHONUNBUFFERED"] = "1"
 
         if DEBUG:
-            print(f"[L3-DEBUG] Streaming: {script_name} (timeout={timeout}s)", file=sys.stderr)
+            print(f"[L3-DEBUG] Streaming: {script_name} (silence={silence_interval})", file=sys.stderr)
 
-        result = subprocess.run(
+        result = run_supervised(
             cmd,
-            stdout=subprocess.PIPE,
-            stderr=None,  # Inherit: live output visible in terminal
-            text=True,
-            encoding="utf-8",
-            errors="replace",
-            timeout=timeout,
-            cwd=scripts_dir,
+            capture_stderr=False,
+            lease_interval=silence_interval,
+            lease_name="stream_%s" % script_name,
             env=env,
+            cwd=scripts_dir,
         )
 
         if result.stdout:
@@ -197,8 +196,8 @@ def call_streaming_script(script_name: str, args: list = None, timeout: int = No
 
         return {"success": result.returncode == 0, "exit_code": result.returncode}
 
-    except subprocess.TimeoutExpired:
-        return {"success": False, "error": f"Timeout after {timeout}s"}
+    except NoProgress as e:
+        return {"success": False, "error": str(e)}
     except Exception as e:
         return {"success": False, "error": str(e)}
 

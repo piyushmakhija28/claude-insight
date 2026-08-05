@@ -23,6 +23,8 @@ import time
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+from ...liveness import env_optional_seconds
+
 try:
     from loguru import logger
 except ImportError:
@@ -170,15 +172,15 @@ def step4_implementation_execution(state: FlowState) -> Dict[str, Any]:
             return result
 
         # --- Invoke LLM ---
-        timeout = int(os.environ.get("STEP10_LLM_TIMEOUT", "300"))
-        logger.info("[Step10] Invoking llm_call (model=deep, timeout={}s)", timeout)
+        silence_interval = env_optional_seconds("STEP10_LLM_SILENCE")
+        logger.info("[Step10] Invoking llm_call (model=deep, silence={})", silence_interval)
         result["step4_llm_invoked"] = True
 
         llm_response: Optional[str] = llm_call(
             prompt=final_prompt,
             model="deep",
             temperature=0.2,
-            timeout=timeout,
+            timeout=silence_interval,
         )
 
         if not llm_response:

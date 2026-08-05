@@ -53,18 +53,65 @@ def _rel_file(fqn):
     return ""
 
 
-def _classify_risk(caller_count):
+def _classify_risk(caller_count, high_confidence_caller_count=None):
     """Classify risk level based on number of callers.
 
     low:    0-2 callers
     medium: 3-7 callers
     high:   8+ callers
+
+    Args:
+        caller_count: Raw caller count, including callers reached through
+            edges whose callee binding is only a guess.
+        high_confidence_caller_count: Caller count restricted to edges backed
+            by positive resolution evidence. When supplied it decides the
+            classification, because a fan-in inflated by builtin-name
+            collisions must not promote a method to "high" risk. The raw
+            count is still reported by every caller alongside this one.
+
+    Issue #266: classifying on the raw count alone made every method sharing
+    a name with a builtin rank as a top danger zone in the Step 1 planning
+    prompt.
     """
-    if caller_count <= 2:
+    effective = caller_count if high_confidence_caller_count is None else high_confidence_caller_count
+    if effective <= 2:
         return "low"
-    if caller_count <= 7:
+    if effective <= 7:
         return "medium"
     return "high"
+
+
+def _edge_counts(graph):
+    """Report the raw and high-confidence call-edge totals as distinct fields.
+
+    Every function that consumes graph.get_edges() returns this alongside its
+    own results, so no consumer can present a single edge count that silently
+    mixes evidenced bindings with guesses.
+    """
+    try:
+        counts = graph.get_resolution_confidence()
+        return {
+            "total": counts["total_call_edges"],
+            "high_confidence": counts["high_confidence"],
+            "ambiguous": counts["ambiguous"],
+        }
+    except AttributeError:
+        edges = [e for e in graph.get_edges() if e.get("type") != "inheritance"]
+        return {
+            "total": len(edges),
+            "high_confidence": sum(1 for e in edges if _is_high_confidence(e)),
+            "ambiguous": sum(1 for e in edges if e.get("confidence") == "ambiguous"),
+        }
+
+
+def _is_high_confidence(edge):
+    """Report whether a call edge's callee binding is backed by positive evidence.
+
+    Edges predating the confidence marker carry no "confidence" key; they are
+    counted as low confidence so an unmarked snapshot can never silently
+    inflate a high-confidence figure.
+    """
+    return edge.get("confidence") == "high"
 
 
 def _methods_in_files(graph, file_set):
@@ -146,11 +193,17 @@ def _build_cross_file_deps(graph, file_set):
     """Build cross-file dependency list: other files calling into target files.
 
     Returns list of dicts:
-        {"from_file": str, "to_file": str, "edge_count": int}
+        {"from_file": str, "to_file": str, "edge_count": int,
+         "edge_count_high_confidence": int}
+
+    Both counts are always reported. edge_count includes every edge the
+    resolver bound; edge_count_high_confidence includes only those bindings
+    backed by positive evidence.
     """
     from collections import defaultdict
 
     counter = defaultdict(int)  # (from_file, to_file) -> count
+    high_confidence_counter = defaultdict(int)
 
     edges = graph.get_edges()
     for edge in edges:
@@ -162,10 +215,19 @@ def _build_cross_file_deps(graph, file_set):
             continue
         if to_file in file_set and from_file not in file_set:
             counter[(from_file, to_file)] += 1
+            if _is_high_confidence(edge):
+                high_confidence_counter[(from_file, to_file)] += 1
 
     result = []
     for (from_f, to_f), count in sorted(counter.items(), key=lambda x: -x[1]):
-        result.append({"from_file": from_f, "to_file": to_f, "edge_count": count})
+        result.append(
+            {
+                "from_file": from_f,
+                "to_file": to_f,
+                "edge_count": count,
+                "edge_count_high_confidence": high_confidence_counter[(from_f, to_f)],
+            }
+        )
     return result
 
 
@@ -220,14 +282,22 @@ def analyze_impact_before_change(
     Returns:
         dict with keys:
             target_files        - list of normalized relative paths analyzed
-            affected_methods    - list of {"fqn", "callers_count", "risk"}
+            affected_methods    - list of {"fqn", "callers_count",
+                                  "callers_count_high_confidence", "risk"}
             affected_test_files - list of test file paths that reference targets
             risk_level          - "low" | "medium" | "high"
             safe_change_zones   - list of FQNs with 0 callers (leaf methods)
-            danger_zones        - list of {"fqn", "callers_count"}
-            cross_file_deps     - list of {"from_file", "to_file", "edge_count"}
+            danger_zones        - list of {"fqn", "callers_count",
+                                  "callers_count_high_confidence"}
+            cross_file_deps     - list of {"from_file", "to_file", "edge_count",
+                                  "edge_count_high_confidence"}
+            edge_counts         - {"total", "high_confidence", "ambiguous"}
             summary             - one-line human-readable summary
             call_graph_available - bool
+
+    Every fan-in figure is reported twice: the raw count and the count
+    restricted to edges whose callee binding is backed by positive evidence.
+    Danger zones and risk levels are gated on the high-confidence count.
     """
     try:
         mod, _imp_err = _import_builder()
@@ -279,38 +349,48 @@ def analyze_impact_before_change(
             # No specific files: analyze all methods
             target_methods = list(graph.methods.keys())
 
-        # Compute impact map (callers per method)
+        # Compute impact map (callers per method). The high-confidence variant
+        # gates danger zones; the raw variant is reported alongside it so a
+        # reviewer can see how much of a fan-in rests on guessed bindings.
         impact_map = graph.compute_impact_map()
+        impact_map_high_confidence = graph.compute_impact_map(high_confidence_only=True)
 
         affected_methods = []
         safe_change_zones = []
         danger_zones = []
 
         for fqn in target_methods:
-            callers = impact_map.get(fqn, set())
-            n = len(callers)
-            risk = _classify_risk(n)
+            n = len(impact_map.get(fqn, set()))
+            n_high_confidence = len(impact_map_high_confidence.get(fqn, set()))
+            risk = _classify_risk(n, n_high_confidence)
             affected_methods.append(
                 {
                     "fqn": fqn,
                     "callers_count": n,
+                    "callers_count_high_confidence": n_high_confidence,
                     "risk": risk,
                 }
             )
             if n == 0:
                 safe_change_zones.append(fqn)
-            elif n >= 5:
-                danger_zones.append({"fqn": fqn, "callers_count": n})
+            elif n_high_confidence >= 5:
+                danger_zones.append(
+                    {
+                        "fqn": fqn,
+                        "callers_count": n,
+                        "callers_count_high_confidence": n_high_confidence,
+                    }
+                )
 
         # Sort for deterministic output
-        affected_methods.sort(key=lambda x: -x["callers_count"])
+        affected_methods.sort(key=lambda x: -x["callers_count_high_confidence"])
         safe_change_zones.sort()
-        danger_zones.sort(key=lambda x: -x["callers_count"])
+        danger_zones.sort(key=lambda x: -x["callers_count_high_confidence"])
 
         # Overall risk: highest risk among affected methods
         if danger_zones:
             overall_risk = "high"
-        elif any(m["callers_count"] >= 3 for m in affected_methods):
+        elif any(m["callers_count_high_confidence"] >= 3 for m in affected_methods):
             overall_risk = "medium"
         else:
             overall_risk = "low"
@@ -348,6 +428,7 @@ def analyze_impact_before_change(
             "safe_change_zones": safe_change_zones,
             "danger_zones": danger_zones,
             "cross_file_deps": cross_file_deps,
+            "edge_counts": _edge_counts(graph),
             "summary": summary,
             "call_graph_available": True,
         }
@@ -393,6 +474,9 @@ def get_implementation_context(
             suggested_test_scope       - list of test file paths
             stats                      - {"total_classes", "total_methods",
                                           "max_depth"}
+            edge_counts                - {"total", "high_confidence",
+                                          "ambiguous"} for the edges this
+                                          function consumed
             call_graph_available       - bool
     """
     try:
@@ -508,6 +592,7 @@ def get_implementation_context(
             "cross_file_dependencies": cross_file_dependencies,
             "suggested_test_scope": test_scope,
             "stats": stats,
+            "edge_counts": _edge_counts(graph),
             "call_graph_available": True,
         }
 
@@ -520,6 +605,7 @@ def get_implementation_context(
                 "cross_file_dependencies": {},
                 "suggested_test_scope": [],
                 "stats": {"total_classes": 0, "total_methods": 0, "max_depth": 0},
+                "edge_counts": {"total": 0, "high_confidence": 0, "ambiguous": 0},
             }
         )
 
@@ -604,14 +690,22 @@ def review_change_impact(
             if e.get("type") != "inheritance":
                 current_edge_keys.add((e["from"], e["to"], e.get("type", "call")))
 
-        # Reverse map: callee -> set of callers (current)
+        # Reverse maps: callee -> set of callers (current). The high-confidence
+        # map excludes callers reached only through a guessed binding, so a
+        # breaking change is not reported as widely felt on the strength of
+        # builtin-name collisions.
         current_callers = {}  # type: Dict[str, Set[str]]
+        current_callers_high_confidence = {}  # type: Dict[str, Set[str]]
         for e in current_edges:
             if e.get("type") != "inheritance":
                 callee = e["to"]
                 if callee not in current_callers:
                     current_callers[callee] = set()
                 current_callers[callee].add(e["from"])
+                if _is_high_confidence(e):
+                    if callee not in current_callers_high_confidence:
+                        current_callers_high_confidence[callee] = set()
+                    current_callers_high_confidence[callee].add(e["from"])
 
         # ---- Pre-change snapshot edges and methods --------------------------
         pre_edge_keys = set()  # type: Set[tuple]
@@ -677,14 +771,15 @@ def review_change_impact(
             old_params = pre_method.get("params", [])
             new_params = method.get("params", [])
             if old_params != new_params:
-                callers = current_callers.get(fqn, set())
-                n_callers = len(callers)
+                n_callers = len(current_callers.get(fqn, set()))
+                n_callers_high_confidence = len(current_callers_high_confidence.get(fqn, set()))
                 if n_callers > 0:
                     breaking_changes.append(
                         {
                             "method": fqn,
                             "reason": "signature_changed",
                             "callers": n_callers,
+                            "callers_high_confidence": n_callers_high_confidence,
                         }
                     )
 
@@ -737,6 +832,7 @@ def review_change_impact(
             "cyclomatic_change": cyclomatic_change,
             "max_call_depth": max_call_depth,
             "risk_assessment": risk_assessment,
+            "edge_counts": _edge_counts(graph),
             "summary": summary,
             "call_graph_available": True,
         }
@@ -752,6 +848,7 @@ def review_change_impact(
                 "cyclomatic_change": {"before_avg": 0.0, "after_avg": 0.0, "delta": 0.0},
                 "max_call_depth": 0,
                 "risk_assessment": "safe",
+                "edge_counts": {"total": 0, "high_confidence": 0, "ambiguous": 0},
                 "summary": "Review failed: %s" % str(exc),
             }
         )
@@ -925,7 +1022,8 @@ def get_phase_scoped_context(snapshot, phase_files, phase_description=""):
         "phase_description": str,
         "phase_files": [...],
         "subgraph": {nodes, edges, stats},
-        "danger_zones": [{"fqn": ..., "callers_count": N}],
+        "danger_zones": [{"fqn": ..., "callers_count": N,
+                          "callers_count_high_confidence": N}],
         "safe_change_zones": [fqn, ...],
         "entry_points": [fqn, ...],
         "cross_phase_callers": [{"fqn": ..., "file": ..., "calls_into": ...}],
@@ -979,7 +1077,8 @@ def get_phase_scoped_context(snapshot, phase_files, phase_description=""):
 
         # Count callers for each phase method (from the full snapshot, not subgraph)
         all_edges = snapshot.get("edges", [])
-        caller_counts = {}  # fqn -> count of unique callers
+        caller_counts = {}  # fqn -> set of unique callers
+        caller_counts_high_confidence = {}  # fqn -> set of evidenced callers
         cross_phase_callers = []
 
         for edge in all_edges:
@@ -991,6 +1090,10 @@ def get_phase_scoped_context(snapshot, phase_files, phase_description=""):
                 if to_fqn not in caller_counts:
                     caller_counts[to_fqn] = set()
                 caller_counts[to_fqn].add(from_fqn)
+                if _is_high_confidence(edge):
+                    if to_fqn not in caller_counts_high_confidence:
+                        caller_counts_high_confidence[to_fqn] = set()
+                    caller_counts_high_confidence[to_fqn].add(from_fqn)
 
                 # Track callers from OUTSIDE the phase
                 if from_fqn not in phase_method_fqns:
@@ -1013,15 +1116,22 @@ def get_phase_scoped_context(snapshot, phase_files, phase_description=""):
 
         for fqn in phase_method_fqns:
             count = len(caller_counts.get(fqn, set()))
-            if count > max_callers:
-                max_callers = count
-            if count >= 5:
-                danger_zones.append({"fqn": fqn, "callers_count": count})
+            count_high_confidence = len(caller_counts_high_confidence.get(fqn, set()))
+            if count_high_confidence > max_callers:
+                max_callers = count_high_confidence
+            if count_high_confidence >= 5:
+                danger_zones.append(
+                    {
+                        "fqn": fqn,
+                        "callers_count": count,
+                        "callers_count_high_confidence": count_high_confidence,
+                    }
+                )
             elif count == 0:
                 safe_zones.append(fqn)
 
-        # Sort danger zones by callers descending
-        danger_zones.sort(key=lambda d: d["callers_count"], reverse=True)
+        # Sort danger zones by evidenced callers descending
+        danger_zones.sort(key=lambda d: d["callers_count_high_confidence"], reverse=True)
 
         # Find entry points: phase methods not called by other phase methods
         phase_callees = set()
@@ -1143,7 +1253,12 @@ def get_orchestration_context(task_description="", project_root=""):
     Returns:
         dict with keys:
             affected_modules    - list[str]: module stems matched by task keywords
-            hot_nodes           - list[dict]: {"fqn", "callers_count"} 5+ callers
+            hot_nodes           - list[dict]: {"fqn", "callers_count",
+                                  "callers_count_high_confidence"}; entry when
+                                  the high-confidence count reaches 5, with the
+                                  raw count reported alongside it
+            edge_counts         - dict: {"total", "high_confidence",
+                                  "ambiguous"} for the consumed edges
             leaf_nodes          - list[str]: FQNs with 0 callers
             dependency_order    - list[str]: topological depth-order of modules
             skip_phases         - list[str]: phase names safely skippable
@@ -1158,6 +1273,7 @@ def get_orchestration_context(task_description="", project_root=""):
         "dependency_order": [],
         "skip_phases": [],
         "complexity_boost": 0,
+        "edge_counts": {"total": 0, "high_confidence": 0, "ambiguous": 0},
         "call_graph_available": False,
         "failure_reason": "",
     }
@@ -1172,6 +1288,7 @@ def get_orchestration_context(task_description="", project_root=""):
             return {**_empty, "failure_reason": "build_call_graph() returned None for root: " + root}
 
         impact_map = graph.compute_impact_map()
+        impact_map_high_confidence = graph.compute_impact_map(high_confidence_only=True)
 
         # Extract keywords from task description for module matching
         task_words = set()
@@ -1186,15 +1303,21 @@ def get_orchestration_context(task_description="", project_root=""):
         dep_graph = {}  # module_stem -> list[module_stem it depends on]
 
         for fqn, _method in graph.methods.items():
-            callers = impact_map.get(fqn, set())
-            n = len(callers)
+            n = len(impact_map.get(fqn, set()))
+            n_high_confidence = len(impact_map_high_confidence.get(fqn, set()))
             file_path = _rel_file(fqn)
             file_stem = Path(file_path).stem if file_path else ""
 
             if n == 0:
                 leaf_nodes.append(fqn)
-            elif n >= 5:
-                hot_nodes.append({"fqn": fqn, "callers_count": n})
+            elif n_high_confidence >= 5:
+                hot_nodes.append(
+                    {
+                        "fqn": fqn,
+                        "callers_count": n,
+                        "callers_count_high_confidence": n_high_confidence,
+                    }
+                )
 
             # Keyword match: does this FQN mention task keywords?
             if task_words and file_stem:
@@ -1202,7 +1325,7 @@ def get_orchestration_context(task_description="", project_root=""):
                 if any(w in fqn_lower for w in task_words):
                     affected_modules.add(file_stem)
 
-        hot_nodes.sort(key=lambda x: -x["callers_count"])
+        hot_nodes.sort(key=lambda x: -x["callers_count_high_confidence"])
 
         # Build module-level dependency graph from call graph edges
         all_module_stems = set()
@@ -1244,6 +1367,7 @@ def get_orchestration_context(task_description="", project_root=""):
             "dependency_order": dependency_order[:30],
             "skip_phases": skip_phases,
             "complexity_boost": complexity_boost,
+            "edge_counts": _edge_counts(graph),
             "call_graph_available": True,
         }
 

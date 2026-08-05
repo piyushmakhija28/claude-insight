@@ -82,3 +82,29 @@ htmlcov/
 # Windows null device (created accidentally by some shells)
 nul
 context.toon.json
+
+# Rule 45 SS 2 -- auto-generated diagrams, never committed
+/uml/
+/drawio/
+
+# Regenerable call-graph analysis output (each >500 KB, blocked by the
+# check-added-large-files pre-commit gate). Rebuild from source per
+# docs/phase-5-uml/callgraph_coverage_probe.md.
+docs/phase-0-reverse-engineering/ast_call_graph.json
+docs/phase-0-reverse-engineering/codebase_kg/edges.json
+docs/phase-0-reverse-engineering/codebase_kg/nodes.json
+
+# ADR-007 pinned library snapshot -- BUILT, never committed. Measured against
+# library 29.73.0 on 2026-08-03: 9,009,526 bytes across 513 files, of which
+# 8,045,233 bytes are the 508 agent personas. Two independent reasons not to
+# commit it, either sufficient on its own:
+#   1. skills_all.json projects to 537,671 bytes, over the 512,000-byte
+#      check-added-large-files gate above. Committing is blocked, not merely
+#      undesirable.
+#   2. FR-16 is "bundle, do not duplicate". Committing 9 MB of library content
+#      into this repository's history is the duplication FR-16 argues against.
+# It still ships to users: ADR-007 calls it a BUILD-time snapshot and ADR-008
+# distributes through a separate marketplace repo, so the publish step builds it
+# into the published artefact via
+# "python scripts/build_library_snapshot.py --release --verify".
+/plugin/snapshot/

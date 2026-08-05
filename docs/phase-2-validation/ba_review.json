@@ -1,0 +1,168 @@
+{
+  "review_meta": {
+    "phase": "2.1",
+    "agent": "business-analyst-agent",
+    "date": "2026-08-01",
+    "inputs": [
+      "docs/phase-1-architecture/hld.md (1567 lines, 15 sections, 15 ADRs, consensus APPROVED iteration 4)",
+      "docs/phase-1-architecture/plugin_schema_spike.md (FR-14a, 5/5 items measured)",
+      "docs/phase-1-architecture/consensus_summary_phase1.md",
+      "docs/phase-0-requirements/prd-v2.md (amended in place by this review)",
+      "docs/orchestration_prompt.md sections 1.2, 1.4, 3.3 and the ADR block (as reflected through prd-v2.md's own Section 12 coverage statement and hld.md's inherited citations, not re-read line-by-line in full -- context budget)"
+    ],
+    "scope_note": "BA-09 and BA-10 (API-contract FR traceability) are N/A -- Phase 1.5 did not run, this project has no REST API surface. Not reported as gaps.",
+    "budget_note": "25,000 token context budget. orchestration_prompt.md (4729 lines) was not read end-to-end; its content relevant to this task was already synthesized into prd-v2.md Section 12's coverage statement and hld.md's own citations, which were read and independently cross-checked against hld.md and plugin_schema_spike.md directly."
+  },
+  "fr_coverage": {
+    "in_hld_architectural_scope": ["FR-4", "FR-5", "FR-7", "FR-8a", "FR-9a", "FR-10", "FR-11", "FR-12", "FR-13", "FR-14", "FR-14a", "FR-16", "FR-17", "FR-18", "FR-19", "FR-21", "FR-23"],
+    "out_of_hld_scope_by_design": {
+      "FR-1": "Workstream A policy audit/documentation task, not an architectural concern. No HLD coverage needed.",
+      "FR-2": "Workstream A audit matrix population. No HLD coverage needed.",
+      "FR-3": "Workstream A per-policy disposition (except the FR-23 carve-out, which HLD OAQ 2 covers). No HLD coverage needed for the remainder.",
+      "FR-6": "ADR-006 content already exists (HLD SS 4.1, settled/inherited); FR-6's remaining work is a doc-creation task, not an architecture question.",
+      "FR-8": "Superseded by FR-8a for the architectural question; FR-8's 'keep both hooks' decision predates the HLD.",
+      "FR-9": "Explicitly out of scope per HLD SS 1.3 -- lives in claude-global-library, a different repo.",
+      "FR-20": "Workstream A policy-orphan disposition, a documentation/audit task.",
+      "FR-22": "Explicitly out of scope per HLD SS 1.3 -- owned by business-analyst-agent + product-manager-agent at Phase 5, not an HLD architecture question."
+    },
+    "explicitly_unresolved_by_design": {
+      "FR-15": "HLD OAQ 6: architecturally acknowledged (ADR-012/FR-19 depend on knowing which of FR-15's remediation sites are CODE) but deliberately NOT sized on either the 13 or ~95 figure. Requires an AST re-derivation before entering any plan as a sized deliverable. AC replaced in prd-v2.md Section 5 at this pass per HLD's explicit delegation."
+    },
+    "new_at_this_pass": {
+      "FR-24": "New FR (uninstall residue runbook), added because FR-18's original AC was found unachievable and the HLD does not itself propose a compensating requirement -- judged necessary by this pass per the instruction to add one if warranted."
+    },
+    "coverage_gaps_found": [
+      {
+        "id": "FR-9a",
+        "gap": "No dedicated measurable AC existed for FR-9a in prd-v2.md Section 5 (only an RTM row saying '(prerequisite for FR-10's AC)'). HLD OAQ 4 supplies a concrete regression test (test_discovery_covers_every_package, 5 assertions) and reveals FR-9a's TRUE scope is 4 independent truncation points (parsers/config.py:11, call_graph_builder_legacy.py:64, code_graph_analyzer.py:73 under sdlc_pipeline/, and a hyphenated near-duplicate under scripts/architecture/), not the single site Phase 0 named.",
+        "status": "FIXED at coordinator's escalation (originally logged ADVISORY in this pass; the coordinator independently re-derived the same four sites, judged the gap CRITICAL rather than ADVISORY on the grounds that an FR whose completion is defined by another FR's tests has no independent definition of done, and directed the fix). Dedicated AC added to Section 5 (inserted between the FR-9 and FR-10 rows) requiring all four sites to reach one of two recorded end states (migrated to the ADR-013 contract, or formally retired) plus the named regression test's canary assertion (`sdlc_pipeline` present at `analysed_n == 45`). The fifth truncator (`build_dependency_resolver/parsers.py:682`) is explicitly named and excluded as a v2.1 follow-on, so its absence reads as a decision, not an oversight. RTM row (Section 6) updated from '(prerequisite for FR-10's AC)' to point at the new Section 5 row."
+      }
+    ]
+  },
+  "ac_implementability": [
+    {"id": "NFR-1", "verdict": "untestable as originally worded", "reason": "The original AC ('delta = 0 processes attributable to claude-workflow-engine') could never pass, because the retained Stop hook is claude-workflow-engine code that fires every turn by design (ADR-010). Fixed: per-component attribution, explicit Stop/Notification exclusion. CURRENT bundle requirement (per FIND-02, ADR-019, superseding this pass's original minimum-viable-bundle draft): the plugin bundles ZERO MCP servers, full stop -- plugin_schema_spike.md Item 5 showed even a minimum-viable bundle spawns eagerly, so no nonzero bundle size satisfies this AC."},
+    {"id": "NFR-2", "verdict": "insufficient scope as originally worded, now testable", "reason": "Original AC scanned only 'the plugin's bundled code'; ADR-016 found 9 additional timeout sites on the engine pipeline path outside that scan's reach. Fixed: scan now explicitly covers the engine pipeline path and requires the 5 ADR-016 liveness mechanisms to be present, not just an absence of timeout= tokens."},
+    {"id": "NFR-3", "verdict": "was solvable, mis-scoped as 'not designed'", "reason": "Original framing implied a from-scratch build. HLD OAQ 1 shows the replacement writer already exists and satisfies the guarantee at the correct granularity; the real remaining work is 3 named durability defects, which the revised AC now enumerates explicitly."},
+    {"id": "FR-18", "verdict": "untestable / unachievable as originally worded", "reason": "plugin_schema_spike.md Item 4 measured that Claude Code's own uninstall leaves settings.json bookkeeping keys emptied-not-removed and an orphaned cache directory prune does not reclaim -- a plugin cannot intercept /plugin uninstall to prevent this. The AC is narrowed to plugin-attributable functional residue; the disk/settings.json bookkeeping residue is redirected to FR-24's documentation requirement instead of being asserted to zero."},
+    {"id": "FR-15", "verdict": "untestable as originally worded (asserted a disputed number as fact)", "reason": "The prior AC's '13' figure is one of two live, unreconciled measurements (13 vs ~95). An AC that asserts a disputed figure as a pass/fail threshold is not testable in a way that produces a trustworthy result. Replaced with a method-based AC (AST classifier, zero-CODE terminal condition) per HLD's explicit delegation to business-analyst-agent."},
+    {"id": "NFR-5", "verdict": "was blocked, now unblocked", "reason": "Gated on FR-14a resolving every item to CONFIRMED or PROVISIONAL-with-fallback. plugin_schema_spike.md now shows 5/5 CONFIRMED (the spike grew from 4 to 5 items per ADR-018 between HLD authorship and this pass). The gate is cleared; the AC itself required no rewording beyond reflecting the 4->5 item-count growth and cross-referencing the revised FR-18/NFR-1 ACs its own lifecycle tests depend on."},
+    {"id": "FR-9a", "verdict": "was uncheckable independent of FR-10, now testable on its own terms", "reason": "Original state had no AC of its own -- 'done' was defined transitively by FR-10's tests passing, which a single-site fix could satisfy while leaving 3 of 4 truncation points intact. Fixed per coordinator escalation: dedicated AC now requires all 4 sites individually resolved (migrated or formally retired) plus a named regression-test canary assertion independent of FR-10."}
+  ],
+  "rtm_gaps": [
+    {
+      "id": "FR-18-missing-section-5-row",
+      "severity": "CRITICAL",
+      "description": "prd-v2.md Section 6 (RTM) listed FR-18 -> 'AC-6 + Section 5 row' as its acceptance criterion pointer, but no FR-18 row existed anywhere in Section 5's measurable-AC table. The document's own 'RTM gap count: 0' claim was false at the row level for FR-18 specifically, even though every other FR/NFR did have a Section 5 row.",
+      "status": "FIXED at this pass -- FR-18 row added to Section 5 with the narrowed, plugin-schema-spike-informed AC; RTM gap-count note in Section 6 corrected to record this."
+    },
+    {
+      "id": "FR-24-not-yet-in-RTM-pre-pass",
+      "severity": "N/A (new requirement, not a pre-existing gap)",
+      "description": "FR-24 did not exist before this pass, so it could not have been an RTM gap in the prior document version. Added to Section 4, Section 5, and Section 6 (RTM) in the same pass so it enters the document already fully traced -- no dangling new FR.",
+      "status": "FIXED at creation."
+    },
+    {
+      "id": "FR-9a-parasitic-AC",
+      "severity": "CRITICAL (escalated by coordinator from this review's initial ADVISORY classification)",
+      "description": "Section 6's FR-9a row read '(prerequisite for FR-10's AC)' with no Section 5 row of its own. This is a distinct defect from the FR-18 RTM gap: it is not a dangling pointer to a missing row, it is a row that never claimed to need one -- FR-9a's definition of done was entirely borrowed from FR-10's tests, which is checkable but not a correct measure of FR-9a's own four-site scope (a single-site fix passes FR-10's tests while leaving 3 sites, including one inside sdlc_pipeline/, untouched).",
+      "status": "FIXED -- dedicated Section 5 AC added; Section 6 RTM row updated to reference it."
+    }
+  ],
+  "findings": [
+    {
+      "id": "FIND-01",
+      "severity": "CRITICAL",
+      "issue": "NFR-2's original measurable AC scanned only bundled plugin code, missing 6 timeout= application sites (+3 definition sites) on the engine pipeline path, including a 75-second fixed wall-clock timeout at task_orchestration.py:160. Hook deletion alone does not satisfy NFR-2; a gate that checked only the withdrawn AC would have passed a design that still violates the NFR by construction.",
+      "required_fix": "APPLIED in this pass -- prd-v2.md NFR-2 rows (Section 3 and Section 5) rewritten to scope the static scan across the engine pipeline path and require ADR-016's 5 liveness mechanisms."
+    },
+    {
+      "id": "FIND-02",
+      "severity": "CRITICAL",
+      "issue": "NFR-1's original AC ('delta = 0 processes attributable to claude-workflow-engine') was ill-defined -- it could never pass because the retained, ADR-010-kept Stop hook is claude-workflow-engine code that fires every turn. Separately, plugin_schema_spike.md Item 5 measured that any bundled .mcp.json server spawns eagerly on plugin enable with zero tool calls, which fails NFR-1 for a design bundling all 13 engine MCP servers.",
+      "required_fix": "APPLIED in this pass -- NFR-1 rows rewritten for per-component attribution (exclude Stop/Notification explicitly) and to require ADR-018's minimum-viable .mcp.json bundle (FR-23 push gate + progress writer only). **SUPERSEDED, not disputed, by a later coordinator-relayed decision:** solution-architect subsequently ruled the minimum-viable-bundle constraint insufficient -- plugin_schema_spike.md Item 5 already showed even a two-server bundle spawns eagerly, so any nonzero bundle leaves NFR-1 unable to fail by construction (a metric that cannot fail measures nothing). Decision: the plugin bundles ZERO MCP servers (ADR-019), with an explicit opt-in `register-mcp` command replacing the bundle. All three NFR-1 sites (Section 3 verdict, Section 5 AC, Section 7 Gherkin) and NFR-5's install test were updated to ADR-019's zero-bundle wording. The distinction matters: this constraint was correct when written and was overtaken by a subsequent architectural decision, not by an error in the original analysis -- recorded that way in-line rather than silently overwritten."
+    },
+    {
+      "id": "FIND-03",
+      "severity": "MAJOR",
+      "issue": "NFR-3's premise (post-tool-tracker.py as sole checkpoint/progress writer) was a conflation of two independent systems, discovered by HLD OAQ 1's direct source-code verification. The downstream product-sequencing-v2.md estimate (8 points, WSJF 3.00) for 'NFR-3 replacement crash-recovery writer' rests on this inaccurate premise (a new writer must be built), when the writer already exists and survives FR-4 untouched.",
+      "required_fix": "APPLIED in this pass -- NFR-3 rows rewritten to name CheckpointManager as the existing writer, enumerate the 3 real durability defects (ADR-011), correct the warm-daemon PreToolUse-vs-PostToolUse mis-attribution, and explicitly flag the WSJF re-scoring need for product-manager-agent (not resolved by this document, which cannot re-size sprints)."
+    },
+    {
+      "id": "FIND-04",
+      "severity": "CRITICAL",
+      "issue": "FR-18's original acceptance criterion ('no orphaned files, MCP registrations, or settings entries') is measurably unachievable using Claude Code's own /plugin uninstall, per plugin_schema_spike.md Item 4: settings.json bookkeeping keys are emptied not removed, and an orphaned plugin cache directory survives uninstall and is not reclaimed by claude plugin prune. No plugin-side mechanism exists to intercept or clean this (uninstall has no execution point for plugin code, symmetric to ADR-012's install-time finding).",
+      "required_fix": "APPLIED in this pass -- FR-18's AC narrowed to plugin-attributable functional residue (stated explicitly as a narrowing of an unachievable original, not silently). New FR-24 added requiring a documented, user-run cleanup runbook for the residue FR-18 cannot own. Section 7 Gherkin scenario updated to match."
+    },
+    {
+      "id": "FIND-05",
+      "severity": "MAJOR",
+      "issue": "FR-15's acceptance criterion asserted a disputed figure (13 CODE-level sites) as settled fact, despite an independent, differently-derived measurement (~95 live-code sites) that HLD SS 12 OAQ 6 states explicitly 'cannot both stand.' A gate-passed document (1.00/1.00 per HLD's own citation) had already frozen the disputed number into a pass/fail AC.",
+      "required_fix": "APPLIED in this pass, per HLD's explicit delegation to business-analyst-agent -- withdrew the 13-based AC (struck through, not deleted, for audit trail) and substituted a method-based AC (AST classifier partitioning every occurrence into CODE/DOCSTRING/COMMENT, zero-CODE terminal condition, path_resolver.py's own canonical strings excluded). FR-15 remains explicitly UNSIZED pending the classifier's run."
+    },
+    {
+      "id": "FIND-06",
+      "severity": "CRITICAL",
+      "issue": "RTM integrity defect: prd-v2.md Section 6 pointed FR-18 at a Section 5 row that did not exist. This is exactly the class of defect the requirements-traceability-core skill's RTM methodology (bipartite graph coverage check) is designed to catch, and it survived the document's own 'RTM gap count: 0' self-assessment.",
+      "required_fix": "APPLIED in this pass -- FR-18 row added to Section 5; the RTM gap-count note in Section 6 corrected to record the defect and its fix rather than silently re-asserting 0."
+    },
+    {
+      "id": "FIND-07",
+      "severity": "CRITICAL (escalated by coordinator from this review's initial ADVISORY classification)",
+      "issue": "FR-9a had no dedicated measurable AC in prd-v2.md Section 5 (RTM row only said 'prerequisite for FR-10's AC'). HLD OAQ 4 reveals FR-9a's true scope is 4 independent truncation points across 4 files, not the single site Phase 0 named, plus a 5th out-of-scope-but-flagged truncator in build_dependency_resolver/parsers.py recorded for a v2.1 follow-on. Coordinator's rationale for escalation: with no AC of its own, FR-9a's completion was defined transitively by FR-10's tests passing -- an implementer could fix site 1, watch FR-10 go green, and leave 3 sites intact (including site 3, which lives inside sdlc_pipeline/, the very package site 1 drops entirely). An FR whose completion is defined by another FR's tests has no independent definition of done, which is a correctness defect on the critical path, not a nice-to-have.",
+      "required_fix": "APPLIED at coordinator's direction -- dedicated FR-9a AC added to Section 5 (between the FR-9 and FR-10 rows) requiring all 4 sites to reach one of two recorded end states (migrated to the ADR-013 contract, or formally retired), plus the ADR-013 regression test's canary assertion (`sdlc_pipeline` present at `analysed_n == 45`). The 5th truncator is explicitly named and excluded as a decision, not an oversight. Section 6 RTM row updated to point at the new Section 5 row instead of at FR-10."
+    },
+    {
+      "id": "FIND-09",
+      "severity": "MAJOR",
+      "issue": "ADR-019 (zero bundled MCP servers, adopted after this pass's original FR-18/NFR-1 reconciliation) gives up true one-step install: FR-14's original wording promised the plugin installable in one step, naming MCP server references among the bundled content that step delivers. Under ADR-019, `/plugin install` alone delivers commands/agents/skills (functionally complete, no hand-edited settings.json -- AC-6's 'no manual surgery' bar still holds in full), but MCP-backed capabilities (FR-23 push gate, progress writer) require a second, explicit `register-mcp` step. solution-architect explicitly flagged this as a partial deliberate miss against FR-14 requiring BA/PM acknowledgement rather than silent architect-side absorption.",
+      "required_fix": "APPLIED -- this pass owns FR wording and chose to AMEND rather than silently accept: FR-14's Section 2 note and Section 5 AC both now state explicitly that one-step install covers commands/agents/skills only, that MCP-backed capabilities require the separate register-mcp step, and that this is a recorded, deliberate trade-off (the alternative -- bundling MCP to preserve one-step install -- reopens NFR-1 per FIND-02's ADR-019 correction), not an unflagged regression. NFR-5's install test AC (Section 5) gained a fourth assertion exercising both steps and confirming the push gate is unreachable after step one alone."
+    },
+    {
+      "id": "FIND-10",
+      "severity": "ADVISORY",
+      "issue": "hld.md Section 10 (Migration Design), step 2, reads: 'Verify the FR-23 replacement is reachable... This must pass before step 4' -- written before ADR-019 existed, on the assumption the push-gate MCP tool ships bundled and is therefore reachable immediately after install. Under ADR-019, the push gate is NOT reachable until the user separately runs `register-mcp`, so migration step 2 as currently worded could be attempted before its own prerequisite (the register-mcp step) has been described to the user, or before it exists as a documented step at all. This is an hld.md-owned document (Section 10 migration runbook), not a prd-v2.md defect, so it is not editable by this review the way FR-18/FR-15's prd-v2.md-owned ACs were.",
+      "required_fix": "NOT APPLIED -- out of this document's ownership. Flagged for solution-architect (or whoever owns hld.md Section 10's next revision) to insert an explicit register-mcp step into the migration runbook's numbered sequence, most naturally between the current steps 1 and 2, so step 2's reachability check has a described prerequisite to point at."
+    },
+    {
+      "id": "FIND-08",
+      "severity": "ADVISORY",
+      "issue": "FR-16 (build-time snapshot mechanism) is architecturally covered by the HLD (C4 SS 3 SNAP component, ADR-007 pinned snapshot) but is not listed in HLD SS 1.3's explicit in-scope FR enumeration. This appears to be a listing omission rather than an actual coverage gap, since the component and ADR both exist and are load-bearing elsewhere in the document (e.g. the Migration Design section, the STRIDE supply-chain analysis at SS 8.1).",
+      "required_fix": "NOT APPLIED -- no prd-v2.md edit needed since FR-16's actual coverage is sound; flagged only so the HLD's own SS 1.3 scope line can be corrected for completeness in a future HLD revision."
+    }
+  ],
+  "return_value_summary": {
+    "coverage_counts": {
+      "fr_total": 24,
+      "fr_in_hld_scope": 17,
+      "fr_out_of_hld_scope_by_design": 8,
+      "fr_explicitly_unsized_by_design": 1,
+      "fr_new_this_pass": 1,
+      "nfr_total": 5,
+      "nfr_in_hld_scope": 5
+    },
+    "reconciliation_items_completed": [
+      "1. NFR-2 rewritten -- ADR-016's 9 engine-side timeout sites (6 application + 3 definition), 75s composite figure, hook-deletion-is-insufficient stated explicitly, AC scope widened to the pipeline path.",
+      "2. NFR-1 rewritten -- per-component attribution AC, Stop/Notification exclusion. ORIGINALLY drafted with an ADR-018 minimum-viable-bundle requirement (FR-23 push gate + progress writer only); that bundle requirement is SUPERSEDED as of this file's current state -- see FIND-02 -- by solution-architect's later ADR-019 decision (plugin bundles ZERO MCP servers, explicit opt-in register-mcp command). This line is kept as a historical record of what step 2 originally did; it does NOT describe NFR-1's current AC. Current AC: zero bundled MCP servers, no exceptions.",
+      "3. NFR-3 rewritten -- ADR-011/OAQ 1's two-system correction, CheckpointManager named as the existing writer, 3 durability defects enumerated, WSJF re-scoring flagged for product-manager-agent, warm-daemon attribution corrected.",
+      "4. FR-18 rewritten -- narrowed to plugin-attributable residue per plugin_schema_spike.md Item 4's measured unachievability of the original bar, stated explicitly as unachievable rather than silently narrowed; new FR-24 added for the documented cleanup runbook.",
+      "5. FR-14a marked RESOLVED throughout -- FR-6/FR-14/NFR-5/ADR-009a-branch-2 references updated from PROVISIONAL/pending to CONFIRMED/unblocked, reflecting all 5 spike items now measured."
+    ],
+    "additional_work_beyond_the_five_items": [
+      "FR-15's AC replaced per HLD's explicit named delegation to business-analyst-agent (not one of the numbered five, but directly assigned by the HLD to this role).",
+      "A genuine pre-existing RTM gap (FR-18 had no Section 5 row) was found and fixed.",
+      "Section 7 Gherkin scenarios (install and uninstall) updated to stay consistent with the revised NFR-1 and FR-18 ACs.",
+      "FR-9a's missing dedicated AC (FIND-07) -- initially logged ADVISORY by this review, then escalated to CRITICAL and fixed at the coordinator's explicit direction after independent re-verification. Dedicated Section 5 AC added (4-site closure requirement, ADR-013 regression-test canary, explicit v2.1 deferral of the 5th truncator); Section 6 RTM row repointed from FR-10 to the new Section 5 row. STATUS: FIXED -- this item is CLOSED, not open work.",
+      "NFR-1's bundle constraint (FIND-02) -- superseded by solution-architect's ADR-019 decision (zero bundled MCP servers, not merely minimum-viable) after this pass's original reconciliation. All three NFR-1 sites plus NFR-5's install-test AC updated to the zero-bundle wording; the superseded ADR-018 wording marked correct-when-written-but-overtaken, not disputed.",
+      "FR-14 amended (FIND-09) -- ADR-019's zero-bundle decision costs the plugin true one-step install for MCP-backed capabilities. Amended FR-14's Section 2 note and Section 5 AC to state explicitly that one-step install covers commands/agents/skills only, with the FR-23 push gate and progress writer requiring a second, explicit register-mcp step -- a deliberate, acknowledged trade-off, not a silent miss, per solution-architect's explicit request for BA/PM acknowledgement."
+    ],
+    "critical_findings_for_solution_architect": [
+      "CORRECTED at Phase 2.5 gate: this field previously said the one open item was FR-9a's undersized AC (FIND-07, ADVISORY). That was stale -- FIND-07 was escalated to CRITICAL and FIXED in the same pass this summary was first written, and the summary was never updated to match. FIND-07 requires NO further solution-architect action; it is closed.",
+      "The genuinely open item for solution-architect is FIND-10 (ADVISORY, NOT APPLIED): hld.md Section 10's migration runbook step 2 ('verify the FR-23 replacement is reachable... before step 4') predates ADR-019 and assumes the push gate ships bundled. Under ADR-019 (zero bundled MCP servers), the push gate is unreachable until the user separately runs register-mcp, which does not yet exist as a numbered step in Section 10's sequence. This is hld.md-owned content and was not edited by this review.",
+      "FIND-08 (ADVISORY, NOT APPLIED): FR-16 is architecturally covered by the HLD but missing from HLD SS 1.3's own in-scope FR list -- a listing omission in hld.md, not a prd-v2.md defect. Per the coordinator's routing instruction, this is going to solution-architect at Phase 2.3 with no action required from business-analyst-agent."
+    ],
+    "could_not_verify": [
+      "docs/orchestration_prompt.md sections 1.2/1.4/3.3 and the ADR block were not re-read end-to-end in this pass (4,729-line file; context budget). Their content relevant to this task was cross-checked indirectly via hld.md's own citations of them (which independently re-derived several of the same figures against live source, per consensus_summary_phase1.md's iteration-4 verification) and via prd-v2.md's own Section 12 coverage statement of what it already read from that file. No contradiction was found between those sources and hld.md during this pass; a full line-by-line re-read was judged lower value than the targeted verification actually performed against hld.md, plugin_schema_spike.md, and prd-v2.md directly.",
+      "FR-1..FR-3, FR-9, FR-20's underlying audit-matrix content (policy_enforcement_raw.json, capability_loss.md) was not re-read in this pass -- these are Workstream A artifacts outside the HLD's architectural scope and outside this pass's five reconciliation items."
+    ]
+  }
+}

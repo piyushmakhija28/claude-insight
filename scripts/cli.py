@@ -20,6 +20,26 @@ import subprocess
 import sys
 from pathlib import Path
 
+try:
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+    from utils.path_resolver import display_path
+except ImportError:
+
+    def display_path(*parts):
+        """Return the portable display spelling of a Claude-home path.
+
+        Fallback used when path_resolver cannot be imported.
+
+        Args:
+            *parts: Path components to append below the Claude home.
+
+        Returns:
+            str: Display path using forward slashes.
+        """
+        tail = "/".join(str(part).strip("/") for part in parts if str(part).strip("/"))
+        base = "~/" + "." + "claude"
+        return base + "/" + tail if tail else base
+
 
 def get_version():
     """Read version from VERSION file."""
@@ -232,7 +252,7 @@ def cmd_doctor(args):
         except Exception as exc:
             issues.append(f"Cannot read settings.json: {exc}")
     else:
-        issues.append("~/.claude/settings.json not found. Run 'cwe setup'.")
+        issues.append("{} not found. Run 'cwe setup'.".format(display_path("settings.json")))
 
     # Check for stale sessions (older than 7 days)
     sessions_dir = Path.home() / ".claude" / "logs" / "sessions"
@@ -286,7 +306,7 @@ def cmd_setup(args):
         print("  1. cp .env.example .env")
         print("  2. Edit .env with your API keys (ANTHROPIC_API_KEY, GITHUB_TOKEN)")
         print("  3. pip install -r requirements.txt")
-        print("  4. Register MCP servers in ~/.claude/settings.json")
+        print("  4. Register MCP servers in {}".format(display_path("settings.json")))
 
 
 def main():

@@ -1,54 +1,9 @@
 {
-  "_comment": "Template for ~/.claude/settings.json. Replace {CLAUDE_SCRIPTS} with your scripts path and {CLAUDE_HOOKS} with your hooks path. On Windows: C:/Users/<username>/.claude/scripts and C:/Users/<username>/.claude/hooks.",
+  "_comment": "Template for ~/.claude/settings.json. Replace {CLAUDE_SCRIPTS} with your scripts path and {CLAUDE_HOOKS} with your hooks path. On Windows: C:/Users/<username>/.claude/scripts and C:/Users/<username>/.claude/hooks. v2.0.0 REGISTERS NO UserPromptSubmit, PreToolUse or PostToolUse HOOK. Those three were deleted by PRD FR-4 / SRS FR-13 and FR-15; the pipeline is reached only through the six explicit slash commands, and tool-call enforcement is reached only through registered MCP servers. Re-adding any of them here silently undoes that migration on every machine bootstrapped from this file, which is why tests/test_settings_template_has_no_deleted_hooks.py fails if one returns.",
   "permissions": {
     "defaultMode": "default"
   },
   "hooks": {
-    "UserPromptSubmit": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "python {CLAUDE_SCRIPTS}/3-level-flow.py",
-            "timeout": 120
-          }
-        ]
-      }
-    ],
-    "PreToolUse": [
-      {
-        "matcher": "^(Write|Edit|NotebookEdit|Bash|Read|Grep|Glob)$",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "python {CLAUDE_HOOKS}/pre-tool-enforcer.py",
-            "timeout": 12
-          }
-        ]
-      }
-    ],
-    "PostToolUse": [
-      {
-        "matcher": "^(Write|Edit|NotebookEdit|Bash|TaskCreate|TaskUpdate|Skill|Task)$",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "python {CLAUDE_HOOKS}/post-tool-tracker.py",
-            "timeout": 30
-          }
-        ]
-      },
-      {
-        "matcher": "^(Read|Grep|Glob|WebFetch|WebSearch)$",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "python {CLAUDE_HOOKS}/post-tool-tracker.py",
-            "timeout": 10
-          }
-        ]
-      }
-    ],
     "Stop": [
       {
         "hooks": [

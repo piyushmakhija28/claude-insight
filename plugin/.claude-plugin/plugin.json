@@ -1,0 +1,8 @@
+{
+  "name": "claude-workflow-engine",
+  "version": "0.1.0",
+  "description": "SDLC orchestration entry points for the Claude Workflow Engine. Ships commands, agents and skills only: zero hooks (ADR-010) and zero bundled MCP servers (ADR-019), so an enabled-but-uninvoked plugin contributes no processes to a session.",
+  "author": {
+    "name": "techdeveloper-org"
+  }
+}

@@ -33,21 +33,37 @@ from typing import Any, Callable, Dict, Optional, Tuple
 
 from loguru import logger
 
+from .liveness import env_optional_seconds as _env_optional_seconds
+
 # ---------------------------------------------------------------------------
 # Canonical timeout values (seconds) per Level 3 step
 # Active steps only: Pre-0 (0), Step 0, Steps 8-14
 # v1.15.2: removed dead entries for steps 1,2,3,4,5,6,7
 # ---------------------------------------------------------------------------
 
-STEP_TIMEOUTS: Dict[int, int] = {
-    0: 900,  # Task Analysis (LLM - let it take its time)
-    8: 900,  # GitHub Issue Creation (LLM title gen + GitHub API)
-    9: 120,  # Branch Creation (git operations)
-    10: 900,  # Implementation Execution (Claude heavy lifting)
-    11: 900,  # Pull Request & Code Review (network + possible LLM)
-    12: 120,  # Issue Closure (network I/O)
-    13: 120,  # Project Documentation Update (file writes)
-    14: 120,  # Final Summary & Voice Notification (local)
+# NFR-2 / ADR-016: unbounded by default, per-step override through
+# STEP{N}_TIMEOUT. An operator opts INTO a step deadline; none is imposed.
+#
+# WHAT THIS TABLE USED TO BE, AND WHY THAT IS THE ARGUMENT AGAINST IT
+# --------------------------------------------------------------------
+# It was a literal map on the PRE-v1.20 step numbering -- keys {0, 8, 9, 10,
+# 11, 12, 13, 14} -- and the domain-driven renumbering to Steps 0-8 moved every
+# step underneath it without moving the table. Measured against the live tree,
+# `_run_step` is invoked with step numbers 2, 3, 4, 5, 6, 7 and 8. The
+# intersection with the old key set was exactly {8}: six of the seven wrapped
+# steps had silently had no deadline at all, and the seventh -- now "Final
+# Telemetry and Summary Report" -- was inheriting the 900-second budget written
+# for the old "GitHub Issue Creation".
+#
+# That is the whole case against a fixed deadline in one artifact. It was the
+# wrong instrument, it had quietly stopped being applied to most of what it
+# governed, and nobody noticed -- because a timeout that never fires is
+# indistinguishable from a timeout that is not there. The bound that replaces it
+# is not a longer number; it is the progress lease, attempt budget and circuit
+# breaker in `langgraph_engine.liveness`, which sit around the subprocess and
+# network calls where the long-running work actually happens.
+STEP_TIMEOUTS: Dict[int, Optional[float]] = {
+    step: _env_optional_seconds("STEP%d_TIMEOUT" % step) for step in range(0, 9)
 }
 
 # Human-readable step labels for log messages
@@ -222,6 +238,37 @@ class StepTimeout:
 # ---------------------------------------------------------------------------
 
 
+def _run_unbounded(fn, args, kwargs, fallback, step_label):
+    """Run a step on the calling thread with no deadline.
+
+    Running here rather than on a watched worker is the point: the abandoned
+    daemon thread the bounded path leaves behind can still be writing to GitHub
+    or Jira while the pipeline proceeds on a fallback result, which is a worse
+    failure than waiting. With no bound configured there is nothing to watch
+    for, so there is no reason to hand the work to another thread.
+
+    Args:
+        fn: Callable to execute.
+        args: Positional arguments for fn.
+        kwargs: Keyword arguments for fn.
+        fallback: Dict returned when fn raises.
+        step_label: Label for log messages.
+
+    Returns:
+        dict: fn's result, or the fallback when fn raised.
+    """
+    started = time.time()
+    try:
+        result = fn(*args, **kwargs) or {}
+    except Exception as exc:
+        logger.error(f"[TimeoutWrapper] {step_label} raised exception: {exc}")
+        return {**(fallback or {}), "timed_out": False, "error": str(exc), "step_label": step_label}
+    if isinstance(result, dict):
+        result.setdefault("timed_out", False)
+        result.setdefault("elapsed_ms", (time.time() - started) * 1000)
+    return result
+
+
 def run_with_timeout(
     fn: Callable,
     step_number: int,
@@ -231,14 +278,15 @@ def run_with_timeout(
     custom_timeout: Optional[int] = None,
 ) -> Dict[str, Any]:
     """
-    Execute fn with the canonical timeout for step_number.
+    Execute fn under the step's configured bound, or unbounded when none is set.
 
-    Looks up the timeout from STEP_TIMEOUTS. If step_number is not in the
-    table, uses 60 seconds as a safe default.
+    Looks the bound up in STEP_TIMEOUTS, which is populated from STEP{N}_TIMEOUT
+    and is None for every step unless an operator sets one. When it is None the
+    callable runs on this thread with no deadline, per NFR-2 / ADR-016.
 
     Args:
         fn:             Callable to execute.
-        step_number:    Level 3 step number (8-14). Used for timeout lookup.
+        step_number:    Pipeline step number (0-8). Used for the bound lookup.
         args:           Positional arguments passed to fn.
         kwargs:         Keyword arguments passed to fn.
         fallback:       Return value if fn times out or raises. Should contain
@@ -256,10 +304,14 @@ def run_with_timeout(
             fallback={"issue_created": False, "source": "timeout_fallback", "risk_level": "high"}
         )
     """
-    timeout_s = custom_timeout if custom_timeout is not None else STEP_TIMEOUTS.get(step_number, 60)
+    timeout_s = custom_timeout if custom_timeout is not None else STEP_TIMEOUTS.get(step_number)
     step_label = STEP_LABELS.get(step_number, f"Step {step_number}")
 
-    logger.info(f"[TimeoutWrapper] Starting STEP {step_number}: {step_label} " f"(timeout={timeout_s}s)")
+    if timeout_s is None:
+        logger.info(f"[TimeoutWrapper] Starting STEP {step_number}: {step_label} (unbounded)")
+        return _run_unbounded(fn, args, kwargs or {}, fallback, f"STEP {step_number}: {step_label}")
+
+    logger.info(f"[TimeoutWrapper] Starting STEP {step_number}: {step_label} " f"(bound={timeout_s}s)")
 
     wrapper = StepTimeout(timeout_seconds=timeout_s)
     return wrapper.run(

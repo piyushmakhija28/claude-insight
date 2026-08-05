@@ -11,14 +11,18 @@ Invoked by: call_execution_script("prompt_gen_expert_caller", args)
 Output: JSON with keys: status, prompt, llm_response, error (on failure)
 
 Environment:
-  STEP1_PROMPT_GEN_TIMEOUT  max seconds for claude CLI (default: 60)
+  STEP1_PROMPT_GEN_SILENCE  seconds of claude CLI silence tolerated before the
+                            child is treated as stuck (default: unbounded)
+
+The former STEP1_PROMPT_GEN_TIMEOUT killed the claude CLI after a fixed 60
+seconds regardless of whether it was working. Its replacement measures silence
+rather than duration and defaults to no bound at all, per NFR-2 / ADR-016.
 """
 
 import json
 import logging
 import os
 import shutil
-import subprocess
 import sys
 from pathlib import Path
 
@@ -51,7 +55,7 @@ _TEMPLATES_DIR = Path(__file__).resolve().parent.parent / "templates"
 _TEMPLATE_FILE = _TEMPLATES_DIR / "orchestration_system_prompt.txt"
 
 DEBUG = os.getenv("CLAUDE_DEBUG") == "1"
-_TIMEOUT = int(os.getenv("STEP1_PROMPT_GEN_TIMEOUT", "60"))
+_SILENCE_ENV_VAR = "STEP1_PROMPT_GEN_SILENCE"
 
 
 # ---------------------------------------------------------------------------
@@ -211,7 +215,16 @@ def _build_filled_prompt(template, args):
 
 
 def _call_claude_cli(prompt):
-    """Call claude CLI in headless print mode via stdin. Returns (response_text, error)."""
+    """Call claude CLI in headless print mode via stdin. Returns (response_text, error).
+
+    Bounded by progress rather than by elapsed time: the CLI is left alone for as
+    long as it keeps producing output, and only silence -- and only when an
+    operator has configured an interval -- ends it. The circuit breaker observes
+    the outcome so that a systemically failing CLI stops being called at all,
+    which is the mechanism that replaces the deadline this used to carry.
+    """
+    from langgraph_engine.liveness import BreakerOpen, NoProgress, env_optional_seconds, run_supervised
+
     claude_path = shutil.which("claude")
     if not claude_path:
         return None, "claude CLI binary not found in PATH"
@@ -220,14 +233,12 @@ def _call_claude_cli(prompt):
         print("[prompt_gen_expert_caller] Running: claude CLI -p", file=sys.stderr, flush=True)
 
     try:
-        result = subprocess.run(
+        result = run_supervised(
             [claude_path, "-p"],
             input=prompt,
-            capture_output=True,
-            text=True,
-            timeout=_TIMEOUT,
-            encoding="utf-8",
-            errors="replace",
+            lease_interval=env_optional_seconds(_SILENCE_ENV_VAR),
+            lease_name="prompt_gen_claude_cli",
+            breaker_name="claude_cli",
         )
 
         if result.returncode != 0 and not result.stdout:
@@ -239,8 +250,10 @@ def _call_claude_cli(prompt):
             return response_text, None
         return None, "claude CLI returned empty response"
 
-    except subprocess.TimeoutExpired:
-        return None, "claude CLI timed out after %ds" % _TIMEOUT
+    except BreakerOpen as exc:
+        return None, "claude CLI circuit breaker open, call not attempted: " + str(exc)
+    except NoProgress as exc:
+        return None, "claude CLI made no progress: " + str(exc)
     except Exception as exc:
         return None, "claude CLI call failed: " + str(exc)
 

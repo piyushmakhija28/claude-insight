@@ -240,7 +240,7 @@ class Level3GitHubWorkflow:
         )
 
         try:
-            response = llm_call(prompt, model="fast_classification", temperature=0.1, timeout=15)
+            response = llm_call(prompt, model="fast_classification", temperature=0.1)
             if not response:
                 return None
 

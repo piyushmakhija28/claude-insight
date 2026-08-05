@@ -1,0 +1,981 @@
+{
+ "meta": {
+  "document": "Phase 7 routing map: 37 v2.0.0 sprint issues to claude-global-library agents and skills",
+  "generated": "2026-08-02",
+  "library_root": "C:/Users/techd/Documents/workspace-spring-tool-suite-4-4.27.0-new/claude-global-library",
+  "library_version": "29.72.0",
+  "source_issues": "docs/phase-6-sprint/github_issues.json",
+  "source_key_map": "docs/phase-6-sprint/issue_key_map.json",
+  "agents_catalogue": "knowledge-graph/_master/agents_all.json (508 agents)",
+  "skills_catalogue": "knowledge-graph/_master/skills_all.json (996 skills)",
+  "issues_routed": 37,
+  "confidence_counts": {
+   "HIGH": 29,
+   "MEDIUM": 8,
+   "LOW": 0,
+   "NO_MATCH": 0
+  },
+  "distinct_agents_used": 26,
+  "distinct_agents": [
+   "acceptance-testing-bdd-engineer",
+   "architecture-conformance-auditor",
+   "ast-graph-engineer",
+   "automation-engineer",
+   "business-analyst-agent",
+   "claude-code-plugin-engineer",
+   "codebase-archaeology-agent",
+   "codebase-kg-engineer",
+   "devsecops-engineer",
+   "distributed-consensus-engineer",
+   "graph-orchestration-runtime-engineer",
+   "harness-engineering-architect",
+   "harness-evaluation-engineer",
+   "impact-analysis-agent",
+   "integration-testing-engineer",
+   "loop-safety-engineer",
+   "mcp-server-engineer",
+   "multi-model-router-architect",
+   "performance-testing-engineer",
+   "python-backend-engineer",
+   "release-engineering-specialist",
+   "site-reliability-engineer",
+   "solution-architect",
+   "static-analysis-engineer",
+   "technical-writer-agent",
+   "unit-testing-specialist"
+  ],
+  "verification": "Every primary_agent and supporting_agents[].name was checked for membership in agents_all.json['agents'][*].name AND for an existing agents/<name>/agent.md file. Every skills[] entry was checked for membership in skills_all.json['skills'][*].name AND for an existing skills/<name>/SKILL.md file. Generation aborts on any miss.",
+  "revised": "2026-08-02 (library gap acceptance re-route)",
+  "confidence_counts_before_gap_fill": {
+   "HIGH": 22,
+   "MEDIUM": 11,
+   "LOW": 4,
+   "NO_MATCH": 0
+  },
+  "rows_revised_2026_08_02": [
+   "V2-004",
+   "V2-015",
+   "V2-016",
+   "V2-017",
+   "V2-020",
+   "V2-021",
+   "V2-022",
+   "V2-024",
+   "V2-026",
+   "V2-032",
+   "V2-036"
+  ]
+ },
+ "dispatch_contract": {
+  "rule": "Library agents are NOT registered subagent_types. Spawn subagent_type 'general-purpose' and inject the agent's persona as a ---persona--- block at the top of the prompt.",
+  "persona_block_fields": [
+   "name",
+   "description",
+   "tools",
+   "model",
+   "Skill Dependencies section"
+  ],
+  "persona_source": "the file at primary_agent_md_path / supporting_agents[].agent_md_path",
+  "enforcement": "A live PreToolUse hook BLOCKS any generic subagent spawned without a persona block."
+ },
+ "routes": [
+  {
+   "key": "V2-001",
+   "issue_number": 256,
+   "batch": "A",
+   "gate": "D2",
+   "title": "PRD FR-6 / SRS FR-16: create docs/architecture/ADR-006-hook-free-execution.md",
+   "primary_agent": "solution-architect",
+   "primary_agent_md_path": "agents/solution-architect/agent.md",
+   "primary_agent_md_abs_path": "C:/Users/techd/Documents/workspace-spring-tool-suite-4-4.27.0-new/claude-global-library/agents/solution-architect/agent.md",
+   "supporting_agents": [],
+   "skills": [
+    "system-design",
+    "clean-architecture"
+   ],
+   "match_confidence": "HIGH",
+   "justification": "ADR authoring is solution-architect's named output artifact; the job is to place an already-decided ADR at its required path with its Consequence section unedited."
+  },
+  {
+   "key": "V2-002",
+   "issue_number": 258,
+   "batch": "A",
+   "gate": "D3",
+   "title": "PRD FR-9 / SRS FR-20: reconcile claude-global-library master graph count drift",
+   "primary_agent": "automation-engineer",
+   "primary_agent_md_path": "agents/automation-engineer/agent.md",
+   "primary_agent_md_abs_path": "C:/Users/techd/Documents/workspace-spring-tool-suite-4-4.27.0-new/claude-global-library/agents/automation-engineer/agent.md",
+   "supporting_agents": [
+    {
+     "name": "codebase-kg-engineer",
+     "agent_md_path": "agents/codebase-kg-engineer/agent.md",
+     "agent_md_abs_path": "C:/Users/techd/Documents/workspace-spring-tool-suite-4-4.27.0-new/claude-global-library/agents/codebase-kg-engineer/agent.md"
+    }
+   ],
+   "skills": [
+    "python-system-scripting",
+    "error-handling-patterns",
+    "logging-patterns",
+    "codebase-knowledge-graph"
+   ],
+   "match_confidence": "MEDIUM",
+   "justification": "Narrow fix: re-run build_master.py --full, validate.py and test_invariant_checker.py in a second repo and make three count sources agree. That is Python build-script operation (automation-engineer); codebase-kg-engineer supports on graph-artifact invariants."
+  },
+  {
+   "key": "V2-003",
+   "issue_number": 259,
+   "batch": "A",
+   "gate": "D6",
+   "title": "PRD NFR-1 / SRS NFR-7: build the per-component process-count measurement harness",
+   "primary_agent": "harness-evaluation-engineer",
+   "primary_agent_md_path": "agents/harness-evaluation-engineer/agent.md",
+   "primary_agent_md_abs_path": "C:/Users/techd/Documents/workspace-spring-tool-suite-4-4.27.0-new/claude-global-library/agents/harness-evaluation-engineer/agent.md",
+   "supporting_agents": [
+    {
+     "name": "performance-testing-engineer",
+     "agent_md_path": "agents/performance-testing-engineer/agent.md",
+     "agent_md_abs_path": "C:/Users/techd/Documents/workspace-spring-tool-suite-4-4.27.0-new/claude-global-library/agents/performance-testing-engineer/agent.md"
+    }
+   ],
+   "skills": [
+    "eval-harness-design-core",
+    "deterministic-replay-trace-core",
+    "agent-regression-harness-core",
+    "performance-testing-core"
+   ],
+   "match_confidence": "HIGH",
+   "justification": "Build an observability/measurement harness over an agentic tool harness, with a pass/fail regression gate. performance-testing-engineer supports on measurement rigour: cold vs warm reported separately, window must not cross a response-turn boundary."
+  },
+  {
+   "key": "V2-004",
+   "issue_number": 260,
+   "batch": "A",
+   "gate": "D1",
+   "title": "PRD FR-1 / SRS FR-10: produce docs/reports/policy-implementation-audit-v2.md",
+   "primary_agent": "business-analyst-agent",
+   "primary_agent_md_path": "agents/business-analyst-agent/agent.md",
+   "primary_agent_md_abs_path": "C:/Users/techd/Documents/workspace-spring-tool-suite-4-4.27.0-new/claude-global-library/agents/business-analyst-agent/agent.md",
+   "supporting_agents": [
+    {
+     "name": "codebase-archaeology-agent",
+     "agent_md_path": "agents/codebase-archaeology-agent/agent.md",
+     "agent_md_abs_path": "C:/Users/techd/Documents/workspace-spring-tool-suite-4-4.27.0-new/claude-global-library/agents/codebase-archaeology-agent/agent.md"
+    },
+    {
+     "name": "technical-writer-agent",
+     "agent_md_path": "agents/technical-writer-agent/agent.md",
+     "agent_md_abs_path": "C:/Users/techd/Documents/workspace-spring-tool-suite-4-4.27.0-new/claude-global-library/agents/technical-writer-agent/agent.md"
+    }
+   ],
+   "skills": [
+    "business-requirements-analysis-core",
+    "requirements-traceability-core",
+    "codebase-archaeology",
+    "technical-writing-core"
+   ],
+   "match_confidence": "HIGH",
+   "justification": "Agent added 2026-08-02, confidence unchanged at HIGH. The 46-row traceability matrix was always business-analyst-agent's; GAP-3 recorded that the surrounding prose of policy-implementation-audit-v2.md had no owner. technical-writer-agent now owns it -- technical-writing-core section 1's Diataxis classification and section 2's task-based information architecture are the missing piece for the report body. Added only to this row of the audit series: V2-005, V2-006 and V2-007 are matrix-cell population with no prose deliverable, and V2-008 is a script.",
+   "revised": "2026-08-02"
+  },
+  {
+   "key": "V2-005",
+   "issue_number": 261,
+   "batch": "A",
+   "gate": "D1",
+   "title": "PRD FR-2 / SRS FR-11: populate all 7 audit-matrix columns for all 46 policies",
+   "primary_agent": "business-analyst-agent",
+   "primary_agent_md_path": "agents/business-analyst-agent/agent.md",
+   "primary_agent_md_abs_path": "C:/Users/techd/Documents/workspace-spring-tool-suite-4-4.27.0-new/claude-global-library/agents/business-analyst-agent/agent.md",
+   "supporting_agents": [],
+   "skills": [
+    "requirements-traceability-core",
+    "business-requirements-analysis-core"
+   ],
+   "match_confidence": "HIGH",
+   "justification": "Populate the 7th column across 46 rows from a fixed closed vocabulary. Pure traceability-matrix completion, no second capability needed."
+  },
+  {
+   "key": "V2-006",
+   "issue_number": 262,
+   "batch": "A",
+   "gate": "D1",
+   "title": "PRD FR-3 / SRS FR-12: record a disposition and rationale for each of the 15 hook-coupled policies",
+   "primary_agent": "business-analyst-agent",
+   "primary_agent_md_path": "agents/business-analyst-agent/agent.md",
+   "primary_agent_md_abs_path": "C:/Users/techd/Documents/workspace-spring-tool-suite-4-4.27.0-new/claude-global-library/agents/business-analyst-agent/agent.md",
+   "supporting_agents": [
+    {
+     "name": "solution-architect",
+     "agent_md_path": "agents/solution-architect/agent.md",
+     "agent_md_abs_path": "C:/Users/techd/Documents/workspace-spring-tool-suite-4-4.27.0-new/claude-global-library/agents/solution-architect/agent.md"
+    }
+   ],
+   "skills": [
+    "requirements-traceability-core",
+    "business-requirements-analysis-core",
+    "system-design"
+   ],
+   "match_confidence": "HIGH",
+   "justification": "A disposition-plus-rationale ledger over 15 hook-coupled policies. solution-architect supports because port-to-MCP / demote-to-advisory / delete are architecture decisions, and push_gate.py's row is pre-decided as port-to-MCP."
+  },
+  {
+   "key": "V2-007",
+   "issue_number": 263,
+   "batch": "A",
+   "gate": "D1",
+   "title": "PRD FR-20 / SRS FR-32: record a post-plugin disposition for all 14 genuine policy orphans",
+   "primary_agent": "business-analyst-agent",
+   "primary_agent_md_path": "agents/business-analyst-agent/agent.md",
+   "primary_agent_md_abs_path": "C:/Users/techd/Documents/workspace-spring-tool-suite-4-4.27.0-new/claude-global-library/agents/business-analyst-agent/agent.md",
+   "supporting_agents": [
+    {
+     "name": "automation-engineer",
+     "agent_md_path": "agents/automation-engineer/agent.md",
+     "agent_md_abs_path": "C:/Users/techd/Documents/workspace-spring-tool-suite-4-4.27.0-new/claude-global-library/agents/automation-engineer/agent.md"
+    }
+   ],
+   "skills": [
+    "requirements-traceability-core",
+    "python-system-scripting"
+   ],
+   "match_confidence": "HIGH",
+   "justification": "Disposition for 14 orphan policies plus a name-reconciliation script; BA owns the disposition semantics, automation-engineer owns the comparison script."
+  },
+  {
+   "key": "V2-008",
+   "issue_number": 264,
+   "batch": "A",
+   "gate": "D1",
+   "title": "PRD NFR-4 / SRS NFR-10: cross-check all 27 capability_loss.md names against the audit matrix",
+   "primary_agent": "automation-engineer",
+   "primary_agent_md_path": "agents/automation-engineer/agent.md",
+   "primary_agent_md_abs_path": "C:/Users/techd/Documents/workspace-spring-tool-suite-4-4.27.0-new/claude-global-library/agents/automation-engineer/agent.md",
+   "supporting_agents": [
+    {
+     "name": "business-analyst-agent",
+     "agent_md_path": "agents/business-analyst-agent/agent.md",
+     "agent_md_abs_path": "C:/Users/techd/Documents/workspace-spring-tool-suite-4-4.27.0-new/claude-global-library/agents/business-analyst-agent/agent.md"
+    }
+   ],
+   "skills": [
+    "python-system-scripting",
+    "error-handling-patterns",
+    "requirements-traceability-core"
+   ],
+   "match_confidence": "MEDIUM",
+   "justification": "The deliverable is a script that fails on an empty disposition and on the literal value 'disappeared'. Script authoring is automation-engineer; BA supports on what a valid disposition is. No agent in the library owns coverage-ledger cross-checking as a named capability."
+  },
+  {
+   "key": "V2-009",
+   "issue_number": 265,
+   "batch": "B",
+   "gate": "D4",
+   "title": "PRD FR-9a / SRS FR-21: fix call-graph DISCOVERY truncation",
+   "primary_agent": "ast-graph-engineer",
+   "primary_agent_md_path": "agents/ast-graph-engineer/agent.md",
+   "primary_agent_md_abs_path": "C:/Users/techd/Documents/workspace-spring-tool-suite-4-4.27.0-new/claude-global-library/agents/ast-graph-engineer/agent.md",
+   "supporting_agents": [
+    {
+     "name": "harness-evaluation-engineer",
+     "agent_md_path": "agents/harness-evaluation-engineer/agent.md",
+     "agent_md_abs_path": "C:/Users/techd/Documents/workspace-spring-tool-suite-4-4.27.0-new/claude-global-library/agents/harness-evaluation-engineer/agent.md"
+    },
+    {
+     "name": "unit-testing-specialist",
+     "agent_md_path": "agents/unit-testing-specialist/agent.md",
+     "agent_md_abs_path": "C:/Users/techd/Documents/workspace-spring-tool-suite-4-4.27.0-new/claude-global-library/agents/unit-testing-specialist/agent.md"
+    }
+   ],
+   "skills": [
+    "ast-call-graph-engineering",
+    "codebase-archaeology",
+    "dead-code-detection",
+    "agent-regression-harness-core",
+    "deterministic-replay-trace-core",
+    "unit-testing-core",
+    "mutation-testing-core"
+   ],
+   "match_confidence": "HIGH",
+   "justification": "The parser half (discovery caps at call_graph_builder_legacy.py:64 and graph_model.py:43) is ast-graph-engineer's core domain. The strengthened AC is test engineering as much as parser work, so it needs BOTH supporting agents: harness-evaluation-engineer for the probe harness and module-scoped log capture, unit-testing-specialist for the independent enumeration oracle and the negative test that proves the check can fail. SIZE FLAG: the 5-point estimate does not hold with the runtime-proof AC."
+  },
+  {
+   "key": "V2-010",
+   "issue_number": 266,
+   "batch": "B",
+   "gate": "D4",
+   "title": "PRD FR-9b / SRS FR-38: fix the call-graph RESOLVER ambiguous bare-name bind",
+   "primary_agent": "ast-graph-engineer",
+   "primary_agent_md_path": "agents/ast-graph-engineer/agent.md",
+   "primary_agent_md_abs_path": "C:/Users/techd/Documents/workspace-spring-tool-suite-4-4.27.0-new/claude-global-library/agents/ast-graph-engineer/agent.md",
+   "supporting_agents": [
+    {
+     "name": "impact-analysis-agent",
+     "agent_md_path": "agents/impact-analysis-agent/agent.md",
+     "agent_md_abs_path": "C:/Users/techd/Documents/workspace-spring-tool-suite-4-4.27.0-new/claude-global-library/agents/impact-analysis-agent/agent.md"
+    }
+   ],
+   "skills": [
+    "ast-call-graph-engineering",
+    "codebase-archaeology",
+    "change-impact-analysis"
+   ],
+   "match_confidence": "HIGH",
+   "justification": "graph_model.py:265 returning candidates[0] for an ambiguous bare name is exactly call-graph edge-resolution precision (the CHA -> RTA refinement axis). impact-analysis-agent supports because the four fan-in consumers being corrected are danger_zones / hot_nodes blast-radius consumers."
+  },
+  {
+   "key": "V2-011",
+   "issue_number": 267,
+   "batch": "C",
+   "gate": "D4",
+   "title": "PRD FR-10 / SRS FR-22: KG-driven agent and skill selection, zero hardcoded lists",
+   "primary_agent": "harness-engineering-architect",
+   "primary_agent_md_path": "agents/harness-engineering-architect/agent.md",
+   "primary_agent_md_abs_path": "C:/Users/techd/Documents/workspace-spring-tool-suite-4-4.27.0-new/claude-global-library/agents/harness-engineering-architect/agent.md",
+   "supporting_agents": [
+    {
+     "name": "codebase-kg-engineer",
+     "agent_md_path": "agents/codebase-kg-engineer/agent.md",
+     "agent_md_abs_path": "C:/Users/techd/Documents/workspace-spring-tool-suite-4-4.27.0-new/claude-global-library/agents/codebase-kg-engineer/agent.md"
+    },
+    {
+     "name": "python-backend-engineer",
+     "agent_md_path": "agents/python-backend-engineer/agent.md",
+     "agent_md_abs_path": "C:/Users/techd/Documents/workspace-spring-tool-suite-4-4.27.0-new/claude-global-library/agents/python-backend-engineer/agent.md"
+    }
+   ],
+   "skills": [
+    "agent-routing-dispatch-policy-core",
+    "tool-call-mediation-core",
+    "codebase-knowledge-graph",
+    "ast-call-graph-engineering",
+    "python-core"
+   ],
+   "match_confidence": "HIGH",
+   "justification": "A selector that ranks agents from a knowledge graph with zero hardcoded name literals is agent-routing-dispatch-policy work. codebase-kg-engineer supports on typed-graph edge-path traversal and on verifying edge paths against ast_call_graph.json or a rebuilt FR-9a-fixed graph; python-backend-engineer supplies the implementation in this Python codebase."
+  },
+  {
+   "key": "V2-012",
+   "issue_number": 268,
+   "batch": "C",
+   "gate": "D4",
+   "title": "PRD FR-11 / SRS FR-23: emit selection explainability, five fields per selected agent",
+   "primary_agent": "graph-orchestration-runtime-engineer",
+   "primary_agent_md_path": "agents/graph-orchestration-runtime-engineer/agent.md",
+   "primary_agent_md_abs_path": "C:/Users/techd/Documents/workspace-spring-tool-suite-4-4.27.0-new/claude-global-library/agents/graph-orchestration-runtime-engineer/agent.md",
+   "supporting_agents": [
+    {
+     "name": "harness-engineering-architect",
+     "agent_md_path": "agents/harness-engineering-architect/agent.md",
+     "agent_md_abs_path": "C:/Users/techd/Documents/workspace-spring-tool-suite-4-4.27.0-new/claude-global-library/agents/harness-engineering-architect/agent.md"
+    }
+   ],
+   "skills": [
+    "graph-observability-error-handling-core",
+    "agent-routing-dispatch-policy-core"
+   ],
+   "match_confidence": "MEDIUM",
+   "justification": "Five auditable fields emitted per selected agent during a full LangGraph pipeline run is graph-runtime observability. harness-engineering-architect supports on what a selection record must contain. Confidence is MEDIUM because no agent owns decision-provenance schema design as a named capability."
+  },
+  {
+   "key": "V2-013",
+   "issue_number": 269,
+   "batch": "C",
+   "gate": "D4",
+   "title": "PRD FR-12 / SRS FR-24: explicit no-match and low-confidence fallback path",
+   "primary_agent": "harness-engineering-architect",
+   "primary_agent_md_path": "agents/harness-engineering-architect/agent.md",
+   "primary_agent_md_abs_path": "C:/Users/techd/Documents/workspace-spring-tool-suite-4-4.27.0-new/claude-global-library/agents/harness-engineering-architect/agent.md",
+   "supporting_agents": [],
+   "skills": [
+    "agent-routing-dispatch-policy-core",
+    "stop-condition-budget-control-core"
+   ],
+   "match_confidence": "HIGH",
+   "justification": "Defining the no-match / below-threshold outcome so a silent default pick is impossible is dispatch-policy design; the threshold and the explicit stop outcome are both in this agent's mandatory skill set."
+  },
+  {
+   "key": "V2-014",
+   "issue_number": 270,
+   "batch": "C",
+   "gate": "D4",
+   "title": "PRD FR-13 / SRS FR-25: conform to the model fallback protocol",
+   "primary_agent": "multi-model-router-architect",
+   "primary_agent_md_path": "agents/multi-model-router-architect/agent.md",
+   "primary_agent_md_abs_path": "C:/Users/techd/Documents/workspace-spring-tool-suite-4-4.27.0-new/claude-global-library/agents/multi-model-router-architect/agent.md",
+   "supporting_agents": [
+    {
+     "name": "harness-engineering-architect",
+     "agent_md_path": "agents/harness-engineering-architect/agent.md",
+     "agent_md_abs_path": "C:/Users/techd/Documents/workspace-spring-tool-suite-4-4.27.0-new/claude-global-library/agents/harness-engineering-architect/agent.md"
+    }
+   ],
+   "skills": [
+    "multi-model-routing-core",
+    "model-capability-profiling-core",
+    "retry-backoff-circuit-breaker-core"
+   ],
+   "match_confidence": "HIGH",
+   "justification": "haiku -> sonnet -> opus -> escalate is a cascade router topology with confidence gates, which is this agent's stated design surface. harness-engineering-architect supports on the rate-limit retry/escalation mechanics."
+  },
+  {
+   "key": "V2-015",
+   "issue_number": 271,
+   "batch": "D",
+   "gate": "D5",
+   "title": "PRD FR-14 / SRS FR-26: build the installable plugin manifest, zero hooks, zero .mcp.json",
+   "primary_agent": "claude-code-plugin-engineer",
+   "primary_agent_md_path": "agents/claude-code-plugin-engineer/agent.md",
+   "primary_agent_md_abs_path": "C:/Users/techd/Documents/workspace-spring-tool-suite-4-4.27.0-new/claude-global-library/agents/claude-code-plugin-engineer/agent.md",
+   "supporting_agents": [
+    {
+     "name": "architecture-conformance-auditor",
+     "agent_md_path": "agents/architecture-conformance-auditor/agent.md",
+     "agent_md_abs_path": "C:/Users/techd/Documents/workspace-spring-tool-suite-4-4.27.0-new/claude-global-library/agents/architecture-conformance-auditor/agent.md"
+    }
+   ],
+   "skills": [
+    "claude-code-plugin-packaging-core",
+    "architecture-fitness-function-core",
+    "github-actions-ci",
+    "system-design"
+   ],
+   "match_confidence": "HIGH",
+   "justification": "GAP-1 CLOSED 2026-08-02. claude-code-plugin-packaging-core section 1 supplies the .claude-plugin/plugin.json location, the closed eight-field schema (name / version / description / author) and the fixed-name root-level discovery scan, which is the manifest contract the AC requires; section 3 and M3 supply the hook-merge monoid and the proof that per-hook disable is structurally impossible, which is exactly the fact that forced ADR-010's zero-bundled-hooks rule. The agent encodes both as Operating Rules 1, 2 and 5. architecture-conformance-auditor is retained unchanged for the CI gate half the AC names by capability. Residual prompt input: the CONFIRMED-list from orchestration_prompt.md section 1.4 and the measured 2-spawn figure are project artefacts, not domain facts. The eager-spawn rationale for zero .mcp.json lives in mcp-server-engineering-core section 3 / M6, not in the plugin skill.",
+   "revised": "2026-08-02"
+  },
+  {
+   "key": "V2-016",
+   "issue_number": 272,
+   "batch": "D",
+   "gate": "D5",
+   "title": "SRS FR-37 / ADR-019: build register-mcp and unregister-mcp",
+   "primary_agent": "mcp-server-engineer",
+   "primary_agent_md_path": "agents/mcp-server-engineer/agent.md",
+   "primary_agent_md_abs_path": "C:/Users/techd/Documents/workspace-spring-tool-suite-4-4.27.0-new/claude-global-library/agents/mcp-server-engineer/agent.md",
+   "supporting_agents": [],
+   "skills": [
+    "mcp-server-engineering-core",
+    "python-system-scripting",
+    "error-handling-patterns",
+    "logging-patterns"
+   ],
+   "match_confidence": "MEDIUM",
+   "justification": "GAP-2 PARTIALLY CLOSED 2026-08-02. mcp-server-engineering-core section 3 supplies the user-scope registration surface by name (the mcpServers block inside ~/.claude/settings.json) and states that registration is a pure configuration mutation that spawns nothing, with unregistration as its exact mirror -- the round trip the AC requires. Section 4 supplies merge-against-fresh-read by that name, correctly labels it a probabilistic narrowing rather than a correctness guarantee, and warns that atomic rename-into-place is NOT a substitute for lost-update protection; the agent encodes both as Operating Rules 7 and 8 and Core Responsibility 6. Held at MEDIUM, not raised to HIGH, for two named reasons: (1) the skill has zero coverage of mcp-base, AtomicJsonStore or the vendored-by-copy propagation hazard (grep-verified: zero hits across all seven delivered files), so the agent will author a 22nd write-safety helper instead of reusing mcp_base/persistence.py:26 unless told; (2) the ADR-020 Path C verification sub-task is a one-shot measurement with no library owner at all. Supply both as prompt notes.",
+   "revised": "2026-08-02"
+  },
+  {
+   "key": "V2-017",
+   "issue_number": 273,
+   "batch": "D",
+   "gate": "D5",
+   "title": "SRS NFR-12 / ADR-020: PREVENT and DETECT layers on the push gate",
+   "primary_agent": "mcp-server-engineer",
+   "primary_agent_md_path": "agents/mcp-server-engineer/agent.md",
+   "primary_agent_md_abs_path": "C:/Users/techd/Documents/workspace-spring-tool-suite-4-4.27.0-new/claude-global-library/agents/mcp-server-engineer/agent.md",
+   "supporting_agents": [
+    {
+     "name": "site-reliability-engineer",
+     "agent_md_path": "agents/site-reliability-engineer/agent.md",
+     "agent_md_abs_path": "C:/Users/techd/Documents/workspace-spring-tool-suite-4-4.27.0-new/claude-global-library/agents/site-reliability-engineer/agent.md"
+    }
+   ],
+   "skills": [
+    "mcp-server-engineering-core",
+    "python-system-scripting",
+    "logging-patterns",
+    "observability-engineering-core"
+   ],
+   "match_confidence": "HIGH",
+   "justification": "GAP-2 CLOSED for this row 2026-08-02. Layer 1 (unregister-mcp refuses by default and names the consequence) is the unregistration write path, which is mcp-server-engineer Core Responsibility 6 verbatim. Layer 2's 'cheap startup precondition without spawning a process' is directly supported by mcp-server-engineering-core section 3's statement that registration state is pure configuration and that nothing spawns until a session actually needs the server -- so the precondition is a config read, not a probe. site-reliability-engineer is retained for the detective-control and one-unmissable-line signal design. automation-engineer was dropped as primary because the registration-CLI write path it was standing in for is now owned by name.",
+   "revised": "2026-08-02"
+  },
+  {
+   "key": "V2-018",
+   "issue_number": 274,
+   "batch": "E",
+   "gate": "D5",
+   "title": "PRD FR-15 / SRS FR-28: AST-classify every home-directory occurrence, then remediate the CODE ones",
+   "primary_agent": "static-analysis-engineer",
+   "primary_agent_md_path": "agents/static-analysis-engineer/agent.md",
+   "primary_agent_md_abs_path": "C:/Users/techd/Documents/workspace-spring-tool-suite-4-4.27.0-new/claude-global-library/agents/static-analysis-engineer/agent.md",
+   "supporting_agents": [
+    {
+     "name": "python-backend-engineer",
+     "agent_md_path": "agents/python-backend-engineer/agent.md",
+     "agent_md_abs_path": "C:/Users/techd/Documents/workspace-spring-tool-suite-4-4.27.0-new/claude-global-library/agents/python-backend-engineer/agent.md"
+    }
+   ],
+   "skills": [
+    "static-code-analysis-engine-core",
+    "linting-style-governance-core",
+    "python-core"
+   ],
+   "match_confidence": "HIGH",
+   "justification": "An AST rule engine that partitions occurrences by enclosing node type (ast.arguments.defaults, ast.Call keyword, assignment RHS, docstring position, tokenize.COMMENT) is exactly static-code-analysis-engine-core, and the exemption of src/utils/path_resolver.py is suppression/exemption governance. python-backend-engineer supports on the remediation edits. Task 2 cannot be sized until task 1 runs."
+  },
+  {
+   "key": "V2-019",
+   "issue_number": 275,
+   "batch": "E",
+   "gate": "D5",
+   "title": "PRD FR-17 / SRS FR-30: pass encoding= at every text-mode open()",
+   "primary_agent": "static-analysis-engineer",
+   "primary_agent_md_path": "agents/static-analysis-engineer/agent.md",
+   "primary_agent_md_abs_path": "C:/Users/techd/Documents/workspace-spring-tool-suite-4-4.27.0-new/claude-global-library/agents/static-analysis-engineer/agent.md",
+   "supporting_agents": [],
+   "skills": [
+    "static-code-analysis-engine-core",
+    "linting-style-governance-core"
+   ],
+   "match_confidence": "HIGH",
+   "justification": "A detection rule that must catch the mode-less open(path) form and carry a binary/tarfile/urllib exemption list, applied over 19 sites, is a linter rule with a suppression budget. No second capability needed."
+  },
+  {
+   "key": "V2-020",
+   "issue_number": 276,
+   "batch": "E",
+   "gate": "D5",
+   "title": "PRD FR-16 / SRS FR-29: build-time library snapshot script",
+   "primary_agent": "release-engineering-specialist",
+   "primary_agent_md_path": "agents/release-engineering-specialist/agent.md",
+   "primary_agent_md_abs_path": "C:/Users/techd/Documents/workspace-spring-tool-suite-4-4.27.0-new/claude-global-library/agents/release-engineering-specialist/agent.md",
+   "supporting_agents": [
+    {
+     "name": "automation-engineer",
+     "agent_md_path": "agents/automation-engineer/agent.md",
+     "agent_md_abs_path": "C:/Users/techd/Documents/workspace-spring-tool-suite-4-4.27.0-new/claude-global-library/agents/automation-engineer/agent.md"
+    },
+    {
+     "name": "devsecops-engineer",
+     "agent_md_path": "agents/devsecops-engineer/agent.md",
+     "agent_md_abs_path": "C:/Users/techd/Documents/workspace-spring-tool-suite-4-4.27.0-new/claude-global-library/agents/devsecops-engineer/agent.md"
+    },
+    {
+     "name": "claude-code-plugin-engineer",
+     "agent_md_path": "agents/claude-code-plugin-engineer/agent.md",
+     "agent_md_abs_path": "C:/Users/techd/Documents/workspace-spring-tool-suite-4-4.27.0-new/claude-global-library/agents/claude-code-plugin-engineer/agent.md"
+    }
+   ],
+   "skills": [
+    "release-versioning-management-core",
+    "github-actions-ci",
+    "python-system-scripting",
+    "devsecops-core",
+    "claude-code-plugin-packaging-core"
+   ],
+   "match_confidence": "MEDIUM",
+   "justification": "Agent added 2026-08-02, confidence deliberately UNCHANGED. claude-code-plugin-packaging-core section 4 / M6 supplies the one thing this row was missing: the snapshot is bundled inside the plugin and must be located through ${CLAUDE_PLUGIN_ROOT}, never a CWD-relative path -- M6's correct-by-construction vs correct-by-coincidence proof is exactly the failure mode where a snapshot read passes every author-local test and breaks for every installed user. This is NOT a confidence lift, because the stated reason this row was MEDIUM was the three-way capability split (release pipeline / snapshot script / ADV-006 secrets scan), which is unchanged and is now four-way. If the dispatcher caps supporting agents at two, drop devsecops-engineer first -- ADV-006 is a single secrets_check.py invocation.",
+   "revised": "2026-08-02"
+  },
+  {
+   "key": "V2-021",
+   "issue_number": 277,
+   "batch": "E",
+   "gate": "D5",
+   "title": "PRD FR-24 / SRS FR-36: publish the uninstall-residue runbook",
+   "primary_agent": "technical-writer-agent",
+   "primary_agent_md_path": "agents/technical-writer-agent/agent.md",
+   "primary_agent_md_abs_path": "C:/Users/techd/Documents/workspace-spring-tool-suite-4-4.27.0-new/claude-global-library/agents/technical-writer-agent/agent.md",
+   "supporting_agents": [
+    {
+     "name": "claude-code-plugin-engineer",
+     "agent_md_path": "agents/claude-code-plugin-engineer/agent.md",
+     "agent_md_abs_path": "C:/Users/techd/Documents/workspace-spring-tool-suite-4-4.27.0-new/claude-global-library/agents/claude-code-plugin-engineer/agent.md"
+    }
+   ],
+   "skills": [
+    "technical-writing-core",
+    "procedural-documentation-core",
+    "claude-code-plugin-packaging-core"
+   ],
+   "match_confidence": "HIGH",
+   "justification": "GAP-3 CLOSED 2026-08-02. The precise reason this row was LOW -- that the library's only runbook skill fires from incident telemetry after a production incident, the wrong trigger for a product uninstall procedure -- is answered head-on by technical-writer-agent's own 'Distinct from postmortem-facilitator-agent' section: 'use this agent when the starting point is a known process that needs to be written down correctly; hand off to postmortem-facilitator-agent when the starting point is a corpus of past incidents that needs to be mined into a decision tree.' V2-021 is the former. procedural-documentation-core section 1 supplies the six-part runbook anatomy (purpose / preconditions / numbered atomic steps / verification points / rollback / escalation) and section 3 grounds each verification point as a literal Hoare postcondition check, which is what 'manual removal steps for each measured path' requires. claude-code-plugin-engineer supports because the residue list is a plugin-lifecycle fact set: packaging-core section 2 covers the orphaned-version cache under ~/.claude/plugins/ and its 7-day retention, and M4 proves why enabledPlugins / extraKnownMarketplaces residue is not cleanly attributable.",
+   "revised": "2026-08-02"
+  },
+  {
+   "key": "V2-022",
+   "issue_number": 278,
+   "batch": "E",
+   "gate": "D5",
+   "title": "PRD FR-18 / SRS FR-31: zero plugin-attributable functional residue after uninstall",
+   "primary_agent": "claude-code-plugin-engineer",
+   "primary_agent_md_path": "agents/claude-code-plugin-engineer/agent.md",
+   "primary_agent_md_abs_path": "C:/Users/techd/Documents/workspace-spring-tool-suite-4-4.27.0-new/claude-global-library/agents/claude-code-plugin-engineer/agent.md",
+   "supporting_agents": [
+    {
+     "name": "integration-testing-engineer",
+     "agent_md_path": "agents/integration-testing-engineer/agent.md",
+     "agent_md_abs_path": "C:/Users/techd/Documents/workspace-spring-tool-suite-4-4.27.0-new/claude-global-library/agents/integration-testing-engineer/agent.md"
+    }
+   ],
+   "skills": [
+    "claude-code-plugin-packaging-core",
+    "integration-testing-core",
+    "contract-testing-core",
+    "python-system-scripting"
+   ],
+   "match_confidence": "HIGH",
+   "justification": "GAP-1 CLOSED for this row 2026-08-02. The AC's load-bearing word is 'attributable', and claude-code-plugin-packaging-core M4 is a formal derivation of exactly why a four-scope merged settings.json makes uninstall a non-total subtraction, with section 2 stating that bundled resources are install-time side effects into SHARED systems whose contributions co-mingle with other plugins' and the user's own config. That is the reasoning that narrowed FR-18 from whole-file equality to an attributable delta. The agent carries it as Core Responsibility 8, Operating Rule 6 and MUST NOT 3. integration-testing-engineer is retained for part (b), the delta assertion itself.",
+   "revised": "2026-08-02"
+  },
+  {
+   "key": "V2-023",
+   "issue_number": 279,
+   "batch": "E",
+   "gate": "D5",
+   "title": "PRD NFR-5 / SRS NFR-11: install, invoke, uninstall and register round-trip lifecycle tests",
+   "primary_agent": "acceptance-testing-bdd-engineer",
+   "primary_agent_md_path": "agents/acceptance-testing-bdd-engineer/agent.md",
+   "primary_agent_md_abs_path": "C:/Users/techd/Documents/workspace-spring-tool-suite-4-4.27.0-new/claude-global-library/agents/acceptance-testing-bdd-engineer/agent.md",
+   "supporting_agents": [
+    {
+     "name": "integration-testing-engineer",
+     "agent_md_path": "agents/integration-testing-engineer/agent.md",
+     "agent_md_abs_path": "C:/Users/techd/Documents/workspace-spring-tool-suite-4-4.27.0-new/claude-global-library/agents/integration-testing-engineer/agent.md"
+    }
+   ],
+   "skills": [
+    "bdd-acceptance-testing-core",
+    "acceptance-testing-bdd-core",
+    "test-automation-architecture-core",
+    "integration-testing-core"
+   ],
+   "match_confidence": "HIGH",
+   "justification": "Gherkin scenarios for install/invoke/uninstall are already written in prd-v2.md section 7, and this agent implements Behave step definitions from Gherkin specs. integration-testing-engineer supports on the register/unregister round trip that crosses a process boundary."
+  },
+  {
+   "key": "V2-024",
+   "issue_number": 280,
+   "batch": "F",
+   "gate": "D6",
+   "title": "PRD FR-23 / SRS FR-35: port push_gate.py to a named MCP tool BEFORE PreToolUse is deleted",
+   "primary_agent": "mcp-server-engineer",
+   "primary_agent_md_path": "agents/mcp-server-engineer/agent.md",
+   "primary_agent_md_abs_path": "C:/Users/techd/Documents/workspace-spring-tool-suite-4-4.27.0-new/claude-global-library/agents/mcp-server-engineer/agent.md",
+   "supporting_agents": [
+    {
+     "name": "python-backend-engineer",
+     "agent_md_path": "agents/python-backend-engineer/agent.md",
+     "agent_md_abs_path": "C:/Users/techd/Documents/workspace-spring-tool-suite-4-4.27.0-new/claude-global-library/agents/python-backend-engineer/agent.md"
+    },
+    {
+     "name": "integration-testing-engineer",
+     "agent_md_path": "agents/integration-testing-engineer/agent.md",
+     "agent_md_abs_path": "C:/Users/techd/Documents/workspace-spring-tool-suite-4-4.27.0-new/claude-global-library/agents/integration-testing-engineer/agent.md"
+    }
+   ],
+   "skills": [
+    "mcp-server-engineering-core",
+    "api-design-core",
+    "contract-testing-core",
+    "python-core"
+   ],
+   "match_confidence": "HIGH",
+   "justification": "GAP-2 CLOSED for this row 2026-08-02. 'Reachable as an MCP tool callable by name' is now a named capability: mcp-server-engineering-core section 1 gives the tools/list -> tools/call primitive triad and the capability declaration that makes a tool reachable, and section 2 gives the descriptor shape (name, description, inputSchema, optional outputSchema), the verb-object naming convention, and the rule that a description must state both mechanism and usage boundary. The agent's Core Responsibility 1 and 9 cover the schema and its contract tests. Its own Agent Priority explicitly excludes the business logic a tool merely wraps, which is why python-backend-engineer stays on the row for push_gate.py's own logic; integration-testing-engineer stays for the contract-equivalence AC (test_push_gate.py's assertions passing against the new path).",
+   "revised": "2026-08-02"
+  },
+  {
+   "key": "V2-025",
+   "issue_number": 281,
+   "batch": "F",
+   "gate": "D6",
+   "title": "ADR-017: build the assert_push_gate_reachable() CI assertion",
+   "primary_agent": "architecture-conformance-auditor",
+   "primary_agent_md_path": "agents/architecture-conformance-auditor/agent.md",
+   "primary_agent_md_abs_path": "C:/Users/techd/Documents/workspace-spring-tool-suite-4-4.27.0-new/claude-global-library/agents/architecture-conformance-auditor/agent.md",
+   "supporting_agents": [
+    {
+     "name": "unit-testing-specialist",
+     "agent_md_path": "agents/unit-testing-specialist/agent.md",
+     "agent_md_abs_path": "C:/Users/techd/Documents/workspace-spring-tool-suite-4-4.27.0-new/claude-global-library/agents/unit-testing-specialist/agent.md"
+    }
+   ],
+   "skills": [
+    "architecture-fitness-function-core",
+    "unit-testing-core",
+    "mutation-testing-core"
+   ],
+   "match_confidence": "HIGH",
+   "justification": "assert_push_gate_reachable() is an architecture fitness function run in CI that asserts on the replacement's reachability and must not assert on the old hook's presence. unit-testing-specialist supports on the mandatory companion negative test proving the assertion can fail."
+  },
+  {
+   "key": "V2-026",
+   "issue_number": 282,
+   "batch": "F",
+   "gate": "D6",
+   "title": "PRD FR-7 / SRS FR-17: six explicit slash-command entry points",
+   "primary_agent": "claude-code-plugin-engineer",
+   "primary_agent_md_path": "agents/claude-code-plugin-engineer/agent.md",
+   "primary_agent_md_abs_path": "C:/Users/techd/Documents/workspace-spring-tool-suite-4-4.27.0-new/claude-global-library/agents/claude-code-plugin-engineer/agent.md",
+   "supporting_agents": [
+    {
+     "name": "automation-engineer",
+     "agent_md_path": "agents/automation-engineer/agent.md",
+     "agent_md_abs_path": "C:/Users/techd/Documents/workspace-spring-tool-suite-4-4.27.0-new/claude-global-library/agents/automation-engineer/agent.md"
+    },
+    {
+     "name": "graph-orchestration-runtime-engineer",
+     "agent_md_path": "agents/graph-orchestration-runtime-engineer/agent.md",
+     "agent_md_abs_path": "C:/Users/techd/Documents/workspace-spring-tool-suite-4-4.27.0-new/claude-global-library/agents/graph-orchestration-runtime-engineer/agent.md"
+    }
+   ],
+   "skills": [
+    "claude-code-plugin-packaging-core",
+    "python-system-scripting",
+    "linux-shell-scripting",
+    "graph-orchestration-framework-comparison-core"
+   ],
+   "match_confidence": "HIGH",
+   "justification": "GAP-1 CLOSED for this row 2026-08-02. Six slash commands are only reachable if they are discovered: claude-code-plugin-packaging-core section 1 fixes commands/ at the plugin ROOT and names nesting it under .claude-plugin/ as the single most common authoring mistake, one that installs cleanly and silently exposes zero capabilities. Section 4 requires each command's script to resolve its own files through ${CLAUDE_PLUGIN_ROOT}. Those two facts were the missing half; the agent carries them as Operating Rules 1 and 4. automation-engineer retained for the Python behind the commands, graph-orchestration-runtime-engineer retained because the sixth command drives the full pipeline Steps 0-8.",
+   "revised": "2026-08-02"
+  },
+  {
+   "key": "V2-027",
+   "issue_number": 283,
+   "batch": "G",
+   "gate": "D6",
+   "title": "PRD FR-4 / SRS FR-13: delete the PreToolUse and PostToolUse hook registrations",
+   "primary_agent": "automation-engineer",
+   "primary_agent_md_path": "agents/automation-engineer/agent.md",
+   "primary_agent_md_abs_path": "C:/Users/techd/Documents/workspace-spring-tool-suite-4-4.27.0-new/claude-global-library/agents/automation-engineer/agent.md",
+   "supporting_agents": [
+    {
+     "name": "impact-analysis-agent",
+     "agent_md_path": "agents/impact-analysis-agent/agent.md",
+     "agent_md_abs_path": "C:/Users/techd/Documents/workspace-spring-tool-suite-4-4.27.0-new/claude-global-library/agents/impact-analysis-agent/agent.md"
+    }
+   ],
+   "skills": [
+    "python-system-scripting",
+    "error-handling-patterns",
+    "change-impact-analysis"
+   ],
+   "match_confidence": "MEDIUM",
+   "justification": "The action is a settings.json registration removal; the risk is what goes dark. impact-analysis-agent supports on confirming the measured 135-of-2218-node blast radius and zero surviving cross-boundary edges. Do not start until all five blockers have landed."
+  },
+  {
+   "key": "V2-028",
+   "issue_number": 284,
+   "batch": "G",
+   "gate": "D6",
+   "title": "PRD FR-5 / SRS FR-15: take UserPromptSubmit off the every-prompt hot path",
+   "primary_agent": "automation-engineer",
+   "primary_agent_md_path": "agents/automation-engineer/agent.md",
+   "primary_agent_md_abs_path": "C:/Users/techd/Documents/workspace-spring-tool-suite-4-4.27.0-new/claude-global-library/agents/automation-engineer/agent.md",
+   "supporting_agents": [],
+   "skills": [
+    "python-system-scripting",
+    "error-handling-patterns"
+   ],
+   "match_confidence": "MEDIUM",
+   "justification": "Removing UserPromptSubmit from the every-prompt path is the same registration-surface edit as V2-027, gated on V2-026 existing. No second capability needed."
+  },
+  {
+   "key": "V2-029",
+   "issue_number": 285,
+   "batch": "G",
+   "gate": "D6",
+   "title": "PRD FR-4a / SRS FR-14: record the blast-radius measurement and its three named consequences",
+   "primary_agent": "solution-architect",
+   "primary_agent_md_path": "agents/solution-architect/agent.md",
+   "primary_agent_md_abs_path": "C:/Users/techd/Documents/workspace-spring-tool-suite-4-4.27.0-new/claude-global-library/agents/solution-architect/agent.md",
+   "supporting_agents": [
+    {
+     "name": "impact-analysis-agent",
+     "agent_md_path": "agents/impact-analysis-agent/agent.md",
+     "agent_md_abs_path": "C:/Users/techd/Documents/workspace-spring-tool-suite-4-4.27.0-new/claude-global-library/agents/impact-analysis-agent/agent.md"
+    }
+   ],
+   "skills": [
+    "system-design",
+    "change-impact-analysis"
+   ],
+   "match_confidence": "HIGH",
+   "justification": "The deliverable is ADR-006 body content cross-referencing three named consequences, which is ADR authorship. impact-analysis-agent supports on the blast-radius measurement being recorded."
+  },
+  {
+   "key": "V2-030",
+   "issue_number": 286,
+   "batch": "G",
+   "gate": "D6",
+   "title": "PRD FR-22 / SRS FR-34: add the SRS Change Log row dated to the hook-deletion PR",
+   "primary_agent": "business-analyst-agent",
+   "primary_agent_md_path": "agents/business-analyst-agent/agent.md",
+   "primary_agent_md_abs_path": "C:/Users/techd/Documents/workspace-spring-tool-suite-4-4.27.0-new/claude-global-library/agents/business-analyst-agent/agent.md",
+   "supporting_agents": [],
+   "skills": [
+    "requirements-traceability-core",
+    "business-requirements-analysis-core"
+   ],
+   "match_confidence": "HIGH",
+   "justification": "An append-only SRS Change Log row referencing a superseding FR by number is requirements-document lifecycle work. The row must be dated to the hook-deletion PR, not back-dated."
+  },
+  {
+   "key": "V2-031",
+   "issue_number": 287,
+   "batch": "G",
+   "gate": "D6",
+   "title": "PRD NFR-3 / SRS NFR-9: name the CheckpointManager contract and fix 3 durability defects",
+   "primary_agent": "graph-orchestration-runtime-engineer",
+   "primary_agent_md_path": "agents/graph-orchestration-runtime-engineer/agent.md",
+   "primary_agent_md_abs_path": "C:/Users/techd/Documents/workspace-spring-tool-suite-4-4.27.0-new/claude-global-library/agents/graph-orchestration-runtime-engineer/agent.md",
+   "supporting_agents": [
+    {
+     "name": "distributed-consensus-engineer",
+     "agent_md_path": "agents/distributed-consensus-engineer/agent.md",
+     "agent_md_abs_path": "C:/Users/techd/Documents/workspace-spring-tool-suite-4-4.27.0-new/claude-global-library/agents/distributed-consensus-engineer/agent.md"
+    }
+   ],
+   "skills": [
+    "checkpointing-persistence-architecture-core",
+    "human-in-the-loop-interrupt-resume-core",
+    "graph-observability-error-handling-core",
+    "distributed-transactions-core"
+   ],
+   "match_confidence": "HIGH",
+   "justification": "Naming the CheckpointManager contract, refusing a best-effort checkpoint write, and making the progress surface a projection rather than a second writer is checkpointing-persistence architecture on a LangGraph runtime. distributed-consensus-engineer supports on defect 3, replay idempotency for side-effecting steps under a session-id-plus-step-number key."
+  },
+  {
+   "key": "V2-032",
+   "issue_number": 288,
+   "batch": "G",
+   "gate": "D6",
+   "title": "PRD FR-8 / SRS FR-18: keep Stop and Notification as user-level registrations, byte-identical across install/uninstall",
+   "primary_agent": "integration-testing-engineer",
+   "primary_agent_md_path": "agents/integration-testing-engineer/agent.md",
+   "primary_agent_md_abs_path": "C:/Users/techd/Documents/workspace-spring-tool-suite-4-4.27.0-new/claude-global-library/agents/integration-testing-engineer/agent.md",
+   "supporting_agents": [
+    {
+     "name": "claude-code-plugin-engineer",
+     "agent_md_path": "agents/claude-code-plugin-engineer/agent.md",
+     "agent_md_abs_path": "C:/Users/techd/Documents/workspace-spring-tool-suite-4-4.27.0-new/claude-global-library/agents/claude-code-plugin-engineer/agent.md"
+    }
+   ],
+   "skills": [
+    "integration-testing-core",
+    "contract-testing-core",
+    "claude-code-plugin-packaging-core"
+   ],
+   "match_confidence": "HIGH",
+   "justification": "GAP-1 CLOSED for this row 2026-08-02. The stated reason for MEDIUM was that no library agent owned plugin-lifecycle testing. The lifecycle half now has an owner: claude-code-plugin-packaging-core section 2's four-scope table places Stop and Notification in user scope (~/.claude/settings.json) as a layer the plugin's own install/uninstall must not write to, and M4 derives why a merged key cannot be cleanly subtracted -- which is precisely what 'byte-identical across install/uninstall' asserts. The agent carries it as Core Responsibility 6 and Operating Rule 8. integration-testing-engineer stays primary because the deliverable is a standing test.",
+   "revised": "2026-08-02"
+  },
+  {
+   "key": "V2-033",
+   "issue_number": 289,
+   "batch": "G",
+   "gate": "D6",
+   "title": "PRD FR-8a / SRS FR-19: instrument the Stop hook over 20 invocations and decide each capability",
+   "primary_agent": "harness-evaluation-engineer",
+   "primary_agent_md_path": "agents/harness-evaluation-engineer/agent.md",
+   "primary_agent_md_abs_path": "C:/Users/techd/Documents/workspace-spring-tool-suite-4-4.27.0-new/claude-global-library/agents/harness-evaluation-engineer/agent.md",
+   "supporting_agents": [
+    {
+     "name": "performance-testing-engineer",
+     "agent_md_path": "agents/performance-testing-engineer/agent.md",
+     "agent_md_abs_path": "C:/Users/techd/Documents/workspace-spring-tool-suite-4-4.27.0-new/claude-global-library/agents/performance-testing-engineer/agent.md"
+    }
+   ],
+   "skills": [
+    "agent-regression-harness-core",
+    "deterministic-replay-trace-core",
+    "eval-harness-design-core",
+    "performance-testing-core"
+   ],
+   "match_confidence": "HIGH",
+   "justification": "Instrumenting 20 consecutive REAL Stop-hook invocations for subprocess count, wall-clock duration and which .exists() guards fired is runtime trace capture over an agent harness, with a regression gate at most-2 spawns. A static re-derivation does not satisfy it. performance-testing-engineer supports on the per-invocation timing methodology."
+  },
+  {
+   "key": "V2-034",
+   "issue_number": 290,
+   "batch": "G",
+   "gate": "D6",
+   "title": "PRD FR-21 / SRS FR-33: fix or formally retire the 7 dead Stop-hook script references",
+   "primary_agent": "codebase-archaeology-agent",
+   "primary_agent_md_path": "agents/codebase-archaeology-agent/agent.md",
+   "primary_agent_md_abs_path": "C:/Users/techd/Documents/workspace-spring-tool-suite-4-4.27.0-new/claude-global-library/agents/codebase-archaeology-agent/agent.md",
+   "supporting_agents": [
+    {
+     "name": "business-analyst-agent",
+     "agent_md_path": "agents/business-analyst-agent/agent.md",
+     "agent_md_abs_path": "C:/Users/techd/Documents/workspace-spring-tool-suite-4-4.27.0-new/claude-global-library/agents/business-analyst-agent/agent.md"
+    }
+   ],
+   "skills": [
+    "dead-code-detection",
+    "codebase-archaeology",
+    "requirements-traceability-core"
+   ],
+   "match_confidence": "MEDIUM",
+   "justification": "Seven references in hooks/stop_notifier/ that point at files absent from disk are dangling references, which is dead-code-detection territory. business-analyst-agent supports because the retirement path requires each lost capability to appear with a disposition in the FR-12 / NFR-10 ledger."
+  },
+  {
+   "key": "V2-035",
+   "issue_number": 291,
+   "batch": "G",
+   "gate": "D6",
+   "title": "PRD NFR-2 / SRS NFR-8: replace fixed pipeline timeouts with 5 non-temporal control mechanisms",
+   "primary_agent": "harness-engineering-architect",
+   "primary_agent_md_path": "agents/harness-engineering-architect/agent.md",
+   "primary_agent_md_abs_path": "C:/Users/techd/Documents/workspace-spring-tool-suite-4-4.27.0-new/claude-global-library/agents/harness-engineering-architect/agent.md",
+   "supporting_agents": [
+    {
+     "name": "loop-safety-engineer",
+     "agent_md_path": "agents/loop-safety-engineer/agent.md",
+     "agent_md_abs_path": "C:/Users/techd/Documents/workspace-spring-tool-suite-4-4.27.0-new/claude-global-library/agents/loop-safety-engineer/agent.md"
+    }
+   ],
+   "skills": [
+    "retry-backoff-circuit-breaker-core",
+    "stop-condition-budget-control-core",
+    "agent-loop-lifecycle-core",
+    "tool-call-mediation-core",
+    "loop-termination-safety-core"
+   ],
+   "match_confidence": "HIGH",
+   "justification": "The best single match in the set: four of the five required ADR-016 mechanisms map directly onto this agent's mandatory skills (attempt-count bound and convergence signal to stop-condition-budget-control-core; circuit breaker with non-fixed reopen-wait and full-jitter retry to retry-backoff-circuit-breaker-core). loop-safety-engineer supports on the no-progress/termination proof. Lease renewal is the one mechanism neither agent owns by name."
+  },
+  {
+   "key": "V2-036",
+   "issue_number": 292,
+   "batch": "H",
+   "gate": "D7",
+   "title": "D7: migration guide, CHANGELOG, and VERSION bump to 2.0.0",
+   "primary_agent": "release-engineering-specialist",
+   "primary_agent_md_path": "agents/release-engineering-specialist/agent.md",
+   "primary_agent_md_abs_path": "C:/Users/techd/Documents/workspace-spring-tool-suite-4-4.27.0-new/claude-global-library/agents/release-engineering-specialist/agent.md",
+   "supporting_agents": [
+    {
+     "name": "technical-writer-agent",
+     "agent_md_path": "agents/technical-writer-agent/agent.md",
+     "agent_md_abs_path": "C:/Users/techd/Documents/workspace-spring-tool-suite-4-4.27.0-new/claude-global-library/agents/technical-writer-agent/agent.md"
+    }
+   ],
+   "skills": [
+    "release-versioning-management-core",
+    "github-actions-ci",
+    "procedural-documentation-core",
+    "technical-writing-core"
+   ],
+   "match_confidence": "HIGH",
+   "justification": "Supporting agent CORRECTED 2026-08-02, confidence unchanged at HIGH. postmortem-facilitator-agent was carrying the migration-guide half on the strength of the library's only runbook skill, and was the wrong trigger for the same reason it was wrong on V2-021. technical-writer-agent replaces it: procedural-documentation-core section 1 gives the migration-guide anatomy explicitly as a distinct four-part form (pre-migration checklist / phased steps / post-migration verification with a bake-time window / rollback-abort plan), and section 4 supplies the point-of-no-return discipline the 8-step runbook's 'Required before steps 3 and 5' safety property depends on. release-engineering-specialist keeps VERSION, CHANGELOG and the SemVer bump.",
+   "revised": "2026-08-02"
+  },
+  {
+   "key": "V2-037",
+   "issue_number": 293,
+   "batch": "H",
+   "gate": "D7",
+   "title": "Resolve the VERSION vs CLAUDE.md version contradiction",
+   "primary_agent": "release-engineering-specialist",
+   "primary_agent_md_path": "agents/release-engineering-specialist/agent.md",
+   "primary_agent_md_abs_path": "C:/Users/techd/Documents/workspace-spring-tool-suite-4-4.27.0-new/claude-global-library/agents/release-engineering-specialist/agent.md",
+   "supporting_agents": [],
+   "skills": [
+    "release-versioning-management-core"
+   ],
+   "match_confidence": "HIGH",
+   "justification": "VERSION is the single source of truth under rules/11 and CLAUDE.md:4 is the stale side. Version-source-of-truth reconciliation is release-versioning-management-core. Closes as absorbed if V2-036 lands first and fixes both."
+  }
+ ]
+}

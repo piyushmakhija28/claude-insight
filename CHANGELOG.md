@@ -7,6 +7,82 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [Unreleased]
+
+## [2.0.0] - 2026-08-04
+
+**The hooks are gone.** `PreToolUse`, `PostToolUse` and `UserPromptSubmit` are no longer
+registered in the user-scope `settings.json`, and pipeline execution now requires an explicit
+`--invoked-by=<command>` declaration naming one of six commands. A session in which no command
+is invoked runs no engine code and enforces nothing. Every existing v1.x installation is
+affected and none upgrades silently, which is what makes this MAJOR rather than MINOR.
+`docs/guides/migration-v1.21.5-to-v2.0.0.md` is the runbook.
+
+Reconstructed from the 67 commits in `873db04..00c31f8` (260 files, +76,680/-2,025). No
+`[Unreleased]` section accumulated while the sprint ran, so this entry was rebuilt from commit
+history rather than from in-flight notes; that gap is the reason the empty `[Unreleased]`
+heading above now exists.
+
+### BREAKING CHANGES
+
+- **The three enforcement hooks are deleted from the live user-scope settings** (2e371f6). `PreToolUse`, `PostToolUse` and `UserPromptSubmit` are gone; `Stop` and `Notification` are retained and were proved byte-identical by comparing canonical-JSON digests of the entries rather than their mere presence. Verified at this release: the `hooks` object holds exactly `Stop` and `Notification`. The deletion was ordered behind a precondition -- the replacement push gate was registered and proved reachable by completing a real `tools/call` first -- because deleting `PreToolUse` while the MCP-side gate existed only in the repository and not on the machine would have left no push gate at all, reopening the bypass that `1bb4303` closed. `UserPromptSubmit` was removed by owner ruling; neither issue's written criteria called for it.
+- **Pipeline execution is gated on an explicit declaration** (2e371f6, `scripts/pipeline_invocation.py`). `scripts/3-level-flow.py` refuses to run unless `--invoked-by=<command>` names one of `plan`, `implement`, `review`, `document`, `release` or `run-pipeline`. The declaration is a command-line argument and deliberately not an environment variable: the engine spawns `claude` CLI subprocesses and every one of them would inherit a variable, making an authorization nobody granted. There is no escape hatch, no filename exemption and no opt-out flag. An absent declaration exits 0 (nobody asked for a run); a declaration that was attempted with the wrong name exits 2 (a typo that would otherwise silently cost a whole run).
+- **Enforcement is no longer automatic** (ADR-006, 7173bda). Nothing is enforced on a session where no command is invoked. This is the intended trade-off of the hook-free design, not a regression, and it is the change a v1.x user will notice first.
+- **The plugin bundles zero hooks and zero MCP servers** (ADR-010, ADR-019; 902d1d0). Installing the plugin adds commands, agents and skills only. No MCP-backed capability exists until `register-mcp` is run, so an enabled-but-uninvoked plugin contributes no processes to a session.
+
+### Added
+
+- **Installable plugin** (902d1d0) -- `.claude-plugin/marketplace.json` catalog plus a `plugin/` tree carrying ten commands: the six pipeline entry points above, plus `about`, `doctor`, `register-mcp` and `unregister-mcp`.
+- **`register-mcp` and `unregister-mcp`** (d4a06dc) -- opt-in MCP registration written by merge-against-fresh-read, with `unregister-mcp` refusing by default when `PreToolUse` is absent, since that combination leaves a machine with no local push gate at all.
+- **ADR-020 three-layer push-gate control** (88bb5e9) -- prevention on the one path the plugin owns, detection on the manual-edit path that has no interception point, and a corrected refusal message that had been stating something false.
+- **The push gate as an MCP tool, and six explicit entry points** (0900fff) -- the FR-23 replacement for the deleted `PreToolUse` gate.
+- **`assert_push_gate_reachable` CI assertion** (f893fd2) -- the third and last R-1 precondition, in a workflow that declares no path filters so a docs-only commit cannot skip the sequencing gate it protects.
+- **Eight verification gates**, all wired into CI: `verify_policy_audit_matrix`, `verify_policy_orphan_dispositions`, `verify_policy_capability_dispositions`, `verify_open_encoding`, `verify_home_paths`, `verify_no_fixed_timeouts`, `verify_plugin_conformance` and `verify_push_gate_reachable` (5e287ff, 918561c, b9b8128, 6aab1fc, 7d324bb, 7c98147, 7edba10, 115d827, f893fd2). The plugin-conformance workflow runs both a negative control (it plants a hooks artefact and fails the build if the gate accepts it) and a specificity control (it fails if the gate rejects content violating nothing).
+- **NFR-11 install / invoke / uninstall lifecycle tests** (e9f7059) and a ledger-driven uninstall residue attribution (c0e1c0a), with the by-hand cleanup procedure in `docs/guides/uninstall-residue.md` (7c98147).
+- **Knowledge-graph-driven agent and skill selection** (92053ff, 90e6125) -- selection with no hardcoded names, plus a degraded-outcome path and FR-23 explainability.
+- **Model-fallback tier escalation** (32febbc) -- escalates on rate-limit errors only, never as a preference switch.
+- **Per-component process-count measurement harness** for NFR-1 (28cd530).
+- **The v2.0.0 document set** -- PRD v2 and product sequencing (7699e89), the Phase 1 HLD (bee6135), the Phase 2 delta HLD and consensus record (d5b575f), the review index (6141d93), the sprint plan and 37 issue drafts (7b29820), and `SRS.md` appended with FR-10..FR-38 and NFR-7..NFR-12 (6df37d9).
+
+### Changed
+
+- **The checkpoint durability contract is stated rather than assumed** (463451e), alongside a census of what the retained `Stop` hook actually does.
+- **Fixed pipeline timeouts replaced** (115d827). The v1.20 step renumbering had silently voided the per-step timeout table: it was keyed on the pre-v1.20 numbering, the live wrapped steps intersected it at exactly one entry, and a test was pinning the stale table and passing.
+- **Every home-directory occurrence classified, and the 33 code sites remediated** (7edba10), under a gate that now keeps them out.
+
+### Removed
+
+- **Generated UML and draw.io diagrams are no longer tracked** (ddd40ec) -- 13 `.drawio` files, per `rules/45` section 2, which requires both output directories to be gitignored.
+- **Seven dead `Stop`-hook references retired** (115d827).
+
+### Fixed
+
+- **CallGraph bound builtin-named calls to same-named project methods** (43083ee), and both binding truncation caps were lifted with runtime proof (135b4f1).
+- **The Level 0 auto-fix corrupted the source it was scanning** (557a025), and the preflight guard failed on its own test fixtures because it classified drive paths without regard to the enclosing node (7ee370a).
+- **Version strings had drifted from `VERSION` again** (1919bdb).
+- **Fifty rotted citations re-anchored** across the phase artifacts (0691ec1), plus a premise-staleness sweep of batches B-H (78f398f) -- a class of defect where a document's line references still resolve but no longer point at what they claim.
+
+### Known issues carried into this release
+
+- **`scripts/settings-config.json` still registers all three deleted hooks** (REVIEW-INDEX 46; re-verified at this release: its `hooks` object holds `PreToolUse`, `PostToolUse`, `UserPromptSubmit` and `Stop`). It is the template a machine's `settings.json` is bootstrapped from, so a fresh setup re-creates exactly what this release removed. No gate catches it. The migration guide names this explicitly.
+- **The durable checkpointer does not exist at runtime** (REVIEW-INDEX 42; re-verified: `langgraph.checkpoint.sqlite` and `langgraph_checkpoint_sqlite` both raise `ModuleNotFoundError`, while `requirements.txt:31` declares `langgraph-checkpoint-sqlite>=1.0.0`). Requesting a durable checkpointer silently returns an in-memory one.
+- **The retained `Stop` hook attempts a pull request on every response turn** (REVIEW-INDEX 40, escalated then partly de-escalated by REVIEW-INDEX 45). Two independent conditions currently stand between it and doing so. Restoring either missing import without first revisiting the trigger conditions would make it open real PRs unprompted, once per turn, on any feature branch.
+- **The three ADR-009b policy deletions did not ship.** `docs/phase-2-validation/hld_v2.md` section 10 names them as "the irreversible part of v2.0.0" (1,864 lines). Measured across `873db04..00c31f8`, the only deletions in this release are the 13 generated diagram files above; `policies/` and `docs/policies/` are byte-unchanged. The migration this release actually ships therefore has no irreversible step of that kind.
+## [1.21.5] - 2026-07-31
+
+### Changed
+
+- **`docs/` was 160 files in one flat directory, so nothing indicated what any document was.** Standards, pipeline policies, ADRs, runbooks, one-off audit reports, per-release design notes and the GitHub community files all sat side by side at `docs/*.md`. They are now segregated into nine folders -- `standards/` (52), `policies/` (46), `architecture/` (17), `reports/` (20), `guides/` (14), `releases/` (6), `contributing/` (5), plus the pre-existing `api/` and `phase-1-architecture/`. Classification used an objective signal wherever one existed rather than name-guessing: a file whose name also appears in `~/.claude/rules/` is a standard and one that appears in `~/.claude/policies/` is a policy, which covered 98 of the 160. Every move went through `git mv`, so history follows the files. `docs/README.md` is a new index naming what each folder holds and why.
+
+### Fixed
+
+- **`load_framework_standards()` and `load_language_standards()` would have stopped resolving any bundled standard.** Both build their path as `<repo>/docs/<filename>` at runtime, so the segregation above silently emptied the framework tier (flask, django, spring-boot) and the entire language tier (all six languages `detect_project_type()` recognises). Runtime-assembled paths are invisible to a grep for `docs/<file>.md`, which is how the first reference sweep missed them. Both now read `docs/standards/`, verified by loading all nine bundled documents.
+- **`_bump_version_and_changelog()` wrote to `docs/CHANGELOG-SYSTEM.md`, a file that has never existed in this repo.** The function exists to enforce the version-release-policy rule that every code push updates VERSION and CHANGELOG; instead it took the `else` branch on every run and logged "No CHANGELOG file found - skipping changelog update", so the enforcement had never once fired. It now targets the root `CHANGELOG.md` that rules/11 designates as canonical, emits a proper `## [X.Y.Z] - DATE` / `### Changed` section instead of a bare bullet, and stages the file it actually writes.
+- **Four intra-`docs/` cross-links were already broken before this change** and are repaired now that link paths were being touched anyway: `TESTING_GUIDE.md` and `TESTING_SUMMARY.md` both pointed at a `CODE_QUALITY_REPORT.md` that does not exist, `TESTING_SUMMARY.md` linked `docs/TESTING_GUIDE.md` from inside `docs/` (resolving to `docs/docs/`), and `noqa-audit-todo.md` linked `../CONTRIBUTING.md` at the root when that file lives under `docs/`.
+- **Nine GitHub-relative links (`../../issues`, `../../discussions`, `../../issues/212`-`217`) broke further when their files moved one level deeper.** They now use absolute repository URLs, which no directory depth can invalidate.
+- **`CLAUDE.md` documented a root `rules/` directory holding "46 coding standard definitions".** No such directory exists in this repository -- zero files tracked, nothing on disk. The rules live in `~/.claude/rules/`, and the repo's readable copies are what now sits in `docs/standards/`. The Directory Layout section describes the real `docs/` tree instead.
+- `README.md`'s 15 documentation links and `scripts/setup/setup_wizard.py`'s two references were repointed to the new locations. A full audit of every relative link in all 165 tracked Markdown files now reports zero unresolved targets.
+
 ## [1.21.4] - 2026-07-30
 
 ### Fixed

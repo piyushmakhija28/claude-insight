@@ -1,0 +1,72 @@
+{
+  "verdict": "JOINT APPROVED",
+  "open_items": [],
+  "open_item_count": 0,
+  "loop_iteration": 4,
+  "validator_execution": {
+    "instruction_followed": "Extracted _field_semantics_contract.validator_source verbatim from the LIVE, STORED JSON string (via json.load, exec'd as-extracted) and executed it against the actual current document -- not from any version quoted in the coordinator's prose or the changelog, per the explicit instruction that a check must be run from its stored form.",
+    "primary_run": {
+      "unclassified_fields": [],
+      "count": 0,
+      "status": "PASS"
+    },
+    "matches_file_claim": true,
+    "match_detail": "The file's own validator_result_now (as_of 2026-08-01, consensus iteration 3, count 0, status PASS, scope 'all 14 top-level sections') matches the independent re-run exactly.",
+    "scope_confirmed": "doc's own top-level keys, independently enumerated: ['meta', 'decision_2_3_bundled_mcp_vs_nfr1_now', 'ba_findings_now', 'pm_findings_now', 'critical_items_fixed_in_session_now', 'nfrs_disturbed_now', 'disputed_now', 'dispute_count_now', 'note_on_zero_disputes_record', 'addendum_findings_now', 'adv_011_promotion_now', 'ba_completed_work_noted_now', 'coverage_accounting_now', 'stale_review_artifact_class_now'] -- 14 sections, matching the claim exactly. (The validator's own scope line iterates every non-underscore-prefixed top-level key, so this list is definitional, not merely descriptive; independently confirmed by direct enumeration rather than trusting the label.)",
+    "negative_tests_performed": [
+      {"target": "top-level `meta` (previously never covered under the old 3-array scope)", "action": "injected `deliberately_unclassified_field`", "result": "CAUGHT: ['meta.deliberately_unclassified_field']", "significance": "Confirms the scope genuinely widened beyond the original 3 finding arrays, not merely relabelled them."},
+      {"target": "`coverage_accounting_now`", "action": "injected `deliberately_unclassified_field_2`", "result": "CAUGHT: ['coverage_accounting_now.deliberately_unclassified_field_2']"},
+      {"target": "`decision_2_3_bundled_mcp_vs_nfr1_now` -- the exact section that held OPEN-7 last iteration", "action": "injected `deliberately_unclassified_field_3`", "result": "CAUGHT: ['decision_2_3_bundled_mcp_vs_nfr1_now.deliberately_unclassified_field_3']", "significance": "This is the specific, load-bearing test: the section where a live defect was found two iterations ago is now independently confirmed, by injection rather than by reading the label, to be under mechanical coverage."},
+      {"target": "`stale_review_artifact_class_now`", "action": "injected `deliberately_unclassified_field_5`", "result": "CAUGHT: ['stale_review_artifact_class_now.deliberately_unclassified_field_5']"},
+      {"target": "clean document, re-run", "action": "no mutation", "result": "[] -- deterministic, no side effects between runs"}
+    ],
+    "conclusion": "The reported validator output is accurate and independently reproduced: scope=14, violations=0, and my own negative test (four separate injections, not one) each caught its target with a correctly-pathed violation message. The coordinator's specific claim that OPEN-7's former location is now covered is verified directly, not inferred from the file's self-description."
+  },
+  "verification_of_open_7_fix": {
+    "location": "sa_defence.json line 39 (decision_2_3_bundled_mcp_vs_nfr1_now's push-gate loss item, .detail_now)",
+    "text_confirmed": "'CORRECTED at consensus iteration 3: the earlier wording here said the CI-side assertion (ADR-017) is unaffected because it runs in CI, so the governance guarantee survives where it is load-bearing. That was over-certain and is retracted -- it is the same claim PM-CRITICAL-3 was corrected to withdraw. THE ADR-017 CI ASSERTION DOES NOT EXIST. No governance guarantee survives, because none is running. True state: PROTECTED TODAY via the live PreToolUse hook...; UNPROTECTED both preventively and detectively AFTER FR-4 unless BOTH register-mcp...AND the ADR-017 CI assertion...have landed. See PM-CRITICAL-3.true_state_now, which this entry must stay consistent with.'",
+    "severity_field_confirmed": "'real weakening, disclosed -- and currently unmitigated, since neither replacement is built'",
+    "assessment": "Exact match to the coordinator's description, verified by direct reading of the live file rather than accepted on summary. The fix retracts the over-certain claim explicitly (names what was wrong and why), restates the two-state truth precisely, and cross-references the entry it must stay consistent with -- closing the exact inconsistency I found rather than merely relocating it."
+  },
+  "mandatory_checks": [
+    {
+      "check": "1. ADR-019 and ADR-020 carry Chosen/Why/Rejected with specific technical reasons",
+      "passed": true,
+      "evidence": "Spot-confirmed unchanged: hld.md headings for ADR-019 (line 822) and ADR-020 (line 724) present. hld.md was not the file this round's edit touched."
+    },
+    {
+      "check": "2. Settled ADRs 006-010, 009a, 009b remain recorded, not reversed",
+      "passed": true,
+      "evidence": "Spot-confirmed unchanged: all SETTLED headings intact at known lines (213, 233, 248, 258)."
+    },
+    {
+      "check": "3. No fixed per-call wall-clock timeout introduced (NFR-2); ADR-016's socket-read exception bounded",
+      "passed": true,
+      "evidence": "Spot-confirmed unchanged: ADR-016's 'Chosen: five non-temporal control mechanisms' line (618) intact."
+    },
+    {
+      "check": "4. Every BA and PM finding has a recorded response; arithmetic independently verified",
+      "passed": true,
+      "evidence": "Spot-confirmed unchanged: the 10-entry FIND-01..FIND-10 ids_present list and the BA 10/10 / PM 9/9 reconciliation are still present in coverage_accounting_now, unaffected by the field-suffix rename (which changed field names, not finding counts or response presence)."
+    },
+    {
+      "check": "5. Internal consistency -- re-run in full",
+      "passed": true,
+      "evidence": "OPEN-7 confirmed fixed by direct reading (see verification_of_open_7_fix). The convention that closes this defect class was extended file-wide (3 arrays -> all 14 top-level sections) rather than patched a sixth/seventh time, and the extension is independently verified as real via four separate negative-test injections across previously- and newly-covered sections, not accepted on the file's self-report. No new instance of the defect class was found anywhere in sa_defence.json this pass. This closes the internal-consistency check for the first time across four Phase 2.5 iterations without a fresh finding."
+    },
+    {
+      "check": "6. The three proposed commands are framed as design, never as existing",
+      "passed": true,
+      "evidence": "Spot-confirmed unchanged (hld.md line 738: 'is designed to read and write'). No drift."
+    },
+    {
+      "check": "7. Path C's safety is labelled INFERRED with its inference chain and a verification task",
+      "passed": true,
+      "evidence": "Spot-confirmed intact: sa_defence.json line 287, 'INFERRED to need none -- NOT measured. Verification task attached.'"
+    }
+  ],
+  "residual_limitation_ruling": "Honestly stated and acceptable at this gate. The disclosed boundary -- 'the convention classifies FIELDS... It does NOT verify that a _now field's content is actually current -- only that its staleness is checkable rather than invisible' -- is precise about what kind of defect it closes and does not overreach into claiming more. This matches what was actually built: a naming schema plus a structural validator can guarantee every claim self-declares as frozen-or-live (making omission impossible, per the file's own citation of ADR-013's non-optional-argument and ADR-015's three-way-union reasoning -- the same 'inexpressible rather than discouraged' design principle applied to documentation), but no naming convention can verify that a live claim's CONTENT is true without a human or a separate fact-check rereading it against source. That second kind of error (a correctly-suffixed _now field that is nonetheless wrong) remains possible and is not claimed to be prevented. The distinction is exactly the one this whole four-iteration review has been drawing between arithmetic/structural consistency and judgment/content correctness (see the WSJF-inputs ruling from iteration 3, unchanged) -- and drawing it consistently, across a naming convention and a scoring convention, is itself evidence the project understands the boundary rather than asserting it once and moving on. Accepted without qualification.",
+  "wsjf_inputs_vs_arithmetic_position": "Unchanged from iteration 3, not re-derived this round: the arithmetic/judgment-inputs distinction remains accurately disclosed and not overclaimed anywhere found; still recorded as a documentation recommendation for a future revision, not an open item.",
+  "final_state_assessment": "Four consensus iterations, three rejections, each on a real and independently-verified defect: an unaudited stale ADR heading (iteration 1/2's OPEN-1), a guarantee documented as currently active when it did not exist (iteration 2/3's OPEN-6/PM-CRITICAL-3), and a live instance of that same over-certain claim sitting inside an honestly-disclosed exclusion zone (iteration 3's OPEN-7). Each fix responded to the specific defect found, and by this iteration the response pattern shifted from patching individual sentences to building and then genuinely extending a structural mechanism -- verified this round not by reading the mechanism's description but by independently extracting and executing it, then trying to break it four different ways and failing each time. No new defect was found in sa_defence.json, hld.md's spot-checked anchors, or the arithmetic/enumeration counts this round. JOINT APPROVED.",
+  "coverage_note": "This iteration was scoped by the coordinator to a single file (sa_defence.json) plus running the embedded validator from its stored form, and budget was spent accordingly: extracted and executed validator_source directly from the live JSON (not from prose), ran four independent negative tests (one more than the coordinator's own report described, specifically targeting the exact section that held OPEN-7), and read the full OPEN-7 fix location plus the _field_semantics_contract block in full. Spot-confirmed mandatory checks 1-4, 6, 7 against known-good anchor locations rather than re-deriving them; no drift found. Did not re-read ba_findings_now/pm_findings_now's full narrative content beyond confirming counts/IDs are unchanged, consistent with the coordinator's description that only the OPEN-7 location and the contract itself changed this round. product-sequencing-v2.md's SS 2c-8 remain not read line-by-line by me personally -- carried forward from iteration 2's disclosure, not silently dropped: that file is unchanged since that read, per the coordinator's note and no contradicting evidence found this round either. hld.md's Sections 1, 2, 5, 6, 7, 8/STRIDE, 11, 13, 13a remain not re-read fresh since iteration 1, consistent with no changelog entry pointing at them across any of the four iterations. These disclosures are carried forward as standing, not re-verified line by line this round, because JOINT APPROVED rests on the specific defects this review chain found and confirmed fixed, plus the mandatory checks explicitly re-verified each iteration -- not on a claim of exhaustive coverage of every artifact in scope."
+}

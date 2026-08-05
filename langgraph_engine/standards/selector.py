@@ -35,11 +35,13 @@ try:
     import sys as _sys
 
     _sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent / "src"))
-    from utils.path_resolver import get_claude_home, get_policies_dir
+    from utils.path_resolver import display_path, get_claude_home, get_policies_dir
 
     _STANDARD_SELECTOR_POLICIES_DIR = get_policies_dir()
     _STANDARD_SELECTOR_CLAUDE_HOME = get_claude_home()
 except ImportError:
+    from langgraph_engine.core.claude_paths import display_path
+
     _STANDARD_SELECTOR_POLICIES_DIR = Path.home() / ".claude" / "policies"
     _STANDARD_SELECTOR_CLAUDE_HOME = Path.home() / ".claude"
 
@@ -358,8 +360,9 @@ def load_team_standards(project_path: str) -> List[Dict[str, Any]]:
 def load_framework_standards(project_type: str, framework: str) -> List[Dict[str, Any]]:
     """Load built-in framework standards (bundled with Claude Workflow Engine).
 
-    Looks in docs/ for a framework-specific standards file, e.g.
-    docs/{project_type}-{framework}-standards.md or docs/{framework}-standards.md.
+    Looks in docs/standards/ for a framework-specific standards file, e.g.
+    docs/standards/{project_type}-{framework}-standards.md or
+    docs/standards/{framework}-standards.md.
     Bundled today: flask-standards.md, django-standards.md, and
     spring-boot-standards.md -- these three frameworks get this bundled doc
     at priority 2 rather than falling through to the LibrarySkillStandardsAdapter
@@ -378,7 +381,7 @@ def load_framework_standards(project_type: str, framework: str) -> List[Dict[str
     """
     built_in: List[Dict[str, Any]] = []
 
-    arch_dir = Path(__file__).parent.parent.parent / "docs"
+    arch_dir = Path(__file__).parent.parent.parent / "docs" / "standards"
     if not arch_dir.exists():
         return built_in
 
@@ -412,7 +415,7 @@ def load_language_standards(project_type: str) -> List[Dict[str, Any]]:
     """Load language-level standards (lowest priority).
 
     Looks up project_type in _LANGUAGE_STANDARDS_FILES and reads the
-    matching file from docs/ if one is bundled for that language.
+    matching file from docs/standards/ if one is bundled for that language.
 
     Args:
         project_type: Language string.
@@ -426,7 +429,7 @@ def load_language_standards(project_type: str) -> List[Dict[str, Any]]:
     if not filename:
         return lang
 
-    candidate = Path(__file__).parent.parent.parent / "docs" / filename
+    candidate = Path(__file__).parent.parent.parent / "docs" / "standards" / filename
     if candidate.exists():
         try:
             content = candidate.read_text(encoding="utf-8", errors="replace")
@@ -523,7 +526,10 @@ def select_standards(project_path: str, session_id: str = "default") -> Dict[str
             "source": "team_standards",
             "priority": PRIORITY_TEAM,
             "loaded": len(team_loaded),
-            "locations": ["~/.claude/policies/02-standards-system/**/*.md", "~/.claude/standards/*.md"],
+            "locations": [
+                display_path("policies", "02-standards-system") + "/**/*.md",
+                display_path("standards") + "/*.md",
+            ],
         }
     )
 
@@ -535,8 +541,8 @@ def select_standards(project_path: str, session_id: str = "default") -> Dict[str
             "priority": PRIORITY_FRAMEWORK,
             "loaded": len(framework_loaded),
             "locations": [
-                "docs/{}-{}-standards.md".format(project_type, framework),
-                "docs/{}-standards.md".format(framework),
+                "docs/standards/{}-{}-standards.md".format(project_type, framework),
+                "docs/standards/{}-standards.md".format(framework),
             ],
         }
     )

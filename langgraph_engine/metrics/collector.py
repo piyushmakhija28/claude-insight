@@ -21,6 +21,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set
 
+from langgraph_engine.core.claude_paths import get_claude_logs_dir
+
 try:
     from loguru import logger
 except ImportError:
@@ -47,15 +49,17 @@ STATUS_PARTIAL = "PARTIAL"
 class MetricsCollector:
     """Collect and persist execution metrics across all pipeline steps."""
 
-    def __init__(self, session_id: str, base_log_dir: str = "~/.claude/logs"):
+    def __init__(self, session_id: str, base_log_dir: Optional[str] = None):
         """Initialise metrics collector.
 
         Args:
             session_id:   Unique session identifier.
-            base_log_dir: Base directory for log files.
+            base_log_dir: Base directory for log files. Defaults to the Claude
+                logs root resolved by path_resolver.
         """
         self.session_id = session_id
-        session_dir = Path(base_log_dir).expanduser() / "sessions" / session_id
+        base = Path(base_log_dir).expanduser() if base_log_dir else get_claude_logs_dir()
+        session_dir = base / "sessions" / session_id
         session_dir.mkdir(parents=True, exist_ok=True)
 
         self.metrics_file = session_dir / "metrics.json"

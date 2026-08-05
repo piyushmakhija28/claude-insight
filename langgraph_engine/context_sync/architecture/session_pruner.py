@@ -28,6 +28,8 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+from langgraph_engine.core.claude_paths import display_path
+
 logger = logging.getLogger(__name__)
 
 # ============================================================================
@@ -371,7 +373,7 @@ def main() -> int:
         "sessions_dir",
         nargs="?",
         default=None,
-        help="Specific sessions directory to prune (default: ~/.claude/sessions/)",
+        help="Specific sessions directory to prune (default: {}/)".format(display_path("sessions")),
     )
     parser.add_argument(
         "--dry-run",

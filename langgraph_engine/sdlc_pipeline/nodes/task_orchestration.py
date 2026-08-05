@@ -32,13 +32,7 @@ try:
 except ImportError:
     FlowState = dict  # type: ignore[misc,assignment]
 
-
-def _env_int(name: str, default: int) -> int:
-    """Return int(os.environ[name]), or `default` when the var is unset or non-numeric."""
-    try:
-        return int(os.environ.get(name, str(default)))
-    except (TypeError, ValueError):
-        return default
+from ...liveness import env_optional_seconds as _env_optional_seconds
 
 
 def step1_task_analysis_node(state: FlowState) -> Dict[str, Any]:
@@ -125,7 +119,12 @@ def step1_task_analysis_node(state: FlowState) -> Dict[str, Any]:
         standards_selection_result = {}
 
     # --- PHASE 1: prompt_gen_expert_caller (claude CLI subprocess) ---
-    _pg_inner_timeout = _env_int("STEP1_PROMPT_GEN_TIMEOUT", 60)
+    # This line used to read STEP1_PROMPT_GEN_TIMEOUT (default 60) and apply it
+    # below as "+ 15", composing a 75-second wall-clock abort on the Step 1
+    # pipeline path against a claude CLI whose latency nothing here controls.
+    # NFR-2 / ADR-016 replace it: unbounded unless an operator configures a
+    # silence interval, which measures no-progress rather than duration.
+    _pg_silence = _env_optional_seconds("STEP1_PROMPT_GEN_SILENCE")
     _call_graph_json = _json.dumps(
         {
             "risk_level": call_graph_risk_level,
@@ -157,7 +156,7 @@ def step1_task_analysis_node(state: FlowState) -> Dict[str, Any]:
         "prompt_gen_expert_caller",
         prompt_gen_args,
         model_tier="fast",
-        timeout=_pg_inner_timeout + 15,
+        silence_interval=_pg_silence,
     )
 
     _pg_status = prompt_gen_raw.get("status", "")
@@ -214,7 +213,7 @@ def step1_task_analysis_node(state: FlowState) -> Dict[str, Any]:
                 "todo_decomposer",
                 _decomp_args,
                 model_tier="fast",
-                timeout=_env_int("STEP1_TODO_DECOMPOSER_TIMEOUT", 90) + 15,
+                silence_interval=_env_optional_seconds("STEP1_TODO_DECOMPOSER_SILENCE"),
             )
         except Exception as _decomp_exc:
             logger.warning("[v2] Step 0 todo_decomposer failed (fail-open): {}", _decomp_exc)

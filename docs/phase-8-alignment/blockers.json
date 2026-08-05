@@ -1,0 +1,310 @@
+{
+  "document": "Phase 8 pre-implementation alignment: blockers against batch A",
+  "generated": "2026-08-02",
+  "author": "architecture-conformance-auditor",
+  "scope": "Adversarial gate before code is written against batch A (8 open issues: 256, 258, 259, 260, 261, 262, 263, 264).",
+  "citation_policy": {
+    "revised": "2026-08-02",
+    "rule": "Address content by a STABLE ANCHOR -- a heading, an ADR number, a section number, a table-row prefix, a quoted sentence opening, or a constant/function name. Keep the line number only as a scanning hint. Where no stable anchor exists, say what the line points at, so a reader can find it by content when the number rots.",
+    "why": "Every document this file cites is growing because it is being corrected. MEASURED by wc -l: SRS.md 974 -> 1130 lines and hld_v2.md 1945 -> 2022 since the sprint issues were drafted. A line-keyed citation stops finding what it names the moment content is inserted above it. This is the same mechanism that hid the ADR-013 binding clause through three correction passes, and that produced finding S-03 across 7 issues in premise_scan_bh.json.",
+    "applied": "Every line citation in this file was re-opened on 2026-08-02 rather than offset-computed. Corrections are recorded per-entry in citation_note fields."
+  },
+  "evidence_labels": {
+    "MEASURED": "Checked against disk, git or the live GitHub API by this pass, now.",
+    "CITED": "Read from an artifact; not independently re-derived by this pass.",
+    "INFERRED": "Derived by reasoning over MEASURED or CITED inputs; the derivation is stated."
+  },
+  "verdict": {
+    "batch_a_can_start_today": ["V2-001 / #256", "V2-002 / #258", "V2-003 / #259"],
+    "batch_a_can_start_but_premise_is_false": ["V2-004 / #260"],
+    "batch_a_blocked_by_intra_batch_predecessor": ["V2-005 / #261", "V2-006 / #262", "V2-007 / #263", "V2-008 / #264"],
+    "note": "4 of 8 have an empty blocked_by. Of those 4, V2-004's stated starting condition is false on disk. So 3 of 8 can start today against a correct premise."
+  },
+  "blockers": [
+    {
+      "id": "B-01",
+      "severity": "BLOCKER",
+      "title": "V2-004's stated starting condition is false: the artifact it declares ABSENT exists on disk and is committed",
+      "issue_keys": ["V2-004"],
+      "issue_numbers": [260],
+      "also_affects": [261, 262, 263, 264],
+      "what_is_missing": "docs/reports/policy-implementation-audit-v2.md is asserted ABSENT in four artifacts. MEASURED: it exists, 507 lines, 28780 bytes, committed as bf92747 on 2026-08-01 at 17:23:00 +0530. The sprint artifacts asserting absence were committed as 7b29820 at 17:08:00 +0530, 15 minutes earlier. GitHub issue #260 was created at 2026-08-01T12:13:28Z (17:43:28 +0530), 20 minutes AFTER the file was committed, and carries the already-false premise into the live issue body.",
+      "propagation_sites": [
+        "docs/phase-6-sprint/github_issues.json -> V2-004.build_status ('verified ABSENT on disk 2026-08-01 by this pass')",
+        "docs/phase-6-sprint/sprint_plan.md batch A section ('does not exist')",
+        "docs/phase-6-sprint/sequencing_risks.md R-6 ('Verified independently by this pass, 2026-08-01: ABSENT')",
+        "SRS.md SS 3.1, the 'Build status' paragraph beginning 'Verified absent on disk on 2026-08-01:' (line 157) -- names the file among files verified absent",
+        "live GitHub issue #260 body"
+      ],
+      "defect_class": "backward propagation (correction record class #14): a fact that changed in one place, left standing in every artifact copied from it",
+      "what_unblocks_it": "Owner ruling on whether the committed 507-line audit is the D1 artifact. Then correct the build_status in github_issues.json, the batch A note in sprint_plan.md, R-6 in sequencing_risks.md, SRS.md:152-157, and post a correcting comment on #260 (the github-api MCP server exposes no issue-update tool, so a comment is the only available mechanism).",
+      "evidence": "MEASURED"
+    },
+    {
+      "id": "B-02",
+      "severity": "BLOCKER",
+      "title": "The audit file that exists satisfies none of V2-004's three acceptance criteria",
+      "issue_keys": ["V2-004", "V2-005"],
+      "issue_numbers": [260, 261],
+      "what_is_missing": "AC1 requires 'exactly 46 policy rows'. MEASURED: the file has 9 table blocks; the policy enumerations are four separate tables of 18 / 11 / 8 / 8 rows plus one STALE-TOPOLOGY policy named in prose, not one 46-row matrix. AC2 requires every row to carry a non-empty Evidence cell citing file:line or an explicit NONE. MEASURED: only the 18-row ENFORCED table has an 'Enforcement point' column; the PARTIAL (11), CONTRADICTED (8) and DOCUMENTED-ONLY (8) tables are 2-column and carry no evidence cell. AC3 requires the header to state the read pass covered the policy corpus line-by-line. MEASURED: the file's header states the opposite -- 'Scope of this pass: consolidation plus spot-verification, NOT re-analysis' -- and its section 8 states '41 of the 46 individual classifications were not re-verified'. Separately MEASURED: the string 'Post-plugin' occurs 0 times in the file, and no table exceeds 4 columns, so V2-005's 7-column requirement is also unmet.",
+      "risk_if_unaddressed": "Two failure modes, both live. (a) An implementer checks disk, sees the file, and closes #260 as already-done -- V2-005..V2-008 then build on an artifact that fails their own inputs. (b) An implementer regenerates the file from scratch and destroys committed work: section 3's retraction of the false 46/46 orphan figure, section 6's citation-defect record, and section 8's seven-item 'could NOT determine' list.",
+      "what_unblocks_it": "Rule the existing file an INPUT rather than the deliverable, and restate V2-004 as 'extend the committed audit to a 46-row 7-column matrix' with an explicit instruction not to regenerate. Preserve sections 3, 6 and 8 verbatim.",
+      "evidence": "MEASURED"
+    },
+    {
+      "id": "B-03",
+      "severity": "BLOCKER",
+      "title": "V2-004 AC3 names a directory that does not contain the 46-policy corpus AC1 requires",
+      "issue_keys": ["V2-004", "V2-005", "V2-006", "V2-007", "V2-008"],
+      "issue_numbers": [260, 261, 262, 263, 264],
+      "what_is_missing": "AC3 requires the header to attest that the read pass 'covered ~/.claude/policies/ line-by-line'. AC1 requires exactly 46 policy rows. MEASURED: ~/.claude/policies/ holds 44 .md files recursively across 5 subdirectories, of which 10 are README.md and 2 are non-policy summaries, leaving 32 policy documents. docs/policies/ holds 46 .md files flat. The two sets differ: 18 basenames in docs/policies/ are absent from ~/.claude/policies/, and 7 names exist live that are not in docs/policies/. The 46-policy corpus every count in the plan rests on is docs/policies/ and policy_enforcement_raw.json (MEASURED: 46 records), not the live tree AC3 names. A line-by-line read of ~/.claude/policies/ cannot produce 46 rows.",
+      "absent_from_live_tree": ["callgraph-analysis-policy.md", "documentation-update-policy.md", "encoding-validation-policy.md", "error-recovery-policy.md", "final-summary-policy.md", "hook-system-policy.md", "implementation-execution-policy.md", "intelligent-decision-engine-policy.md", "issue-closure-policy.md", "mcp-plugin-discovery-policy.md", "metrics-monitoring-policy.md", "pr-code-review-policy.md", "quality-gate-policy.md", "recovery-policy.md", "test-generation-policy.md", "tool-optimization-policy.md", "unicode-fix-policy.md", "windows-path-policy.md"],
+      "what_unblocks_it": "Decide which tree is the corpus of record and rewrite AC3 to name it. If docs/policies/ is authoritative, AC3's '~/.claude/policies/' is simply the wrong path and all five D1 issues inherit the error.",
+      "evidence": "MEASURED"
+    },
+    {
+      "id": "B-04",
+      "severity": "HIGH",
+      "title": "Only 4 of batch A's 8 issues have an empty blocked_by; the sprint plan's batch table does not show this",
+      "issue_keys": ["V2-005", "V2-006", "V2-007", "V2-008"],
+      "issue_numbers": [261, 262, 263, 264],
+      "what_is_missing": "MEASURED from github_issues.json: V2-005 blocked_by ['V2-004']; V2-006 ['V2-005']; V2-007 ['V2-005']; V2-008 ['V2-006','V2-007']. The D1 set is a serial chain V2-004 -> V2-005 -> {V2-006, V2-007} -> V2-008, four levels deep, carrying 18 of batch A's 23 points. sprint_plan.md states 'Everything here has zero blocking dependency on any other batch. Batch A is the only batch that can start today.' That sentence is literally accurate about OTHER batches, but the batch A table lists 8 issues with no blocked_by column, so a reader staffing batch A in parallel will find 4 of 8 immediately blocked.",
+      "what_unblocks_it": "Add a blocked_by column to the batch A table, or state the D1 chain depth explicitly. Staff batch A as 3 startable issues (5 points) plus one contested 8-point item, not 8 parallel issues.",
+      "evidence": "MEASURED"
+    },
+    {
+      "id": "B-05",
+      "severity": "HIGH",
+      "title": "V2-017 (ADR-020 PREVENT/DETECT layers) is absent from the blocked_by of both issues whose bodies depend on it",
+      "issue_keys": ["V2-017", "V2-026", "V2-027"],
+      "issue_numbers": [273, 282, 283],
+      "what_is_missing": "MEASURED from github_issues.json: V2-027 blocked_by = ['V2-016','V2-024','V2-025','V2-006','V2-031'] -- V2-017 is not in it. V2-026 blocked_by = ['V2-015'] -- V2-017 is not in it either, although V2-026's own body states 'Every command built here must carry the ADR-020 layer-2 start-up check delivered by V2-017'. V2-017 appears in exactly one blocked_by in the whole file: V2-036. Its ordering before V2-027 therefore rests only on batch letter D < G, and sprint_plan.md describes batches as 'a topological ordering, not a schedule' with intra-batch parallelisation permitted.",
+      "note": "The push-gate constraint as literally stated in the open-items list (BOTH register-mcp AND the ADR-017 CI assertion) IS correctly encoded: V2-016, V2-024 and V2-025 are all present in V2-027's blocked_by. R-1 in sequencing_risks.md names those same three and likewise omits V2-017, so prose and graph agree with each other -- and both omit it.",
+      "what_unblocks_it": "Add V2-017 to V2-026's and V2-027's blocked_by, and post the corresponding cross-reference comments on #282 and #283.",
+      "evidence": "MEASURED"
+    },
+    {
+      "id": "B-06",
+      "severity": "MEDIUM",
+      "title": "V2-008's '25 capabilities' disagrees with capability_loss.md's own enumeration of 27 table rows",
+      "issue_keys": ["V2-008"],
+      "issue_numbers": [264],
+      "what_is_missing": "MEASURED: capability_loss.md contains 3 tables with 16 + 9 + 2 = 27 data rows. V2-008 AC1 and SRS NFR-10 say 25. docs/REVIEW-INDEX.md section 5 describes the same file as '14 PreToolUse gates, 9 PostToolUse capabilities' = 23. The 25 figure RECONCILES as 14 + 9 + 2 only if rows 15 and 16 of the PreToolUse table are excluded -- 'Warm-daemon fast path' and 'PolicyRegistry', the two mechanism rows, the latter explicitly tagged 'FR-9 (mechanism)'. That exclusion rule is stated nowhere in the AC. V2-008 AC2 mandates 'A script cross-checks the 25 names against the matrix and fails if any is missing' -- a script parsing the tables gets 27 and fails on two rows that were never meant to be in scope.",
+      "what_unblocks_it": "State the exclusion rule in AC2, or change the count to 27 and give the 2 mechanism rows dispositions. Three different counts (23, 25, 27) for one file must collapse to one.",
+      "evidence": "MEASURED"
+    },
+    {
+      "id": "B-07",
+      "severity": "MEDIUM",
+      "title": "Corrections #23 and #24 are recorded but unowned: no issue exists, and all 5 publishing documents still carry the false claims",
+      "issue_keys": [],
+      "issue_numbers": [],
+      "what_is_missing": "MEASURED: 'CLAUDE.md:25' still reads '578 classes, 3,985 methods, 4 languages (Python/Java/TS/Kotlin)'; CLAUDE.md:190, :248, :250 repeat it; CHANGELOG.md:433; ADR-002-call-graph-intelligence.md:51, :72, :96; PIPELINE_ARCHITECTURE.md:137, :212. MEASURED: searching github_issues.json for '578', '3,985', '3985', '4 languages', 'Kotlin' and 'TypeScript' returns NO ISSUE for every term. V2-037 covers only the VERSION-vs-CLAUDE.md version string, not these. Per the correction record the true current figures are 480 classes / 3,506 methods, and zero Java/TypeScript/Kotlin source files have ever existed in this repo.",
+      "what_unblocks_it": "Either draft an issue for the 5-document correction or record an explicit owner decision to defer it. As it stands it is caught, documented and unassigned.",
+      "evidence": "MEASURED"
+    },
+    {
+      "id": "B-08",
+      "severity": "MEDIUM",
+      "title": "CLAUDE.md asserts docs/policies/ mirrors ~/.claude/policies/; measured false",
+      "issue_keys": [],
+      "issue_numbers": [],
+      "what_is_missing": "CLAUDE.md:151 reads 'policies/ (46) # one file per pipeline policy; mirrors ~/.claude/policies/ (that copy is what get_policies_dir() reads)'. MEASURED: 18 of the 46 are absent from ~/.claude/policies/, and 7 names exist there that are not in docs/policies/ -- three of which (adaptive-skill-registry, auto-plan-mode-suggestion-policy, auto-skill-agent-selection-policy) are the policies ADR-009b deletes permanently. If get_policies_dir() genuinely reads the live tree, every runtime policy count in the plan is measuring a different corpus from the one the audit enumerates.",
+      "what_unblocks_it": "Confirm which tree get_policies_dir() reads at runtime, then correct CLAUDE.md:151. This is the same question as B-03 and should be answered once.",
+      "evidence": "MEASURED"
+    },
+    {
+      "id": "B-09",
+      "severity": "MEDIUM",
+      "title": "SRS.md's risk table still directs an implementer at the dead truncation constant",
+      "issue_keys": ["V2-009"],
+      "issue_numbers": [265],
+      "what_is_missing": "In SRS.md section '## Risks & Mitigation', the row beginning '| Large codebase exceeds CallGraph limits |' (line 1122 as of 2026-08-02) reads '... MAX_FILES=300, MAX_FILE_SIZE_KB=100 in `parsers/config.py` |'. That is correction #22's dead constant, presented as the live mitigation, in the requirements document of record. SRS.md corrects the same error thoroughly under the '**FR-21:**' SHALL statement in SS 3.1 and under '### Revised Acceptance Criterion for FR-21', and explicitly DROPS it in the sentence beginning '`langgraph_engine/parsers/config.py:11` is DROPPED from the assertion set' (line 893) -- so the same file both corrects and repeats the defect. The binding caps are parsers/call_graph_builder_legacy.py:64 (MAX_FILES = 300) and parsers/graph_model.py:43 (DEFAULT_MAX_PATHS), both verified present on 2026-08-02.",
+      "adjacent_finding": "In the same '## Risks & Mitigation' table, the row beginning '| All LLM providers fail |' (line 1120) reads '4-provider fallback chain'. CLAUDE.md records the chain as 2 providers (claude_cli, anthropic) since v1.15.3, when Ollama, NPU, GPU, OpenAI and DeepSeek were removed. The SRS risk table appears to be pre-v2 content that was never revised when FR-10..FR-38 were appended.",
+      "what_unblocks_it": "Correct the CallGraph-limits row of '## Risks & Mitigation' to name the two binding sites, and re-check the whole table for other pre-v2 residue.",
+      "citation_note": "Addressed by section heading and table-row prefix rather than by line number. These two rows were at :1048 and :1046 when this file was written; SRS.md has since grown from 1056 to 1130 lines and they are now at :1122 and :1120. The anchors do not move.",
+      "evidence": "MEASURED"
+    },
+    {
+      "id": "B-11",
+      "severity": "HIGH",
+      "title": "issue_key_map.json still carries V2-009 at the pre-correction size, so the two machine-readable sources disagree by 3 points",
+      "issue_keys": ["V2-009"],
+      "issue_numbers": [265],
+      "what_is_missing": "MEASURED: issue_key_map.json holds V2-009 size=5, size_provenance='SOURCED'. github_issues.json holds size=8, size_provenance='RE_ESTIMATED'. Summing all 36 non-null sizes gives 108 in issue_key_map.json and 111 in github_issues.json. Comparing the two files key-by-key, V2-009 is the ONLY mismatch of 36 -- every other key agrees on both size and provenance. The RE_ESTIMATED provenance value does not exist anywhere in issue_key_map.json, so correcting the number alone would still leave 'SOURCED' wrong. The file was last written by commit 78fe384, which predates the re-point commit c4fd55d.",
+      "why_it_matters": "issue_key_map.json is the key-to-issue-number authority the routing layer consumes. Two machine-readable files disagreeing on a story point total is the same defect class the project has caught 13 times, in the one place a tool would read rather than a human.",
+      "what_unblocks_it": "Set V2-009 size=8 and provenance=RE_ESTIMATED in issue_key_map.json, and add RE_ESTIMATED to its provenance vocabulary.",
+      "evidence": "MEASURED"
+    },
+    {
+      "id": "B-12",
+      "severity": "HIGH",
+      "title": "V2-009's issue body and acceptance criterion assert a size the same object contradicts",
+      "issue_keys": ["V2-009"],
+      "issue_numbers": [265],
+      "what_is_missing": "MEASURED: github_issues.json V2-009 has size=8, label 'size:8'. Its body still reads 'SIZE FLAG: 5 points ... deliberately NOT re-pointed here -- that is product-manager-agent's call.' Its acceptance_criteria item 10 of 14 reads 'SIZING FLAGGED, NOT APPLIED: this issue's size 5 ... The size field is deliberately UNCHANGED here.' Both statements are false against the size field of the object that contains them. The re-point commit c4fd55d changed the size field and left the body and AC untouched, which its own commit message records as intentional.",
+      "why_it_matters": "This is the live GitHub issue body for #265. An implementer reading #265 is told the item is 5 points and was deliberately not re-pointed, while the label says size:8. There is no issue-update tool on the github-api MCP server, so the live body cannot be corrected in place.",
+      "what_unblocks_it": "Correct the body and AC item 10 in github_issues.json, and post a correcting comment on #265.",
+      "evidence": "MEASURED"
+    },
+    {
+      "id": "B-13",
+      "severity": "MEDIUM",
+      "title": "sprint_plan.md ASSUMPTION A3 states the pre-correction total and is contradicted by A5 directly beneath it",
+      "issue_keys": [],
+      "issue_numbers": [],
+      "what_is_missing": "MEASURED: A3 reads 'The 34 ASSUMED points ... are of the same currency as the 74 sourced points ... Treat the two totals separately.' 74 is the pre-re-point SOURCED figure and there are now three totals, not two. A5, the row immediately below, was added by the same correction and correctly reads 'the 69 SOURCED and the 34 ASSUMED ... Treat all three totals separately.' The same document states 69 at five other locations. Two adjacent assumption rows disagree.",
+      "what_unblocks_it": "Update A3 to 69 and to three totals.",
+      "evidence": "MEASURED"
+    },
+    {
+      "id": "B-14",
+      "severity": "MEDIUM",
+      "title": "sprint_plan.md's 'Still open' paragraph names three propagation targets that were all already corrected",
+      "issue_keys": ["V2-009"],
+      "issue_numbers": [265],
+      "what_is_missing": "sprint_plan.md reads 'Still open: the AC amendment did not propagate to prd-v2.md section 5, SRS.md:736, or the ADR-013 bodies at hld_v2.md:406, :436-443 and :1696-1700, which continue to carry the superseded four-site framing.' MEASURED: this paragraph was ADDED by commit c4fd55d (confirmed via git show; it is not present in 7b29820). At the moment it was written, prd-v2.md section 5 and SRS.md had already been corrected by 92a9a5d on 2026-08-01. hld_v2.md was corrected by 14f742a at 07:50:31, four minutes AFTER c4fd55d at 07:46:21. MEASURED: hld_v2.md:444-445 now reads '[CORRECTED Phase 5] 17 truncation sites exist; exactly TWO bind.' All three targets are now false.",
+      "defect_class": "A correction commit introducing a new stale claim about the state of the very propagation it was performing.",
+      "what_unblocks_it": "Delete or rewrite the paragraph. Its remaining true content is the SRS.md:740 row, not the three targets it names.",
+      "evidence": "MEASURED"
+    },
+    {
+      "id": "B-15",
+      "severity": "MEDIUM",
+      "title": "FR-9a's WSJF was never recomputed after the re-point; five sites still publish the size-5 figure",
+      "issue_keys": ["V2-009"],
+      "issue_numbers": [265],
+      "status_2026_08_02": "RESOLVED except for one site. MEASURED: sprint_plan.md now shows '~~4.60~~ **2.875, recomputed**' in its size ledger (line 113) and carries a before/after WSJF rank table (lines 287-292) recording FR-9a dropping from 10th to joint 13th/14th -- confirming the rank consequence this entry INFERRED. github_issues.json now holds wsjf_as_published 2.88 plus a wsjf_note. STILL OPEN: product-sequencing-v2.md:187 publishes size 5 / WSJF 4.60 unstruck; that file is unchanged since 7699e89, so the line number still holds.",
+      "what_is_missing": "WSJF = CoD / Size. CoD is 23 (product-sequencing-v2.md). At size 5 that is 4.60; at size 8 it is 2.875. Sites publishing 4.60 or 4.6 when this was written, addressed by anchor: the FR-9a row of product-sequencing-v2.md's WSJF table (line 187); sprint_plan.md's '## 2. Size Ledger' section; the V2-009 record's wsjf_as_published field in github_issues.json (cited by key path, not line number, because that file is under concurrent edit); the FR-9a row of prd-v2.md's requirement table (line 137); and the sentence in SRS.md beginning 'issue V2-009 carries size 5' (line 909). Only github_issues.json's field was defensibly named 'wsjf_as_published'; the other four presented it as the item's current WSJF.",
+      "citation_note": "github_issues.json:301 was the original address for the wsjf field. A line number into a JSON file is the most fragile citation form in this project -- the file is machine-generated and reordered by every edit. It is now addressed as issues[key=V2-009].wsjf_as_published, which no reformatting can break.",
+      "mitigating_context": "sprint_plan.md section 5.6 states 'Where WSJF IS load-bearing in this plan: nowhere', so no ordering decision rests on it. The figure is wrong but quarantined. INFERRED: the rank change from 4.60 to 2.88 would move FR-9a materially down the table if WSJF were ever used for ordering.",
+      "what_unblocks_it": "Either recompute to 2.88 at the four unqualified sites or label them 'as published at size 5' the way github_issues.json does.",
+      "evidence": "MEASURED for the published figures; INFERRED for the rank consequence"
+    },
+    {
+      "id": "B-16",
+      "severity": "MEDIUM",
+      "title": "Both Phase 7 routing artifacts copied the stale 5-point flag forward twice AFTER the re-point",
+      "issue_keys": ["V2-009"],
+      "issue_numbers": [265],
+      "what_is_missing": "routing_table.md and routing_map.json both carry the sentence 'the 5-point estimate does not hold with the runtime-proof AC.' MEASURED: both files were generated on 2026-08-02 by commit 9a658eb and revised again the same day by 6d48371, both AFTER c4fd55d re-pointed the issue. The stale flag was carried through two regenerations that post-date the correction. Note both files name the CORRECT binding pair (call_graph_builder_legacy.py:64 and graph_model.py:43), so only the sizing sentence is stale.",
+      "what_unblocks_it": "Remove the sizing sentence from both; it is superseded and neither file carries a size field.",
+      "evidence": "MEASURED"
+    },
+    {
+      "id": "B-17",
+      "severity": "MEDIUM",
+      "title": "sequencing_risks.md R-4 describes the FR-9a acceptance criterion in the present tense as unamended",
+      "issue_keys": ["V2-009"],
+      "issue_numbers": [265],
+      "what_is_missing": "R-4 reads 'V2-009 must close against the two sites that bind, not against the four the AC names' and 'This plan does not rewrite a gate-passed acceptance criterion. The amendment IS an owner decision and is a prerequisite to closing V2-009 correctly.' The amendment happened on 2026-08-01 (commit 92a9a5d). MEASURED: sequencing_risks.md has not been touched since 7b29820, so no part of R-4 reflects it. Its R-14 summary row also records the AC as testing 'discovery, not path enumeration', which the new clause (C) contradicts -- the new AC does assert on path enumeration.",
+      "what_unblocks_it": "Revise R-4 and its R-14 summary row, or mark the whole risk RESOLVED with a pointer to the amended AC."
+      ,
+      "evidence": "MEASURED"
+    },
+    {
+      "id": "B-18",
+      "severity": "MEDIUM",
+      "title": "The superseded four-site framing survives unmarked in SRS.md's normative requirement text and AC row",
+      "issue_keys": ["V2-009"],
+      "issue_numbers": [265],
+      "what_is_missing": "MEASURED 2026-08-02, addressed by anchor because every one of these moved. (1) The '**FR-21:**' SHALL statement in SRS.md SS 3.1 (line 267) requires the fix 'at all four known truncation sites'. (2) The paragraph beginning 'The four sites, as corrected:' (line 285) enumerates them, retaining config.py:11 as item 4. (3) The '| FR-21 |' row of '### Acceptance Criteria for the v2.0.0 Requirements' (line 748) reads 'Each of the 4 named sites reaches exactly one recorded end state'. (4) The sentence containing \"FR-21's four-site closure requirement\" (line 951) refers to it. The revised 14-item runtime-proof criterion is appended under '### Revised Acceptance Criterion for FR-21 (APPENDED 2026-08-01, per rules/44 section 4.2)' (line 840), but NONE of these four locations carries an inline pointer to it. A reader landing on the acceptance-criteria table sees the four-site AC with no indication it was superseded. Equivalent unmarked four-site framing survives at product-sequencing-v2.md:578, :615 and :718 (that file is unchanged since 7699e89, so those line numbers still hold).",
+      "note": "Retention of superseded text is deliberate per rules/44's append-only rule and is correct in principle. The defect is the absence of an inline supersession marker at the point of use, not the retention.",
+      "what_unblocks_it": "Add an inline supersession marker naming the section '### Revised Acceptance Criterion for FR-21' at all four locations above, matching the treatment prd-v2.md:138 already applies to its own superseded row ('THIS ROW SUPERSEDES THE FR-9a ROW IMMEDIATELY BELOW, which is retained verbatim and must not be deleted'). The marker should name the target SECTION, not a line number, for the reason recorded in citation_note.",
+      "citation_note": "All five addresses in this entry were line numbers when written (:258-259, :277-287, :740, :878, :767-844) and all five rotted when SRS.md grew 1056 -> 1130 lines. They are now keyed to the SHALL label, a sentence prefix, a table-row prefix, a quoted phrase and a section heading respectively, with line numbers retained only as scanning hints.",
+      "evidence": "MEASURED"
+    },
+    {
+      "id": "B-19",
+      "severity": "LOW",
+      "title": "product-sequencing-v2.md's WSJF row for FR-9a is the only superseded row in its table not struck through",
+      "issue_keys": ["V2-009"],
+      "issue_numbers": [265],
+      "what_is_missing": "MEASURED: product-sequencing-v2.md:187 publishes FR-9a at size 5 / WSJF 4.60 with no strike-through and no supersession annotation, while other superseded rows in the same table are struck through and annotated. sprint_plan.md marks it WITHDRAWN in the consumer, but the source still publishes 5 as live.",
+      "what_unblocks_it": "Strike through and annotate the row to match the table's own convention.",
+      "evidence": "MEASURED"
+    },
+    {
+      "id": "B-20",
+      "severity": "LOW",
+      "title": "Three artifacts cite SRS.md:736 for the FR-21 acceptance criterion; that line has never been the FR-21 row",
+      "issue_keys": ["V2-009"],
+      "issue_numbers": [265],
+      "what_is_missing": "MEASURED 2026-08-02: SRS.md line 736 is now a table separator ('|---|---|'); the FR-17 row is at line 744 and the FR-21 row at line 748. The target the three artifacts mean is the '| FR-21 |' row of '### Acceptance Criteria for the v2.0.0 Requirements'. The wrong citation appears in sprint_plan.md (twice) and sequencing_risks.md (once). Checked against git show 92a9a5d^:SRS.md -- line 736 was the FR-17 row before the append too, so the citation was already wrong when written: pre-existing, not drift introduced by the recent corrections.",
+      "what_unblocks_it": "Point the three citations at the '| FR-21 |' row of '### Acceptance Criteria for the v2.0.0 Requirements' rather than at a line number. This entry is itself the argument for that: the correct line number moved from 740 to 748 between this file being written and being revised.",
+      "evidence": "MEASURED"
+    },
+    {
+      "id": "B-10",
+      "severity": "LOW",
+      "title": "SRS.md's Next Review date precedes its Last Updated date",
+      "issue_keys": [],
+      "issue_numbers": [],
+      "what_is_missing": "SRS.md footer reads 'Last Updated: 2026-07-31' and 'Next Review: 2026-06-21'. The review date is six weeks before the update date. Cosmetic, but it is in the document rules/44 governs.",
+      "what_unblocks_it": "Set a forward-dated review date during the V2-030 SRS Change Log work.",
+      "evidence": "MEASURED"
+    }
+  ],
+  "known_open_items_state": [
+    {
+      "item": "Push gate has neither preventive nor detective cover after FR-4 until BOTH register-mcp (V2-016) and the ADR-017 CI assertion (V2-025) are built",
+      "state": "CORRECTLY STATED, AND ENCODED FOR THE THREE KEYS IT NAMES",
+      "detail": "V2-027 blocked_by contains V2-016, V2-024 and V2-025 (MEASURED), mirrored in issue_key_map.json dependency_cross_references as [272, 280, 281, 262, 287]. Both remain DESIGNED, NOT BUILT. sequencing_risks.md R-1 states plainly that the constraint has NO mechanical enforcement until V2-025 itself lands -- it is enforced by document and review only. Gap: V2-017 is omitted from the chain, see B-05."
+    },
+    {
+      "item": "FR-25 and FR-26 remain PROPOSED and unfunded, with no issues",
+      "state": "CONFIRMED, NO DRIFT",
+      "detail": "MEASURED: no issue in github_issues.json, issue_key_map.json or routing_map.json implements PRD FR-25 or FR-26. All apparent hits are the unrelated SRS FR-25 / SRS FR-26 (V2-014 and V2-015), and both issue bodies carry explicit COLLISION WARNING text distinguishing them. Recorded in github_issues.json meta.not_drafted and sprint_plan.md section 6."
+    },
+    {
+      "item": "V2-016 is MEDIUM confidence for two independent reasons; ADR-020 Path C is a one-shot measurement",
+      "state": "CORRECTLY STATED, AND THE ONE-SHOT TIMING IS ENCODED IN THE ISSUE",
+      "detail": "V2-016's body names the Path C task in scope with the words 'at the only moment it can be performed', and acceptance_criteria item 4 repeats it, correctly labelled HLD-sourced rather than PRD/SRS-sourced. routing_map.json holds V2-016 at MEDIUM for exactly the two stated reasons; capability_gaps.md:229-231 states Path C has 'no owner in the library, new agents included'. Residual risk is on the routing side only: both the mcp-base/AtomicJsonStore reuse instruction and the Path C timing must be supplied as prompt notes, which capability_gaps.md says in those words."
+    },
+    {
+      "item": "FR-7 must precede FR-5 or the pipeline becomes unreachable",
+      "state": "CORRECTLY STATED AND ENFORCED BY THE DEPENDENCY GRAPH",
+      "detail": "MEASURED: V2-028 (PRD FR-5, #284) blocked_by = ['V2-026'] (PRD FR-7, #282), cross-referenced as 284 <- 282. Batch order F < G alone would not guarantee it, since batches are a topological ordering permitting intra-batch parallelisation. V2-028's AC also encodes the dependency in its own wording, and sequencing_risks.md R-14 records this violation as self-detecting 'immediately and loudly', unlike R-1."
+    },
+    {
+      "item": "The WSJF input integers are single-pass estimates never cross-checked",
+      "state": "CORRECTLY STATED AND CORRECTLY QUARANTINED",
+      "detail": "sprint_plan.md section 5.6 states 'Where WSJF IS load-bearing in this plan: nowhere', and names the three orderings that rest on small WSJF deltas, each resolved by blocked_by rather than by WSJF. MEASURED: V2-004 through V2-008 carry wsjf_as_published = null, so the contested D1 chain has no WSJF input at all. The point ledger is separately sound: recomputing every batch from its own enumeration gives 69 SOURCED (45 pure + 24 SET_SPLIT) + 34 ASSUMED + 8 RE_ESTIMATED = 111 points plus 1 unsized, matching meta.totals exactly."
+    }
+  ],
+  "verified_clean": [
+    {
+      "check": "Every agent named in routing_map.json has a real agent.md at the recorded path",
+      "method": "MEASURED: resolved all 37 primary_agent_md_path plus all 36 supporting_agents[].agent_md_path against the library root with os.path.isfile. 73 of 73 exist. 0 missing.",
+      "result": "No routing row points at a missing agent.md."
+    },
+    {
+      "check": "Catalogue membership and skill files",
+      "method": "MEASURED: all 26 distinct agents are present in knowledge-graph/_master/agents_all.json (508 agents); all 50 distinct skills are present in skills_all.json (996 skills) AND have a SKILL.md on disk. 0 misses in either direction. The distinct_agents list in meta matches the set actually referenced, both directions.",
+      "result": "Clean."
+    },
+    {
+      "check": "routing_table.md agrees with routing_map.json",
+      "method": "MEASURED: parsed all 37 per-issue sections of routing_table.md and compared issue number, confidence and primary agent against the map. 37/37 parsed, 0 mismatches, confidence tally 29 HIGH / 8 MEDIUM matching meta exactly. NOTE: an earlier regex probe of this file matched only 4 rows because the table is section-structured, not row-structured; that probe was discarded as non-exhaustive rather than read as a result.",
+      "result": "Clean."
+    },
+    {
+      "check": "The dispatch contract is executable",
+      "method": "MEASURED: hooks/pre_tool_enforcer/policies/agent_persona.py exists, is loaded at core.py:177, and is registered in the dispatch table at core.py:468. PreToolUse is registered in ~/.claude/settings.json. The gate fired against this pass's own tool calls during the audit.",
+      "result": "The persona-block requirement is live and enforced, and every persona it demands can be lifted from a file that exists."
+    },
+    {
+      "check": "Issue inventory reconciles to the live repository",
+      "method": "MEASURED via per-batch label listing (batch:A returned 9 rows, under the observed 25-row page cap, so complete). 8 open + issue 257 closed as a duplicate of 256. Artifacts record 37 drafts, 37 created and retained, 1 created-then-closed duplicate, range 256-293 = 38 numbers with no gaps. Consistent.",
+      "result": "Clean for batch A. Batches B-H were not re-listed by this pass."
+    }
+  ],
+  "could_not_verify": [
+    "The live GitHub issue BODIES. The github-api MCP server exposes no get_issue and no list_comments tool, so issue bodies and the 26 cross-reference comments could not be read back. All body-level findings are against docs/phase-6-sprint/github_issues.json, which is the recorded source the bodies were created from.",
+    "Whether the 26 cross-reference comments were duplicated by the non-idempotent POST retry. The same missing tools prevent it. issue_key_map.json records this as unverifiable for the same reason.",
+    "Whether the fix for the non-idempotent POST retry (commit 33af037, branch fix/non-idempotent-post-retry) is live. issue_key_map.json states it requires an MCP server restart that did not happen, so every write in the issue-creation run was made under the unfixed client.",
+    "The 41 of 46 policy classifications that the committed audit itself records as CITED and not re-verified. This pass did not re-derive them either.",
+    "Batches B through H were not audited issue-by-issue for stale on-disk premises. B-01 is a premise-staleness defect found in batch A; the same class may exist elsewhere and was not swept.",
+    "Whether get_policies_dir() reads docs/policies/ or ~/.claude/policies/ at runtime. Determining it requires executing the resolver, which this pass did not do; B-03 and B-08 both hinge on it."
+  ]
+}

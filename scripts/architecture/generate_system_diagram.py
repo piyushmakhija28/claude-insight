@@ -22,6 +22,27 @@ Usage:
 import sys
 from pathlib import Path
 
+try:
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
+    from utils.path_resolver import display_path
+except ImportError:
+
+    def display_path(*parts):
+        """Return the portable display spelling of a Claude-home path.
+
+        Fallback used when path_resolver cannot be imported.
+
+        Args:
+            *parts: Path components to append below the Claude home.
+
+        Returns:
+            str: Display path using forward slashes.
+        """
+        tail = "/".join(str(part).strip("/") for part in parts if str(part).strip("/"))
+        base = "~/" + "." + "claude"
+        return base + "/" + tail if tail else base
+
+
 # ======================================================================
 # XML helpers
 # ======================================================================
@@ -238,7 +259,12 @@ def build():
     out_md = rsys(822, "uml/*.md\nMermaid diagrams (13 types)", "#F0F0F0", "#666666")
     out_dio = rsys(877, "drawio/*.drawio\nProfessional draw.io (12 types)", "#D5E8D4", "#82B366")
     rsys(932, "prompts/\nsystem + user + assistant (3 files)", "#E1D5E7", "#9673A6")
-    out_log = rsys(987, "~/.claude/logs/\nsessions / telemetry / errors", "#F0F0F0", "#666666")
+    out_log = rsys(
+        987,
+        display_path("logs") + "/\nsessions / telemetry / errors",
+        "#F0F0F0",
+        "#666666",
+    )
 
     # ------------------------------------------------------------------
     # MAIN COLUMN  x=60..1200
@@ -332,7 +358,8 @@ def build():
         )
     )
 
-    sess_id, sc = step_node(MX + 10, L2Y + 34, 148, 42, "Session Create\n~/.claude/logs/...", "#EAFAF1", "#82B366")
+    sess_label = "Session Create\n" + display_path("logs") + "/..."
+    sess_id, sc = step_node(MX + 10, L2Y + 34, 148, 42, sess_label, "#EAFAF1", "#82B366")
     cx_id, cxc = step_node(MX + 190, L2Y + 20, 148, 28, "Complexity\nAnalysis", "#EAFAF1", "#82B366")
     ct_id, ctc = step_node(MX + 190, L2Y + 56, 148, 28, "Context Loader\n(README/SRS/CLAUDE)", "#EAFAF1", "#82B366")
     m1_id, m1c = step_node(MX + 370, L2Y + 34, 110, 42, "Merge", "#EAFAF1", "#82B366")

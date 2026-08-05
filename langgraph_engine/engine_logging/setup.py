@@ -195,7 +195,7 @@ class ExecutionLogger:
 
         import json
 
-        with open(file_path, "w") as f:
+        with open(file_path, "w", encoding="utf-8") as f:
             json.dump(self.steps_log, f, indent=2)
 
         logger.info(f"Execution log saved: {file_path}")

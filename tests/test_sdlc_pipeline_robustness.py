@@ -14,6 +14,7 @@ import json
 import os
 import sys
 import tempfile
+import threading
 import time
 import types
 import unittest
@@ -60,16 +61,20 @@ if _SCRIPTS_DIR not in sys.path:
 class TestStepTimeout(unittest.TestCase):
     """Tests for StepTimeout and run_with_timeout.
 
-    v1.13.0 removed Steps 1-7 from the pipeline; v1.15.2 removed the
-    corresponding fallback_step1/2/5/7 helpers. The active step set is
-    now: Pre-0 (0), Step 0, Steps 8-14. Tests have been rewritten to
-    exercise only the active step set and the surviving public API
-    (StepTimeout, run_with_timeout, STEP_TIMEOUTS).
+    Rewritten for NFR-2 / ADR-016. The previous version of this class asserted a
+    literal timeout table keyed on the PRE-v1.20 numbering -- ACTIVE_STEPS was
+    [0, 8, 9, 10, 11, 12, 13, 14] and steps 1-7 were asserted to be dead -- and
+    it passed, because it was pinning the same stale keys the production table
+    carried. The live pipeline invokes _run_step with 2, 3, 4, 5, 6, 7 and 8, so
+    six of the seven wrapped steps had no entry at all and the seventh matched
+    only by numeric coincidence. The contract asserted here now is the one
+    NFR-2 asks for: every live step is present, unbounded by default, and
+    overridable by an operator.
     """
 
-    # Canonical active Level 3 step numbers per CLAUDE.md v1.16.1
-    # (Pre-0 is represented as step 0; Step 0 shares the same slot)
-    ACTIVE_STEPS = [0, 8, 9, 10, 11, 12, 13, 14]
+    # Live pipeline step numbers, measured from the _run_step call sites under
+    # sdlc_pipeline/nodes/ rather than copied from a comment.
+    LIVE_STEPS = [0, 1, 2, 3, 4, 5, 6, 7, 8]
 
     def setUp(self):
         from langgraph_engine.timeout_wrapper import STEP_TIMEOUTS, StepTimeout, run_with_timeout
@@ -78,44 +83,59 @@ class TestStepTimeout(unittest.TestCase):
         self.run_with_timeout = run_with_timeout
         self.STEP_TIMEOUTS = STEP_TIMEOUTS
 
-    def test_step_timeouts_coverage(self):
-        """All active Level 3 steps must have a configured timeout."""
-        for step_num in self.ACTIVE_STEPS:
-            self.assertIn(
-                step_num,
-                self.STEP_TIMEOUTS,
-                f"Missing timeout for Step {step_num}",
-            )
-            self.assertGreater(self.STEP_TIMEOUTS[step_num], 0)
+    def test_every_live_step_has_an_entry(self):
+        """A step absent from the table is a step whose bound nobody decided."""
+        for step_num in self.LIVE_STEPS:
+            self.assertIn(step_num, self.STEP_TIMEOUTS, f"Missing entry for Step {step_num}")
 
-    def test_no_dead_step_timeouts(self):
-        """Purged steps (1-7) must NOT appear in STEP_TIMEOUTS."""
-        for step_num in range(1, 8):
+    def test_every_live_step_is_unbounded_by_default(self):
+        """NFR-2: a run nobody configured must not be aborted by a clock."""
+        for step_num in self.LIVE_STEPS:
+            self.assertIsNone(
+                self.STEP_TIMEOUTS[step_num],
+                f"Step {step_num} carries a default deadline; NFR-2 requires unbounded",
+            )
+
+    def test_no_entry_survives_on_the_retired_numbering(self):
+        """The pre-v1.20 keys 9 through 14 no longer exist as live steps."""
+        for step_num in range(9, 15):
             self.assertNotIn(
                 step_num,
                 self.STEP_TIMEOUTS,
-                f"Dead step {step_num} should not have a timeout entry",
+                f"Retired step number {step_num} still has an entry",
             )
 
-    def test_canonical_step_timeouts(self):
-        """Specific active steps must meet spec requirements."""
-        # LLM-heavy steps use 900s to allow LLM calls to complete.
-        # Network/file-I/O steps use shorter durations (120s).
-        self.assertEqual(
-            self.STEP_TIMEOUTS[0],
-            900,
-            "Step 0 (Task Analysis - LLM) should be 900s",
-        )
-        self.assertEqual(
-            self.STEP_TIMEOUTS[10],
-            900,
-            "Step 10 (Implementation - LLM) should be 900s",
-        )
-        self.assertEqual(
-            self.STEP_TIMEOUTS[14],
-            120,
-            "Step 14 (Final Summary - local) should be 120s",
-        )
+    def test_a_step_bound_is_operator_overridable(self):
+        """The bound is configurable per step, which is the other half of NFR-2."""
+        import importlib
+        import os
+
+        import langgraph_engine.timeout_wrapper as module
+
+        previous = os.environ.get("STEP4_TIMEOUT")
+        os.environ["STEP4_TIMEOUT"] = "45"
+        try:
+            importlib.reload(module)
+            self.assertEqual(module.STEP_TIMEOUTS[4], 45.0)
+        finally:
+            if previous is None:
+                os.environ.pop("STEP4_TIMEOUT", None)
+            else:
+                os.environ["STEP4_TIMEOUT"] = previous
+            importlib.reload(module)
+        self.assertIsNone(module.STEP_TIMEOUTS[4])
+
+    def test_unbounded_step_runs_on_the_calling_thread(self):
+        """With no bound there is nothing to watch for, so no worker is spawned."""
+        seen = {}
+
+        def record():
+            seen["thread"] = threading.current_thread().name
+            return {"status": "ok"}
+
+        result = self.run_with_timeout(fn=record, step_number=4, fallback={"status": "fallback"})
+        self.assertEqual(result["status"], "ok")
+        self.assertEqual(seen["thread"], threading.current_thread().name)
 
     def test_fast_function_returns_result(self):
         """Function completing within timeout should return its result."""
@@ -123,7 +143,7 @@ class TestStepTimeout(unittest.TestCase):
         def fast():
             return {"status": "ok", "value": 99}
 
-        result = self.run_with_timeout(fn=fast, step_number=9, fallback={"status": "fallback"})
+        result = self.run_with_timeout(fn=fast, step_number=4, custom_timeout=30, fallback={"status": "fallback"})
         self.assertEqual(result["status"], "ok")
         self.assertEqual(result["value"], 99)
 

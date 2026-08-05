@@ -314,20 +314,20 @@ class DummyProjectSeeder:
             # Create flow-trace.json
             flow_trace = self.create_flow_trace(session_id, task_type, model, agent)
             flow_file = session_dir / "flow-trace.json"
-            with open(flow_file, "w") as f:
+            with open(flow_file, "w", encoding="utf-8") as f:
                 json.dump(flow_trace, f, indent=2)
 
             # Create session-summary.json
             summary = self.create_session_summary(session_id, task_type, model, agent)
             summary_file = session_dir / "session-summary.json"
-            with open(summary_file, "w") as f:
+            with open(summary_file, "w", encoding="utf-8") as f:
                 json.dump(summary, f, indent=2)
 
             # Create flags directory with task-breakdown-pending.json
             flags_dir = session_dir / "flags"
             flags_dir.mkdir(exist_ok=True)
             flag_file = flags_dir / "task-breakdown-pending.json"
-            with open(flag_file, "w") as f:
+            with open(flag_file, "w", encoding="utf-8") as f:
                 json.dump(
                     {"session_id": session_id, "created_at": datetime.now().isoformat(), "pending": True}, f, indent=2
                 )
@@ -346,12 +346,12 @@ class DummyProjectSeeder:
             "last_updated": datetime.now().isoformat(),
             "sessions": [s for s, _, _ in sessions_data],
         }
-        with open(progress_file, "w") as f:
+        with open(progress_file, "w", encoding="utf-8") as f:
             json.dump(progress_data, f, indent=2)
 
         # Update policy-hits.log
         policy_log = self.logs_dir / "policy-hits.log"
-        with open(policy_log, "a") as f:
+        with open(policy_log, "a", encoding="utf-8") as f:
             for i, (task_type, model, agent) in enumerate(sessions_data, 1):
                 f.write(f"[{datetime.now().isoformat()}] Session {i}: {task_type} | {model} | {agent}\n")
 

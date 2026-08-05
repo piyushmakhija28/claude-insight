@@ -1,0 +1,746 @@
+{
+  "file_count_live_scope": 335,
+  "package_files_count": {
+    "hooks": 7,
+    "hooks/post_tool_tracker": 12,
+    "hooks/pre_tool_enforcer": 21,
+    "hooks/stop_notifier": 5,
+    "langgraph_engine": 55,
+    "langgraph_engine/analysis": 5,
+    "langgraph_engine/build_dependency_resolver": 4,
+    "langgraph_engine/context": 5,
+    "langgraph_engine/context_sync": 12,
+    "langgraph_engine/core": 9,
+    "langgraph_engine/diagrams": 24,
+    "langgraph_engine/engine_logging": 6,
+    "langgraph_engine/github": 7,
+    "langgraph_engine/helper_nodes": 5,
+    "langgraph_engine/integrations": 7,
+    "langgraph_engine/library": 2,
+    "langgraph_engine/metrics": 5,
+    "langgraph_engine/parsers": 9,
+    "langgraph_engine/preflight_guard": 4,
+    "langgraph_engine/quality": 5,
+    "langgraph_engine/routing": 5,
+    "langgraph_engine/runtime_verification": 8,
+    "langgraph_engine/sdlc_pipeline": 45,
+    "langgraph_engine/security": 2,
+    "langgraph_engine/skills": 4,
+    "langgraph_engine/standards": 4,
+    "langgraph_engine/state": 5,
+    "scripts": 8,
+    "scripts/agents": 3,
+    "scripts/architecture": 2,
+    "scripts/github_operations": 6,
+    "scripts/github_pr_workflow": 5,
+    "scripts/helpers": 3,
+    "scripts/setup": 1,
+    "scripts/tools": 9,
+    "src": 1,
+    "src/mcp": 10,
+    "src/services": 2,
+    "src/utils": 3
+  },
+  "package_classes": {
+    "hooks": 1,
+    "hooks/pre_tool_enforcer": 1,
+    "langgraph_engine": 45,
+    "langgraph_engine/context_sync": 2,
+    "langgraph_engine/core": 3,
+    "langgraph_engine/diagrams": 20,
+    "langgraph_engine/engine_logging": 4,
+    "langgraph_engine/github": 9,
+    "langgraph_engine/integrations": 7,
+    "langgraph_engine/library": 7,
+    "langgraph_engine/metrics": 2,
+    "langgraph_engine/parsers": 11,
+    "langgraph_engine/quality": 1,
+    "langgraph_engine/routing": 6,
+    "langgraph_engine/runtime_verification": 8,
+    "langgraph_engine/sdlc_pipeline": 16,
+    "langgraph_engine/security": 1,
+    "langgraph_engine/skills": 2,
+    "langgraph_engine/standards": 2,
+    "langgraph_engine/state": 3,
+    "scripts": 1,
+    "scripts/agents": 4,
+    "scripts/architecture": 2,
+    "scripts/github_operations": 1,
+    "src/mcp": 8,
+    "src/services": 4,
+    "src/utils": 2
+  },
+  "package_public_top_level_functions": {
+    "hooks": 37,
+    "hooks/post_tool_tracker": 14,
+    "hooks/pre_tool_enforcer": 38,
+    "hooks/stop_notifier": 14,
+    "langgraph_engine": 68,
+    "langgraph_engine/analysis": 9,
+    "langgraph_engine/build_dependency_resolver": 6,
+    "langgraph_engine/context": 7,
+    "langgraph_engine/context_sync": 22,
+    "langgraph_engine/core": 11,
+    "langgraph_engine/diagrams": 8,
+    "langgraph_engine/engine_logging": 7,
+    "langgraph_engine/github": 5,
+    "langgraph_engine/helper_nodes": 9,
+    "langgraph_engine/integrations": 3,
+    "langgraph_engine/library": 2,
+    "langgraph_engine/metrics": 21,
+    "langgraph_engine/parsers": 6,
+    "langgraph_engine/preflight_guard": 6,
+    "langgraph_engine/quality": 9,
+    "langgraph_engine/routing": 5,
+    "langgraph_engine/runtime_verification": 4,
+    "langgraph_engine/sdlc_pipeline": 107,
+    "langgraph_engine/security": 3,
+    "langgraph_engine/skills": 9,
+    "langgraph_engine/standards": 12,
+    "scripts": 22,
+    "scripts/agents": 3,
+    "scripts/architecture": 21,
+    "scripts/github_operations": 7,
+    "scripts/github_pr_workflow": 1,
+    "scripts/helpers": 3,
+    "scripts/setup": 10,
+    "scripts/tools": 54,
+    "src/mcp": 31,
+    "src/utils": 22
+  },
+  "package_public_methods": {
+    "hooks": 4,
+    "hooks/post_tool_tracker": 10,
+    "hooks/pre_tool_enforcer": 5,
+    "hooks/stop_notifier": 1,
+    "langgraph_engine": 187,
+    "langgraph_engine/context_sync": 15,
+    "langgraph_engine/core": 27,
+    "langgraph_engine/diagrams": 57,
+    "langgraph_engine/engine_logging": 22,
+    "langgraph_engine/github": 24,
+    "langgraph_engine/integrations": 37,
+    "langgraph_engine/library": 15,
+    "langgraph_engine/metrics": 10,
+    "langgraph_engine/parsers": 46,
+    "langgraph_engine/quality": 5,
+    "langgraph_engine/routing": 4,
+    "langgraph_engine/runtime_verification": 16,
+    "langgraph_engine/sdlc_pipeline": 70,
+    "langgraph_engine/skills": 12,
+    "langgraph_engine/standards": 2,
+    "langgraph_engine/state": 7,
+    "scripts": 2,
+    "scripts/agents": 20,
+    "scripts/architecture": 6,
+    "src/mcp": 41,
+    "src/services": 14,
+    "src/utils": 28
+  },
+  "totals": {
+    "files": 335,
+    "classes": 173,
+    "public_top_level_functions": 616,
+    "public_methods": 687
+  },
+  "import_graph_edges_file_level": 482,
+  "import_graph_nontrivial_sccs": [
+    [
+      "langgraph_engine/sdlc_pipeline/nodes/pre_nodes.py",
+      "langgraph_engine/sdlc_pipeline/sonar_auto_fixer.py",
+      "langgraph_engine/sdlc_pipeline/nodes/implementation_and_review_wrapper.py",
+      "langgraph_engine/sdlc_pipeline/nodes/issue_and_branch_wrapper.py",
+      "langgraph_engine/sdlc_pipeline/nodes/closure_docs_summary_wrapper.py",
+      "langgraph_engine/sdlc_pipeline/nodes/__init__.py",
+      "langgraph_engine/sdlc_pipeline/subgraph.py",
+      "langgraph_engine/orchestrator.py",
+      "langgraph_engine/__init__.py"
+    ]
+  ],
+  "package_level_sccs": [
+    [
+      "langgraph_engine/quality",
+      "langgraph_engine/context_sync",
+      "langgraph_engine/preflight_guard",
+      "langgraph_engine/github",
+      "langgraph_engine/build_dependency_resolver",
+      "langgraph_engine/standards",
+      "langgraph_engine/routing",
+      "langgraph_engine/runtime_verification",
+      "langgraph_engine/engine_logging",
+      "langgraph_engine/analysis",
+      "langgraph_engine/diagrams",
+      "langgraph_engine/sdlc_pipeline",
+      "langgraph_engine/skills",
+      "langgraph_engine/core",
+      "langgraph_engine/state",
+      "langgraph_engine"
+    ]
+  ],
+  "martin_metrics": {
+    "hooks": {
+      "Ca": 0,
+      "Ce": 0,
+      "I": 0.0,
+      "files": 7
+    },
+    "hooks/post_tool_tracker": {
+      "Ca": 0,
+      "Ce": 0,
+      "I": 0.0,
+      "files": 12
+    },
+    "hooks/pre_tool_enforcer": {
+      "Ca": 0,
+      "Ce": 0,
+      "I": 0.0,
+      "files": 21
+    },
+    "hooks/stop_notifier": {
+      "Ca": 0,
+      "Ce": 0,
+      "I": 0.0,
+      "files": 5
+    },
+    "langgraph_engine": {
+      "Ca": 16,
+      "Ce": 17,
+      "I": 0.515,
+      "files": 55
+    },
+    "langgraph_engine/analysis": {
+      "Ca": 2,
+      "Ce": 4,
+      "I": 0.667,
+      "files": 5
+    },
+    "langgraph_engine/build_dependency_resolver": {
+      "Ca": 1,
+      "Ce": 1,
+      "I": 0.5,
+      "files": 4
+    },
+    "langgraph_engine/context": {
+      "Ca": 1,
+      "Ce": 3,
+      "I": 0.75,
+      "files": 5
+    },
+    "langgraph_engine/context_sync": {
+      "Ca": 2,
+      "Ce": 2,
+      "I": 0.5,
+      "files": 12
+    },
+    "langgraph_engine/core": {
+      "Ca": 12,
+      "Ce": 1,
+      "I": 0.077,
+      "files": 9
+    },
+    "langgraph_engine/diagrams": {
+      "Ca": 3,
+      "Ce": 2,
+      "I": 0.4,
+      "files": 24
+    },
+    "langgraph_engine/engine_logging": {
+      "Ca": 5,
+      "Ce": 1,
+      "I": 0.167,
+      "files": 6
+    },
+    "langgraph_engine/github": {
+      "Ca": 1,
+      "Ce": 2,
+      "I": 0.667,
+      "files": 7
+    },
+    "langgraph_engine/helper_nodes": {
+      "Ca": 0,
+      "Ce": 2,
+      "I": 1.0,
+      "files": 5
+    },
+    "langgraph_engine/integrations": {
+      "Ca": 0,
+      "Ce": 2,
+      "I": 1.0,
+      "files": 7
+    },
+    "langgraph_engine/library": {
+      "Ca": 6,
+      "Ce": 0,
+      "I": 0.0,
+      "files": 2
+    },
+    "langgraph_engine/metrics": {
+      "Ca": 1,
+      "Ce": 1,
+      "I": 0.5,
+      "files": 5
+    },
+    "langgraph_engine/parsers": {
+      "Ca": 2,
+      "Ce": 0,
+      "I": 0.0,
+      "files": 9
+    },
+    "langgraph_engine/preflight_guard": {
+      "Ca": 1,
+      "Ce": 1,
+      "I": 0.5,
+      "files": 4
+    },
+    "langgraph_engine/quality": {
+      "Ca": 1,
+      "Ce": 3,
+      "I": 0.75,
+      "files": 5
+    },
+    "langgraph_engine/routing": {
+      "Ca": 2,
+      "Ce": 3,
+      "I": 0.6,
+      "files": 5
+    },
+    "langgraph_engine/runtime_verification": {
+      "Ca": 4,
+      "Ce": 3,
+      "I": 0.429,
+      "files": 8
+    },
+    "langgraph_engine/sdlc_pipeline": {
+      "Ca": 5,
+      "Ce": 8,
+      "I": 0.615,
+      "files": 45
+    },
+    "langgraph_engine/security": {
+      "Ca": 1,
+      "Ce": 0,
+      "I": 0.0,
+      "files": 2
+    },
+    "langgraph_engine/skills": {
+      "Ca": 1,
+      "Ce": 2,
+      "I": 0.667,
+      "files": 4
+    },
+    "langgraph_engine/standards": {
+      "Ca": 2,
+      "Ce": 4,
+      "I": 0.667,
+      "files": 4
+    },
+    "langgraph_engine/state": {
+      "Ca": 1,
+      "Ce": 1,
+      "I": 0.5,
+      "files": 5
+    },
+    "scripts": {
+      "Ca": 0,
+      "Ce": 4,
+      "I": 1.0,
+      "files": 8
+    },
+    "scripts/agents": {
+      "Ca": 0,
+      "Ce": 0,
+      "I": 0.0,
+      "files": 3
+    },
+    "scripts/architecture": {
+      "Ca": 0,
+      "Ce": 1,
+      "I": 1.0,
+      "files": 2
+    },
+    "scripts/github_operations": {
+      "Ca": 0,
+      "Ce": 0,
+      "I": 0.0,
+      "files": 6
+    },
+    "scripts/github_pr_workflow": {
+      "Ca": 0,
+      "Ce": 1,
+      "I": 1.0,
+      "files": 5
+    },
+    "scripts/helpers": {
+      "Ca": 0,
+      "Ce": 0,
+      "I": 0.0,
+      "files": 3
+    },
+    "scripts/setup": {
+      "Ca": 0,
+      "Ce": 0,
+      "I": 0.0,
+      "files": 1
+    },
+    "scripts/tools": {
+      "Ca": 0,
+      "Ce": 1,
+      "I": 1.0,
+      "files": 9
+    },
+    "src": {
+      "Ca": 0,
+      "Ce": 0,
+      "I": 0.0,
+      "files": 1
+    },
+    "src/mcp": {
+      "Ca": 0,
+      "Ce": 0,
+      "I": 0.0,
+      "files": 10
+    },
+    "src/services": {
+      "Ca": 0,
+      "Ce": 0,
+      "I": 0.0,
+      "files": 2
+    },
+    "src/utils": {
+      "Ca": 1,
+      "Ce": 1,
+      "I": 0.5,
+      "files": 3
+    }
+  },
+  "path_violations": {
+    "home_dir_refs": [
+      "langgraph_engine/backup_manager.py:25: def __init__(self, session_id: str, backup_base_dir: str = \"~/.claude/logs\"):",
+      "langgraph_engine/cache_system.py:17: Cache location: ~/.claude/logs/cache/<tier>/<hex_key>.json",
+      "langgraph_engine/cache_system.py:69: _DEFAULT_CACHE_BASE: str = os.environ.get(\"CACHE_BASE_DIR\", \"~/.claude/logs/cache\")",
+      "langgraph_engine/checkpointer.py:111: Defaults to ~/.claude/memory/langgraph-checkpoints.db",
+      "langgraph_engine/checkpoint_manager.py:8: ~/.claude/logs/sessions/{session_id}/checkpoints/",
+      "langgraph_engine/checkpoint_manager.py:85: CHECKPOINT_DIR_TEMPLATE = \"~/.claude/logs/sessions/{session_id}/checkpoints\"",
+      "langgraph_engine/error_messages.py:381: f\"Check if the skill file exists: 'ls ~/.claude/skills/**/{skill}*'\"",
+      "langgraph_engine/error_messages.py:383: else \"Check the skills directory: 'ls ~/.claude/skills/'\"",
+      "langgraph_engine/error_messages.py:387: \"Verify the skills directory structure: skills should be at ~/.claude/skills/<domain>/<skill-name>/skill.md\",",
+      "langgraph_engine/error_messages.py:394: \"ls ~/.claude/skills/\",",
+      "langgraph_engine/error_messages.py:395: \"ls ~/.claude/agents/\",",
+      "langgraph_engine/error_messages.py:687: - Skills missing           -> check ~/.claude/skills/ directory",
+      "langgraph_engine/error_messages.py:753: ~/.claude/skills/<domain>/<skill-name>/skill.md",
+      "langgraph_engine/error_messages.py:756: ls ~/.claude/skills/",
+      "langgraph_engine/error_messages.py:762: 1. Create directory: mkdir -p ~/.claude/skills/backend/my-skill",
+      "langgraph_engine/error_messages.py:767: ~/.claude/agents/<agent-name>/agent.md",
+      "langgraph_engine/orchestrator.py:194: # Save to ~/.claude/memory/sessions/{session_id}/workflow-memory.json",
+      "langgraph_engine/parallel_executor.py:586: skills_dir: Path to ~/.claude/skills/",
+      "langgraph_engine/parallel_executor.py:621: agents_dir: Path to ~/.claude/agents/",
+      "langgraph_engine/performance_benchmarks.py:8: - Benchmark results saved to ~/.claude/logs/benchmarks/",
+      "langgraph_engine/performance_benchmarks.py:151: \"\"\"Save benchmark results to ~/.claude/logs/benchmarks/.",
+      "langgraph_engine/session_manager.py:5: Session structure: ~/.claude/logs/sessions/{session_id}/",
+      "langgraph_engine/context/flow_trace_converter.py:316: Defaults to ~/.claude/memory/logs/sessions/{session_id}/",
+      "langgraph_engine/context_sync/context_cache.py:9: Cache location: ~/.claude/logs/cache/{key}.json",
+      "langgraph_engine/context_sync/context_cache.py:14: - Stats persisted to ~/.claude/logs/cache/cache_stats.json on save",
+      "langgraph_engine/context_sync/context_cache.py:191: def __init__(self, cache_base_dir: str = \"~/.claude/logs/cache\"):",
+      "langgraph_engine/context_sync/context_loader.py:168: \"\"\"Load context from PROJECT FILES (not ~/.claude/memory/).",
+      "langgraph_engine/context_sync/helpers.py:23: # pointed at ~/.claude/logs/sessions while the hooks used",
+      "langgraph_engine/context_sync/helpers.py:24: # ~/.claude/memory/logs/sessions, so a failed src/ import silently split session",
+      "langgraph_engine/context_sync/session_loader.py:93: \"\"\"Create and load session in ~/.claude/logs/sessions/{session_id}/.",
+      "langgraph_engine/context_sync/architecture/context_monitor.py:67: Defaults to ~/.claude/logs/sessions/ (most recent session).",
+      "langgraph_engine/context_sync/architecture/context_monitor.py:119: # Default 1: most recent session inside ~/.claude/logs/sessions/",
+      "langgraph_engine/context_sync/architecture/context_monitor.py:220: Defaults to ~/.claude/logs/sessions/.",
+      "langgraph_engine/context_sync/architecture/preference_tracker.py:129: Defaults to ~/.claude/logs/sessions/.",
+      "langgraph_engine/context_sync/architecture/preference_tracker.py:269: Defaults to ~/.claude/memory/user-preferences.json.",
+      "langgraph_engine/context_sync/architecture/preference_tracker.py:297: Defaults to ~/.claude/memory/user-preferences.json.",
+      "langgraph_engine/context_sync/architecture/preference_tracker.py:410: help=\"Sessions directory to analyse (default: ~/.claude/logs/sessions/)\",",
+      "langgraph_engine/context_sync/architecture/preference_tracker.py:420: help=\"Merge and save computed preferences to ~/.claude/memory/user-preferences.json\",",
+      "langgraph_engine/context_sync/architecture/session_pruner.py:5: Archives sessions older than 30 days from ~/.claude/sessions/",
+      "langgraph_engine/context_sync/architecture/session_pruner.py:7: Moves archived sessions to ~/.claude/sessions/archive/<YYYY-MM>/",
+      "langgraph_engine/context_sync/architecture/session_pruner.py:289: Defaults to ~/.claude/sessions/.",
+      "langgraph_engine/context_sync/architecture/session_pruner.py:374: help=\"Specific sessions directory to prune (default: ~/.claude/sessions/)\",",
+      "langgraph_engine/core/config_loader.py:2: Workflow Config Loader -- reads ~/.claude/workflow-config.json.",
+      "langgraph_engine/engine_logging/error_logger.py:38: def __init__(self, session_id: str, log_base_dir: str = \"~/.claude/logs\"):",
+      "langgraph_engine/engine_logging/setup.py:30: session_dir: Path to session folder (~/.claude/logs/sessions/{session_id}/)",
+      "langgraph_engine/helper_nodes/context_helpers.py:72: # Save to ~/.claude/memory/logs/sessions/{session_id}/workflow-memory.json",
+      "langgraph_engine/integrations/config.py:7: All defaults live in ~/.claude/workflow-config.json -- nothing is hardcoded here.",
+      "langgraph_engine/metrics/collector.py:10: ~/.claude/logs/sessions/{session_id}/metrics.json",
+      "langgraph_engine/metrics/collector.py:50: def __init__(self, session_id: str, base_log_dir: str = \"~/.claude/logs\"):",
+      "langgraph_engine/quality/recovery_handler.py:216: base_log_dir: str = \"~/.claude/logs\",",
+      "langgraph_engine/sdlc_pipeline/subgraph.py:187: # Telemetry writer - appends one JSONL line per step to ~/.claude/logs/telemetry/",
+      "langgraph_engine/sdlc_pipeline/subgraph.py:201: File path: ~/.claude/logs/telemetry/{session_id}.jsonl",
+      "langgraph_engine/sdlc_pipeline/architecture/00-code-graph-analysis/code_graph_analyzer.py:690: ~/.claude/memory/logs/sessions/{session_id}/graph-analysis.json",
+      "langgraph_engine/skills/agent_loader.py:44: \"\"\"Loads skill and agent definitions from ~/.claude/ filesystem structure.",
+      "langgraph_engine/skills/manager.py:19: - Disk cache at ~/.claude/skills/<domain>/<skill_name>/ is checked second",
+      "langgraph_engine/skills/manager.py:117: skills_root: Root directory for skill storage. Defaults to ~/.claude/skills/",
+      "langgraph_engine/skills/manager.py:620: Saves to ~/.claude/skills/downloaded/<skill_name>/skill.md so the skill",
+      "langgraph_engine/standards/selector.py:316: \"\"\"Load team-level standards from ~/.claude/.",
+      "langgraph_engine/standards/selector.py:319: - ~/.claude/policies/02-standards-system/*.md",
+      "langgraph_engine/standards/selector.py:320: - ~/.claude/standards/*.md",
+      "langgraph_engine/standards/selector.py:527: \"locations\": [\"~/.claude/policies/02-standards-system/**/*.md\", \"~/.claude/standards/*.md\"],",
+      "langgraph_engine/state/state_definition.py:184: mcp_plugins_path: Optional[str]  # Path to plugins directory (usually ~/.claude/mcp/plugins/)",
+      "langgraph_engine/state/state_definition.py:185: mcp_cache_dir: Optional[str]  # Cache directory (usually ~/.claude/mcp/cache/)",
+      "langgraph_engine/state/state_definition.py:593: workflow_memory_file: str  # ~/.claude/memory/sessions/{session_id}/workflow-memory.json",
+      "hooks/ide_paths.py:8: without polluting the user's ~/.claude/ directory.",
+      "hooks/ide_paths.py:16: Standalone Mode (env vars not set)         -> Use ~/.claude/ (backward compatible)",
+      "hooks/ide_paths.py:36: # Standalone Mode: Use ~/.claude/ (backward compatible)",
+      "hooks/ide_paths.py:113: In standalone mode it is ``~/.claude``.",
+      "hooks/ide_paths.py:126: In standalone mode it is ``~/.claude``.",
+      "hooks/ide_paths.py:139: IDE-specific directories instead of ``~/.claude``.",
+      "hooks/session_context.py:51: Path: Memory root, e.g. ``~/.claude/memory``.",
+      "hooks/session_context.py:73: used ``~/.claude/logs/sessions``, splitting session data across two trees.",
+      "hooks/post_tool_tracker/core.py:601: \"  IF YES -> Write ~/.claude/.session-work-done with session summary.\\n\"",
+      "hooks/post_tool_tracker/progress_tracker.py:178: flag_dir: Path-like pointing to the legacy FLAG_DIR (~/.claude).",
+      "hooks/post_tool_tracker/progress_tracker.py:192: # Legacy cleanup: old-style flags in ~/.claude/",
+      "hooks/pre_tool_enforcer/loaders.py:167: ~/.claude/memory/logs/sessions/{SESSION_ID}/flags/{name}.json",
+      "hooks/pre_tool_enforcer/loaders.py:168: Also checks legacy ~/.claude/ location for backward compat.",
+      "hooks/pre_tool_enforcer/loaders.py:201: # Legacy fallback: check ~/.claude/ for old-format flags",
+      "hooks/stop_notifier/helpers.py:28: 1. ~/.claude/.session-start-voice   -> New session started",
+      "hooks/stop_notifier/helpers.py:29: 2. ~/.claude/.task-complete-voice    -> Task completed",
+      "hooks/stop_notifier/helpers.py:30: 3. ~/.claude/.session-work-done      -> All work done (written by Claude)",
+      "hooks/stop_notifier/helpers.py:146: # Set VOICE_ENABLED=0 in env or ~/.claude/.voice-disabled to disable voice",
+      "hooks/stop_notifier/post_impl.py:15: \"\"\"Find the most recent session directory under ~/.claude/logs/sessions/.",
+      "scripts/3-level-flow.py:416: # Check ~/.claude/memory/ directory exists",
+      "scripts/cli.py:235: issues.append(\"~/.claude/settings.json not found. Run 'cwe setup'.\")",
+      "scripts/cli.py:289: print(\"  4. Register MCP servers in ~/.claude/settings.json\")",
+      "scripts/architecture/generate_system_diagram.py:241: out_log = rsys(987, \"~/.claude/logs/\\nsessions / telemetry / errors\", \"#F0F0F0\", \"#666666\")",
+      "scripts/architecture/generate_system_diagram.py:335: sess_id, sc = step_node(MX + 10, L2Y + 34, 148, 42, \"Session Create\\n~/.claude/logs/...\", \"#EAFAF1\", \"#82B366\")",
+      "scripts/architecture/03-execution-system/00-code-graph-analysis/code-graph-analyzer.py:668: ~/.claude/memory/logs/sessions/{session_id}/graph-analysis.json",
+      "scripts/github_operations/branch_manager.py:192: sys.stdout.write(\"  DEBUG: See ~/.claude/memory/logs/branch-creation-debug.log\\n\")",
+      "scripts/setup/setup_wizard.py:230: \"\"\"Step 4: Register MCP servers in ~/.claude/settings.json.\"\"\"",
+      "scripts/setup/setup_wizard.py:233: if not prompt_yes_no(\"  Register MCP servers in ~/.claude/settings.json?\", default=True):",
+      "scripts/tools/create_mcp_repos.py:49: (\"CLAUDE_SESSION_DIR\", \"Path to session storage directory (default: ~/.claude/sessions)\"),",
+      "scripts/tools/create_mcp_repos.py:161: (\"CLAUDE_MCP_CONFIG\", \"Path to MCP config JSON (default: ~/.claude/settings.json)\"),",
+      "scripts/tools/create_mcp_repos.py:313: (\"CLAUDE_SESSION_DIR\", \"Session storage directory (default: ~/.claude/sessions)\"),",
+      "scripts/tools/create_mcp_repos.py:531: Add to your `~/.claude/settings.json`:",
+      "scripts/tools/metrics-emitter.py:7: Appends structured JSONL records to ~/.claude/memory/logs/metrics.jsonl.",
+      "scripts/tools/metrics-emitter.py:11: Output file  : ~/.claude/memory/logs/metrics.jsonl",
+      "scripts/tools/migrate_session_dirs.py:8: ~/.claude/memory/logs/sessions/SESSION-<ts>-<suffix>   (pipeline, hooks)",
+      "scripts/tools/migrate_session_dirs.py:9: ~/.claude/memory/logs/sessions/session-<ts>-<hex>      (engine)",
+      "scripts/tools/migrate_session_dirs.py:10: ~/.claude/logs/sessions/...                            (engine import fallback)",
+      "scripts/tools/migrate_session_dirs.py:11: ~/.claude/memory/logs/sessions/unknown/                (resolver miss fallback)",
+      "src/mcp/base/persistence.py:44: store = AtomicJsonStore(Path(\"~/.claude/memory/state.json\"))",
+      "src/mcp/base/persistence.py:199: logger = JsonlAppender(Path(\"~/.claude/logs/tools.jsonl\"))",
+      "src/services/__init__.py:19: ~/.claude/memory/ directory and read/written by the respective service.",
+      "src/utils/path_resolver.py:13: | Claude Home   | CLAUDE_HOME             | ~/.claude/                  |",
+      "src/utils/path_resolver.py:31: 1. ~/.claude/memory/ (present when Claude Memory System is installed)",
+      "src/utils/path_resolver.py:93: 1. ~/.claude/memory/ if it exists (Claude Memory System installed)",
+      "src/utils/path_resolver.py:98: claude_home (Path): Claude home directory (~/.claude/ or CLAUDE_HOME).",
+      "src/utils/path_resolver.py:122: # Priority 1: Global ~/.claude/memory",
+      "src/utils/path_resolver.py:244: \"\"\"Get Claude home directory (~/.claude/ or CLAUDE_HOME).\"\"\"",
+      "src/utils/path_resolver.py:274: \"\"\"Check if using global ~/.claude/memory.\"\"\"",
+      "src/utils/path_resolver.py:351: \"\"\"Return True when the global ~/.claude/memory directory is in use.",
+      "src/utils/path_resolver.py:384: Path: Absolute path to ~/.claude/scripts/.",
+      "src/utils/path_resolver.py:393: Path: Absolute path to ~/.claude/policies/.",
+      "src/utils/path_resolver.py:408: \"\"\"Return the Claude home directory (~/.claude/ or CLAUDE_HOME)."
+    ],
+    "abs_path_literals": [],
+    "unencoded_open_calls": [
+      "langgraph_engine/engine_logging/setup.py:198: open(...) missing encoding=",
+      "langgraph_engine/sdlc_pipeline/documentation_generator.py:198: open(...) missing encoding=",
+      "langgraph_engine/sdlc_pipeline/documentation_generator.py:230: open(...) missing encoding=",
+      "langgraph_engine/sdlc_pipeline/documentation_generator.py:240: open(...) missing encoding=",
+      "langgraph_engine/sdlc_pipeline/documentation_generator.py:264: open(...) missing encoding=",
+      "langgraph_engine/sdlc_pipeline/architecture/01-task-breakdown/task_auto_analyzer.py:352: open(...) missing encoding=",
+      "scripts/agents/computer-use-agent.py:408: open(...) missing encoding=",
+      "scripts/agents/dummy-project-seeder.py:349: open(...) missing encoding=",
+      "scripts/agents/dummy-project-seeder.py:354: open(...) missing encoding=",
+      "scripts/agents/dummy-project-seeder.py:317: open(...) missing encoding=",
+      "scripts/agents/dummy-project-seeder.py:323: open(...) missing encoding=",
+      "scripts/agents/dummy-project-seeder.py:330: open(...) missing encoding=",
+      "scripts/agents/verify-computer-use-prerequisites.py:73: open(...) missing encoding=",
+      "scripts/agents/verify-computer-use-prerequisites.py:57: open(...) missing encoding=",
+      "scripts/agents/verify-computer-use-prerequisites.py:114: open(...) missing encoding=",
+      "src/services/claude_integration.py:316: open(...) missing encoding=",
+      "src/services/claude_integration.py:331: open(...) missing encoding=",
+      "src/services/claude_integration.py:377: open(...) missing encoding=",
+      "src/services/claude_integration.py:348: open(...) missing encoding="
+    ]
+  },
+  "counts_summary": {
+    "home_dir_refs": 116,
+    "abs_path_literals": 0,
+    "unencoded_open_calls": 19
+  },
+  "declared_vs_imported_deps": {
+    "declared_packages_by_file": {
+      "requirements.txt": [
+        "langgraph",
+        "langchain-core",
+        "PyGithub",
+        "GitPython",
+        "networkx",
+        "lizard",
+        "anthropic",
+        "requests",
+        "langgraph-checkpoint-sqlite",
+        "python-dotenv",
+        "psutil",
+        "loguru",
+        "rich",
+        "watchdog",
+        "pytest",
+        "pytest-cov",
+        "pytest-mock",
+        "coverage",
+        "pylint",
+        "flake8",
+        "black",
+        "isort",
+        "mypy",
+        "bandit",
+        "safety",
+        "pre-commit",
+        "pydantic",
+        "mcp",
+        "aiofiles"
+      ],
+      "requirements-dev.txt": [
+        "pytest",
+        "pytest-cov",
+        "responses",
+        "ruff"
+      ],
+      "requirements-optional.txt": [
+        "TTS"
+      ]
+    },
+    "declared_unique_count": 32,
+    "declared_but_unused_or_dev_cli_only": [
+      "aiofiles",
+      "bandit",
+      "black",
+      "coverage",
+      "isort",
+      "langchain-core (langchain_core not imported anywhere in live scope; langgraph pulls it transitively)",
+      "mypy",
+      "pre-commit",
+      "pydantic (not directly imported in live scope; likely a transitive mcp/langgraph dep declared explicitly)",
+      "pylint",
+      "python-dotenv (import name dotenv not found in live-scope imports)",
+      "ruff",
+      "safety",
+      "watchdog (declared for standards hot-reload; not found as a direct import in live scope)"
+    ],
+    "used_but_undeclared": [
+      {
+        "package": "boto3",
+        "pip_name": "boto3",
+        "used_by": "langgraph_engine/security/secrets_manager.py",
+        "note": "AWS Secrets Manager integration documented in CLAUDE.md, not in any requirements*.txt"
+      },
+      {
+        "package": "botocore",
+        "pip_name": "botocore",
+        "used_by": "langgraph_engine/security/secrets_manager.py",
+        "note": "transitive of boto3, also directly imported"
+      },
+      {
+        "package": "opentelemetry",
+        "pip_name": "opentelemetry-api / opentelemetry-sdk",
+        "used_by": "langgraph_engine/engine_logging/tracing.py",
+        "note": "ENABLE_TRACING feature documented in CLAUDE.md, undeclared"
+      },
+      {
+        "package": "prometheus_client",
+        "pip_name": "prometheus-client",
+        "used_by": "langgraph_engine/metrics/exporter.py",
+        "note": "ENABLE_METRICS feature documented in CLAUDE.md, undeclared"
+      },
+      {
+        "package": "sentry_sdk",
+        "pip_name": "sentry-sdk",
+        "used_by": "langgraph_engine/context/error_tracking.py",
+        "note": "Sentry error tracking documented in CLAUDE.md, undeclared"
+      },
+      {
+        "package": "cryptography",
+        "pip_name": "cryptography",
+        "used_by": "langgraph_engine/security/secrets_manager.py",
+        "note": "undeclared"
+      },
+      {
+        "package": "edge_tts",
+        "pip_name": "edge-tts",
+        "used_by": "scripts/tools/voice-notifier.py",
+        "note": "undeclared; not even in requirements-optional.txt alongside TTS"
+      },
+      {
+        "package": "pyttsx3",
+        "pip_name": "pyttsx3",
+        "used_by": "scripts/tools/voice-notifier.py",
+        "note": "undeclared TTS fallback"
+      },
+      {
+        "package": "mss",
+        "pip_name": "mss",
+        "used_by": "scripts/agents/computer-use-agent.py",
+        "note": "screen capture dep, undeclared"
+      },
+      {
+        "package": "pyautogui",
+        "pip_name": "pyautogui",
+        "used_by": "scripts/agents/computer-use-agent.py",
+        "note": "undeclared"
+      }
+    ],
+    "used_but_undeclared_count": 10
+  },
+  "sdp_violations": [
+    {
+      "dependent": "langgraph_engine (root/composition-root)",
+      "I_dependent": 0.515,
+      "dependency": "langgraph_engine/quality",
+      "I_dependency": 0.75,
+      "note": "root depends on a less-stable package; expected for a composition root (orchestrator.py wires all subpackages) but technically SDP-noncompliant"
+    },
+    {
+      "dependent": "langgraph_engine (root/composition-root)",
+      "I_dependent": 0.515,
+      "dependency": "langgraph_engine/context",
+      "I_dependency": 0.75,
+      "note": "same composition-root caveat"
+    },
+    {
+      "dependent": "langgraph_engine (root/composition-root)",
+      "I_dependent": 0.515,
+      "dependency": "langgraph_engine/sdlc_pipeline",
+      "I_dependency": 0.615,
+      "note": "same composition-root caveat"
+    },
+    {
+      "dependent": "langgraph_engine (root/composition-root)",
+      "I_dependent": 0.515,
+      "dependency": "langgraph_engine/analysis",
+      "I_dependency": 0.667,
+      "note": "same composition-root caveat"
+    },
+    {
+      "dependent": "langgraph_engine (root/composition-root)",
+      "I_dependent": 0.515,
+      "dependency": "langgraph_engine/github",
+      "I_dependency": 0.667,
+      "note": "same composition-root caveat"
+    },
+    {
+      "dependent": "langgraph_engine (root/composition-root)",
+      "I_dependent": 0.515,
+      "dependency": "langgraph_engine/skills",
+      "I_dependency": 0.667,
+      "note": "same composition-root caveat"
+    },
+    {
+      "dependent": "langgraph_engine (root/composition-root)",
+      "I_dependent": 0.515,
+      "dependency": "langgraph_engine/standards",
+      "I_dependency": 0.667,
+      "note": "same composition-root caveat"
+    },
+    {
+      "dependent": "langgraph_engine (root/composition-root)",
+      "I_dependent": 0.515,
+      "dependency": "langgraph_engine/routing",
+      "I_dependency": 0.6,
+      "note": "same composition-root caveat"
+    }
+  ],
+  "sdp_violations_note": "All 8 detected SDP violations originate from the same dependent (langgraph_engine root / orchestrator.py), the pipelines composition root. This is architecturally expected for a composition root and is reported per the skill anti-pattern warning against blind application, not flagged as debt."
+}

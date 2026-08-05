@@ -3,7 +3,7 @@ Tests for CallGraph.compute_call_paths depth and path limits (issue #207).
 
 Verifies:
 - Default max_depth is 30 (was 15 before issue #207).
-- Default max_paths is 500 (was 200 before issue #207).
+- Default max_paths is unbounded (was 200 before #207, 500 before #265).
 - Both defaults can be overridden via CLAUDE_CG_MAX_DEPTH / CLAUDE_CG_MAX_PATHS
   environment variables at module load time.
 - Explicit kwargs override the env defaults for a single call.
@@ -71,13 +71,15 @@ def _build_star_graph(fanout):
 
 
 class TestComputeCallPathsDefaults:
-    """Defaults must be the new values (30 / 500), not the old (15 / 200)."""
+    """Depth defaults to 30; paths default to unbounded since issue #265."""
 
     def test_default_max_depth_is_30(self):
         assert DEFAULT_MAX_DEPTH == 30
 
-    def test_default_max_paths_is_500(self):
-        assert DEFAULT_MAX_PATHS == 500
+    def test_default_max_paths_is_unbounded(self):
+        # Issue #265: 500 bound on every production run and truncated the input
+        # to every sequence and interaction diagram. None means "no cap".
+        assert DEFAULT_MAX_PATHS is None
 
 
 class TestComputeCallPathsDepth:
@@ -155,7 +157,7 @@ class TestComputeCallPathsEnvVarOverride:
         try:
             # Must fall back to the coded defaults, not raise.
             assert gm.DEFAULT_MAX_DEPTH == 30
-            assert gm.DEFAULT_MAX_PATHS == 500
+            assert gm.DEFAULT_MAX_PATHS is None
         finally:
             monkeypatch.delenv("CLAUDE_CG_MAX_DEPTH", raising=False)
             monkeypatch.delenv("CLAUDE_CG_MAX_PATHS", raising=False)

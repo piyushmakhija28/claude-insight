@@ -56,7 +56,7 @@ def _clear_cache():
 
 
 def _mock_call_execution_script(captured_calls):
-    def _side_effect(script_name, args=None, model_tier=None, timeout=None):
+    def _side_effect(script_name, args=None, model_tier=None, silence_interval=None):
         captured_calls.append((script_name, args))
         if script_name == "prompt_gen_expert_caller":
             return {"status": "SUCCESS", "llm_response": "orchestration prompt body", "prompt": "raw"}

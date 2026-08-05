@@ -32,7 +32,10 @@ Resume an interrupted session:
 import signal
 import sys
 import time
+from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional
+
+from langgraph_engine.core.claude_paths import get_claude_logs_dir
 
 try:
     from loguru import logger
@@ -213,7 +216,7 @@ class RecoveryHandler:
         self,
         session_id: str,
         step_executor: Optional[Callable] = None,
-        base_log_dir: str = "~/.claude/logs",
+        base_log_dir: Optional[str] = None,
     ):
         """Initialise the recovery handler.
 
@@ -222,14 +225,17 @@ class RecoveryHandler:
             step_executor: Optional callable(step, state) -> dict|None.
                            Used by resume_session() to replay steps.
             base_log_dir: Base directory for checkpoints and error logs.
+                          Defaults to the path_resolver Claude logs root, which
+                          both delegates resolve for themselves when unset.
         """
         self.session_id = session_id
         self.step_executor = step_executor
 
-        self.checkpoint_manager = CheckpointManager(session_id, base_dir=base_log_dir)
+        base = str(Path(base_log_dir).expanduser() if base_log_dir else get_claude_logs_dir())
+        self.checkpoint_manager = CheckpointManager(session_id, base_dir=base)
         self.error_logger = ErrorLogger(
             session_id=session_id,
-            log_base_dir=base_log_dir,
+            log_base_dir=base,
         )
 
         self._start_time = time.time()

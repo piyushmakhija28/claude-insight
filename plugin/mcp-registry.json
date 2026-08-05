@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "what_this_is": "The catalogue of MCP servers that register-mcp is able to add to the user's user-scope settings.json. It is NOT a .mcp.json and Claude Code never reads it. Nothing here is spawned, referenced or discovered by the plugin manager; it is inert data read only by plugin/scripts/mcp_registration.py when the user explicitly runs register-mcp. ADR-019 forbids bundling servers, and this file bundles none - it bundles the knowledge of which servers exist so the user does not have to hand-write a settings entry.",
+  "servers": [
+    {
+      "id": "post-tool-tracker",
+      "capability": "progress-writer",
+      "description": "Per-tool-call progress and commit-readiness projection. Replaces the PostToolUse hook's progress writing once that hook is deleted (PRD FR-4).",
+      "repo": "mcp-post-tool-tracker",
+      "entry": "server.py",
+      "interpreter": "python"
+    },
+    {
+      "id": "push-gate",
+      "capability": "version-push-gate",
+      "description": "Local version-push gate, exposing the tool check_push_allowed. Ports the PreToolUse push_gate policy to an MCP tool so the guarantee survives hook deletion (PRD FR-4). Unlike the other entries this one is NOT an mcp-* checkout: it lives inside the engine repository, which is a sibling of the mcp-* checkouts under the same server root. It is engine governance rather than a reusable integration, it needs no dependency at all, and keeping it here is what lets the engine's own test suite prove the tool path on a fresh clone. ADR-019 is unaffected - the plugin tree still bundles nothing.",
+      "repo": "claude-workflow-engine",
+      "entry": "src/mcp/push_gate/server.py",
+      "interpreter": "python"
+    }
+  ]
+}

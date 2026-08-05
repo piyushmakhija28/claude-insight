@@ -32,16 +32,63 @@ Temperature guidelines (research-backed):
 Usage (unchanged - backward compatible):
     from langgraph_engine.llm_call import llm_call
     response = llm_call(prompt, model="fast", temperature=0.1)
+
+NFR-2 / ADR-016 -- WHERE THE ONE PERMITTED TIMEOUT LIVES
+--------------------------------------------------------
+``timeout`` on every provider's ``call`` now defaults to None, meaning unbounded:
+a CLI subprocess is bounded by progress (see ``liveness.run_supervised``) and
+never by a deadline.
+
+``AnthropicProvider`` is the single documented exception ADR-016 permits, and it
+is deliberately the only one. It is a socket/HTTP-level timeout on ONE network
+call, not a bound on the enclosing pipeline task: it is configurable through
+ANTHROPIC_HTTP_TIMEOUT, it can be disabled entirely by setting that to 0, and
+when it fires it is recorded as a failure against the ``anthropic_api`` circuit
+breaker and surfaced as a retryable error rather than aborting the step. A
+design with no socket timeout at all hangs forever with no recovery signal,
+which ADR-016 rejects explicitly; a socket timeout that feeds a breaker is a
+different construct from a deadline that kills a task, and only the second is
+banned.
 """
 
 import logging
 import os
 import shutil
-import subprocess
 from abc import ABC, abstractmethod
 from typing import List, Optional
 
+from .liveness import get_breaker, run_supervised
+
 _log = logging.getLogger(__name__)
+
+
+ANTHROPIC_HTTP_TIMEOUT_VAR = "ANTHROPIC_HTTP_TIMEOUT"
+
+DEFAULT_ANTHROPIC_HTTP_TIMEOUT = 60.0
+
+
+def _anthropic_socket_timeout(override=None):
+    """Resolve the one socket/HTTP timeout ADR-016 permits.
+
+    Args:
+        override: Per-call value in seconds, or None to read the environment.
+
+    Returns:
+        float or None: The socket timeout, or None when it is disabled -- either
+        by setting ANTHROPIC_HTTP_TIMEOUT to 0 or by passing 0 explicitly. None
+        means the SDK is left to its own default behaviour with no bound imposed
+        here, which is what "user-overridable to unbounded" requires.
+    """
+    if override is not None:
+        return float(override) if float(override) > 0 else None
+    raw = os.environ.get(ANTHROPIC_HTTP_TIMEOUT_VAR, "").strip()
+    if not raw:
+        return DEFAULT_ANTHROPIC_HTTP_TIMEOUT
+    try:
+        value = float(raw)
+    except (TypeError, ValueError):
+        return DEFAULT_ANTHROPIC_HTTP_TIMEOUT
+    return value if value > 0 else None
 
 
 # =============================================================================
@@ -62,7 +109,7 @@ class LLMProvider(ABC):
         prompt: str,
         model: str = "fast",
         temperature: float = 0.3,
-        timeout: int = 120,
+        timeout: Optional[float] = None,
         json_mode: bool = False,
     ) -> Optional[str]:
         """Send prompt to LLM and return response text.
@@ -71,7 +118,8 @@ class LLMProvider(ABC):
             prompt: The prompt text to send.
             model: Tier - "fast", "balanced", or "deep".
             temperature: Sampling temperature (0.0-1.0).
-            timeout: Max seconds to wait for response.
+            timeout: Provider-specific bound. None, the default, means unbounded:
+                see the module docstring for why only one provider honours it.
             json_mode: If True, request JSON-formatted output.
 
         Returns:
@@ -127,14 +175,19 @@ class ClaudeCLIProvider(LLMProvider):
         """Return True when the 'claude' CLI was found on PATH at init."""
         return self._available
 
-    def call(self, prompt, model="fast", temperature=0.3, timeout=120, json_mode=False):
+    def call(self, prompt, model="fast", temperature=0.3, timeout=None, json_mode=False):
         """Run the prompt through the 'claude' CLI and return its stdout.
+
+        The CLI is bounded by progress rather than by elapsed time: it runs for as
+        long as it keeps writing, and the ``claude_cli`` circuit breaker is what
+        stops a systemically failing CLI from being called again.
 
         Args:
             prompt: Prompt text; truncated to 10k chars to stay within CLI limits.
             model: Tier key mapped to a CLI model alias via MODEL_MAP.
             temperature: Accepted for interface parity; the CLI ignores it.
-            timeout: Max seconds to wait for the subprocess.
+            timeout: Seconds of CLI silence tolerated before the child is treated
+                as stuck. None, the default, means unbounded.
             json_mode: Accepted for interface parity; not enforced by the CLI.
 
         Returns:
@@ -153,14 +206,12 @@ class ClaudeCLIProvider(LLMProvider):
         env["CLAUDE_WORKFLOW_RUNNING"] = "1"
 
         try:
-            result = subprocess.run(
+            result = run_supervised(
                 [self._claude_path, "-p", "--model", cli_model, prompt],
-                capture_output=True,
-                text=True,
-                timeout=timeout,
+                lease_interval=timeout,
+                lease_name="llm_claude_cli",
                 env=env,
-                encoding="utf-8",
-                errors="replace",
+                breaker_name="claude_cli",
             )
             if result.returncode == 0 and result.stdout.strip():
                 return result.stdout.strip()
@@ -228,7 +279,7 @@ class AnthropicProvider(LLMProvider):
         """Return True when an ANTHROPIC_API_KEY was present at init."""
         return self._available
 
-    def call(self, prompt, model="fast", temperature=0.3, timeout=120, json_mode=False):
+    def call(self, prompt, model="fast", temperature=0.3, timeout=None, json_mode=False):
         """Send the prompt to the Anthropic Messages API and return the text.
 
         Selects the model by tier, optionally appends a JSON-only instruction,
@@ -239,7 +290,11 @@ class AnthropicProvider(LLMProvider):
             prompt: Prompt text to send.
             model: Tier key selecting fast/balanced/deep model ids.
             temperature: Sampling temperature (0.0-1.0).
-            timeout: Requested timeout in seconds (capped at 60 by the SDK call).
+            timeout: Per-request socket/HTTP timeout override in seconds. None,
+                the default, uses ANTHROPIC_HTTP_TIMEOUT; setting either to 0
+                disables the socket timeout entirely. This is the ONE timeout
+                ADR-016 permits, and it feeds the circuit breaker rather than
+                aborting the enclosing pipeline task.
             json_mode: If True, append an instruction to return only valid JSON.
 
         Returns:
@@ -267,12 +322,16 @@ class AnthropicProvider(LLMProvider):
         try:
             import anthropic as _anthropic_sdk
 
-            response = client.messages.create(
-                model=api_model,
-                max_tokens=2048,
-                messages=[{"role": "user", "content": actual_prompt}],
-                temperature=temperature,
-                timeout=min(timeout, 60),
+            breaker = get_breaker("anthropic_api")
+            socket_timeout = _anthropic_socket_timeout(timeout)
+            response = breaker.call(
+                lambda: client.messages.create(
+                    model=api_model,
+                    max_tokens=2048,
+                    messages=[{"role": "user", "content": actual_prompt}],
+                    temperature=temperature,
+                    timeout=socket_timeout,
+                )
             )
             text = next((block.text for block in response.content if block.type == "text"), "").strip()
             return text if text else None
@@ -369,7 +428,7 @@ def llm_call(
     prompt: str,
     model: str = "fast",
     temperature: Optional[float] = None,
-    timeout: int = 120,
+    timeout: Optional[float] = None,
     json_mode: bool = False,
 ) -> Optional[str]:
     """Make an LLM call with automatic fallback chain.
@@ -381,7 +440,7 @@ def llm_call(
         prompt: The prompt text to send.
         model: "fast" (haiku), "balanced" (sonnet), "deep" (opus).
         temperature: Override temp (default: auto per model tier).
-        timeout: Max seconds to wait.
+        timeout: Provider-specific bound. None, the default, means unbounded.
         json_mode: If True, request JSON format.
 
     Returns:
@@ -417,12 +476,10 @@ def generate_llm_commit_title(commit_type: str = None, cwd: str = None) -> Optio
         Commit title string (max 72 chars), or None if LLM unavailable.
     """
     try:
-        stat_result = subprocess.run(
-            ["git", "diff", "--cached", "--stat"], capture_output=True, text=True, timeout=5, cwd=cwd
-        )
+        stat_result = run_supervised(["git", "diff", "--cached", "--stat"], cwd=cwd)
         stat_text = stat_result.stdout.strip() if stat_result.returncode == 0 else ""
 
-        diff_result = subprocess.run(["git", "diff", "--cached"], capture_output=True, text=True, timeout=5, cwd=cwd)
+        diff_result = run_supervised(["git", "diff", "--cached"], cwd=cwd)
         diff_text = diff_result.stdout[:3000] if diff_result.returncode == 0 else ""
 
         if not stat_text and not diff_text:
@@ -448,7 +505,7 @@ def generate_llm_commit_title(commit_type: str = None, cwd: str = None) -> Optio
             f"- No quotes, no explanation, just the commit title line\n"
         )
 
-        response = llm_call(prompt, model="fast", temperature=0.1, timeout=15)
+        response = llm_call(prompt, model="fast", temperature=0.1)
         if not response:
             return None
 
@@ -457,9 +514,6 @@ def generate_llm_commit_title(commit_type: str = None, cwd: str = None) -> Optio
             title = f"{commit_type}: {title}"
         return title[:69] + "..." if len(title) > 72 else title
 
-    except subprocess.TimeoutExpired:
-        _log.debug("generate_llm_commit_title: git command timed out")
-        return None
     except Exception as exc:
         _log.debug("generate_llm_commit_title failed: %s", exc)
         return None

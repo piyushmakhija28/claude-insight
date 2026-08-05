@@ -313,7 +313,7 @@ class AutoSessionTracker:
             "enabled_at": datetime.now().isoformat(),
         }
 
-        with open(self.auto_tracking_config, "w") as f:
+        with open(self.auto_tracking_config, "w", encoding="utf-8") as f:
             json.dump(config, f, indent=2)
 
         return config
@@ -328,7 +328,7 @@ class AutoSessionTracker:
         """
         config = {"enabled": False, "disabled_at": datetime.now().isoformat()}
 
-        with open(self.auto_tracking_config, "w") as f:
+        with open(self.auto_tracking_config, "w", encoding="utf-8") as f:
             json.dump(config, f, indent=2)
 
         return config
@@ -345,7 +345,7 @@ class AutoSessionTracker:
             return {"enabled": False}
 
         try:
-            with open(self.auto_tracking_config, "r") as f:
+            with open(self.auto_tracking_config, "r", encoding="utf-8") as f:
                 return json.load(f)
         except (IOError, json.JSONDecodeError):
             return {"enabled": False}
@@ -374,7 +374,7 @@ class AutoSessionTracker:
         config = self.get_tracking_status()
         config["last_sync"] = datetime.now().isoformat()
 
-        with open(self.auto_tracking_config, "w") as f:
+        with open(self.auto_tracking_config, "w", encoding="utf-8") as f:
             json.dump(config, f, indent=2)
 
         return {"success": True, "message": "Sessions synced successfully", "synced_at": config["last_sync"]}

@@ -28,6 +28,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+from langgraph_engine.core.claude_paths import display_path
+
 # ============================================================================
 # CONSTANTS
 # ============================================================================
@@ -407,7 +409,7 @@ def main() -> int:
         "sessions_dir",
         nargs="?",
         default=None,
-        help="Sessions directory to analyse (default: ~/.claude/logs/sessions/)",
+        help="Sessions directory to analyse (default: {}/)".format(display_path("logs", "sessions")),
     )
     parser.add_argument(
         "--json",
@@ -417,7 +419,7 @@ def main() -> int:
     parser.add_argument(
         "--update",
         action="store_true",
-        help="Merge and save computed preferences to ~/.claude/memory/user-preferences.json",
+        help="Merge and save computed preferences to {}".format(display_path("memory", "user-preferences.json")),
     )
     parser.add_argument(
         "--show-stored",

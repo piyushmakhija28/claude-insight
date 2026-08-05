@@ -1,0 +1,837 @@
+{
+  "artifact": "discovery_manifest",
+  "phase": "phase-5-uml",
+  "generated_by": "ast-graph-engineer read-only coverage probe",
+  "project_root": "C:/Users/techd/Documents/workspace-spring-tool-suite-4-4.27.0-new/claude-workflow-engine",
+  "read_only": true,
+  "source_files_modified": 0,
+  "measurement_method": {
+    "runtime_probe": "langgraph_engine.parsers.call_graph_builder_legacy.CallGraphBuilder instantiated in-process; _discover_files() and build() called directly",
+    "sampling": "none - every discovered path was enumerated, no slice or head limit applied to the probe output",
+    "static_enumeration": "repo-wide grep over *.py excluding .venv/ for cap declarations"
+  },
+  "truncation_sites": {
+    "claim_under_test": "cap is duplicated across four files, plus a fifth different-class truncator",
+    "verdict": "four-file part CONFIRMED; 'fifth' part UNDERCOUNTS - two different-class truncators exist, not one. Two graph-traversal caps the claim does not mention also exist.",
+    "file_count_caps_on_callgraph_ast_discovery": [
+      {
+        "id": "FC-1",
+        "file": "langgraph_engine/parsers/config.py",
+        "line": 11,
+        "constant": "MAX_FILES",
+        "value": 300,
+        "live": false,
+        "evidence": "MEASURED-STATIC: only importer repo-wide is langgraph_engine/parsers/__init__.py:22, which re-exports it via __all__. No module reads it. The live builder declares its own duplicate. config.py's own docstring claims it is the 'single source of truth' - that claim is false."
+      },
+      {
+        "id": "FC-2",
+        "file": "langgraph_engine/parsers/call_graph_builder_legacy.py",
+        "line": 64,
+        "constant": "MAX_FILES",
+        "value": 300,
+        "live": true,
+        "enforced_at": [
+          "langgraph_engine/parsers/call_graph_builder_legacy.py:107",
+          "langgraph_engine/parsers/call_graph_builder_legacy.py:118"
+        ],
+        "evidence": "MEASURED-RUNTIME: this is the cap that actually binds. Default CallGraphBuilder(root) discovered exactly 300 of 411 files."
+      },
+      {
+        "id": "FC-3",
+        "file": "langgraph_engine/sdlc_pipeline/architecture/00-code-graph-analysis/code_graph_analyzer.py",
+        "line": 73,
+        "constant": "MAX_FILES",
+        "value": 500,
+        "live": false,
+        "enforced_at": [
+          "...code_graph_analyzer.py:154",
+          "...code_graph_analyzer.py:169"
+        ],
+        "evidence": "MEASURED-STATIC: repo-wide grep for 'code_graph_analyzer' finds no importer outside the file itself. Dormant duplicate of FC-4."
+      },
+      {
+        "id": "FC-4",
+        "file": "scripts/architecture/03-execution-system/00-code-graph-analysis/code-graph-analyzer.py",
+        "line": 68,
+        "constant": "MAX_FILES",
+        "value": 500,
+        "live": true,
+        "enforced_at": [
+          "...code-graph-analyzer.py:137",
+          "...code-graph-analyzer.py:152"
+        ],
+        "evidence": "MEASURED-STATIC: loaded by importlib at langgraph_engine/analysis/complexity_calculator.py:366-373 to compute the graph half of combined_complexity_score. Not on the UML path.",
+        "binds_today": false,
+        "binds_today_reason": "500 > 411 files on disk, so this cap does not currently truncate"
+      }
+    ],
+    "file_size_caps": [
+      {
+        "id": "FS-1",
+        "file": "langgraph_engine/parsers/config.py",
+        "line": 14,
+        "constant": "MAX_FILE_SIZE_KB",
+        "value": 100,
+        "live": false
+      },
+      {
+        "id": "FS-2",
+        "file": "langgraph_engine/parsers/call_graph_builder_legacy.py",
+        "line": 65,
+        "constant": "MAX_FILE_SIZE_KB",
+        "value": 100,
+        "live": true,
+        "enforced_at": [
+          "langgraph_engine/parsers/call_graph_builder_legacy.py:113"
+        ]
+      },
+      {
+        "id": "FS-3",
+        "file": "langgraph_engine/sdlc_pipeline/architecture/00-code-graph-analysis/code_graph_analyzer.py",
+        "line": 74,
+        "constant": "MAX_FILE_SIZE_KB",
+        "value": 100,
+        "live": false
+      },
+      {
+        "id": "FS-4",
+        "file": "scripts/architecture/03-execution-system/00-code-graph-analysis/code-graph-analyzer.py",
+        "line": 69,
+        "constant": "MAX_FILE_SIZE_KB",
+        "value": 100,
+        "live": true
+      }
+    ],
+    "file_size_caps_measured_impact": {
+      "files_on_disk_over_100kb": 0,
+      "note": "MEASURED: zero source files exceed 100 KB today, so the size caps currently exclude nothing. They remain latent."
+    },
+    "graph_traversal_caps": [
+      {
+        "id": "GT-1",
+        "file": "langgraph_engine/parsers/graph_model.py",
+        "line": 42,
+        "constant": "DEFAULT_MAX_DEPTH",
+        "value": 30,
+        "env_override": "CLAUDE_CG_MAX_DEPTH",
+        "live": true,
+        "binds_today": false,
+        "evidence": "MEASURED: max_call_depth observed was 11 (truncated run) and 7 (unbounded run), both far below 30."
+      },
+      {
+        "id": "GT-2",
+        "file": "langgraph_engine/parsers/graph_model.py",
+        "line": 43,
+        "constant": "DEFAULT_MAX_PATHS",
+        "value": 500,
+        "env_override": "CLAUDE_CG_MAX_PATHS",
+        "live": true,
+        "binds_today": true,
+        "evidence": "MEASURED: the builder emitted 'compute_call_paths: hit max_paths=500 limit; results truncated' on BOTH the truncated and the unbounded run. This cap binds even after the file cap is lifted."
+      }
+    ],
+    "different_class_truncators": [
+      {
+        "id": "DC-1",
+        "file": "langgraph_engine/build_dependency_resolver/parsers.py",
+        "lines": [
+          681,
+          682
+        ],
+        "constants": {
+          "max_depth": 4,
+          "max_files_scanned": 1000
+        },
+        "scope": "bounded BFS inside _dir_has_code_uncached(); answers 'does this directory contain source', not call-graph discovery"
+      },
+      {
+        "id": "DC-2",
+        "file": "langgraph_engine/sdlc_pipeline/code_explorer.py",
+        "line": 453,
+        "constants": {
+          "max_files": 3
+        },
+        "scope": "extract_code_snippets() - reads first 15 lines of at most 3 files for LLM context; not call-graph discovery"
+      }
+    ],
+    "downstream_diagram_truncators": [
+      {
+        "file": "langgraph_engine/diagrams/sequence_diagram.py",
+        "lines": [
+          171,
+          172
+        ],
+        "constants": {
+          "chains_per_file": 20,
+          "total_chains": 80
+        }
+      },
+      {
+        "file": "langgraph_engine/diagrams/interaction_diagram.py",
+        "lines": [
+          76,
+          77
+        ],
+        "constants": {
+          "chains_per_file": 10,
+          "total_chains": 40
+        }
+      },
+      {
+        "file": "langgraph_engine/diagrams/legacy_generator.py",
+        "lines": [
+          414,
+          415
+        ],
+        "constants": {
+          "chains_per_file": 20,
+          "total_chains": 80
+        }
+      },
+      {
+        "file": "langgraph_engine/diagrams/legacy_generator.py",
+        "lines": [
+          740,
+          741
+        ],
+        "constants": {
+          "chains_per_file": 10,
+          "total_chains": 40
+        }
+      },
+      {
+        "file": "langgraph_engine/diagrams/drawio/drawio_converter_enriched.py",
+        "lines": [
+          270,
+          403,
+          611
+        ],
+        "constants": {
+          "max_styled_nodes": 200
+        }
+      }
+    ],
+    "counts": {
+      "file_count_cap_files": 4,
+      "file_size_cap_files": 4,
+      "graph_traversal_cap_sites": 2,
+      "different_class_truncators": 2,
+      "downstream_diagram_truncator_sites": 5,
+      "total_distinct_truncation_sites_enumerated": 17
+    }
+  },
+  "discovery_set": {
+    "measurement": "MEASURED-RUNTIME",
+    "source_files_on_disk": 411,
+    "on_disk_by_extension": {
+      ".py": 411
+    },
+    "on_disk_by_top_package": {
+      "langgraph_engine": 237,
+      "tests": 75,
+      "hooks": 45,
+      "scripts": 37,
+      "src": 16,
+      "<root>": 1
+    },
+    "truncated_run": {
+      "max_files": 300,
+      "files_discovered": 300,
+      "by_top_package": {
+        "langgraph_engine": 164,
+        "tests": 75,
+        "scripts": 37,
+        "src": 16,
+        "hooks": 7,
+        "<root>": 1
+      },
+      "stats": {
+        "total_classes": 449,
+        "total_methods": 2844,
+        "total_functions": 887,
+        "total_call_edges": 18098,
+        "total_inheritance_edges": 71,
+        "resolved_edges": 4908,
+        "unresolved_edges": 13190,
+        "files_analyzed": 300,
+        "max_call_depth": 11,
+        "avg_cyclomatic": 3.83,
+        "max_cyclomatic": 53
+      }
+    },
+    "unbounded_run": {
+      "max_files": 1000000000,
+      "files_discovered": 411,
+      "by_top_package": {
+        "langgraph_engine": 237,
+        "tests": 75,
+        "hooks": 45,
+        "scripts": 37,
+        "src": 16,
+        "<root>": 1
+      },
+      "stats": {
+        "total_classes": 480,
+        "total_methods": 3506,
+        "total_functions": 1340,
+        "total_call_edges": 26114,
+        "total_inheritance_edges": 75,
+        "resolved_edges": 7004,
+        "unresolved_edges": 19110,
+        "files_analyzed": 411,
+        "max_call_depth": 7,
+        "avg_cyclomatic": 4.43,
+        "max_cyclomatic": 107
+      }
+    },
+    "files_lost_to_truncation": 111,
+    "ordering_evidence": {
+      "measurement": "MEASURED-RUNTIME",
+      "last_file_admitted_at_index_299": "langgraph_engine/runtime_verification/node_contracts.py",
+      "index_of_first_sdlc_pipeline_file_in_full_order": 304,
+      "index_of_first_hooks_pre_tool_enforcer_file_in_full_order": 378,
+      "index_of_first_tests_file_in_full_order": 72,
+      "interpretation": "pathlib glob order exhausts the 300-file budget 5 files before the sdlc_pipeline tree begins"
+    }
+  },
+  "package_coverage": [
+    {
+      "subtree": "hooks/<top>",
+      "files_in_truncated_scope": 7,
+      "files_total": 7,
+      "files_missing": 0,
+      "status": "fully_in_scope"
+    },
+    {
+      "subtree": "hooks/post_tool_tracker",
+      "files_in_truncated_scope": 0,
+      "files_total": 12,
+      "files_missing": 12,
+      "status": "fully_absent"
+    },
+    {
+      "subtree": "hooks/pre_tool_enforcer",
+      "files_in_truncated_scope": 0,
+      "files_total": 21,
+      "files_missing": 21,
+      "status": "fully_absent"
+    },
+    {
+      "subtree": "hooks/stop_notifier",
+      "files_in_truncated_scope": 0,
+      "files_total": 5,
+      "files_missing": 5,
+      "status": "fully_absent"
+    },
+    {
+      "subtree": "langgraph_engine/<top>",
+      "files_in_truncated_scope": 55,
+      "files_total": 55,
+      "files_missing": 0,
+      "status": "fully_in_scope"
+    },
+    {
+      "subtree": "langgraph_engine/analysis",
+      "files_in_truncated_scope": 5,
+      "files_total": 5,
+      "files_missing": 0,
+      "status": "fully_in_scope"
+    },
+    {
+      "subtree": "langgraph_engine/build_dependency_resolver",
+      "files_in_truncated_scope": 4,
+      "files_total": 4,
+      "files_missing": 0,
+      "status": "fully_in_scope"
+    },
+    {
+      "subtree": "langgraph_engine/context",
+      "files_in_truncated_scope": 5,
+      "files_total": 5,
+      "files_missing": 0,
+      "status": "fully_in_scope"
+    },
+    {
+      "subtree": "langgraph_engine/context_sync",
+      "files_in_truncated_scope": 8,
+      "files_total": 12,
+      "files_missing": 4,
+      "status": "partially_in_scope"
+    },
+    {
+      "subtree": "langgraph_engine/core",
+      "files_in_truncated_scope": 9,
+      "files_total": 9,
+      "files_missing": 0,
+      "status": "fully_in_scope"
+    },
+    {
+      "subtree": "langgraph_engine/diagrams",
+      "files_in_truncated_scope": 19,
+      "files_total": 24,
+      "files_missing": 5,
+      "status": "partially_in_scope"
+    },
+    {
+      "subtree": "langgraph_engine/engine_logging",
+      "files_in_truncated_scope": 6,
+      "files_total": 6,
+      "files_missing": 0,
+      "status": "fully_in_scope"
+    },
+    {
+      "subtree": "langgraph_engine/github",
+      "files_in_truncated_scope": 7,
+      "files_total": 7,
+      "files_missing": 0,
+      "status": "fully_in_scope"
+    },
+    {
+      "subtree": "langgraph_engine/helper_nodes",
+      "files_in_truncated_scope": 5,
+      "files_total": 5,
+      "files_missing": 0,
+      "status": "fully_in_scope"
+    },
+    {
+      "subtree": "langgraph_engine/integrations",
+      "files_in_truncated_scope": 7,
+      "files_total": 7,
+      "files_missing": 0,
+      "status": "fully_in_scope"
+    },
+    {
+      "subtree": "langgraph_engine/library",
+      "files_in_truncated_scope": 2,
+      "files_total": 2,
+      "files_missing": 0,
+      "status": "fully_in_scope"
+    },
+    {
+      "subtree": "langgraph_engine/metrics",
+      "files_in_truncated_scope": 5,
+      "files_total": 5,
+      "files_missing": 0,
+      "status": "fully_in_scope"
+    },
+    {
+      "subtree": "langgraph_engine/parsers",
+      "files_in_truncated_scope": 9,
+      "files_total": 9,
+      "files_missing": 0,
+      "status": "fully_in_scope"
+    },
+    {
+      "subtree": "langgraph_engine/preflight_guard",
+      "files_in_truncated_scope": 4,
+      "files_total": 4,
+      "files_missing": 0,
+      "status": "fully_in_scope"
+    },
+    {
+      "subtree": "langgraph_engine/quality",
+      "files_in_truncated_scope": 5,
+      "files_total": 5,
+      "files_missing": 0,
+      "status": "fully_in_scope"
+    },
+    {
+      "subtree": "langgraph_engine/routing",
+      "files_in_truncated_scope": 5,
+      "files_total": 5,
+      "files_missing": 0,
+      "status": "fully_in_scope"
+    },
+    {
+      "subtree": "langgraph_engine/runtime_verification",
+      "files_in_truncated_scope": 4,
+      "files_total": 8,
+      "files_missing": 4,
+      "status": "partially_in_scope"
+    },
+    {
+      "subtree": "langgraph_engine/sdlc_pipeline",
+      "files_in_truncated_scope": 0,
+      "files_total": 45,
+      "files_missing": 45,
+      "status": "fully_absent"
+    },
+    {
+      "subtree": "langgraph_engine/security",
+      "files_in_truncated_scope": 0,
+      "files_total": 2,
+      "files_missing": 2,
+      "status": "fully_absent"
+    },
+    {
+      "subtree": "langgraph_engine/skills",
+      "files_in_truncated_scope": 0,
+      "files_total": 4,
+      "files_missing": 4,
+      "status": "fully_absent"
+    },
+    {
+      "subtree": "langgraph_engine/standards",
+      "files_in_truncated_scope": 0,
+      "files_total": 4,
+      "files_missing": 4,
+      "status": "fully_absent"
+    },
+    {
+      "subtree": "langgraph_engine/state",
+      "files_in_truncated_scope": 0,
+      "files_total": 5,
+      "files_missing": 5,
+      "status": "fully_absent"
+    },
+    {
+      "subtree": "scripts/<top>",
+      "files_in_truncated_scope": 8,
+      "files_total": 8,
+      "files_missing": 0,
+      "status": "fully_in_scope"
+    },
+    {
+      "subtree": "scripts/agents",
+      "files_in_truncated_scope": 3,
+      "files_total": 3,
+      "files_missing": 0,
+      "status": "fully_in_scope"
+    },
+    {
+      "subtree": "scripts/architecture",
+      "files_in_truncated_scope": 2,
+      "files_total": 2,
+      "files_missing": 0,
+      "status": "fully_in_scope"
+    },
+    {
+      "subtree": "scripts/github_operations",
+      "files_in_truncated_scope": 6,
+      "files_total": 6,
+      "files_missing": 0,
+      "status": "fully_in_scope"
+    },
+    {
+      "subtree": "scripts/github_pr_workflow",
+      "files_in_truncated_scope": 5,
+      "files_total": 5,
+      "files_missing": 0,
+      "status": "fully_in_scope"
+    },
+    {
+      "subtree": "scripts/helpers",
+      "files_in_truncated_scope": 3,
+      "files_total": 3,
+      "files_missing": 0,
+      "status": "fully_in_scope"
+    },
+    {
+      "subtree": "scripts/setup",
+      "files_in_truncated_scope": 1,
+      "files_total": 1,
+      "files_missing": 0,
+      "status": "fully_in_scope"
+    },
+    {
+      "subtree": "scripts/tools",
+      "files_in_truncated_scope": 9,
+      "files_total": 9,
+      "files_missing": 0,
+      "status": "fully_in_scope"
+    },
+    {
+      "subtree": "setup.py/<top>",
+      "files_in_truncated_scope": 1,
+      "files_total": 1,
+      "files_missing": 0,
+      "status": "fully_in_scope"
+    },
+    {
+      "subtree": "src/<top>",
+      "files_in_truncated_scope": 1,
+      "files_total": 1,
+      "files_missing": 0,
+      "status": "fully_in_scope"
+    },
+    {
+      "subtree": "src/mcp",
+      "files_in_truncated_scope": 10,
+      "files_total": 10,
+      "files_missing": 0,
+      "status": "fully_in_scope"
+    },
+    {
+      "subtree": "src/services",
+      "files_in_truncated_scope": 2,
+      "files_total": 2,
+      "files_missing": 0,
+      "status": "fully_in_scope"
+    },
+    {
+      "subtree": "src/utils",
+      "files_in_truncated_scope": 3,
+      "files_total": 3,
+      "files_missing": 0,
+      "status": "fully_in_scope"
+    },
+    {
+      "subtree": "tests/<top>",
+      "files_in_truncated_scope": 61,
+      "files_total": 61,
+      "files_missing": 0,
+      "status": "fully_in_scope"
+    },
+    {
+      "subtree": "tests/e2e",
+      "files_in_truncated_scope": 5,
+      "files_total": 5,
+      "files_missing": 0,
+      "status": "fully_in_scope"
+    },
+    {
+      "subtree": "tests/integration",
+      "files_in_truncated_scope": 7,
+      "files_total": 7,
+      "files_missing": 0,
+      "status": "fully_in_scope"
+    },
+    {
+      "subtree": "tests/load",
+      "files_in_truncated_scope": 2,
+      "files_total": 2,
+      "files_missing": 0,
+      "status": "fully_in_scope"
+    }
+  ],
+  "fully_absent_packages": [
+    "hooks/post_tool_tracker",
+    "hooks/pre_tool_enforcer",
+    "hooks/stop_notifier",
+    "langgraph_engine/sdlc_pipeline",
+    "langgraph_engine/security",
+    "langgraph_engine/skills",
+    "langgraph_engine/standards",
+    "langgraph_engine/state"
+  ],
+  "partially_absent_packages": [
+    "langgraph_engine/context_sync",
+    "langgraph_engine/diagrams",
+    "langgraph_engine/runtime_verification"
+  ],
+  "absent_files": [
+    "hooks/post_tool_tracker/__init__.py",
+    "hooks/post_tool_tracker/core.py",
+    "hooks/post_tool_tracker/github_integration.py",
+    "hooks/post_tool_tracker/loaders.py",
+    "hooks/post_tool_tracker/policies/__init__.py",
+    "hooks/post_tool_tracker/policies/phase_complexity.py",
+    "hooks/post_tool_tracker/policies/post_merge_update.py",
+    "hooks/post_tool_tracker/policies/skill_selection_clear.py",
+    "hooks/post_tool_tracker/policies/task_breakdown_clear.py",
+    "hooks/post_tool_tracker/policies/task_tracking.py",
+    "hooks/post_tool_tracker/policies/uncommitted_push.py",
+    "hooks/post_tool_tracker/progress_tracker.py",
+    "hooks/pre_tool_enforcer/__init__.py",
+    "hooks/pre_tool_enforcer/compat.py",
+    "hooks/pre_tool_enforcer/core.py",
+    "hooks/pre_tool_enforcer/daemon.py",
+    "hooks/pre_tool_enforcer/loaders.py",
+    "hooks/pre_tool_enforcer/policies/__init__.py",
+    "hooks/pre_tool_enforcer/policies/agent_persona.py",
+    "hooks/pre_tool_enforcer/policies/bash_commands.py",
+    "hooks/pre_tool_enforcer/policies/checkpoint.py",
+    "hooks/pre_tool_enforcer/policies/context_read.py",
+    "hooks/pre_tool_enforcer/policies/failure_kb.py",
+    "hooks/pre_tool_enforcer/policies/grep_opt.py",
+    "hooks/pre_tool_enforcer/policies/level1_sync.py",
+    "hooks/pre_tool_enforcer/policies/push_gate.py",
+    "hooks/pre_tool_enforcer/policies/python_unicode.py",
+    "hooks/pre_tool_enforcer/policies/read_opt.py",
+    "hooks/pre_tool_enforcer/policies/skill_context.py",
+    "hooks/pre_tool_enforcer/policies/skill_selection.py",
+    "hooks/pre_tool_enforcer/policies/task_breakdown.py",
+    "hooks/pre_tool_enforcer/policies/write_edit.py",
+    "hooks/pre_tool_enforcer/registry.py",
+    "hooks/stop_notifier/__init__.py",
+    "hooks/stop_notifier/core.py",
+    "hooks/stop_notifier/helpers.py",
+    "hooks/stop_notifier/post_impl.py",
+    "hooks/stop_notifier/voice.py",
+    "langgraph_engine/context_sync/architecture/context_monitor.py",
+    "langgraph_engine/context_sync/architecture/pattern_detector.py",
+    "langgraph_engine/context_sync/architecture/preference_tracker.py",
+    "langgraph_engine/context_sync/architecture/session_pruner.py",
+    "langgraph_engine/diagrams/drawio/__init__.py",
+    "langgraph_engine/diagrams/drawio/converter.py",
+    "langgraph_engine/diagrams/drawio/drawio_converter_enriched.py",
+    "langgraph_engine/diagrams/drawio/url_utils.py",
+    "langgraph_engine/diagrams/drawio/xml_helpers.py",
+    "langgraph_engine/runtime_verification/__init__.py",
+    "langgraph_engine/runtime_verification/report.py",
+    "langgraph_engine/runtime_verification/schema_verifier.py",
+    "langgraph_engine/runtime_verification/verifier.py",
+    "langgraph_engine/sdlc_pipeline/__init__.py",
+    "langgraph_engine/sdlc_pipeline/architecture/00-code-graph-analysis/code_graph_analyzer.py",
+    "langgraph_engine/sdlc_pipeline/architecture/00-prompt-generation/anti_hallucination_enforcement.py",
+    "langgraph_engine/sdlc_pipeline/architecture/00-prompt-generation/prompt_generator.py",
+    "langgraph_engine/sdlc_pipeline/architecture/01-task-breakdown/task_auto_analyzer.py",
+    "langgraph_engine/sdlc_pipeline/architecture/orchestrator_agent_caller.py",
+    "langgraph_engine/sdlc_pipeline/architecture/prompt_gen_expert_caller.py",
+    "langgraph_engine/sdlc_pipeline/architecture/todo_decomposer.py",
+    "langgraph_engine/sdlc_pipeline/architecture/todo_executor.py",
+    "langgraph_engine/sdlc_pipeline/call_graph_analyzer.py",
+    "langgraph_engine/sdlc_pipeline/code_explorer.py",
+    "langgraph_engine/sdlc_pipeline/documentation_generator.py",
+    "langgraph_engine/sdlc_pipeline/documentation_manager.py",
+    "langgraph_engine/sdlc_pipeline/faithfulness_gate.py",
+    "langgraph_engine/sdlc_pipeline/figma_workflow.py",
+    "langgraph_engine/sdlc_pipeline/github_code_review.py",
+    "langgraph_engine/sdlc_pipeline/github_lifecycle.py",
+    "langgraph_engine/sdlc_pipeline/helpers.py",
+    "langgraph_engine/sdlc_pipeline/integration_test_generator.py",
+    "langgraph_engine/sdlc_pipeline/jira_lifecycle.py",
+    "langgraph_engine/sdlc_pipeline/llm_retry.py",
+    "langgraph_engine/sdlc_pipeline/nodes/__init__.py",
+    "langgraph_engine/sdlc_pipeline/nodes/closure_docs_summary_implementation.py",
+    "langgraph_engine/sdlc_pipeline/nodes/closure_docs_summary_wrapper.py",
+    "langgraph_engine/sdlc_pipeline/nodes/implementation_and_review_implementation.py",
+    "langgraph_engine/sdlc_pipeline/nodes/implementation_and_review_wrapper.py",
+    "langgraph_engine/sdlc_pipeline/nodes/issue_and_branch_implementation.py",
+    "langgraph_engine/sdlc_pipeline/nodes/issue_and_branch_wrapper.py",
+    "langgraph_engine/sdlc_pipeline/nodes/orchestration.py",
+    "langgraph_engine/sdlc_pipeline/nodes/pre_nodes.py",
+    "langgraph_engine/sdlc_pipeline/nodes/task_orchestration.py",
+    "langgraph_engine/sdlc_pipeline/quality_gate.py",
+    "langgraph_engine/sdlc_pipeline/review_criteria.py",
+    "langgraph_engine/sdlc_pipeline/sonar_auto_fixer.py",
+    "langgraph_engine/sdlc_pipeline/sonarqube/__init__.py",
+    "langgraph_engine/sdlc_pipeline/sonarqube/api_client.py",
+    "langgraph_engine/sdlc_pipeline/sonarqube/auto_fixer.py",
+    "langgraph_engine/sdlc_pipeline/sonarqube/config.py",
+    "langgraph_engine/sdlc_pipeline/sonarqube/lightweight_scanner.py",
+    "langgraph_engine/sdlc_pipeline/sonarqube/orchestrator.py",
+    "langgraph_engine/sdlc_pipeline/sonarqube/result_aggregator.py",
+    "langgraph_engine/sdlc_pipeline/sonarqube_scanner.py",
+    "langgraph_engine/sdlc_pipeline/subgraph.py",
+    "langgraph_engine/sdlc_pipeline/templates/__init__.py",
+    "langgraph_engine/sdlc_pipeline/test_generator.py",
+    "langgraph_engine/security/__init__.py",
+    "langgraph_engine/security/secrets_manager.py",
+    "langgraph_engine/skills/__init__.py",
+    "langgraph_engine/skills/agent_loader.py",
+    "langgraph_engine/skills/manager.py",
+    "langgraph_engine/skills/selection_criteria.py",
+    "langgraph_engine/standards/__init__.py",
+    "langgraph_engine/standards/integration.py",
+    "langgraph_engine/standards/library_adapter.py",
+    "langgraph_engine/standards/selector.py",
+    "langgraph_engine/state/__init__.py",
+    "langgraph_engine/state/context_optimizer.py",
+    "langgraph_engine/state/reducers.py",
+    "langgraph_engine/state/state_definition.py",
+    "langgraph_engine/state/step_keys.py"
+  ],
+  "read_only_override": {
+    "exists": true,
+    "measurement": "MEASURED-RUNTIME - all four candidate mechanisms executed against the live builder",
+    "mechanisms_tested": [
+      {
+        "mechanism": "environment variable",
+        "tried": [
+          "CALLGRAPH_MAX_FILES",
+          "MAX_FILES",
+          "CLAUDE_CG_MAX_FILES"
+        ],
+        "works": false,
+        "observed_files": 300,
+        "evidence": "No os.environ read exists anywhere in langgraph_engine/parsers/ except graph_model.py:33 (depth/paths only). Setting all three vars to 99999 left discovery at 300."
+      },
+      {
+        "mechanism": "constructor keyword argument CallGraphBuilder(root, max_files=N)",
+        "works": true,
+        "observed_files": 411,
+        "evidence": "call_graph_builder_legacy.py:76 exposes max_files as a ctor arg. Passing 99999 discovered all 411 files.",
+        "limitation": "build_call_graph(project_path) at line 682 does NOT forward it, and that is the function the UML path (diagrams/legacy_generator.py:93) calls."
+      },
+      {
+        "mechanism": "rebinding the module attribute (legacy.MAX_FILES = N)",
+        "works": false,
+        "observed_files": 300,
+        "evidence": "NEGATIVE RESULT, measured. The default is bound at def time, so rebinding the module global has no effect. A plausible-looking approach that silently does nothing."
+      },
+      {
+        "mechanism": "patching CallGraphBuilder.__init__.__defaults__ = (N,)",
+        "works": true,
+        "observed_files": 411,
+        "evidence": "MEASURED: after the patch, the no-arg build_call_graph(root) reported files_analyzed=411, total_classes=480, total_methods=3506. This is the mechanism that widens the UML/diagram path without editing source."
+      }
+    ],
+    "recommended_for_documentation_pass": "patch CallGraphBuilder.__init__.__defaults__ in the probe process (widens build_call_graph and therefore the diagram generators), and additionally set CLAUDE_CG_MAX_PATHS to lift GT-2",
+    "source_edit_required": false
+  },
+  "true_vs_truncated": {
+    "measurement": "MEASURED-RUNTIME",
+    "truncated": {
+      "files": 300,
+      "classes": 449,
+      "methods": 2844,
+      "functions": 887,
+      "call_edges": 18098
+    },
+    "complete": {
+      "files": 411,
+      "classes": 480,
+      "methods": 3506,
+      "functions": 1340,
+      "call_edges": 26114
+    },
+    "delta": {
+      "files": 111,
+      "classes": 31,
+      "methods": 662,
+      "functions": 453,
+      "call_edges": 8016
+    },
+    "percent_of_methods_invisible_under_truncation": 18.9
+  },
+  "claude_md_578_3985": {
+    "documented_claim": "578 classes, 3,985 methods, 4 languages (Python/Java/TS/Kotlin)",
+    "documented_in": [
+      "CLAUDE.md:25",
+      "CLAUDE.md:248",
+      "CHANGELOG.md:433",
+      "docs/architecture/ADR-002-call-graph-intelligence.md:51",
+      "docs/architecture/PIPELINE_ARCHITECTURE.md:137"
+    ],
+    "verdict": "MEASURED COMPLETE (untruncated) at the time it was written, and now STALE",
+    "evidence": {
+      "method": "MEASURED-RUNTIME: git archive of commit ab54428 (first commit introducing '3,985' into CLAUDE.md) exported to a scratch directory, then CallGraphBuilder run against it at both max_files=300 and unbounded",
+      "commit": "ab54428",
+      "py_files_at_that_commit": 226,
+      "non_python_source_files_at_that_commit": 0,
+      "measured_at_that_commit": {
+        "files": 226,
+        "classes": 579,
+        "methods": 3992,
+        "functions": 1265
+      },
+      "identical_at_both_caps": true,
+      "reasoning": "226 files is below the 300 cap, so no truncation was possible then. The measured 579/3992 lands within 1 class and 7 methods of the published 578/3,985, which identifies the published figure as a complete measurement of a slightly different commit."
+    },
+    "secondary_finding": {
+      "claim": "4 languages (Python/Java/TS/Kotlin)",
+      "verdict": "FALSE both then and now",
+      "evidence": "MEASURED: 0 .java/.ts/.tsx/.kt files at commit ab54428 and 0 today. All 411 source files are .py. The builder supports 4 languages; the graph has only ever contained 1."
+    },
+    "current_correct_figures": {
+      "complete": "480 classes / 3,506 methods",
+      "as_shipped_truncated": "449 classes / 2,844 methods"
+    }
+  },
+  "undetermined": [
+    "Whether the mcp-uml-diagram server repo (external to this repo) applies its own independent cap - it is not on this filesystem and was not probed.",
+    "Whether any consumer relies on the 300-file cap for runtime budget reasons; no timing measurement was taken beyond noting both runs completed without a timeout.",
+    "Exact commit the published 578/3,985 was measured on. ab54428 yields 579/3992, near but not identical; the exact parent commit was not bisected."
+  ]
+}

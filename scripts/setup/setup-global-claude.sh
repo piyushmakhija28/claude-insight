@@ -151,11 +151,17 @@ fi
 
 if [ -f "$SETTINGS_FILE" ]; then
     echo "  [INFO] Existing settings.json found"
-    # Check if hooks already installed
-    if grep -q "3-level-flow" "$SETTINGS_FILE" 2>/dev/null; then
+    # The sentinel must be a string the CURRENT template still contains. It used
+    # to be "3-level-flow", which v2.0.0 removed along with the UserPromptSubmit
+    # hook -- leaving a sentinel that can never match a machine set up from this
+    # template, so every subsequent run would take the else branch and overwrite
+    # settings.json again. On a post-migration machine that branch destroys the
+    # mcpServers block, including the registered push gate. "stop-notifier" is
+    # the retained hook and is present in the template.
+    if grep -q "stop-notifier" "$SETTINGS_FILE" 2>/dev/null; then
         echo "  [OK] Hooks already configured in settings.json - skipping"
     else
-        echo "  [WARN] settings.json exists but no 3-level-flow hooks found"
+        echo "  [WARN] settings.json exists but no stop-notifier hook found"
         echo "  [INFO] Installing hooks from settings-config.json..."
         cp "$CONFIG_FILE" "$SETTINGS_FILE"
         echo "  [OK] Hooks installed from settings-config.json"

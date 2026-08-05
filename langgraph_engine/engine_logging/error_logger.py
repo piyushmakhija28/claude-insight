@@ -13,6 +13,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional
 
+from langgraph_engine.core.claude_paths import get_claude_logs_dir
 from langgraph_engine.core.logger_factory import get_logger
 
 _LEVEL_METHODS = {
@@ -35,15 +36,17 @@ class ErrorLogger:
     SEVERITY_ERROR = "ERROR"
     SEVERITY_CRITICAL = "CRITICAL"
 
-    def __init__(self, session_id: str, log_base_dir: str = "~/.claude/logs"):
+    def __init__(self, session_id: str, log_base_dir: Optional[str] = None):
         """Initialize error logger for a session.
 
         Args:
             session_id: Unique session identifier
-            log_base_dir: Base directory for logs
+            log_base_dir: Base directory for logs. Defaults to the Claude logs
+                root resolved by path_resolver.
         """
         self.session_id = session_id
-        self.log_dir = Path(log_base_dir).expanduser() / "sessions" / session_id
+        base = Path(log_base_dir).expanduser() if log_base_dir else get_claude_logs_dir()
+        self.log_dir = base / "sessions" / session_id
         self.log_dir.mkdir(parents=True, exist_ok=True)
 
         self.error_file = self.log_dir / "errors.log"

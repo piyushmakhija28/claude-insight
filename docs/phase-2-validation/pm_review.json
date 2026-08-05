@@ -1,0 +1,180 @@
+{
+  "phase": "2.2, amended 2.3",
+  "agent": "product-manager-agent",
+  "date": "2026-08-01",
+  "target_document_amended": "docs/phase-0-requirements/product-sequencing-v2.md",
+  "note": "The phase_2_2_* fields below (mvp_boundary_check.condition_1, nfr_ownership NFR-1 row, critical_path, findings MAJOR item on the NFR-1/bundled-MCP-server conflict) describe the state AS SIZED at Phase 2.2, before solution-architect decided at Phase 2.3. They are kept as the historical record of what was handed over as cost data. See phase_2_3_amendment below for the decision and its consequences; that object supersedes the superseded fields, which are not edited in place.",
+  "reference_implementation": "Reinertsen (2009) WSJF = CoD/size, CoD = UBV+TC+RROE, SAFe 1-10 rubric, via claude-global-library/skills/product-management-core/SKILL.md and examples/example-1-wsjf-backlog-prioritization.md -- cited, not hand-derived",
+  "build_order_matches": {
+    "verdict": "MATCHES STRUCTURALLY, ONE GATE-TEXT DEFECT",
+    "canonical_source": "docs/releases/v2.0.0-plugin-transformation-requirements.md SS 9 (7-gate D1-D7 table)",
+    "detail": "The HLD's implicit sequencing (C4 views, ADR set, OAQ resolutions) does not reorder D1-D7 and does not move any FR across a gate boundary. FR-9a still precedes FR-10..13 inside D4; FR-23 still precedes FR-4/FR-5 inside D6; FR-14a still precedes FR-14/15/16/17/18 inside D5.",
+    "critical_defect": "Deliverable 5's own gate criterion in the canonical source ('Installs and uninstalls cleanly on Windows') is measured-false. FR-14a item 4 (plugin_schema_spike.md) confirms claude plugin uninstall empties enabledPlugins and extraKnownMarketplaces to {} without removing the keys, and leaves an orphaned plugin-cache directory that claude plugin prune does not clean. This is the identical defect underlying FR-18's now-unachievable AC, one level up in the same source document. It requires the same synchronized rewrite by the same owner (business-analyst-agent), not a second independent fix.",
+    "new_dependency_found": "D5's completion now has an internal prerequisite not present in the Phase 0 draft: the Phase 2.3 NFR-1/bundled-MCP-server decision (solution-architect) must land before FR-14's .mcp.json is finalized, or D5 risks being verified against a bundling shape that later changes."
+  },
+  "mvp_boundary_check": {
+    "moved": false,
+    "verdict": "MVP boundary from product-sequencing-v2.md SS 4 (Phase 0) is UNCHANGED in scope, but now carries two explicit conditions it did not carry before.",
+    "condition_1": "Holds only if Phase 2.3's solution-architect decision on the NFR-1/bundled-MCP-server conflict selects option (b) (redefine NFR-1 to name a minimum-viable bundled set) from this revision's SS 2b. Options (a) (bundle zero MCP servers) and (c) (per-server lazy opt-in) each require re-opening FR-14's AC or D5's gate text and would force this document back through re-sequencing before D5/D6 could close.",
+    "condition_2": "Holds only if business-analyst-agent's FR-18 acceptance-criterion rewrite resolves as an AC change (either narrowing to plugin-attributable residue, or adding the sized FR-18a cleanup command, +2 points) rather than a larger scope expansion.",
+    "size_delta": "Net effect on D6's true job size is an increase, not a scope change: NFR-2 grows from a shared ~1.5-point share of a 3-point row to a dedicated 8-point row (ADR-016's 5 non-temporal control mechanisms across 6 timeout= sites in 5 files), partially offset by NFR-3 shrinking from 8 points to 3 (CheckpointManager already exists per HLD OAQ 1). FR-18 may grow by 2 points contingently (FR-18a). No FR or NFR moved into or out of the v2.0.0/v2.1 split as a result of this revision.",
+    "v21_deferrals_unchanged": "FR-8a capability rebuilds (of 5 candidates), FR-19 (blocked on ADR-009b sign-off), residual FR-20 polish, ADR-008 marketplace polish beyond bare mechanics -- all unaffected by this revision, per SS 3's Kano-free re-derivation carried forward unchanged from the prior revision."
+  },
+  "nfr_ownership": [
+    {
+      "nfr": "NFR-1",
+      "owner": "Workstream B",
+      "measurement_method": "Process-count delta = 0, attributed per-component; must explicitly exclude the retained Stop/Notification hooks (17 spawn sites in hooks/stop_notifier/, fires every response turn by ADR-010's deliberate 'keep' decision)",
+      "phase_2_2_change": "Re-scored as a standalone WSJF row (size 2, WSJF 10.50, split out of the old combined NFR-1/NFR-2 row of size 3, WSJF 7.00). Closure gated on the Phase 2.3 SS 2b decision landing first.",
+      "old_size": 3,
+      "old_wsjf_shared_with": "NFR-2",
+      "new_size": 2,
+      "new_wsjf": 10.50
+    },
+    {
+      "nfr": "NFR-2",
+      "owner": "Workstream B",
+      "measurement_method": "Static scan for timeout=, signal.alarm, subprocess timeout kwargs across bundled plugin code AND the engine pipeline path; pass = zero unconditional matches",
+      "phase_2_2_change": "Re-scored UP, materially. ADR-016 found NFR-2 already violated inside the engine independent of hooks: 6 timeout= application sites across 5 files (prompt_gen_expert_caller.py:228, todo_decomposer.py:147, orchestrator_agent_caller.py:137, todo_executor.py:114, task_orchestration.py:160 and :217), including a 75-second wall-clock abort (STEP1_PROMPT_GEN_TIMEOUT default 60 + 15s margin) on the pipeline's own critical path. Fix requires 5 non-temporal control mechanisms (attempt-count budget, lease renewal, convergence-hash detection, circuit breaker with exponential-backoff-plus-jitter per external dependency, slow-call-rate trip) -- a build, not a scan.",
+      "old_size": 3,
+      "old_wsjf_shared_with": "NFR-1",
+      "new_size": 8,
+      "new_wsjf": 2.88
+    },
+    {
+      "nfr": "NFR-3",
+      "owner": "Workstream B, owning the existing langgraph_engine/checkpoint_manager.py::CheckpointManager (not a new component)",
+      "measurement_method": "Kill-the-process-mid-pipeline test against CheckpointManager's output at core/step_decorator.py step boundaries; second test covers per-tool-call progress via mcp-post-tool-tracker as a projection of the checkpoint record, not an independent writer",
+      "phase_2_2_change": "Re-scored DOWN, materially. HLD OAQ 1 independently re-verified against live source (byte-exact method count and line numbers, confirmed by the Phase 1.4 consensus reviewer) that CheckpointManager already exists and is already wired at every step boundary, and survives FR-4 untouched. Remaining work is naming the contract plus 3 durability defects from ADR-011 (swallowed checkpoint-save failure at step_decorator.py:169, checkpoint/progress dual-write risk, non-idempotent replay on external side effects), not building a new writer.",
+      "old_size": 8,
+      "old_wsjf": 3.00,
+      "new_size": 3,
+      "new_wsjf": 6.33
+    },
+    {
+      "nfr": "NFR-4",
+      "owner": "Workstream A",
+      "measurement_method": "Script cross-checks all 25 capability_loss.md names against the audit matrix; fails on any missing or empty disposition",
+      "phase_2_2_change": "Unchanged from Phase 0.",
+      "correction_pointer_2026_08_02": "RECORD NOT REWRITTEN. The measurement_method above is retained verbatim as this gate report wrote it. Its figure of 25 has since been measured wrong: capability_loss.md holds three tables with 16 + 9 + 2 = 27 data rows. The 25 counted only the 14 policy gates in the PreToolUse table and dropped two further full rows carrying their own owner and requirement cells -- daemon.py (warm-daemon fast path, NFR-1, ledger line 33) and registry.py (PolicyRegistry ordered fail-open dispatch, FR-9 mechanism, ledger line 34). The PreToolUse table is 16 PreToolUse components (14 policy gates plus the daemon and registry mechanism); that descriptor, not the arithmetic, is what generated the undercount. The correction is applied in SRS.md (revised NFR-10, appended per rules/44 section 4.2), prd-v2.md, product-sequencing-v2.md, hld.md, hld_v2.md, github_issues.json, sprint_plan.md and the routing artifacts -- not here."
+    },
+    {
+      "nfr": "NFR-5",
+      "owner": "Workstream D",
+      "measurement_method": "3 Gherkin-backed lifecycle tests: install leaves zero overhead + no hook entries; invoke reaches all 25 capabilities with a decided disposition; uninstall leaves no orphaned settings.json or plugin-cache state",
+      "phase_2_2_change": "FR-14a gate is now satisfied (DONE, all 5 items measured 2026-08-01) -- no longer PROVISIONAL. The uninstall test itself is blocked pending business-analyst-agent's FR-18 AC rewrite, since the Phase 0 wording is measured-false against claude plugin uninstall's actual behaviour (item 4 of the spike).",
+      "correction_pointer_2026_08_02": "RECORD NOT REWRITTEN. The measurement_method above is retained verbatim. Its 'invoke reaches all 25 capabilities' clause carries the same superseded count as the NFR-4 entry: the correct figure is 27 (16 + 9 + 2). See the NFR-4 correction_pointer_2026_08_02 in this file for the full derivation."
+    }
+  ],
+  "critical_path": {
+    "sequence": "D2(FR-6) -> D3(FR-9) -> D4(FR-9a PREREQUISITE FR-10..13) -> D5(FR-14a DONE; internal prerequisite on the Phase 2.3 SS-2b decision before .mcp.json finalizes; FR-18 AC rewrite must sync with the canonical source's deliverable-5 gate text; then FR-14/15/16/17/18) -> D6(FR-23 MUST PRECEDE FR-4/FR-5, specified via ADR-017 but not yet CI-enforced; plus FR-7, NFR-1 harness, NFR-2 re-scoped-larger, NFR-3 re-scoped-smaller, FR-22, FR-21-minimal) -> D7(migration/CHANGELOG/VERSION)",
+    "unchanged_from_phase_0": "D1's audit remains not the bottleneck (approved 2026-08-01). FR-9a -> FR-10 remains the single riskiest link in the whole chain.",
+    "changed_from_phase_0": [
+      "FR-9a's risk grade lowered from 'no design exists' to 'a specified design (ADR-013, four named truncation points, independently-re-walked regression test) must be built without leaving sites #2/#4 unmigrated' -- still risk #1, now better-characterized.",
+      "FR-14a is fully retired as a critical-path risk; it was Phase 0's risk #2 and is now DONE.",
+      "FR-23's MUST-PRECEDE-FR-4 constraint is promoted from risk #3 to risk #2 now that FR-14a is retired; it remains specified-but-unenforced (ADR-017 names the mechanism, orchestration_prompt.md SS 1.2 Consequence 2a names the owners, no CI check has landed as of this revision).",
+      "A NEW dependency is surfaced for the first time: the Phase 2.3 NFR-1/bundled-MCP-server decision sits inside D5 and gates whether D6's NFR-1 criterion can be truthfully declared met; this is now risk #3."
+    ]
+  },
+  "findings": [
+    {
+      "severity": "CRITICAL",
+      "finding": "Deliverable 5's gate text in docs/releases/v2.0.0-plugin-transformation-requirements.md SS 9 ('Installs and uninstalls cleanly on Windows') is measured-false by FR-14a item 4 (plugin_schema_spike.md): claude plugin uninstall leaves two settings.json keys emptied but not removed, plus an orphaned, unpruned plugin-cache directory. This is the same defect as FR-18's now-unachievable AC one level up and needs a synchronized rewrite by the same owner, business-analyst-agent, not a second independent decision."
+    },
+    {
+      "severity": "CRITICAL",
+      "finding": "NFR-2 was under-scoped in the Phase 0 draft by being bundled into a shared 3-point 'measurement harness' row with NFR-1. ADR-016 shows it requires a 5-mechanism resilience-engineering build across 6 timeout= call sites in 5 files, including a 75-second wall-clock abort on the pipeline's own critical path (task_orchestration.py:160/217). Re-scored to size 8, WSJF 2.88, as its own row. If this re-scope is not carried into planning, D6 cannot close on NFR-2 as originally estimated."
+    },
+    {
+      "severity": "CRITICAL",
+      "finding": "FR-23's MUST-PRECEDE-FR-4 ordering constraint, which protects the version-push gate closed by commit 1bb4303, is specified in ADR-017 but has no CI enforcement as of this revision. An out-of-order merge deleting hooks/pre_tool_enforcer/ before the MCP port lands would silently reopen a bypass someone explicitly closed, with no failing test to catch it. This is now the top unresolved sequencing risk, tied with FR-9a's build-completeness risk."
+    },
+    {
+      "severity": "MAJOR",
+      "finding": "NFR-3 was overscored (size 8, WSJF 3.00) against a false premise that a new crash-recovery writer had to be built. HLD OAQ 1 shows CheckpointManager already exists, already wired at every step boundary, and survives FR-4 untouched. Re-scored to size 3, WSJF 6.33 -- this frees planning capacity inside D6 and should be sequenced early, alongside the other cheap high-WSJF governance fixes (FR-22, FR-6), rather than left at its old implied low priority."
+    },
+    {
+      "severity": "MAJOR",
+      "finding": "FR-4/FR-5's WSJF row carried a 'core NFR-1 outcome' justification partly resting on an assumed large process-footprint reduction. ADR-018's corrected spawn-site census shows FR-4+FR-5 remove roughly 6 of 116 spawn sites (~5%); the real value is invocation-frequency reduction (2 interpreter starts per tool call), not footprint. Re-scored UBV 9->8, CoD 21->20, WSJF 7.00->6.67, and the row's framing corrected to 'necessary but not sufficient for NFR-1' given ADR-018's bundled-MCP-server finding."
+    },
+    {
+      "severity": "MAJOR",
+      "finding": "FR-18's AC is unachievable as written against measured claude plugin uninstall behaviour (empty-but-present settings.json keys, orphaned unpruned cache directory). business-analyst-agent owns the rewrite; both plausible resolution paths are sized here (FR-18a plugin-shipped cleanup command, +2 points/WSJF 6.50, versus AC-narrowing to plugin-attributable residue only, no size delta) so D5 is ready whichever way it lands."
+    },
+    {
+      "severity": "MAJOR",
+      "finding": "The NFR-1/bundled-MCP-server conflict (ADR-018 item 5, measured: 2 confirmed spawns in a session that forbade tool use) was entirely unsized in the prior revision. It is assigned to solution-architect for decision at Phase 2.3, not decided here. Three options are sized: (a) bundle zero MCP servers (~5 pts, breaks FR-14's one-step-install AC, does NOT preserve the MVP boundary), (b) redefine NFR-1 to name a minimum-viable bundled set matching the HLD's existing ADR-018 design (~1 pt, DOES preserve the MVP boundary), (c) per-server lazy opt-in (~8+ pts, unproven platform capability per the spike, does NOT preserve the MVP boundary as currently scoped)."
+    },
+    {
+      "severity": "ADVISORY",
+      "finding": "FR-14a is fully RESOLVED (5 of 5 items measured empirically 2026-08-01, per plugin_schema_spike.md). Retired from the active WSJF table (spent, like D1's audit) and from the 'second-riskiest link' framing in the critical path and top-3 risks. CORRECTED 2026-08-01 (Phase 2.3, solution-architect attribution fix, see phase_2_3_correction below): ADR-009a branch 2 was unblocked by FR-14a item 2's MEASUREMENT (CLAUDE_PLUGIN_ROOT confirmed present in os.environ), not by ADR-012's manifest-anchored ascent. ADR-012's ascent is defence-in-depth -- it would have unblocked branch 2 had the env var been absent, but it is not what actually did."
+    },
+    {
+      "severity": "ADVISORY",
+      "finding": "Splitting NFR-1 and NFR-2 into separate WSJF rows (previously one shared row) is a bookkeeping correction that changes the WSJF top-5 ranking (NFR-1 harness enters at #3, WSJF 10.50) but does not itself change scope. Flagged for visibility since it displaces FR-4/FR-5 from the prior #4 tie down to #5."
+    }
+  ],
+  "kano_status": "Not reintroduced. All re-scoring in this revision continues to use Reinertsen WSJF (CoD = UBV+TC+RROE) exclusively, per the corrected rule established in the prior revision's SS 0.",
+  "constraints_observed": [
+    "No invented GTM, revenue, or customer-segment analysis (single-developer internal tooling).",
+    "NFR-1 measured by process count with per-component attribution, never timing, throughout this revision.",
+    "Reference implementation named for all WSJF arithmetic: Reinertsen (2009) via product-management-core SKILL.md, cited not re-derived.",
+    "The NFR-1/bundled-MCP-server question is sized, not decided; decision authority stays with solution-architect at Phase 2.3.",
+    "No source file modified; only docs/phase-0-requirements/product-sequencing-v2.md amended and this file created.",
+    "ASCII-only, UTF-8, cp1252-safe throughout."
+  ],
+  "phase_2_3_amendment": {
+    "trigger": "Coordinator relayed solution-architect's Phase 2.3 decision on the NFR-1/bundled-MCP-server conflict sized in mvp_boundary_check.condition_1 / findings (the MAJOR item on ADR-018 item 5): option (a) was chosen, not option (b). Phase 2.2's sizing was used explicitly as cost data, not a recommendation, per the coordinator.",
+    "decision_source": "docs/phase-1-architecture/hld.md ADR-019 (SS 4.2); docs/phase-2-validation/ba_review.json FIND-09/FIND-10; docs/phase-2-validation/advisory_items.json ADV-011/ADV-012",
+    "decision": "ADR-019: the plugin is designed to bundle ZERO MCP servers. Registration is designed as an explicit opt-in `register-mcp` command (the user would run it once, by choice) -- PROPOSED, no code exists yet; `unregister-mcp` is designed to reverse it -- also PROPOSED, not built. Decisive reasoning accepted without dispute: NFR-1 already took one carve-out (the retained Stop hook, via per-component attribution); a second carve-out for bundled MCP would leave nothing capable of making NFR-1 fail, and a metric that cannot fail measures nothing. This is a measurement-falsifiability argument WSJF has no term for, not a WSJF override.",
+    "mvp_boundary_moved": false,
+    "mvp_boundary_verdict": "Does NOT move to v2.1. Composition changed, not boundary: the register-mcp/unregister-mcp command pair (PROPOSED by ADR-019, not yet built) is new, MANDATORY v2.0.0 scope (there is no bundle-instead fallback to defer under option (a)). What genuinely changed is that an implicit property of the boundary -- one-step install of the COMPLETE capability set -- silently carried inside FR-14's original wording and D5's gate text, was never itself a named boundary line item, and has now failed for the MCP-backed half. This document now names it explicitly (one-step install is designed to cover commands/agents/skills only; MCP-backed capabilities are designed to require the separate register-mcp step, once built) rather than leaving the loss implicit a second time.",
+    "register_mcp_sizing": {
+      "unit": "ADR-019 register-mcp/unregister-mcp command pair -- PROPOSED, not built: designed to write/reverse a settings.json merge-against-fresh-read, plus the ADR-019-mandated discoverability check (designed to detect an unregistered server and emit one actionable line naming register-mcp)",
+      "gate": "D5",
+      "reference_implementation": "Reinertsen (2009) WSJF = CoD/size, CoD = UBV+TC+RROE, via product-management-core/SKILL.md -- same instrument as every other row in this document",
+      "UBV": 7,
+      "TC": 6,
+      "RROE": 6,
+      "CoD": 19,
+      "size": 5,
+      "WSJF": 3.80,
+      "reasoning": "UBV=7: would be the sole path to any MCP-backed capability under option (a), including the FR-23 push gate, once built. TC=6, not higher: does not block D6's actual gate, because FR-23 ordering is DESIGNED to be CI-enforced via ADR-017 (that CI assertion is itself PROPOSED, not yet wired -- see critical_path.sequence) independent of whether register-mcp is ever run; it does block FR-14a/NFR-5's install-test AC and the ADR-019 discoverability requirement. RROE=6: would close a real correctness/UX gap (silent absence of a capability presenting as working) and would add NFR-5's 4th test scenario, but is new-feature work, not a defect fix, scoring below NFR-3's re-scored defect-fix row (6.33). Size=5: comparable to FR-7's slash-command entry-point row -- two new commands, a shared settings.json write-safety helper two writers would need to use consistently (flagged in advisory_items.json as sharpened, ESCALATION CANDIDATE), one new round-trip test.",
+      "enters_wsjf_top_5": false,
+      "table_position": "Mid-table: below FR-23 (7.67) and FR-4/FR-5 (6.67), above FR-16's build-time snapshot script (2.80)"
+    },
+    "critical_path_moved": true,
+    "critical_path_change": "One new internal D5 dependency: FR-14 plugin skeleton -> ADR-019 register-mcp/unregister-mcp build (PROPOSED, no code yet) -> NFR-5's 4th round-trip test scenario -> D5 closes. D6's own gate criterion is NOT newly dependent on this, because FR-23's MUST-PRECEDE-FR-4 ordering is DESIGNED to be enforced in CI (ADR-017) -- that CI assertion is itself PROPOSED and not yet wired as of this revision (ba_review.json/orchestration_prompt.md SS 1.2 Consequence 2a) -- independent of whether any given user ever runs register-mcp once it exists. FR-9a -> FR-10 remains the single riskiest link in the whole chain, unaffected by ADR-019. Two secondary items surfaced: (1) FR-23's local guarantee is designed to weaken from preventive to detective for a user who never registers -- a git pre-push-hook mitigation was named (ADV-012, PROPOSED, not adopted), named scope belonging to FR-23's owner, not re-scoped here; (2) hld.md SS 10's migration runbook step 2 is written against the pre-ADR-019 assumption that the push gate is reachable immediately after install and has not yet been updated to insert the required register-mcp step (ba_review.json FIND-10, flagged not fixed, owned by solution-architect) -- this document surfaces it but does not own the fix.",
+    "fr14_dependency": {
+      "depends_on_ba_decision": false,
+      "status": "ALREADY RESOLVED, checked directly rather than assumed. docs/phase-2-validation/ba_review.json FIND-09 records business-analyst-agent chose to AMEND FR-14's wording (not accept the one-step-install miss silently): prd-v2.md's FR-14 row and Section 5 AC now state explicitly that one-step install covers commands/agents/skills only, with MCP-backed capabilities requiring the separate register-mcp step, recorded as a deliberate trade-off. This is APPLIED, not pending -- the only outstanding item on that document is an unrelated Section 8 sign-off. This document's MVP-boundary wording was updated to match the applied text rather than hedge against an unresolved outcome."
+    },
+    "housekeeping_correction_found_incidentally": "SUPERSEDED by phase_2_3_correction below -- this note's rationale ('did not activate') was incomplete, not merely brief; see the corrected reasoning. Also contains a since-corrected present-tense overclaim about FR-24 (see phase_2_3_correction.fr18a_disposition.disposition for the accurate, verified 'not started, file does not exist' status; not fixed in place here since this note is a historical record superseded wholesale). SS 2a's FR-18a contingent row (plugin-shipped cleanup command, sized WSJF 6.50, IF business-analyst-agent selected that path) did not activate. A separate, earlier business-analyst-agent pass (prd-v2.md change-log entry 1.1, Phase 2.1 reconciliation) had already resolved FR-18's AC via AC-narrowing to plugin-attributable residue plus a new, named-but-not-yet-built FR-24 (documentation-only uninstall-residue runbook, docs/guides/uninstall-residue.md) -- not an executable cleanup command, since no plugin-owned execution point exists at uninstall time. FR-18a's WSJF row is retired as not-activated; FR-24 is documentation-only and not sized as new engineering scope. Not requested by the coordinator's message; recorded here for the document's internal accuracy since it was discovered while verifying the FR-14 dependency.",
+    "no_action_items_acknowledged": [
+      "CRITICAL #3 (FR-23 ordering not mechanically enforced): answered by ADR-017's PROPOSED CI assertion (design accepted; not yet wired into CI as of this revision), but ADR-019 changed the local guarantee from preventive to detective; ADV-012 (git pre-push hook, PROPOSED) named, not adopted. No action from this document.",
+      "CRITICAL #1 (deliverable-5 gate text falsified): fixed directly by the orchestrator in docs/releases/v2.0.0-plugin-transformation-requirements.md. No action from this document.",
+      "ADV-011 promoted to FR-25 (PROPOSED: a CI check that would recompute every annotated counting basis in hld.md -- not yet built). Engineering/QA scope, not sized here -- no WSJF row added, per the coordinator's 'no action needed' framing."
+    ]
+  },
+  "phase_2_3_correction": {
+    "trigger": "solution-architect fully enumerated this document's Phase 2.2 findings against their own responses (9/9 mapped and answered). Two had been missed; this is one of them, flagged as invalidating a sizing rather than adjusting one, plus a separate attribution correction to carry forward.",
+    "fr18a_disposition": {
+      "same_row_or_distinct": "SAME ROW resurfacing, not a distinct one. This is SS 2a's FR-18a (plugin-shipped cleanup command, D5, size 2, WSJF 6.50), previously retired once already (housekeeping_correction_found_incidentally above, and SS 2c in the amended document) as 'not-activated' -- i.e., framed as a road BA chose not to take. That framing was incomplete: FR-18a was never a buildable road, independent of any BA choice.",
+      "why_invalid": "The residue FR-18a was sized to clean (two settings.json bookkeeping keys emptied to {} but not removed, an orphaned plugin-cache directory claude plugin prune does not clean) comes into existence at the moment claude plugin uninstall completes -- exactly when the plugin's own code stops running. A plugin-shipped command has no execution point after that instant: no uninstall-time hook, no post-uninstall callback exists for a plugin to register. Structurally identical to HLD ADR-020's Path C finding: once the plugin is gone, no plugin code runs, so neither prevention nor detection is available to it. FR-18a as scoped names a contradiction, not a deprioritized capability.",
+      "disposition": "FOLD INTO FR-24 (option b). Option (a), pre-uninstall preparation, was checked and NOT adopted: the plugin's only pre-uninstall-reachable state is its own MCP registrations, and unregister-mcp -- PROPOSED by ADR-019, not built (sized in phase_2_3_amendment.register_mcp_sizing, size 5/WSJF 3.80) -- is designed to reach those in full, once it exists. The remaining residue (the two bookkeeping keys, the orphaned cache directory) is written and owned entirely by Claude Code's own uninstall/caching machinery -- no pre-uninstall plugin action changes it. Sizing FR-18a as (a) would size a command whose entire effective scope would duplicate unregister-mcp's designed scope. FR-24 (docs/guides/uninstall-residue.md -- NAMED by business-analyst-agent at Phase 2.1 with a defined AC, status 'Named at Phase 2.1; not started' per prd-v2.md; the file does not exist on disk, verified) is the shape that would actually work, because a human would run it after the plugin is gone -- the only time the residue exists and the only actor left who could act on it. FR-18a's original intent is fully subsumed by FR-24's already-defined (not yet built) scope.",
+      "size": 0,
+      "size_reasoning": "Per the reference implementation (Reinertsen 2009, WSJF = CoD/size, via product-management-core/SKILL.md), a contingency that resolves to no independent work has no CoD left to score -- the capability falls fully within FR-24's already-defined-but-not-yet-built scope, and the only genuine pre-uninstall opportunity falls fully within unregister-mcp's already-defined-but-not-yet-built scope. Retired at an honest zero, not carried forward at 6.50 or re-priced at a smaller nonzero figure to appear conservative. This zero is a scoping conclusion (no independent unit of work exists to size once FR-24 and unregister-mcp are built as designed), not a claim that either is currently complete.",
+      "document_locations_corrected": [
+        "docs/phase-0-requirements/product-sequencing-v2.md SS 2a: FR-18a row struck through with corrected reason (was: contingent-not-activated; now: invalidated, folds into FR-24 at size 0)",
+        "docs/phase-0-requirements/product-sequencing-v2.md: new SS 2d added, full reasoning",
+        "docs/phase-0-requirements/product-sequencing-v2.md SS 2c and SS 8: prior 'not-activated' framing annotated as superseded, pointing to SS 2d",
+        "docs/phase-2-validation/pm_review.json: this object, plus the FR-14a ADVISORY finding correction below"
+      ]
+    },
+    "adr012_attribution_correction": {
+      "issue": "ADR-009a branch 2 was unblocked by FR-14a item 2's MEASUREMENT (CLAUDE_PLUGIN_ROOT confirmed present in os.environ), not by ADR-012's manifest-anchored ascent. The ascent is defence-in-depth -- it would have unblocked branch 2 had the env var been absent, but it is not what actually did.",
+      "locations_checked": "Full grep of docs/phase-0-requirements/product-sequencing-v2.md and this file for 'ADR-012' and 'branch 2'.",
+      "result": "docs/phase-0-requirements/product-sequencing-v2.md SS 0a item 5 was ALREADY correctly attributed (credits item 2's measurement, names ADR-012 as defence-in-depth only) -- no edit needed there. ONE incorrect instance found and corrected: this file's findings array, the ADVISORY entry on FR-14a, previously read 'ADR-009a branch 2 is unblocked via ADR-012's manifest-anchored ascent, independent of the spike's answer' -- corrected in place to credit the measurement, per the text now in that finding."
+    }
+  }
+}

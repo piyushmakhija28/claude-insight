@@ -32,6 +32,27 @@ else:
     if _HOOKS_DIR not in sys.path:
         sys.path.insert(0, _HOOKS_DIR)
 
+    try:
+        sys.path.insert(0, str(Path(_PROJECT_ROOT) / "src"))
+        from utils.path_resolver import display_path
+    except ImportError:
+
+        def display_path(*parts):
+            """Return the portable display spelling of a Claude-home path.
+
+            Fallback used when path_resolver cannot be imported. A hook must
+            never fail to run because a message could not name a directory.
+
+            Args:
+                *parts: Path components to append below the Claude home.
+
+            Returns:
+                str: Display path using forward slashes.
+            """
+            tail = "/".join(str(part).strip("/") for part in parts if str(part).strip("/"))
+            base = "~/" + "." + "claude"
+            return base + "/" + tail if tail else base
+
     # ------------------------------------------------------------------
     # Metrics emitter: no metrics_emitter module exists in this repo
     # (dead reference removed in the fast-path cleanup) - stays no-op.
@@ -598,7 +619,7 @@ else:
                         sys.stderr.write(
                             "[POST-TOOL VOICE] Task #" + str(completed_count) + " completed.\n"
                             "  CHECK: Are ALL tasks now completed?\n"
-                            "  IF YES -> Write ~/.claude/.session-work-done with session summary.\n"
+                            "  IF YES -> Write " + display_path(".session-work-done") + " with session summary.\n"
                             '  Command: python -c "from pathlib import Path; '
                             "Path.home().joinpath('.claude','.session-work-done')"
                             ".write_text('Sir, all tasks completed. [YOUR SUMMARY HERE]', encoding='utf-8')\"\n"

@@ -1,0 +1,85 @@
+# Push-gate reachability gate - PRD FR-23 / ADR-017 / HLD v2 section 7.7 (issue V2-025)
+#
+# This is a SEPARATE workflow from ci.yml on purpose, for the same reason
+# plugin-conformance.yml is. ci.yml carries a paths-ignore list containing
+# "**/*.md" and "docs/**". This gate protects an ORDERING constraint
+# (sequencing_risks.md R-1), and the commit that violates an ordering constraint
+# is not confined to any file type - a documentation-only commit that retires the
+# equivalence record would be skipped entirely by ci.yml. A gate whose trigger
+# excludes a class of commits is a bet that you already know which files matter;
+# for a sequencing gate you do not. This workflow declares no path filters.
+#
+# It is also kept off ci.yml's test matrix so a CRITICAL governance failure
+# reports as its own red check rather than as one line inside a test job.
+#
+# The two control steps are not decoration. They run the SAME script against
+# hand-built settings and catalogue files that differ in exactly one axis each,
+# so every run re-proves both directions of the biconditional in HLD 7.7:
+#
+#   registration ABSENT  + gate UNREACHABLE -> must FAIL  (negative control)
+#   registration PRESENT + gate UNREACHABLE -> must PASS  (specificity control)
+#
+# The specificity control is the one that matters most. An assertion that failed
+# whenever the PreToolUse registration was absent would satisfy a careless
+# reading of the acceptance criterion and would block the very deletion this gate
+# exists to make safe.
+
+name: Push-gate reachability
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: push-gate-reachable-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  push-gate-reachable:
+    name: Push-gate reachability (ADR-017 CRITICAL)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Push-gate reachability gate
+        run: python scripts/verify_push_gate_reachable.py
+
+      - name: Push-gate reachability negative control
+        shell: bash
+        run: |
+          set -eu
+          scratch="$(mktemp -d)"
+          printf '{"hooks":{}}' > "$scratch/settings.json"
+          printf '{"schema_version":1,"servers":[{"id":"push-gate","capability":"version-push-gate","repo":"nowhere","entry":"does/not/exist.py","interpreter":"python"}]}' > "$scratch/registry.json"
+          if python scripts/verify_push_gate_reachable.py --skip-evidence --settings "$scratch/settings.json" --catalogue "$scratch/registry.json"; then
+            echo "NEGATIVE CONTROL FAILED: the gate passed with no registration and no reachable tool"
+            exit 1
+          fi
+          echo "NEGATIVE CONTROL OK: the gate rejected the state PRD FR-4 must never produce"
+
+      - name: Push-gate reachability specificity control
+        shell: bash
+        run: |
+          set -eu
+          scratch="$(mktemp -d)"
+          printf '{"hooks":{"PreToolUse":[{"matcher":"","hooks":[]}]}}' > "$scratch/settings.json"
+          printf '{"schema_version":1,"servers":[{"id":"push-gate","capability":"version-push-gate","repo":"nowhere","entry":"does/not/exist.py","interpreter":"python"}]}' > "$scratch/registry.json"
+          if python scripts/verify_push_gate_reachable.py --skip-evidence --settings "$scratch/settings.json" --catalogue "$scratch/registry.json"; then
+            echo "SPECIFICITY CONTROL OK: an unreachable tool alone does not fail the build while the registration stands"
+          else
+            echo "SPECIFICITY CONTROL FAILED: the gate fired on a state that violates nothing"
+            exit 1
+          fi

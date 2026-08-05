@@ -11,5 +11,9 @@ pytest-cov>=4.0.0,<6.0.0       # Coverage measurement and reporting (--cov flags
 # --- HTTP mocking for integration tests (ADR-002) ----------------------------
 responses>=0.24.0,<1.0.0       # Mock library for requests-based HTTP calls
 
+# --- Plugin packaging conformance gate (V2-015 / SRS FR-26) ------------------
+jsonschema>=4.0.0,<5.0.0       # Closed-world validation of .claude-plugin/plugin.json
+PyYAML>=6.0,<7.0               # Parse workflow YAML so CI steps run from stored form
+
 # --- Linting -----------------------------------------------------------------
 ruff>=0.4.0,<1.0.0             # Fast Python linter (used in CI lint job)

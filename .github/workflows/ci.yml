@@ -125,6 +125,57 @@ jobs:
       - name: Secrets scan (gate)
         run: python scripts/secrets_check.py
 
+      # --- Policy audit conformance (hard gates) -----------------------------
+      # Both are stdlib-only, so they run before dependency install.
+      # Until this step existed, nothing in the repository invoked either gate:
+      # they passed locally and were never executed against the artifact in CI.
+      # A check nothing runs is the same class of defect as a check that
+      # cannot fail.
+      #
+      # The matrix gate asserts AC1-AC7 for V2-004 and V2-005, including that
+      # every Post-plugin plan cell is populated and in vocabulary. It is
+      # EXPECTED to fail whenever a disposition is left undecided, and that
+      # failure is the mechanism that surfaces the decision rather than a
+      # broken check to be loosened.
+      - name: Policy audit matrix conformance (gate)
+        run: python scripts/verify_policy_audit_matrix.py
+
+      # The orphan gate asserts an empty symmetric difference between the
+      # matrix and as-built-prd section 4.2, in both directions. It is not a
+      # count check: a count agrees whenever two names are simultaneously
+      # wrong.
+      - name: Policy orphan dispositions (gate)
+        run: python scripts/verify_policy_orphan_dispositions.py
+
+      # SRS FR-30: no text-mode open() may rely on the platform default codepage.
+      # cp1252 on the Windows dev machine, UTF-8 on this runner -- the same file
+      # read on both yields different bytes, so this is a correctness gate and
+      # not a style one. It is an AST pass rather than a grep because the
+      # baseline it replaced was a grep, and that grep undercounted by seven by
+      # requiring an explicit mode string: open(path) with no mode is already
+      # text mode. Undecidable call sites fail rather than pass quietly.
+      - name: Text-mode open() encoding (gate)
+        run: python scripts/verify_open_encoding.py
+
+      # Home-directory literals in CODE (FR-15 / SRS FR-28). Landed with V2-018
+      # and left unwired until V2-025's audit found it -- the same defect class
+      # this repository had already found once, when three policy gates existed
+      # and nothing executed any of them. Classification is by enclosing node,
+      # so a path inside a docstring is documentation and does not fail.
+      - name: Home-directory path literals (gate)
+        run: python scripts/verify_home_paths.py
+
+      # Fixed wall-clock timeouts on the long-running pipeline path (NFR-2 /
+      # SRS NFR-8 / ADR-016). A timeout there is a temporal proxy for "is this
+      # making progress", and it answers that question wrongly in both
+      # directions. Detection is an AST pass, not a grep, because "timeout=" is
+      # ordinary prose in docstrings and comments; classification records
+      # whether the value is unbounded, configurable, or a fixed default, and
+      # the one permitted socket-level exception is an enumerated entry whose
+      # COUNT the gate itself enforces.
+      - name: Fixed pipeline timeouts (gate)
+        run: python scripts/verify_no_fixed_timeouts.py
+
       - name: Install production dependencies
         run: uv pip install -r requirements.txt --system
 

@@ -24,6 +24,27 @@ import subprocess
 import sys
 from pathlib import Path
 
+try:
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
+    from utils.path_resolver import display_path
+except ImportError:
+
+    def display_path(*parts):
+        """Return the portable display spelling of a Claude-home path.
+
+        Fallback used when path_resolver cannot be imported.
+
+        Args:
+            *parts: Path components to append below the Claude home.
+
+        Returns:
+            str: Display path using forward slashes.
+        """
+        tail = "/".join(str(part).strip("/") for part in parts if str(part).strip("/"))
+        base = "~/" + "." + "claude"
+        return base + "/" + tail if tail else base
+
+
 # ASCII-only banner
 BANNER = """
 ============================================================
@@ -230,7 +251,7 @@ def register_mcp_servers():
     """Step 4: Register MCP servers in ~/.claude/settings.json."""
     print("\n--- Step 4: MCP Server Registration ---\n")
 
-    if not prompt_yes_no("  Register MCP servers in ~/.claude/settings.json?", default=True):
+    if not prompt_yes_no("  Register MCP servers in {}?".format(display_path("settings.json")), default=True):
         print("  Skipped MCP registration")
         return True
 
@@ -369,9 +390,9 @@ def print_next_steps():
     print('    4. Full mode:         cwe run --mode full "add user profile"')
     print('    5. Debug mode:        cwe run --debug "investigate crash"')
     print("\n  Documentation:")
-    print("    - Getting started:    docs/00_START_HERE.md")
+    print("    - Getting started:    docs/guides/00_START_HERE.md")
     print("    - Full README:        README.md")
-    print("    - Architecture:       docs/ARCHITECTURE_REVIEW.md")
+    print("    - Architecture:       docs/architecture/ARCHITECTURE_REVIEW.md")
     print()
 
 

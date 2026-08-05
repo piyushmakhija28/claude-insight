@@ -146,7 +146,7 @@ flowchart TD
 
 ## Architecture
 
-> Full architecture with all diagrams: [`docs/PIPELINE_ARCHITECTURE.md`](docs/PIPELINE_ARCHITECTURE.md)
+> Full architecture with all diagrams: [`docs/architecture/PIPELINE_ARCHITECTURE.md`](docs/architecture/PIPELINE_ARCHITECTURE.md)
 
 ### 3-Level LangGraph Pipeline
 
@@ -329,7 +329,7 @@ See `orchestration_template.example.json` for the full field reference.
 
 > Interactive version of this section + the pipeline diagram above: [Pipeline & Hook Architecture](https://claude.ai/code/artifact/6045b61f-00e5-411d-a2a6-d62b267ba29c)
 
-Claude Code exposes 9 hook events. This project registers **4 of them** in `~/.claude/settings.json`. The table below was produced by tracing every registered entry point down to which internal policy modules actually execute, not by reading the prose docs — `docs/hook-system-policy.md` has drifted from the real wiring (see Findings below).
+Claude Code exposes 9 hook events. This project registers **4 of them** in `~/.claude/settings.json`. The table below was produced by tracing every registered entry point down to which internal policy modules actually execute, not by reading the prose docs — `docs/policies/hook-system-policy.md` has drifted from the real wiring (see Findings below).
 
 ### Registration Status
 
@@ -389,7 +389,7 @@ All 6 files under `hooks/post_tool_tracker/policies/` are loaded and invoked: `u
 1. **`PolicyRegistry` is a dead abstraction.** `hooks/pre_tool_enforcer/registry.py` defines a `PolicyRegistry` class meant to register and run policies generically. `core.py:182` imports it, but nothing in the repo ever instantiates it — `core.py` hand-builds its own `_BLOCKING_POLICIES` list instead. Either wire real policies through it or delete it.
 2. **`write_edit.py` never executes.** Loaded and wrapped at `core.py:216` / `367-369`, but no call site in `main()` reaches it — and its own body is a stub that always returns `False`. A second, non-stub-looking copy also sits unused directly in the `pre-tool-enforcer.py` shim (lines 204-222), likewise never called. Two dead implementations of the same check.
 3. **No dedicated `SessionEnd` hook.** `stop_notifier/core.py` runs session archiving, pruning, and preference tracking on every `Stop` event — work a real `SessionEnd` hook would own instead. Since `Stop` fires on every response (not just session close), this logic runs far more often than necessary.
-4. **`docs/hook-system-policy.md` no longer matches the implementation.** It describes a `script-chain-executor.py` dispatcher and a `hook-downloader.py` sync-from-repo model — neither file exists in the repo anymore. Its example `settings.json` snippets point at `~/.claude/scripts/...py`, while the real registration points directly into this repo's `hooks/...py`. Its policy counts ("8" PreToolUse checks, "6" PostToolUse functions) use a different taxonomy than the actual files and only coincidentally match on PostToolUse.
+4. **`docs/policies/hook-system-policy.md` no longer matches the implementation.** It describes a `script-chain-executor.py` dispatcher and a `hook-downloader.py` sync-from-repo model — neither file exists in the repo anymore. Its example `settings.json` snippets point at `~/.claude/scripts/...py`, while the real registration points directly into this repo's `hooks/...py`. Its policy counts ("8" PreToolUse checks, "6" PostToolUse functions) use a different taxonomy than the actual files and only coincidentally match on PostToolUse.
 
 ---
 
@@ -807,7 +807,7 @@ See [CHANGELOG.md](CHANGELOG.md) for the complete version history.
 
 **Complexity score is not ground truth:** `combined_complexity_score` is a heuristic: `simple_score × 0.3 + graph_score × 0.7`. It is on a 1-25 scale and correlates with effort, but it does not map to story points and should not be treated as precise.
 
-**Framework-specific standards cover only Flask, Django, and Spring Boot so far.** `load_framework_standards()` in `standards/selector.py` looks in `docs/` for a `{framework}-standards.md` file; `docs/flask-standards.md`, `docs/django-standards.md`, and `docs/spring-boot-standards.md` are bundled. `detect_framework()` also recognizes FastAPI, Pyramid, Tornado, Celery, Scrapy, plain Spring, Quarkus, Micronaut, and the common JS/TS frameworks (React, Angular, Vue, Express, etc.) — none of those have a bundled doc yet, so detection succeeds but the framework tier returns empty for them. `load_language_standards()` has full coverage: all 6 project types `detect_project_type()` recognizes except `unknown` resolve real content (`docs/02-backend-standards.md` python, `docs/06-typescript-standards.md` javascript/typescript, `docs/07-go-standards.md` go, `docs/08-rust-standards.md` rust, `docs/java-standards.md` java, `docs/csharp-standards.md` csharp).
+**Framework-specific standards cover only Flask, Django, and Spring Boot so far.** `load_framework_standards()` in `standards/selector.py` looks in `docs/standards/` for a `{framework}-standards.md` file; `docs/standards/flask-standards.md`, `docs/standards/django-standards.md`, and `docs/standards/spring-boot-standards.md` are bundled. `detect_framework()` also recognizes FastAPI, Pyramid, Tornado, Celery, Scrapy, plain Spring, Quarkus, Micronaut, and the common JS/TS frameworks (React, Angular, Vue, Express, etc.) — none of those have a bundled doc yet, so detection succeeds but the framework tier returns empty for them. `load_language_standards()` has full coverage: all 6 project types `detect_project_type()` recognizes except `unknown` resolve real content (`docs/standards/02-backend-standards.md` python, `docs/standards/06-typescript-standards.md` javascript/typescript, `docs/standards/07-go-standards.md` go, `docs/standards/08-rust-standards.md` rust, `docs/standards/java-standards.md` java, `docs/standards/csharp-standards.md` csharp).
 
 ### Trade-offs by Design
 
@@ -826,7 +826,7 @@ See [CHANGELOG.md](CHANGELOG.md) for the complete version history.
 
 ## Contributing
 
-See [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) for setup instructions, coding standards, and PR guidelines.
+See [docs/contributing/CONTRIBUTING.md](docs/contributing/CONTRIBUTING.md) for setup instructions, coding standards, and PR guidelines.
 
 Key rules:
 - No `# ruff: noqa: F821` file-level suppressors
@@ -843,4 +843,4 @@ Key rules:
 
 ---
 
-**Version:** 1.21.4 | **Last Updated:** 2026-07-30
+**Version:** 2.0.0 | **Last Updated:** 2026-08-05

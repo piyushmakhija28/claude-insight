@@ -47,6 +47,10 @@ Convenience functions (all delegate to path_resolver):
     get_policies_dir() -> Path
     get_session_logs_dir() -> Path
     get_claude_home() -> Path
+    get_claude_logs_dir() -> Path
+    get_claude_memory_dir() -> Path
+    get_claude_sessions_dir() -> Path
+    display_path(*parts) -> str
     get_settings_file() -> Path
     get_telemetry_dir() -> Path
     get_level_logs_dir() -> Path
@@ -244,6 +248,65 @@ class PathResolver:
         """Get Claude home directory (~/.claude/ or CLAUDE_HOME)."""
         return self.claude_home
 
+    def get_claude_logs_dir(self):
+        """Get the Claude logs root.
+
+        This is the root the per-session log, backup, checkpoint and cache
+        trees hang off. It is distinct from get_logs_dir(), which returns the
+        DATA directory's logs subtree and follows the data-dir priority chain.
+
+        Override: CLAUDE_LOGS_DIR env var.
+        Default: {CLAUDE_HOME}/logs/
+        """
+        return self.logs_root
+
+    def get_claude_memory_dir(self):
+        """Get the Claude memory directory.
+
+        Override: none (derived from CLAUDE_HOME).
+        Default: {CLAUDE_HOME}/memory/
+        """
+        return self.claude_home / "memory"
+
+    def get_claude_sessions_dir(self):
+        """Get the Claude sessions directory.
+
+        Override: none (derived from CLAUDE_HOME).
+        Default: {CLAUDE_HOME}/sessions/
+        """
+        return self.claude_home / "sessions"
+
+    def display_path(self, *parts):
+        """Render a path under the Claude home in its portable display spelling.
+
+        Help text, printed diagnostics, generated documentation and diagram
+        captions need to NAME a Claude-home path without CONSTRUCTING one. They
+        are still executable string literals, so spelling the path inline makes
+        them drift the day the layout moves, but interpolating a resolved
+        absolute path would embed one machine's home directory into messages and
+        into generated files that are published.
+
+        This returns the tilde-rooted spelling whenever the Claude home sits at
+        its default location under the user's home, which keeps that text
+        byte-identical to what it was when hardcoded, and the absolute path only
+        when CLAUDE_HOME has been pointed somewhere else, where the tilde form
+        would be a lie. Either way the spelling is defined in exactly one place.
+
+        Args:
+            *parts: Path components to append below the Claude home.
+
+        Returns:
+            str: Display path using forward slashes on every platform.
+        """
+        try:
+            base = "~/" + self.claude_home.relative_to(Path.home()).as_posix()
+        except ValueError:
+            base = self.claude_home.as_posix()
+        if not parts:
+            return base
+        tail = "/".join(str(part).strip("/") for part in parts if str(part).strip("/"))
+        return base + "/" + tail if tail else base
+
     def get_scripts_dir(self):
         """Get scripts directory (hooks live here).
 
@@ -420,6 +483,45 @@ def get_settings_file():
         Path: Absolute path to settings.json.
     """
     return path_resolver.get_settings_file()
+
+
+def get_claude_logs_dir():
+    """Return the Claude logs root (CLAUDE_LOGS_DIR or {CLAUDE_HOME}/logs).
+
+    Returns:
+        Path: Absolute path to the Claude logs root.
+    """
+    return path_resolver.get_claude_logs_dir()
+
+
+def get_claude_memory_dir():
+    """Return the Claude memory directory ({CLAUDE_HOME}/memory).
+
+    Returns:
+        Path: Absolute path to the Claude memory directory.
+    """
+    return path_resolver.get_claude_memory_dir()
+
+
+def get_claude_sessions_dir():
+    """Return the Claude sessions directory ({CLAUDE_HOME}/sessions).
+
+    Returns:
+        Path: Absolute path to the Claude sessions directory.
+    """
+    return path_resolver.get_claude_sessions_dir()
+
+
+def display_path(*parts):
+    """Return the portable display spelling of a path under the Claude home.
+
+    Args:
+        *parts: Path components to append below the Claude home.
+
+    Returns:
+        str: Display path using forward slashes on every platform.
+    """
+    return path_resolver.display_path(*parts)
 
 
 def get_telemetry_dir():

@@ -195,7 +195,7 @@ class CodebaseAnalyzer:
         package_json = self.root / "package.json"
         if package_json.exists():
             try:
-                with open(package_json) as f:
+                with open(package_json, encoding="utf-8") as f:
                     pkg = json.load(f)
                     if pkg.get("scripts", {}).get("test"):
                         return True, "npm test"
@@ -227,7 +227,7 @@ class CodebaseAnalyzer:
         req_file = self.root / "requirements.txt"
         if req_file.exists():
             try:
-                with open(req_file) as f:
+                with open(req_file, encoding="utf-8") as f:
                     lines = f.readlines()[:10]  # First 10 deps
                     deps.extend([line.strip() for line in lines if line.strip()])
             except OSError as exc:
@@ -237,7 +237,7 @@ class CodebaseAnalyzer:
         pkg_file = self.root / "package.json"
         if pkg_file.exists():
             try:
-                with open(pkg_file) as f:
+                with open(pkg_file, encoding="utf-8") as f:
                     pkg = json.load(f)
                     deps.extend(list(pkg.get("dependencies", {}).keys())[:10])
             except (OSError, ValueError) as exc:
@@ -261,7 +261,7 @@ class CodebaseAnalyzer:
         pkg_file = self.root / "package.json"
         if pkg_file.exists():
             try:
-                with open(pkg_file) as f:
+                with open(pkg_file, encoding="utf-8") as f:
                     return json.load(f).get("version", "0.1.0")
             except (OSError, ValueError) as exc:
                 logger.debug("doc_gen: package.json version read skipped: %s", exc)

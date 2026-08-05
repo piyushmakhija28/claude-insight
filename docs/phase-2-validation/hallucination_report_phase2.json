@@ -1,0 +1,129 @@
+{
+  "gate": "phase-2.4-anti-hallucination",
+  "pass": 3,
+  "scope": "Delta-only per coordinator instruction: hld.md draft-9(1567 lines, cleared)->draft-12(1802 lines, 2 new ADRs); prd-v2.md v1.0->v1.2; product-sequencing-v2.md new SS2b/2c; docs/phase-2-validation/ (ba_review.json, pm_review.json, sa_defence.json, advisory_items.json). Did NOT re-sweep ADR-006..018 prose already cleared in Phase 1.3/2.4 passes 1-2.",
+  "ground_truth_used": ["docs/phase-1-architecture/plugin_schema_spike.md (full)", "docs/orchestration_prompt.md (referenced, not re-read this pass)", "live source (hld.md, prd-v2.md, docs/releases/v2.0.0-plugin-transformation-requirements.md, docs/phase-2-validation/*.json)"],
+
+  "item1_measured_vs_inferred_ruling": {
+    "instruction": "Check ADR-019/020's claims trace to what the spike ACTUALLY measured, specifically the 'Path C is safe' (user-scope MCP registrations survive uninstall) claim.",
+    "claim_location": "hld.md ADR-020, lines 730-734: 'Path C is safe, and it is an unintended benefit of ADR-019... Because registrations are written at user scope rather than bundled in a plugin .mcp.json, they survive plugin uninstall.'",
+    "what_the_spike_actually_measured": "plugin_schema_spike.md Item 4 measured two things: (a) the spike's OWN throwaway plugin's bundled .mcp.json server was explicitly confirmed NOT merged into settings.json's mcpServers key at all -- 'it stays scoped to the plugin and is tracked separately' via installed_plugins.json/the plugin manifest system (Item 3). (b) The Final Verification section confirms 'the 5 hook registrations and 25 pre-existing mcpServers entries are byte-for-byte identical to baseline' after the full install/uninstall/marketplace-remove/prune cycle -- but these 25 entries PRE-DATE the spike; they were never written BY any plugin command.",
+      "gap": "The spike never created an entry inside settings.json's mcpServers key via a plugin-owned command (the exact mechanism register-mcp would use, since register-mcp does not exist yet) and then tested whether THAT entry survives uninstall. It only observed that (i) pre-existing, unrelated entries survive, and (ii) uninstall's settings.json footprint is limited to enabledPlugins/extraKnownMarketplaces. Extrapolating from 'uninstall does not touch mcpServers at all' to 'a register-mcp-created mcpServers entry will therefore also survive' is a REASONABLE inference (same key, same passive-non-touch mechanism) but it IS an inference, not a direct measurement -- register-mcp's write path was never exercised by the spike.",
+    "ruling": "INFERRED, NOT MEASURED. The inference is well-reasoned (structural analogy: register-mcp writes to the same mcpServers key that uninstall was shown not to touch at all) and is probably correct, but the HLD presents it with zero hedging as a flatly measured fact ('Path C is safe... they survive plugin uninstall'), used as load-bearing justification for ADR-020's Path C row ('None needed -- see below' in the interception-point table). Per the instructions, reasoned architectural judgement is not hallucination when its inputs are traceable -- but here the INPUT ITSELF is misrepresented: the document does not say 'inferred from Item 4's finding that the uninstall mechanism does not touch the mcpServers key at all' -- it says the registrations 'survive plugin uninstall' as accomplished fact.",
+    "severity": "HIGH",
+    "why_load_bearing": "ADR-020's three-layer control scheme explicitly assigns Path C 'None needed' specifically because Path C is asserted safe. If the inference is wrong (e.g., a future Claude Code version treats plugin-command-written mcpServers entries differently from pre-existing ones, or register-mcp's implementation is later found to write through a different code path), Path C would need the same PREVENT/DETECT treatment given to Paths A and B, and nothing currently plans for that.",
+    "recommended_fix": "Add one clause: 'This is inferred from Item 4's finding that uninstall does not touch settings.json's mcpServers key at all (verified only for pre-existing entries and the spike's own non-mcpServers-key bundled server) -- register-mcp's own write path was not itself exercised by the spike. Recommend a targeted re-test once register-mcp exists: register via the real command, uninstall, confirm survival.'"
+  },
+
+  "item2_orchestrator_verified_reconfirmed": {
+    "instruction": "Do not re-derive; light sanity check only.",
+    "checks_performed": [
+      {"claim": "hld.md and docs/phase-2-validation/hld_v2.md are byte-identical at 1802 lines", "method": "diff + checksum", "result": "CONFIRMED -- diff empty, identical MD5 e9e0254d3394a4783049b38dda3e8d3a"},
+      {"claim": "17 distinct ADR ids present (006, 007, 009a, 009b, 010-020)", "method": "grep '^#### ADR-' headers", "result": "CONFIRMED consistent with hld.md's own SS4 count statement: 15 '####' headings (009/009a/009b share one heading) = 17 distinct decision ids when 009 bare + 009a + 009b are counted separately, matching SS4's own explicit disambiguation text"},
+      {"claim": "SS10 carries an 8-step sequence with register-mcp at step 2", "method": "direct read, hld.md lines 1265-1274", "result": "CONFIRMED -- 8 numbered steps, step 2 is 'Register the MCP servers ... /{plugin-name}:register-mcp'"}
+    ],
+    "verdict": "All three reconfirmed true, no further action."
+  },
+
+  "item3_pm_review_stale_claim_sweep": {
+    "instruction": "Do not flag the known SS10 staleness (true when PM read it, fixed by SA afterward). Check for OTHER claims about documents that changed underneath the reviewer.",
+    "known_case_not_flagged": "pm_review.json phase_2_3_amendment.critical_path_change: 'hld.md SS 10's migration runbook step 2 ... has not yet been updated to insert the required register-mcp step' -- confirmed stale (SS10 now has it), correctly NOT flagged as an HLD defect per instruction. This is a reviewer-timing artifact, not a hallucination.",
+    "additional_case_found": {
+      "location": "ba_review.json FIND-08 (not pm_review.json, but the identical pattern -- coordinator's item 3 principle applied to the sibling document)",
+      "claim_at_time_of_writing": "'FR-16 ... is not listed in HLD SS 1.3's explicit in-scope FR enumeration ... required_fix: NOT APPLIED -- no prd-v2.md edit needed ... flagged only so the HLD's own SS 1.3 scope line can be corrected for completeness in a future HLD revision.'",
+      "current_live_state": "hld.md SS1.3 (lines 66-71) WAS updated: 'FR-16... is now enumerated rather than abbreviated: BA's Phase 2 review correctly found FR-16 -- bundle-do-not-duplicate -- architecturally covered by ADR-007's pinned snapshot but absent from this listing.' The fix landed after ba_review.json was written.",
+      "ruling": "Same benign category as the known SS10 case -- true when written, superseded by a later in-place fix, NOT a ba_review.json hallucination. Surfaced per the coordinator's instruction to look for OTHER instances of this pattern; correctly not counted as a defect.",
+      "severity": "NONE (informational)"
+    }
+  },
+
+  "item4_count_defect_class_sweep": {
+    "instruction": "Generalise: every summary count against the enumeration it introduces, across the newly-landed content.",
+    "checks": [
+      {
+        "location": "hld.md SS4 line 200-205 (ADR count after ADR-019/020 added)",
+        "claim": "7 settled + 10 newly authored (011-020) = 17 total; 15 headings (009/009a/009b share one)",
+        "method": "Direct grep-count of '#### ADR-' headers", "result": "EXACT MATCH -- 15 headings counted, 17 decision-ids when 009/009a/009b unpacked. This is the SIXTH recurrence the coordinator flagged (ADV-011) already caught and correctly fixed in the live document.",
+        "verdict": "NO DEFECT"
+      },
+      {
+        "location": "hld.md OAQ2 lines 1428-1454 (15-policy disposition totals)",
+        "claim": "Totals: 5 port-to-MCP, 5 demote-to-advisory, 5 delete -- 15 of 15",
+        "method": "Manually recounted all 15 table rows against their individual Disposition column",
+        "result": "EXACT MATCH -- rows 3,4,5,7,14 port (5); rows 2,6,8,9,13 demote (5); rows 1,10,11,12,15 delete (5). Sums correctly and the row-list parenthetical is accurate.",
+        "verdict": "NO DEFECT"
+      },
+      {
+        "location": "hld.md SS3 C4 Level 2 diagram, lines 133-191",
+        "claim": "Node count 21 of 50 (6 PKG + 3 FACADE + 8 ENG + 3 MCPS + 1 for MCPS-as-edge-target)",
+        "method": "Manually recounted declared nodes in the mermaid block",
+        "result": "Arithmetic is internally correct for the diagram AS DRAWN (20 declared + 1 = 21), but the diagram's CONTENT is stale -- see the separate HIGH finding below. The count is accurate; what is being counted is wrong.",
+        "verdict": "COUNT CORRECT, CONTENT STALE (see finding SS3-STALE below)"
+      },
+      {
+        "location": "prd-v2.md top-of-file header (line 7) vs Section 13 Change Log (line 478)",
+        "claim": "Header states 'Version: 1.1 (see Section 13 Change Log)'; the Change Log's own latest row (2026-08-01, already marked 'Supersession applied') is version 1.2, describing changes already in effect throughout the document body (NFR-1 zero-bundle wording, FR-14 amendment).",
+        "method": "Direct read of both locations",
+        "result": "MISMATCH. The document's own summary field (header) was not bumped when its own enumeration (Change Log) advanced. This is the identical defect class ADV-011 describes (a checkable count/label that is not self-updating), just in prd-v2.md rather than hld.md.",
+        "verdict": "DEFECT FOUND",
+        "severity": "LOW",
+        "note": "Purely cosmetic -- the document body correctly reflects v1.2 content throughout (confirmed: NFR-1/FR-14 sections match the v1.2 change-log description); only the header label is stale."
+      },
+      {
+        "location": "sa_defence.json meta.addendum (coverage-completeness arithmetic)",
+        "claim": "'the coordinator's first relay omitted 4 findings (BA filed 8, 6 relayed; PM filed 9, 6 responded to). All 4 are answered below.'",
+        "method": "Cross-referenced against (a) the arithmetic implied by the sentence itself, (b) the actual addendum_findings array contents (6 items: PM-CRITICAL-3, BA-FIND-05, BA-FIND-06, PM-ADVISORY-9, BA-FIND-10, COORD-CHALLENGE-DOCUMENTED-ONLY), and (c) ba_review.json's actual on-disk finding count (10: FIND-01..FIND-10).",
+        "result": "THREE-WAY MISMATCH. (1) The sentence's own arithmetic: 8-6=2 BA omitted, 9-6=3 PM omitted, sum=5, not the stated 'omitted 4'. (2) The addendum_findings array's actual ID prefixes show 3 BA items (BA-FIND-05/06/10) + 2 PM items (PM-CRITICAL-3, PM-ADVISORY-9) + 1 non-BA/PM coordinator-originated item (COORD-CHALLENGE-DOCUMENTED-ONLY) = 5 BA/PM-sourced + 1 other, not '4' total and not the 2-BA/3-PM split the header sentence implies (it is actually 3-BA/2-PM). (3) ba_review.json contains 10 findings on disk, not 8 as 'BA filed 8' states. Reconciling sa_defence.json's own ba_findings (6, IDs BA-1..BA-6) + addendum's 3 BA items (FIND-05/06/10) = 9 of ba_review.json's 10 findings addressed, leaving FIND-08 (the FR-16/SS1.3 listing item) with no traceable response anywhere in sa_defence.json.",
+        "verdict": "DEFECT FOUND",
+        "severity": "HIGH",
+        "mitigating_factor": "FIND-08's underlying issue was independently confirmed fixed in live hld.md SS1.3 (see item3 finding above) despite sa_defence.json never explicitly tracking it, so there is no live unresolved defect in the HLD -- but sa_defence.json's own completeness claim ('All 4 are answered below') is false on its own terms and cannot be reconciled with the source document it claims full coverage of.",
+        "note": "This is exactly the count-vs-enumeration defect class the coordinator asked to be generalised: a self-reported coverage tally that does not match the array it summarises, in a document whose entire purpose is to certify complete coverage (0 disputed, all findings answered)."
+      }
+    ]
+  },
+
+  "item5_nfr3_survival_argument_ruling": {
+    "instruction": "Verify the claim that ADR-011's no-dual-write rule means MCP opt-in (ADR-019) did not break NFR-3, against ADR-011's actual text.",
+    "claim_location": "hld.md SS9 'Cross-NFR interaction check' table, lines 1233-1243, NFR-3 row; corroborated by sa_defence.json ba_findings/cross-NFR note line 191",
+    "adr011_actual_text_checked": "ADR-011 defect 2 (verified in an earlier pass, re-confirmed present this pass): 'Checkpoint and progress must not become a dual write ... The offset/progress record must be committed in the same transaction as the state it describes ... This design takes the first option: progress is a field of the checkpoint record, and the MCP progress tool is a projection of it, not an independent writer.' ADR-011's Chosen section separately names CheckpointManager (in-process, triggered by core/step_decorator.py at every step boundary) as the sole writer, entirely independent of any MCP call.",
+    "reasoning_check": "Holds exactly. NFR-3's actual AC ('kill mid-pipeline; resume picks up at the correct step') depends only on CheckpointManager's step-boundary writes, which are engine-internal function calls inside step_decorator.py -- not MCP tool invocations, and therefore not gated by whether the user has run register-mcp. mcp-post-tool-tracker (which DOES become opt-in under ADR-019) is, per ADR-011's own explicit design choice, a read-side PROJECTION of already-committed checkpoint state, used only for the finer-grained per-tool-call progress QUERY surface -- a distinct, lesser capability from crash-recovery correctness. The hld.md table's conclusion ('Crash recovery is therefore unaffected ... only the query surface is [affected]') is a precise, correctly-scoped consequence of ADR-011's actual mechanism, not an overclaim.",
+    "cross_document_consistency": "hld.md's SS9 table and sa_defence.json's independent restatement (line 191: 'A user who never registers MCP loses the query surface, not crash recovery') use materially identical reasoning and reach the same conclusion, both correctly traceable to ADR-011's text.",
+    "verdict": "REASONING HOLDS -- NFR-3 genuinely did not break, and the document correctly shows its work rather than asserting the conclusion.",
+    "severity": "NONE"
+  },
+
+  "additional_high_finding_ss3_diagram_stale": {
+    "id": "SS3-STALE",
+    "location": "hld.md SS3 (C4 Level 2 -- Container/Component View), lines 131-194 -- NOT touched when ADR-019/ADR-020 were authored elsewhere in the same document",
+    "finding": "The C4 Level 2 mermaid diagram directly contradicts ADR-019, which supersedes it in the same document. Specifically: (1) node MCPJSON reads '.mcp.json -- minimal set (ADR-018)', asserting the plugin still bundles a minimal MCP server set -- but ADR-019 (SS4.2, 'Chosen') explicitly states 'the plugin ships no .mcp.json. It bundles commands, agents and skills only,' and ADR-018's own text is separately marked 'Superseded in part by ADR-019' (line 711). (2) node ROOT is labelled 'PluginRootResolver -- manifest-anchored ascent (ADR-012)' with no indication that ADR-012's own text (lines 357-367, 'STATUS UPDATE') now reframes this as defence-in-depth with the env var as primary -- the diagram still implies ascent is the primary mechanism. (3) no register-mcp/unregister-mcp command nodes appear anywhere in the diagram (CMDS or elsewhere) despite pm_review.json describing register-mcp as 'new, MANDATORY v2.0.0 scope' and SS10's runbook giving it a dedicated numbered step.",
+    "hallucination_type": "intrinsic (the diagram's assertion directly contradicts a later section of the SAME document, both are equally 'live' text with no supersession marker on the diagram side)",
+    "severity": "HIGH",
+    "why_not_caught_by_item4_count_check": "The diagram's own node-count arithmetic (21 of 50) is internally correct for what is drawn -- this is a content-currency defect, not a counting defect, which is why it required direct content verification rather than an enumeration recount.",
+    "recommended_fix": "Redraw MCPJSON out of the PKG subgraph (the plugin bundles no .mcp.json under ADR-019), add register-mcp/unregister-mcp nodes to CMDS or as a new labelled edge into MCPS, and annotate ROOT with '(ADR-012, defence-in-depth; env var primary per Phase 2 spike)' to match ADR-012's own corrected text."
+  },
+
+  "aggregate_scores": {
+    "claims_scored": 11,
+    "claims_supported": 7,
+    "claims_contradicted_or_stale_but_disclosed_as_benign": 2,
+    "claims_with_genuine_defect": 3,
+    "defect_list": ["ADR-020 Path C unlabeled inference (HIGH)", "SS3 C4 Level 2 diagram stale vs ADR-019/012 (HIGH)", "sa_defence.json coverage arithmetic mismatch (HIGH)", "prd-v2.md header version stale vs its own Change Log (LOW)"],
+    "NLI_faithfulness_audited_scope": 0.75,
+    "FactScore_audited_scope": 0.75,
+    "note": "Score reflects the claim set actually re-examined in this pass. Item 2's reconfirmed facts, item 3's correctly-non-flagged staleness, and item 5's fully-verified NFR-3 reasoning all score as supported; the three HIGH findings and one LOW finding above score as defects. Gate requires exactly 1.0 on both axes with no partial credit."
+  },
+
+  "gate_requirement": "NLI = 1.0 AND FactScore = 1.0, no partial credit",
+  "gate_verdict": "RETRY",
+  "gate_reason": "Three HIGH-severity findings block the gate: (1) ADR-020's 'Path C is safe' claim is an unlabeled inference presented as a measured fact, load-bearing for a safety-control decision (Path C gets 'None needed' specifically because of this claim). (2) SS3's C4 Level 2 diagram contradicts ADR-019 (still shows a bundled '.mcp.json -- minimal set') and does not reflect ADR-012's Phase 2 reframing, within the same 1802-line document. (3) sa_defence.json's own coverage-completeness claim ('omitted 4... All 4 are answered below') does not reconcile with either its own addendum_findings array or ba_review.json's actual 10 findings on disk, leaving FIND-08 untracked (though independently confirmed fixed in hld.md by luck, not by sa_defence.json's process). None of these are reasoned-judgement disputes -- all three are traceability/consistency defects the constraints direct to flag.",
+
+  "not_examined_this_pass": [
+    "product-sequencing-v2.md new SS2b/2c and the register-mcp WSJF row -- not independently re-derived against Reinertsen WSJF arithmetic (UBV=7,TC=6,RROE=6,CoD=19,size=5,WSJF=3.80 in pm_review.json was read but not recomputed by hand)",
+    "advisory_items.json ADV-001 through ADV-009 (only ADV-010, 011, 012 were read, per relevance to items 1 and 4)",
+    "orchestration_prompt.md sections 1.2/1.4/3.3 -- named as ground truth by the coordinator but not re-read this pass; relied on prior-pass familiarity and the spike document instead",
+    "ba_review.json's fr_coverage, ac_implementability, and rtm_gaps sections (only the findings array was read in full)",
+    "pm_review.json's build_order_matches.new_dependency_found and the full nfr_ownership array beyond NFR-1/2/3 rows were skimmed, not deeply cross-verified",
+    "Full re-verification of ADR-016's 9 timeout citations and ADR-013's 4+1 truncator line numbers this pass -- relied on the prior pass's byte-exact verification, per the no-re-sweep instruction",
+    "sa_defence.json's critical_items_fixed_in_session (5) and ba_completed_work_noted_no_action (4) arrays -- not read this pass"
+  ]
+}

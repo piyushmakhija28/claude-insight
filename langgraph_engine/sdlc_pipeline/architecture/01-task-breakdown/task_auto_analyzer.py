@@ -349,7 +349,7 @@ class TaskAutoAnalyzer:
             "phases": len(result["phases"]),
         }
 
-        with open(self.task_log, "a") as f:
+        with open(self.task_log, "a", encoding="utf-8") as f:
             f.write(json.dumps(log_entry) + "\n")
 
     def print_result(self, result):

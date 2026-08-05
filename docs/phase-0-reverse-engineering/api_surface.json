@@ -1,0 +1,167 @@
+{
+  "generated": "2026-08-01",
+  "scope_note": "In-repo API surface only: src/mcp/ (session-mgr, the one MCP server CLAUDE.md documents as also kept in-engine), 27 LangGraph node registrations, and the two hook payload contracts (PreToolUse/PostToolUse). The other 12 MCP servers CLAUDE.md documents (git-ops, github-api, policy-enforcement, token-optimizer, pre-tool-gate, post-tool-tracker, standards-loader, uml-diagram, drawio-diagram, jira-api, jenkins-ci, figma-api) live in separate repos under techdeveloper-org, not in this repo, and their tool signatures are out of scope for a repo-local reverse-engineering pass.",
+  "mcp_session_mgr_tools": {
+    "source_file": "src/mcp/session_mcp_server.py",
+    "tool_count": 14,
+    "matches_claude_md_documented_count": 14,
+    "tools": [
+      {
+        "name": "session_save",
+        "signature": "session_save(session_id: str, data_type: str, content: str, project: str = 'default') -> dict",
+        "line": 159
+      },
+      {
+        "name": "session_load",
+        "signature": "session_load(session_id: str = '', data_type: str = 'state', project: str = 'default') -> dict",
+        "line": 213
+      },
+      {
+        "name": "session_list",
+        "signature": "session_list(project: str = '', limit: int = 20) -> dict",
+        "line": 262
+      },
+      {
+        "name": "session_archive",
+        "signature": "session_archive(days_old: int = 30) -> dict",
+        "line": 305
+      },
+      {
+        "name": "session_query",
+        "signature": "session_query(filters: str = '{}') -> dict",
+        "line": 344
+      },
+      {
+        "name": "session_create",
+        "signature": "session_create((multi-arg, see source)) -> dict",
+        "line": 415
+      },
+      {
+        "name": "session_link",
+        "signature": "session_link(child_id: str, parent_id: str) -> dict",
+        "line": 474
+      },
+      {
+        "name": "session_tag",
+        "signature": "session_tag(session_id: str, tags: str, summary: str = '') -> dict",
+        "line": 523
+      },
+      {
+        "name": "session_get_context",
+        "signature": "session_get_context(session_id: str, max_ancestors: int = 5, max_related: int = 5) -> dict",
+        "line": 584
+      },
+      {
+        "name": "session_search_tags",
+        "signature": "session_search_tags(tags: str, limit: int = 20) -> dict",
+        "line": 662
+      },
+      {
+        "name": "session_accumulate",
+        "signature": "session_accumulate((multi-arg, see source)) -> dict",
+        "line": 691
+      },
+      {
+        "name": "session_finalize",
+        "signature": "session_finalize(session_id: str) -> dict",
+        "line": 811
+      },
+      {
+        "name": "session_add_work_item",
+        "signature": "session_add_work_item(session_id: str, description: str, work_type: str = 'TASK', metadata: str = '{}') -> dict",
+        "line": 1005
+      },
+      {
+        "name": "session_complete_work_item",
+        "signature": "session_complete_work_item(session_id: str, work_id: str, status: str = 'COMPLETED') -> dict",
+        "line": 1055
+      }
+    ]
+  },
+  "langgraph_node_registrations": {
+    "source": "docs/phase-0-reverse-engineering/ast_call_graph.json .langgraph_dynamic_dispatch.registrations",
+    "count": 27,
+    "note": "27/27 graph.add_node(id, fn) call sites resolved to a live-scope function (0 unresolved), all seeded as CHA entry points per ast_call_graph_summary.md.",
+    "note_2": "Full node-id -> fqn/file/line list is in ast_call_graph.json itself (not duplicated verbatim here to control file size); representative sample below.",
+    "sample": [
+      {
+        "node_id": "preflight_guard_unicode",
+        "fqn": "langgraph_engine.preflight_guard.nodes.node_unicode_fix",
+        "file": "langgraph_engine/orchestrator.py",
+        "line": 657
+      },
+      {
+        "node_id": "preflight_guard_encoding",
+        "fqn": "langgraph_engine.preflight_guard.nodes.node_encoding_validation",
+        "file": "langgraph_engine/orchestrator.py",
+        "line": 658
+      },
+      {
+        "node_id": "preflight_guard_windows",
+        "fqn": "langgraph_engine.preflight_guard.nodes.node_windows_path_check",
+        "file": "langgraph_engine/orchestrator.py",
+        "line": 659
+      },
+      {
+        "node_id": "preflight_guard_merge",
+        "fqn": "langgraph_engine.preflight_guard.merge.preflight_guard_merge_node",
+        "file": "langgraph_engine/orchestrator.py",
+        "line": 660
+      },
+      {
+        "node_id": "ask_preflight_guard_fix",
+        "fqn": "langgraph_engine.preflight_guard.recovery.ask_preflight_guard_fix",
+        "file": "langgraph_engine/orchestrator.py",
+        "line": 669
+      }
+    ],
+    "pipeline_edges_add_edge_count": 24,
+    "conditional_edges_add_conditional_edges_count": 4
+  },
+  "hook_payload_contracts": {
+    "PreToolUse": {
+      "entry_script": "hooks/pre-tool-enforcer.py (shim -> hooks/pre_tool_enforcer/core.py)",
+      "settings_json_wiring": "PreToolUse -> hooks/pre-tool-enforcer.py, timeout 60s, matcher '' (every tool call), async: false (per docs/orchestration_prompt.md's verified settings.json table, 2026-08-01)",
+      "check_fn_signature": "check_fn(tool_name: str, tool_input: dict) -> tuple[blocked: bool, message: str]",
+      "registry_contract": "hooks/pre_tool_enforcer/registry.py PolicyRegistry.run_all(tool_name, tool_input, session_id=None) -> (blocked, message); fail-open on any individual check exception",
+      "ordered_blocking_policies": [
+        "checkpoint",
+        "task_breakdown",
+        "skill_selection",
+        "context_read",
+        "context_sync",
+        "python_unicode",
+        "bash_commands",
+        "push_clean_tree",
+        "push_version",
+        "grep_opt",
+        "read_opt",
+        "agent_persona"
+      ],
+      "non_blocking_hint_providers": [
+        "dynamic_skill_context",
+        "failure_kb_hints",
+        "policy_optimization_middleware"
+      ]
+    },
+    "PostToolUse": {
+      "entry_script": "hooks/post-tool-tracker.py -> hooks/post_tool_tracker/core.py",
+      "settings_json_wiring": "PostToolUse -> hooks/post-tool-tracker.py, timeout 60s, matcher '' (every tool call), async: false",
+      "core_module_wmc": 163,
+      "core_main_cyclomatic_complexity": 140
+    },
+    "Stop": {
+      "entry_script": "hooks/stop-notifier.py -> hooks/stop_notifier/core.py",
+      "settings_json_wiring": "Stop -> hooks/stop-notifier.py, timeout 60s, async: false",
+      "fires_per": "every AI response turn, not once per session (corrects an earlier mis-scoping; verified against core.py:44-61's own docstring)",
+      "main_cyclomatic_complexity": 121,
+      "subprocess_targets_that_do_not_exist_on_disk": [
+        "scripts/architecture/03-execution-system/09-git-commit/git-auto-commit-policy.py",
+        "scripts/architecture/01-sync-system/session-management/auto-save-session.py",
+        "scripts/architecture/01-sync-system/session-management/archive-old-sessions.py",
+        "scripts/architecture/01-sync-system/session-pruner.py",
+        "scripts/architecture/03-execution-system/failure-prevention/common-failures-prevention.py"
+      ]
+    }
+  }
+}

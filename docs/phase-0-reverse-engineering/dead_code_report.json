@@ -1,0 +1,208 @@
+{
+  "generated": "2026-08-01",
+  "codebase_path": "C:\\Users\\techd\\Documents\\workspace-spring-tool-suite-4-4.27.0-new\\claude-workflow-engine",
+  "tech_stack": ["Python 3.10+", "LangGraph 0.2.0+", "LangChain", "FastMCP (mcp package)"],
+  "method": "Module/file-granularity static reachability via repo-wide grep-based import scan (CHA-equivalent for Python: string-literal and `import`/`from` statement search), cross-checked against 4 declared dynamic-dispatch roots. Full per-function AST call-graph BFS (3,985 methods) was NOT executed in this pass -- out of the 25,000-token context budget for a single grep/read-only agent. This is disclosed explicitly in `unprovable` and the downstream_filter note; ast-graph-engineer (Phase 0.1) should build the precise function-level graph.",
+  "total_python_files_repo_wide_excl_venv": 411,
+  "file_count_by_top_dir": {
+    "langgraph_engine": 237,
+    "tests": 75,
+    "hooks": 45,
+    "scripts": 37,
+    "src": 16,
+    "root": 1
+  },
+  "entry_points_found": 7,
+  "entry_points": [
+    {"path": "scripts/3-level-flow.py", "kind": "CLI entry point", "evidence": "listed in CLAUDE.md; imports session_context, os/sys/json/threading at scripts/3-level-flow.py:21-27"},
+    {"path": "hooks/pre-tool-enforcer.py", "kind": "Claude Code PreToolUse hook shim", "evidence": "hooks/pre-tool-enforcer.py:1-21, delegates to hooks/pre_tool_enforcer/__init__.py:4 `from .core import main`"},
+    {"path": "hooks/post-tool-tracker.py", "kind": "Claude Code PostToolUse hook shim", "evidence": "hooks/post-tool-tracker.py:1-15, delegates to hooks/post_tool_tracker/__init__.py:7 `from .core import main`"},
+    {"path": "hooks/stop-notifier.py", "kind": "Claude Code Stop hook shim", "evidence": "hooks/stop-notifier.py:12 `from stop_notifier.core import main`"},
+    {"path": "langgraph_engine/orchestrator.py::create_flow_graph()", "kind": "LangGraph node-registration root (dynamic dispatch)", "evidence": "graph.add_node(...) call sites at orchestrator.py:779,801,810,830,841 etc."},
+    {"path": "src/mcp/*", "kind": "MCP tool decorator surface", "evidence": "session_hooks.py imported in-process per CLAUDE.md MCP Servers table"},
+    {"path": "setup.py", "kind": "packaging entry point", "evidence": "root of repo"}
+  ],
+  "dci_per_module": {
+    "langgraph_engine/helper_nodes/": 0.86,
+    "langgraph_engine/call_graph_analyzer.py": 0.35,
+    "langgraph_engine/quality_gate.py": 0.35,
+    "langgraph_engine/flow_state.py": 0.05,
+    "langgraph_engine/call_graph_builder.py": 0.05,
+    "langgraph_engine/uml_generators.py": 0.05,
+    "hooks/pre_tool_enforcer/": 0.05,
+    "hooks/post_tool_tracker/": 0.05,
+    "hooks/stop_notifier/": 0.05
+  },
+  "classifications": [
+    {
+      "id": "langgraph_engine.helper_nodes (package: context_helpers.py, output_helpers.py, standards_helpers.py, step_helpers.py, __init__.py)",
+      "kind": "module/package",
+      "path": "langgraph_engine/helper_nodes/*.py",
+      "line": 1,
+      "verdict": "REMOVE",
+      "confidence": "HIGH",
+      "evidence": "Repo-wide grep for the literal string 'helper_nodes' outside the package itself returns ZERO matches (checked across langgraph_engine/, scripts/, hooks/, src/, tests/). Every function it defines has an identically-named, independently-implemented duplicate that IS the live one: optimize_context_after_level1 (orchestrator.py:147 vs helper_nodes/context_helpers.py:25), optimize_context_for_level3_step (orchestrator.py:171 vs context_helpers.py:49), save_workflow_memory (orchestrator.py:185 vs context_helpers.py:63), verify_prompt_integrity (orchestrator.py:243 vs output_helpers.py:37), synthesize_prompt_with_flow_data (orchestrator.py:261 vs output_helpers.py:55), output_node (orchestrator.py:363, registered via graph.add_node('sdlc_output', output_node) at orchestrator.py:779/841, vs output_helpers.py:157), apply_integration_step10 (orchestrator.py:231, registered at orchestrator.py:801, vs standards_helpers.py:17), apply_integration_step13 (orchestrator.py:237, registered at orchestrator.py:830, vs standards_helpers.py:23), step5_retry_increment_node (orchestrator.py:133, registered at orchestrator.py:810, vs step_helpers.py:10). No getattr()-based dynamic dispatch found in orchestrator.py or sdlc_pipeline/subgraph.py (checked). Independently confirms the CLAUDE.md claim ('Orphaned package -- no live importers anywhere in the repo') rather than inheriting it.",
+      "note": "Per dead-code-detection skill, REMOVE-tier deletion requires running the full regression test suite first; this agent does not delete code."
+    },
+    {
+      "id": "langgraph_engine.call_graph_analyzer (top-level backward-compat shim)",
+      "kind": "module",
+      "path": "langgraph_engine/call_graph_analyzer.py",
+      "line": 1,
+      "verdict": "REVIEW",
+      "confidence": "MEDIUM",
+      "evidence": "File is self-declared deprecated: `warnings.warn('Import from langgraph_engine.call_graph_analyzer is deprecated. Use langgraph_engine.sdlc_pipeline.call_graph_analyzer instead.', DeprecationWarning)` at lines 4-9, then `from .sdlc_pipeline.call_graph_analyzer import *` at line 11. Zero internal callers import this OLD path (all 6 real call sites -- implementation_and_review_wrapper.py:121,420, orchestration.py:155, pre_nodes.py:108, task_orchestration.py:72 -- import directly from `..call_graph_analyzer` relative to sdlc_pipeline/, i.e. the canonical module, not this shim). langgraph_engine/analysis/call_graph_analyzer.py:11 is a second, sibling compat shim doing the same re-export.",
+      "note": "Unlike flow_state.py/call_graph_builder.py/uml_generators.py (explicitly RETAINed per task brief with heavy internal use), this shim has no confirmed internal or external consumer found by grep. Kept at REVIEW rather than REMOVE because an external caller using the old dotted path is plausible and unprovable by static grep alone."
+    },
+    {
+      "id": "langgraph_engine.quality_gate (top-level backward-compat shim)",
+      "kind": "module",
+      "path": "langgraph_engine/quality_gate.py",
+      "line": 1,
+      "verdict": "REVIEW",
+      "confidence": "MEDIUM",
+      "evidence": "Self-declared deprecated shim: 'Import from langgraph_engine.quality_gate is deprecated... canonical location is langgraph_engine.sdlc_pipeline.quality_gate' (lines 3-6). The one real caller (implementation_and_review_wrapper.py:458) imports `from ..quality_gate import evaluate_quality_gate, generate_gate_report` relative to sdlc_pipeline/, i.e. sdlc_pipeline/quality_gate.py, not this top-level file.",
+      "note": "Same disposition rationale as call_graph_analyzer.py shim above."
+    },
+    {
+      "id": "langgraph_engine.flow_state",
+      "kind": "module",
+      "path": "langgraph_engine/flow_state.py",
+      "line": 1,
+      "verdict": "RETAIN",
+      "confidence": "HIGH",
+      "evidence": "36 importer files found by repo-wide grep, including langgraph_engine/orchestrator.py, langgraph_engine/state/__init__.py, langgraph_engine/preflight_guard/nodes.py, langgraph_engine/sdlc_pipeline/nodes/*.py (7 files), and 3 test files. Documented compat shim per task brief; import volume confirms it is actively live, not merely documented as such."
+    },
+    {
+      "id": "langgraph_engine.call_graph_builder",
+      "kind": "module",
+      "path": "langgraph_engine/call_graph_builder.py",
+      "line": 1,
+      "verdict": "RETAIN",
+      "confidence": "HIGH",
+      "evidence": "13 importer files found, including langgraph_engine/analysis/call_graph_builder.py, analysis/complexity_calculator.py, build_dependency_resolver/{parsers,resolver}.py, diagrams/ast_analyzer.py, sdlc_pipeline/call_graph_analyzer.py, and 3 test files."
+    },
+    {
+      "id": "langgraph_engine.uml_generators",
+      "kind": "module",
+      "path": "langgraph_engine/uml_generators.py",
+      "line": 1,
+      "verdict": "RETAIN",
+      "confidence": "HIGH",
+      "evidence": "8 importer files found, including diagrams/{ast_analyzer,kroki_renderer,legacy_generator,templates}.py, sdlc_pipeline/documentation_manager.py, sdlc_pipeline/nodes/closure_docs_summary_implementation.py."
+    },
+    {
+      "id": "hooks.pre_tool_enforcer (package)",
+      "kind": "package",
+      "path": "hooks/pre_tool_enforcer/",
+      "line": 1,
+      "verdict": "RETAIN",
+      "confidence": "HIGH",
+      "evidence": "Live via PreToolUse entry point (hooks/pre-tool-enforcer.py -> hooks/pre_tool_enforcer/__init__.py:4). Zero importers found anywhere OUTSIDE the hooks/ tree; the 2 cross-references found (langgraph_engine/context/flow_trace_converter.py, scripts/helpers/flow_trace_reader.py) are comment-text mentions of the package name, not Python import statements (verified by reading the matched lines).",
+      "hook_only": true
+    },
+    {
+      "id": "hooks.post_tool_tracker (package)",
+      "kind": "package",
+      "path": "hooks/post_tool_tracker/",
+      "line": 1,
+      "verdict": "RETAIN",
+      "confidence": "HIGH",
+      "evidence": "Live via PostToolUse entry point (hooks/post-tool-tracker.py -> hooks/post_tool_tracker/__init__.py:7). Same cross-reference check as pre_tool_enforcer -- only comment-text mentions outside hooks/.",
+      "hook_only": true
+    },
+    {
+      "id": "hooks.stop_notifier (package)",
+      "kind": "package",
+      "path": "hooks/stop_notifier/",
+      "line": 1,
+      "verdict": "RETAIN",
+      "confidence": "HIGH",
+      "evidence": "Live via Stop entry point (hooks/stop-notifier.py:12 -> hooks/stop_notifier/__init__.py:5). Same cross-reference check -- only comment-text mentions outside hooks/.",
+      "hook_only": true
+    },
+    {
+      "id": "hooks.ide_paths",
+      "kind": "module",
+      "path": "hooks/ide_paths.py",
+      "line": 1,
+      "verdict": "RETAIN",
+      "confidence": "HIGH",
+      "evidence": "Imported from hooks/* AND from scripts/github_operations/issue_manager.py:27, scripts/github_operations/session_integration.py:13, scripts/github_pr_workflow/git_ops.py:42 (all `from ide_paths import SESSION_STATE_FILE`). Reachable independent of the hook entry points, so NOT hook-only.",
+      "hook_only": false
+    },
+    {
+      "id": "hooks.project_session",
+      "kind": "module",
+      "path": "hooks/project_session.py",
+      "line": 1,
+      "verdict": "RETAIN",
+      "confidence": "MEDIUM",
+      "evidence": "Imported by hooks/policy_tracking_helper.py and other hooks/* files; not confirmed reachable from scripts/3-level-flow.py directly, but bundled on the same sys.path insert as ide_paths.py in the same try/except blocks in scripts/github_operations/*, so treated as REVIEW-leaning-RETAIN pending Phase 0.1 confirmation.",
+      "hook_only": false
+    },
+    {
+      "id": "hooks.session_context",
+      "kind": "module",
+      "path": "hooks/session_context.py",
+      "line": 1,
+      "verdict": "RETAIN",
+      "confidence": "HIGH",
+      "evidence": "Per project memory (project_hook_session_identity), this is the single authority for session identity. Confirmed importers span all three hook packages AND langgraph_engine/context_sync/{helpers,session_loader}.py AND scripts/3-level-flow.py AND scripts/helpers/session_resolver.py AND scripts/tools/migrate_session_dirs.py -- reachable from the main pipeline entry point independent of any hook, so explicitly NOT hook-only despite living in hooks/.",
+      "hook_only": false
+    }
+  ],
+  "downstream_filter": {
+    "live_function_ids": [
+      "NOTE: function-level enumeration of the 3,985 methods across 578 classes was not performed by this agent (module/file-granularity grep-based reachability only, within a 25,000-token context budget). The operational filter for Phase 0.1 is: EXCLUDE all functions/classes under langgraph_engine/helper_nodes/ (verdict REMOVE, see classifications); TREAT langgraph_engine/call_graph_analyzer.py and langgraph_engine/quality_gate.py (top-level shims) as pass-through re-exports of their sdlc_pipeline/ canonical counterparts, not independent live surfaces; INCLUDE everything else under langgraph_engine/, hooks/ (all 3 packages + ide_paths.py + project_session.py + session_context.py + policy_tracking_helper.py), scripts/, and src/mcp/ as live pending ast-graph-engineer's precise BFS from the 7 entry points listed above."
+    ],
+    "scope": "all functions/classes in langgraph_engine/, hooks/, scripts/, src/ EXCEPT langgraph_engine/helper_nodes/*",
+    "dead_function_ids": [
+      "langgraph_engine.helper_nodes.context_helpers.optimize_context_after_level1",
+      "langgraph_engine.helper_nodes.context_helpers.optimize_context_for_level3_step",
+      "langgraph_engine.helper_nodes.context_helpers.save_workflow_memory",
+      "langgraph_engine.helper_nodes.output_helpers.verify_prompt_integrity",
+      "langgraph_engine.helper_nodes.output_helpers.synthesize_prompt_with_flow_data",
+      "langgraph_engine.helper_nodes.output_helpers.output_node",
+      "langgraph_engine.helper_nodes.output_helpers._save_pipeline_execution_log",
+      "langgraph_engine.helper_nodes.standards_helpers.apply_integration_step10",
+      "langgraph_engine.helper_nodes.standards_helpers.apply_integration_step13",
+      "langgraph_engine.helper_nodes.step_helpers.step5_retry_increment_node"
+    ],
+    "note": "Business rule extraction and complexity analysis must be scoped to live_function_ids only; the 10 dead_function_ids above are confirmed-orphaned duplicates and must be excluded from all downstream RE metrics to avoid inflating complexity/cohesion scores with dead weight."
+  },
+  "hook_only_reachable": [
+    {"id": "hooks.pre_tool_enforcer", "path": "hooks/pre_tool_enforcer/ (core.py, loaders.py, and siblings)", "reachable_via": "hooks/pre-tool-enforcer.py (Claude Code PreToolUse hook)"},
+    {"id": "hooks.post_tool_tracker", "path": "hooks/post_tool_tracker/ (core.py, loaders.py, progress_tracker.py, and siblings)", "reachable_via": "hooks/post-tool-tracker.py (Claude Code PostToolUse hook)"},
+    {"id": "hooks.stop_notifier", "path": "hooks/stop_notifier/ (core.py, voice.py, and siblings)", "reachable_via": "hooks/stop-notifier.py (Claude Code Stop hook)"}
+  ],
+  "hook_only_reachable_finding": "This is the highest-value finding of this phase: three entire packages (hooks/pre_tool_enforcer/, hooks/post_tool_tracker/, hooks/stop_notifier/) have NO Python import path from scripts/3-level-flow.py (the main pipeline entry) or from anywhere in langgraph_engine/ -- their only liveness comes from Claude Code's PreToolUse/PostToolUse/Stop hook mechanism registered in the user's ~/.claude/settings.json (external to this repo). The moment those three hook registrations are removed from settings.json, or the three shim files hooks/pre-tool-enforcer.py / post-tool-tracker.py / stop-notifier.py are deleted, these packages become 100% dead code with no other path keeping them alive. hooks/ide_paths.py, hooks/project_session.py, and hooks/session_context.py are explicitly NOT in this category -- they have independent importers in scripts/ and langgraph_engine/ and would survive a hook-removal event.",
+  "unprovable": [
+    {
+      "id": "full function-level call graph (3,985 methods)",
+      "path": "langgraph_engine/ (repo-wide)",
+      "why": "Building a precise per-function reachability BFS requires AST parsing of all 237 langgraph_engine files plus CHA-style virtual-dispatch resolution; this exceeds the read-only grep/Read/Glob toolset and 25,000-token context budget available to this agent. Deferred to ast-graph-engineer (Phase 0.1), which explicitly owns AST graph construction."
+    },
+    {
+      "id": "hooks.project_session direct reachability from scripts/3-level-flow.py",
+      "path": "hooks/project_session.py",
+      "why": "Confirmed imported by hooks/policy_tracking_helper.py and hooks/*; a direct import from scripts/3-level-flow.py or its transitive closure was not traced function-by-function within budget, so its exact non-hook liveness path (as opposed to ide_paths.py's directly-confirmed one) is asserted by proximity/pattern match, not a traced import chain."
+    },
+    {
+      "id": "src/mcp/ liveness beyond session_hooks.py",
+      "path": "src/mcp/ (16 files)",
+      "why": "CLAUDE.md states session-mgr keeps an in-engine copy in src/mcp/ imported in-process by session_hooks.py; the other 15 files in src/mcp/ (rate_limiter.py, input_validator.py, session_mcp_server.py, etc.) were not individually import-traced in this pass."
+    },
+    {
+      "id": "scripts/tools/*.py one-off utility scripts",
+      "path": "scripts/tools/",
+      "why": "Not enumerated individually; these are typically standalone CLI utilities (e.g. release.py, sync-version.py, migrate_session_dirs.py, create_mcp_repos.py) invoked manually rather than imported, so 'reachability via import' is the wrong test for this directory and was out of scope for this pass."
+    }
+  ],
+  "disposition_summary": {
+    "REMOVE": 1,
+    "ARCHIVE": 0,
+    "REVIEW": 3,
+    "RETAIN": 9
+  }
+}

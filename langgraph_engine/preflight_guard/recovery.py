@@ -312,10 +312,13 @@ def fix_preflight_guard_issues(state: FlowState) -> dict:
         try:
             import re as _re_fix
 
-            # Only replace backslashes that are part of a Windows drive path (X:/something).
-            # Negative lookbehind (?<![A-Za-z0-9_]) ensures the drive letter is not preceded
-            # by another word character, preventing false matches on escape sequences like
-            # "Either:\n" (where 'r' would be mistaken for a drive letter).
+            from langgraph_engine.preflight_guard.path_scan import has_drive_path as _has_drive_path
+
+            # A file is only rewritten when the AST-based scan confirms a real drive
+            # path in a string VALUE. The raw-text pattern below cannot make that
+            # distinction on its own: it previously matched an escape sequence, and
+            # rewriting the backslash corrupted the string while removing the match,
+            # so the check passed BECAUSE the source had been damaged.
             _DRIVE_PATH_RE = _re_fix.compile(r"(?<![A-Za-z0-9_])([A-Za-z]):\\([A-Za-z0-9_][A-Za-z0-9_\-\. \\]+)")
 
             def _fix_drive_path(m):
@@ -337,6 +340,8 @@ def fix_preflight_guard_issues(state: FlowState) -> dict:
                     backup and backup.backup_file(str(py_file), "Level 0 (Pre-Flight Sanity Guard)", "Before path fix")
 
                     content = py_file.read_text(encoding="utf-8", errors="ignore")
+                    if not _has_drive_path(content):
+                        continue
                     if "\\" in content and ":\\" in content:
                         # Original content to compare
                         original_content = content
