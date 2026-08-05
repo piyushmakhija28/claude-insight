@@ -428,19 +428,36 @@ class TestRealSpawnDetection:
         children = []
 
         def one_tool_call():
-            """Stand in for one tool call, spawning the marked child on the first."""
+            """Stand in for one tool call, spawning the marked child on the first.
+
+            The child announces itself on stdout and is not left to race the
+            measurement window. ``Popen`` returns before the operating system
+            has necessarily made the process enumerable, and this window is only
+            as long as ten near-empty tool calls take -- so on a loaded machine
+            the window could close before the child became visible, and the
+            harness would be blamed for missing a spawn that had not happened
+            yet. Blocking on the first byte makes the child's existence a
+            precondition of the measurement rather than a race against it.
+            """
             if not children:
-                children.append(
-                    subprocess.Popen(
-                        [sys.executable, "-c", "import time; time.sleep(0.6)  # %s" % MARKER],
-                        stdout=subprocess.DEVNULL,
-                        stderr=subprocess.DEVNULL,
-                    )
+                child = subprocess.Popen(
+                    [
+                        sys.executable,
+                        "-c",
+                        "import sys, time; sys.stdout.write('r'); sys.stdout.flush(); "
+                        "time.sleep(300)  # %s" % MARKER,
+                    ],
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.DEVNULL,
                 )
+                children.append(child)
+                assert child.stdout.read(1) == b"r", "marked child never started"
 
         measurement = session.run_driven(one_tool_call, harness.REQUIRED_TOOL_CALLS)
         for child in children:
+            child.terminate()
             child.wait(timeout=15)
+            child.stdout.close()
 
         verdict, reasons = measurement.verdict()
         assert (

@@ -350,12 +350,31 @@ measurement was already designed; what was undecided was which outcome the proje
 | 52 | **The unit suite passes on Windows and FAILS on Linux, and this release was merged knowing that.** `ci.yml`'s `Test (Python 3.10)` and `Test (Python 3.11)` jobs both exit 1 on `ubuntu-latest` (run #154, `30978135295`). The same suite runs to completion with exit 0 on the Windows development machine, repeatedly, including immediately before the merge. **The cause is unknown** — the failure logs require authentication this session did not have — and the plausible classes are the ones this repository has already been bitten by: path separators, subprocess spawn mechanics, and default text encoding. **The two workflows this sprint added both PASS on ubuntu**, including the push-gate reachability assertion, so the release's core contract is verified on Linux; it is the pre-existing test job that is red | The orchestrator, reading workflow badges after the PR-status tool reported no checks at all |
 | 53 | **The orchestrator's "most probable explanation" was wrong, and its own hedge was right.** `github_get_pr_status` returns `checks: []` for a PR with **183 workflow runs against it**. I read that as Actions most likely being disabled, and said in the same breath that I could not distinguish it from the tool simply not reporting checks. The second reading was correct. A push was made specifically to test the first, and had the hedge not been stated the next step would have been changing repository settings **to fix a problem that did not exist** | The orchestrator, via workflow status badges, which render their conclusion as text |
 
-**#52 is recorded as an accepted, informed risk rather than a defect fixed.** The owner was shown the
-red CI, the Windows/Linux split, and the fact that the cause was undiagnosed, and chose to merge on
-the strength of the two green workflows that verify the release's actual contract. **Nobody should
-later read "the suite passes" from this repository's history without reading this row**, and nobody
-should assume the Linux failure is new — it is untested territory, not a regression this sprint
-introduced, because CI's test job has no earlier green run on this branch to compare against.
+> **DIAGNOSED AND FIXED 2026-08-05, and the framing above was wrong.** This is not a Windows/Linux
+> split. **CI runs a different command than the orchestrator did.** I ran
+> `pytest tests/ --ignore=tests/integration --ignore=tests/load -p no:randomly`; CI runs
+> `pytest tests/ -m "not integration"` — no ignores, and **no `-p no:randomly`, so its order is
+> randomised.** Under CI's exact command the suite fails on Windows too, which removes the platform
+> from the explanation entirely.
+>
+> The failure is `test_nfr1_harness.py::TestRealSpawnDetection::test_real_spawn_is_detected_and_fails`
+> — **the flake every node in this sprint was warned about and correctly attributed.** Its cause is
+> now measured: the test spawned a child that lived 0.6s, while the measurement window is only as
+> long as ten near-empty tool calls take. `Popen` returns before the OS has made a process
+> enumerable, so on a loaded machine the window closed before the child became visible, and the
+> harness was blamed for missing a spawn that had not happened yet. The child now announces itself on
+> stdout and the test blocks on that byte, making its existence a **precondition** of the measurement
+> rather than a race against it.
+>
+> **Negative control, same load, same machine: pre-fix 3 of 8 failed; post-fix 0 of 8, and 0 of 12
+> unloaded.** All four CI steps then pass locally end to end — collect, unit, integration, coverage.
+> The first load attempt produced 0 of 8 too and proved nothing, because `multiprocessing` from stdin
+> never started the workers; that run was discarded rather than counted.
+
+**#52's original entry is left standing above rather than rewritten**, because the sequence matters:
+the release was merged on an honest but wrong hypothesis, and the correction is worth more than a
+tidy record. **The lesson is not "Linux differs" — it is that a suite is only green under the command
+you actually ran**, and for weeks that command differed from CI's in three ways nobody had compared.
 
 **#53 is the sharpest instance in this record of a tool being believed over an instrument.** The
 PR-status tool was not lying; it simply did not populate a field, and an empty list reads exactly

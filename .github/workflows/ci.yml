@@ -201,7 +201,10 @@ jobs:
         run: pytest tests/integration/ -m integration --tb=short -q
 
       # --- Coverage report ---------------------------------------------------
-      # Enforces 50% minimum threshold configured in .coveragerc (fail_under=50).
+      # Enforces the threshold configured in .coveragerc, which is fail_under = 30.
+      # This comment read "50% ... (fail_under=50)" and was wrong in both halves;
+      # measured 2026-08-05, total coverage is 44.17%, so a real 50% floor would
+      # have been failing the build rather than passing it.
       # Generates coverage.xml for artifact upload.
       - name: Coverage report + threshold enforcement
         if: needs.check-enabled.outputs.coverage_enabled == 'true'
