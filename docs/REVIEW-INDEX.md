@@ -384,6 +384,31 @@ measurement was already designed; what was undecided was which outcome the proje
 > require an authenticated session that was not available. The failing test's name is one click away
 > for anyone signed in and was never obtained.
 
+> **DIAGNOSED FOR REAL, 2026-08-05, by reproducing Linux instead of reasoning about it.** Docker was
+> available the whole time. Running CI's exact command inside `python:3.11-slim`, against a clone of
+> the branch, produced the three test names in minutes — the thing that had been guessed at twice and
+> was one authenticated click away the whole time. **Two were genuine CI failures and both are fixed:**
+>
+> - `test_docs_index_matches_the_tree` — **mine, written hours earlier.** It counted files with
+>   `os.listdir`, so it counted the working tree, including a **gitignored** analysis dump in
+>   `docs/phase-0-reverse-engineering/`. The index was generated saying 26 where the repository holds
+>   25. A test written to stop documentation drifting from the tree **was reading a different tree
+>   than the one it documents.** Now counts what `git` tracks.
+> - `test_model_fallback` — guarded against `LibrarySetupError`, which `locate_library_root` **does
+>   not raise**; its documented contract is `Optional[Path]` and it *returns* `None`. So the guard
+>   never fired: the test ran wherever the sibling library exists and died on `None / "..."` wherever
+>   it does not — **which is every CI runner.**
+>
+> The third, `test_push_gate_mcp_tool`'s catalogue check, was a **container artifact** and is proven
+> so rather than assumed: re-run with the clone at `/home/runner/work/claude-workflow-engine/claude-workflow-engine`,
+> the whole suite passes with **zero failures**. See 54 for what that proof exposed.
+
+| 54 | **The push-gate catalogue resolves by directory NAME, so a differently-named checkout breaks registration.** Surfaced only because a container cloned to `/work`: the entry resolved to `/claude-workflow-engine/src/mcp/push_gate/server.py`, a path that does not exist. Resolution is `repo_root.parent / <repo-name> / <entry>`, which happens to be correct on GitHub Actions and on any clone that kept the default directory name — **and silently wrong for anyone who cloned into a different one.** It fails by producing a path, not an error, so `register-mcp` would write a settings entry pointing at nothing | The orchestrator, while proving an unrelated failure was an artifact |
+
+**#54 is the second time in two days that a *test environment* exposed a product defect nobody was
+looking for**, after the bootstrap-template sentinel. Both were found by changing something
+incidental — a checkout path, a template's contents — and watching what broke downstream.
+
 **#52 has now been wrong twice and rewritten three times, which is the most useful thing about it.**
 First it was recorded as a platform split with an unknown cause. Then a real flake was found and the
 platform explanation was discarded — too confidently, on the strength of one reproduction. Now the
