@@ -11,7 +11,7 @@ permits: `README.md`, `CLAUDE.md`, `SRS.md`, `CHANGELOG.md` and `VERSION`.
 | [`contributing/`](contributing/) | Contribution and community files | 5 |
 | [`guides/`](guides/) | How-to guides and runbooks | 21 |
 | [`phase-0-requirements/`](phase-0-requirements/) | Requirements and sequencing | 7 |
-| [`phase-0-reverse-engineering/`](phase-0-reverse-engineering/) | Reverse-engineering artefacts | 26 |
+| [`phase-0-reverse-engineering/`](phase-0-reverse-engineering/) | Reverse-engineering artefacts | 25 |
 | [`phase-1-architecture/`](phase-1-architecture/) | Phase 1 architecture artefacts | 10 |
 | [`phase-2-validation/`](phase-2-validation/) | Cross-validation and the v2 HLD | 13 |
 | [`phase-5-srs/`](phase-5-srs/) | SRS update report | 1 |
@@ -312,12 +312,11 @@ PRD v2, the product sequencing plan, the Phase 1 architect brief and the faithfu
 
 What the v1 system actually did, measured rather than described: the audit surface, path violations, capability loss and the policy inventory.
 
-<details><summary>26 file(s)</summary>
+<details><summary>25 file(s)</summary>
 
 - [api_surface.json](phase-0-reverse-engineering/api_surface.json)
 - [as-built-prd.md](phase-0-reverse-engineering/as-built-prd.md)
 - [as_built_executive_summary.md](phase-0-reverse-engineering/as_built_executive_summary.md)
-- [ast_call_graph.json](phase-0-reverse-engineering/ast_call_graph.json)
 - [ast_call_graph_summary.md](phase-0-reverse-engineering/ast_call_graph_summary.md)
 - [audit_surface.json](phase-0-reverse-engineering/audit_surface.json)
 - [builder_divergence.md](phase-0-reverse-engineering/builder_divergence.md)

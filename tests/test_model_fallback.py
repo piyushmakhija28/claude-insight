@@ -284,10 +284,19 @@ class TestTierArithmetic:
         except ImportError:
             pytest.skip("library resolver unavailable")
 
+        # locate_library_root's documented contract is Optional[Path]: it RETURNS
+        # None when no candidate exists and does not raise for absence. This guard
+        # originally caught LibrarySetupError only, so it never fired -- the test
+        # passed on any machine with the sibling checkout and died on `None /
+        # "knowledge-graph"` on every machine without one, which is every CI
+        # runner. The exception arm is kept because the resolver may still raise
+        # for a malformed override.
         try:
             root = locate_library_root()
         except LibrarySetupError:
             pytest.skip("claude-global-library not available")
+        if root is None:
+            pytest.skip("claude-global-library not available (resolver returned None)")
 
         path = root / "knowledge-graph" / "_master" / "agents_all.json"
         if not path.is_file():

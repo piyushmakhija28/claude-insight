@@ -23,8 +23,8 @@ the index has always counted it.
 """
 
 import io
-import os
 import re
+import subprocess
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -45,19 +45,32 @@ def declared_counts():
 
 
 def actual_counts():
-    """Count the files in every immediate subfolder of docs/.
+    """Count the TRACKED files in every immediate subfolder of docs/.
+
+    Counted from `git ls-files` rather than from the filesystem, because the
+    index describes the repository and not whoever's working tree happens to be
+    on disk. The first version of this test counted `os.listdir`, and it passed
+    locally while failing in CI: `docs/phase-0-reverse-engineering/` holds a
+    gitignored analysis dump that exists here and in no clone, so the index was
+    generated saying 26 where the repository has 25.
 
     Returns:
-        dict: Folder name mapped to its file count, excluding empty folders.
+        dict: Folder name mapped to its tracked top-level file count, excluding
+        folders with none.
     """
+    listing = subprocess.run(
+        ["git", "ls-files", "--", "docs"],
+        cwd=str(REPO_ROOT),
+        capture_output=True,
+        text=True,
+        check=True,
+    )
     counts = {}
-    for entry in sorted(os.listdir(DOCS)):
-        path = DOCS / entry
-        if not path.is_dir():
+    for line in listing.stdout.splitlines():
+        parts = line.strip().split("/")
+        if len(parts) != 3 or parts[0] != "docs":
             continue
-        files = [name for name in os.listdir(path) if (path / name).is_file()]
-        if files:
-            counts[entry] = len(files)
+        counts[parts[1]] = counts.get(parts[1], 0) + 1
     return counts
 
 
