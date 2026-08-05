@@ -148,8 +148,35 @@ class AttributionResult(object):
         }
 
 
+def _match_role(registry, record, role=None):
+    """Return the first component that matches a record directly, optionally role-filtered.
+
+    This is the shared primitive behind plugin-first precedence: attribute() calls it
+    twice, once restricted to components.ROLE_PLUGIN_COUNTED before anything else is
+    considered, and again unrestricted as part of the pre-existing first-match-wins
+    fallback. A single implementation keeps both call sites honest about registration
+    order rather than letting a role-filtered copy drift from the general one.
+
+    Args:
+        registry: ComponentRegistry to search, in registration order.
+        record: ProcessRecord to test.
+        role: Restrict the search to components carrying this role, or None to search
+            every component regardless of role.
+
+    Returns:
+        Tuple of (ComponentSpec, marker), or (None, None).
+    """
+    for spec in registry:
+        if role is not None and spec.role != role:
+            continue
+        marker = spec.matches(record)
+        if marker is not None:
+            return spec, marker
+    return None, None
+
+
 def _direct_match(registry, record):
-    """Return the first component that matches a record directly.
+    """Return the first component that matches a record directly, any role.
 
     Args:
         registry: ComponentRegistry to search, in registration order.
@@ -158,15 +185,53 @@ def _direct_match(registry, record):
     Returns:
         Tuple of (ComponentSpec, marker), or (None, None).
     """
-    for spec in registry:
-        marker = spec.matches(record)
-        if marker is not None:
-            return spec, marker
-    return None, None
+    return _match_role(registry, record)
+
+
+def _walk_ancestry(record, registry, index, max_ancestry_depth, role=None):
+    """Walk a process's ancestor chain looking for a component match.
+
+    The cycle guard (seen_pids plus max_ancestry_depth) is shared by both the
+    plugin-first walk and the pre-existing any-role fallback walk in attribute(), so a
+    parent chain that loops back on itself terminates identically for either search.
+
+    Args:
+        record: ProcessRecord whose ppid starts the walk.
+        registry: ComponentRegistry to search at each ancestor.
+        index: Mapping of pid to ProcessRecord used to resolve each ancestor.
+        max_ancestry_depth: Guard against a cyclic or self-referential parent chain.
+        role: Restrict matches to components carrying this role, or None for any role.
+
+    Returns:
+        Tuple of (ComponentSpec, marker, ancestor_pid), or (None, None, None).
+    """
+    seen_pids = set()
+    cursor = record.ppid
+    depth = 0
+    while cursor is not None and depth < max_ancestry_depth and cursor not in seen_pids:
+        seen_pids.add(cursor)
+        ancestor = index.get(cursor)
+        if ancestor is None:
+            break
+        anc_spec, anc_marker = _match_role(registry, ancestor, role)
+        if anc_spec is not None:
+            return anc_spec, anc_marker, cursor
+        cursor = ancestor.ppid
+        depth += 1
+    return None, None, None
 
 
 def attribute(records, registry, ancestry_index=None, max_ancestry_depth=12):
     """Attribute observed processes to components.
+
+    Plugin attribution is resolved first, against the process itself and its full
+    ancestor chain, before any other component's direct match is considered. Without
+    this precedence a broad marker on a lower-priority component (typically an OBSERVED
+    one, since those carry no cardinality cap) can direct-match a plugin-spawned child
+    before the ancestry walk that would otherwise have charged it to the plugin ever
+    runs, silently making the plugin unfailable through a role nothing guards. Only
+    when no plugin marker matches the process or any ancestor does the pre-existing
+    first-match-wins search over every component, direct then ancestry, run.
 
     Args:
         records: Iterable of ProcessRecord to attribute.
@@ -183,29 +248,35 @@ def attribute(records, registry, ancestry_index=None, max_ancestry_depth=12):
     index = ancestry_index or {}
     results = []
     for record in records:
+        plugin_spec, plugin_marker = _match_role(registry, record, components.ROLE_PLUGIN_COUNTED)
+        if plugin_spec is not None:
+            results.append(Attribution(record, plugin_spec.key, plugin_spec.role, BASIS_DIRECT, plugin_marker))
+            continue
+
+        plugin_anc_spec, plugin_anc_marker, plugin_anc_pid = _walk_ancestry(
+            record, registry, index, max_ancestry_depth, components.ROLE_PLUGIN_COUNTED
+        )
+        if plugin_anc_spec is not None:
+            results.append(
+                Attribution(
+                    record,
+                    plugin_anc_spec.key,
+                    plugin_anc_spec.role,
+                    BASIS_ANCESTRY,
+                    plugin_anc_marker,
+                    plugin_anc_pid,
+                )
+            )
+            continue
+
         spec, marker = _direct_match(registry, record)
         if spec is not None:
             results.append(Attribution(record, spec.key, spec.role, BASIS_DIRECT, marker))
             continue
 
-        attributed = None
-        seen_pids = set()
-        cursor = record.ppid
-        depth = 0
-        while cursor is not None and depth < max_ancestry_depth and cursor not in seen_pids:
-            seen_pids.add(cursor)
-            ancestor = index.get(cursor)
-            if ancestor is None:
-                break
-            anc_spec, anc_marker = _direct_match(registry, ancestor)
-            if anc_spec is not None:
-                attributed = Attribution(record, anc_spec.key, anc_spec.role, BASIS_ANCESTRY, anc_marker, cursor)
-                break
-            cursor = ancestor.ppid
-            depth += 1
-
-        if attributed is not None:
-            results.append(attributed)
+        anc_spec, anc_marker, anc_pid = _walk_ancestry(record, registry, index, max_ancestry_depth)
+        if anc_spec is not None:
+            results.append(Attribution(record, anc_spec.key, anc_spec.role, BASIS_ANCESTRY, anc_marker, anc_pid))
             continue
 
         if record.access_denied:
