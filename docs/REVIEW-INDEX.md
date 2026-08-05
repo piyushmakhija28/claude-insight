@@ -648,3 +648,35 @@ requires the plugin install that is deliberately still un-run, and a genuinely c
 separate invocation against a fresh session. A further gap is recorded rather than closed: two
 observed phases **cannot be combined into one report**, because `build_report` takes `Measurement`
 objects and `harness.py` provides no way to read one back from JSON.
+
+---
+
+## Corrections 58-61 -- securing NFR-1 attribution (2026-08-05)
+
+Follow-on from 55-57. The driver made NFR-1 measurable; this round asked whether the thing it
+measures can still fail. Three of the four below were found by attacking the code, not reading it.
+
+| # | Correction | Found by |
+|---|-----------|----------|
+| 58 | **The plugin's own marker could never match a real Windows process, so `plugin_count` was structurally zero and NFR-1 could not fail.** `build_default_registry()` normalises `plugin_root`-derived markers to forward slashes and lowercase. `ComponentSpec.matches()` compared them against `record.search_text()` **unnormalised** -- and Windows reports command lines and executable paths with backslashes. A marker of `c:/users/.../plugins/cwe` is not a substring of `C:\Users\...\plugins\cwe\entry.py`. **Any NFR-1 result of "0 processes attributable to the plugin" taken on Windows before this fix measured nothing.** This is older than this sprint. The harness's own `--self-test` could not catch it because its synthetic marker (`nfr1_selftest_spawn_marker`) contains no path separator, so it never exercised the asymmetry | The adversarial verification pass, dispatched specifically to attack the failability property |
+| 59 | **Plugin-first precedence was landed, tested green, and still silently coupled to registration order.** A mutation deleting the plugin-first *direct* match left every test in the new suite passing, because `KEY_PLUGIN` happens to be registered first and the pre-existing first-match-wins search found it anyway. The property the change existed to establish -- that correctness does not depend on registry order -- was therefore **unproven by its own test suite**. Closed with an adversarial registry that registers an OBSERVED component *before* the plugin. Mutation table went from 2/3 to 3/3 caught | The orchestrator, mutating the implementer's change against the implementer's tests |
+| 60 | **Fixing one side of the normalisation made any backslash marker silently dead.** Once `matches()` normalised the process text, a marker written with Windows separators could never be found in it -- there were no backslashes left to find. No error, no warning: the component just stops collecting, which reads identically to "that component spawned nothing". On a plugin marker that is 58 again by the opposite route. Markers are now normalised at construction too, so both sides agree. The one existing backslash marker (`tests\nfr1`) had a forward-slash twin, so nothing was actually lost -- verified rather than assumed | The orchestrator, checking what the 58 fix broke on the other side |
+| 61 | **The orchestrator's brief asserted `node.exe` was the Claude Code host, and it is not.** The implementing agent measured it: the CLI on this machine runs as `claude.exe`, and every `node.exe` in the window belonged to unrelated npm/vite dev servers with no Claude Code ancestor. Had the brief been followed, `node.exe` would have been declared a marker that was **wrong on this machine**, not merely unspecific. The agent left it unattributed and said so | The implementing agent, contradicting its brief -- which is what briefs should invite |
+
+> **What 58 means for everything measured before it.** The harness has never been able to attribute
+> a plugin process on Windows. It was never wrong to say "0 plugin-attributable processes" -- there
+> was no plugin installed -- but that zero was **not evidence**, and any reading of it as evidence
+> was unearned. The first measurement that can mean anything is the one taken after this fix.
+
+> **The interlock this round created, stated plainly so nobody removes half of it.** The plugin's
+> entry points are themselves spawned by `claude.exe`, so **every plugin process has the
+> `claude_code_host` marker in its ancestry**. Plugin-first precedence is now the only thing
+> preventing every plugin process from being charged to that OBSERVED component. Declaring
+> `claude_code_host` without plugin-first precedence would be strictly worse than declaring
+> nothing. The two must not be separated, and correction 59's adversarial-registry test is what
+> holds them together.
+
+**Verification for this round:** 2523 passed / 50 skipped / 11 xfailed / 0 failed on the full unit
+suite (`pytest exit=0`, zero FAILED or ERROR lines). 3/3 mutations caught, zero survivors, file
+restored byte-for-byte. `cli.py --self-test` still returns FAIL with `plugin_count=1`, so the
+metric remains failable.
