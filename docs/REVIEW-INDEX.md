@@ -403,7 +403,23 @@ measurement was already designed; what was undecided was which outcome the proje
 > so rather than assumed: re-run with the clone at `/home/runner/work/claude-workflow-engine/claude-workflow-engine`,
 > the whole suite passes with **zero failures**. See 54 for what that proof exposed.
 
-| 54 | **The push-gate catalogue resolves by directory NAME, so a differently-named checkout breaks registration.** Surfaced only because a container cloned to `/work`: the entry resolved to `/claude-workflow-engine/src/mcp/push_gate/server.py`, a path that does not exist. Resolution is `repo_root.parent / <repo-name> / <entry>`, which happens to be correct on GitHub Actions and on any clone that kept the default directory name — **and silently wrong for anyone who cloned into a different one.** It fails by producing a path, not an error, so `register-mcp` would write a settings entry pointing at nothing | The orchestrator, while proving an unrelated failure was an artifact |
+| 54 | **The push-gate catalogue resolves by directory NAME, so a differently-named checkout cannot register it.** Surfaced only because a container cloned to `/work`: the entry resolved to `/claude-workflow-engine/src/mcp/push_gate/server.py`, a path that does not exist. Resolution is `server_root / <repo-name> / <entry>`, which is correct for the sibling `mcp-*` checkouts *by design* — they are named after their repos — and correct for this repository only while its directory keeps the default name | The orchestrator, while proving an unrelated failure was an artifact |
+
+> **SEVERITY CORRECTED 2026-08-05, and the original claim was wrong.** This row said "it fails by
+> producing a path, not an error, so `register-mcp` would write a settings entry pointing at
+> nothing." **It would not.** `mcp_registration.py:526-528` checks `entry.is_file()` before writing
+> and SKIPS with `"entry point not found at <path>"`; the status path at `:437-439` reports
+> `"registered, but its entry point <path> does not exist"`. **No broken entry is ever written.**
+>
+> What actually happens on a differently-named checkout is that push-gate registration **silently
+> declines** — the user gets a SKIP naming a path derived from the hardcoded name, and no push gate.
+> `verify_push_gate_reachable` then fails the build, correctly. So the system degrades safely and the
+> CI gate catches it; the defect is a **misleading diagnostic**, not a corruption.
+>
+> **I wrote the original severity from a container failure without reading the registration path.**
+> That is the same error this record documents over and over — a conclusion outrunning its evidence —
+> and it was caught only because fixing it meant opening the file first. **The "fix" would have been
+> a guard that already existed.**
 
 **#54 is the second time in two days that a *test environment* exposed a product defect nobody was
 looking for**, after the bootstrap-template sentinel. Both were found by changing something
