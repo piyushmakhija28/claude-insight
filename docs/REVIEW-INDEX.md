@@ -581,3 +581,70 @@ requirement set, sized, or assigned. **This is a decision for you** (see section
 on FR-25 and FR-26" with the "(proposed)" hedge dropped — present-tense-as-existing framing, the
 exact leak `hallucination_report_sequencing.json` was checking for, committed in the document that
 catalogues that defect class. Found by the Phase 5 SRS agent contradicting its own brief.*
+
+---
+
+## Corrections 55-57 -- building the NFR-1 measurement driver (2026-08-05)
+
+Three defects, all found by a check rather than by review, and all in work authored in this
+same pass.
+
+| # | Correction | Found by |
+|---|-----------|----------|
+| 55 | **The driver's append-only check only caught the transcript getting SMALLER, and an in-place rewrite of equal-or-greater size sailed straight past it.** `TranscriptTail.poll` compared `st_size` against its offset. Rewriting one three-call record as two one-call records leaves the file no smaller, so the check passed and the tail resumed reading from an offset that now landed **mid-record** -- desynchronised silently, with no error and no signal. Replaced by re-reading the 64 bytes before the offset and comparing them to what was consumed, which detects both shapes. Two further latent bugs came out of the same fix: the tail read in **text mode**, where `tell()` returns an opaque cookie that was being compared to `st_size` as if it were a byte offset, and a chunk ending mid-character would have been mangled by decoding before splitting on newlines. Both fixed by reading bytes and decoding only whole lines | The orchestrator, writing the *specificity* half of a test -- the paired assertion, not the one the test was written for |
+| 56 | **Two of the orchestrator's own assertions could not fail, and only mutation testing said so.** Deleting the tool_use dedup, and deleting the record-type filter, both left the suite green. The dedup was unreachable because no test ever re-read consumed bytes; the record-type test used a `user` record with an **empty** block list, so an empty result proved nothing about the filter. Rewritten: the filter test now puts a real `tool_use` block in a non-assistant record, paired against the identical block in an assistant record. The dedup was **deleted outright** rather than given a test, because the rewrite fix made it genuinely unreachable | A mutation harness run against the orchestrator's own test file |
+| 57 | **A test whose only exit is the behaviour under test does not fail when that behaviour is removed -- it hangs.** `test_the_void_propagates_out_of_drive` called `drive()` with no poll bound, relying on `TranscriptRewritten` to end the loop. With the integrity check mutated away, `drive` span forever: **442 seconds of CPU** before it was killed, stalling the whole mutation run. In CI that is a stuck job, not a red one, which is strictly worse than a failure. Every `drive()` call in the tests now carries an explicit bound, and the mutation harness now bounds each run at 90s and reports a timeout as a **survivor**, never as a catch | The mutation harness, by hanging on its own first mutation |
+
+> **57 has a second half that was the orchestrator's process error, not the code's.** While that
+> mutation run held `driver.py` in its mutated state, the orchestrator ran the test suite against
+> the same file and read the resulting failure as a **bug in the driver**, then spent a debugging
+> cycle reproducing it. The file was simply mutated at the time. **Do not run a suite against a file
+> another process owns** -- and when a result contradicts a mechanism that was just verified, check
+> what else is writing to the file before believing the result. This is the same class as 53:
+> believing an instrument without asking what state it was in.
+
+> **What the round is worth stating plainly:** the driver's logic was reviewed, re-read, and
+> reasoned about before any of these three were found, and review found **none of them**. 55 came
+> from a paired assertion, 56 from mutation, 57 from a bounded harness. After the fixes, a 12-mutation
+> run catches 12 and survives 0. That number is the claim; the reasoning that preceded it was not.
+
+### What the first real observation showed (2026-08-05)
+
+The driver was run against this live session and **observed ten real tool calls** -- real
+`toolu_` ids, real timestamps, window closed on the count rather than on a bound, turn boundary
+not crossed. So the harness's long-standing reason for INDETERMINATE ("the driver recorded 0")
+is gone.
+
+**It still returns INDETERMINATE, for a different and more interesting reason**, and this one is
+not a defect in the driver:
+
+| delta | observed | plugin-attributable | unattributed |
+|-------|----------|--------------------|--------------|
+| endpoint | 4 | **0** | 4 |
+| sampled | 85 | **0** | 85 |
+| union | 88 | **0** | 88 |
+
+Zero processes were attributable to the plugin. The blocker is the 88 the registry cannot name,
+and they fall into three classes:
+
+- **40 `bash.exe` -- 22 of them running `~/.claude/statusline-command.sh`.** That is Claude Code's
+  own statusline firing on a timer. It has nothing to do with the plugin and no marker declares it.
+- **16 `conhost.exe`, 8 `sh.exe`, 6 `cmd.exe`.** Console hosts and shells -- largely spawned by
+  **the ten tool calls the criterion itself requires**. The act of driving the measurement spawns
+  the processes the measurement then cannot account for.
+- **12 `node.exe`, 6 `chrome.exe`.** Claude Code itself, and unrelated user activity on the machine.
+
+**So NFR-1 as currently instrumented cannot reach PASS on a working machine**, independent of the
+plugin and independent of the hook deletion. `unattributed > 0` is guaranteed by the statusline
+alone. Reaching a verdict needs two things that are **decisions, not fixes**: permitted-exclusion
+components covering Claude Code's own periodic work and the tool-call shells, and a quiet machine
+for the rest. Declaring what counts as "the plugin spawning a process" is a scope judgement of the
+same kind as the ADR-020 / FR-31 ruling, so it is recorded here rather than decided.
+
+**The driver does not close #259.** It makes the harness *capable* of a measurement it could not
+previously take -- observer mode now has something to drive it, wired into `cli.py --observe` and
+tested for reachability rather than merely present. **No measurement has been taken.** Taking one
+requires the plugin install that is deliberately still un-run, and a genuinely cold phase requires a
+separate invocation against a fresh session. A further gap is recorded rather than closed: two
+observed phases **cannot be combined into one report**, because `build_report` takes `Measurement`
+objects and `harness.py` provides no way to read one back from JSON.

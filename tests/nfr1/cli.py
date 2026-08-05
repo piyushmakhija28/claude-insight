@@ -2,6 +2,7 @@
 
 Usage:
     python tests/nfr1/cli.py --plugin-root <path> [--json-out <file>]
+    python tests/nfr1/cli.py --observe --phase cold [--plugin-root <path>]
     python tests/nfr1/cli.py --self-test
 
 Invoke by path, not with -m. An unrelated ``tests`` distribution in this environment's
@@ -13,6 +14,17 @@ Against the current tree the harness reports NOT_MEASURABLE, which is the correc
 intended result: no plugin exists to install (issue V2-015) and the PreToolUse and
 PostToolUse hook registrations have not been deleted (issue V2-027). It will not report
 PASS until both land and a real measurement runs.
+
+The --observe mode is the one that actually counts tool calls. It measures a single
+phase in observer mode, tailing the live Claude Code transcript and marking each real
+tool call as it appears. It is separate from the default mode because a cold count is
+only cold when the window opens before the session has issued anything, which means a
+separate invocation against a fresh session -- the default mode's two back-to-back
+phases can produce a cold-labelled slot but not a cold measurement.
+
+Two observed phases still cannot be combined into one report: build_report takes
+Measurement objects, and harness.py provides no way to read a Measurement back from
+JSON. That gap is stated rather than papered over.
 
 The --self-test mode proves the harness is not a no-op. It spawns a real, uniquely
 marked child process inside a driven measurement window, registers a component that
@@ -32,7 +44,7 @@ _TESTS_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if _TESTS_DIR not in sys.path:
     sys.path.insert(0, _TESTS_DIR)
 
-from nfr1 import components, harness  # noqa: E402
+from nfr1 import components, driver, harness  # noqa: E402
 
 SELF_TEST_MARKER = "nfr1_selftest_spawn_marker"
 
@@ -83,6 +95,98 @@ def run_measurement(plugin_root, sample_interval_seconds=0.05):
         repo_root=_repo_root(),
         registry=registry,
     )
+
+
+def run_observed_phase(
+    phase,
+    plugin_root,
+    transcript=None,
+    required=harness.REQUIRED_TOOL_CALLS,
+    max_polls=None,
+    include_sidechains=False,
+    sample_interval_seconds=0.05,
+    poll_seconds=driver.DEFAULT_POLL_SECONDS,
+):
+    """Measure one phase in observer mode, driven by real tool calls.
+
+    This is the mode ``run_measurement`` could not offer. It opens a window, tails
+    the live Claude Code transcript, and calls ``mark_tool_call()`` once per real
+    tool call the session issues, so the count is observed rather than absent.
+
+    One phase per invocation is deliberate. A cold count is only cold if the
+    window opens before the session has issued anything, which means a separate
+    run against a fresh session. Both phases in one interpreter -- what
+    ``run_measurement`` does -- can only produce a cold-labelled slot, not a cold
+    measurement.
+
+    Args:
+        phase: harness.PHASE_COLD or harness.PHASE_WARM.
+        plugin_root: Installed plugin root, or None.
+        transcript: Transcript path, or None to use the newest for this project.
+        required: Tool calls the criterion requires inside the window.
+        max_polls: Optional cap on poll iterations before giving up.
+        include_sidechains: Whether subagent tool calls count.
+        sample_interval_seconds: Continuous sampler polling interval.
+        poll_seconds: Transcript polling interval.
+
+    Returns:
+        Dict describing the phase result, including why it is not a full report.
+    """
+    if transcript is None:
+        transcript = newest_transcript_for_this_project()
+    if transcript is None:
+        return {
+            "phase": phase,
+            "verdict": harness.VERDICT_INDETERMINATE,
+            "error": "no transcript found; nothing to observe",
+        }
+
+    registry = components.build_default_registry(plugin_root)
+    session = harness.MeasurementSession(
+        phase=phase,
+        registry=registry,
+        sample_interval_seconds=sample_interval_seconds,
+    )
+    tail = driver.TranscriptTail(
+        transcript,
+        session_id=driver.session_id_from_path(transcript),
+        include_sidechains=include_sidechains,
+    )
+    try:
+        measurement, observed = driver.drive(session, tail, required, poll_seconds=poll_seconds, max_polls=max_polls)
+    except driver.TranscriptRewritten as exc:
+        return {
+            "phase": phase,
+            "verdict": harness.VERDICT_INDETERMINATE,
+            "void_reason": str(exc),
+            "transcript": transcript,
+            "note": (
+                "the transcript stopped being append-only mid-window, so the "
+                "observation is void; no partial count is reported because a "
+                "partial count here is indistinguishable from a short window"
+            ),
+        }
+
+    payload = measurement.to_dict()
+    payload["transcript"] = transcript
+    payload["observed_tool_calls"] = observed
+    payload["single_phase_note"] = (
+        "this is one phase, not an NFR-1 report. Assembling a report from two "
+        "separately observed phases needs a Measurement that can round-trip "
+        "through JSON, which harness.py does not provide; build_report takes "
+        "Measurement objects only. Until that exists, the phases cannot be "
+        "combined across invocations."
+    )
+    return payload
+
+
+def newest_transcript_for_this_project():
+    """Return the newest transcript Claude Code has written for this repository.
+
+    Returns:
+        str or None: Transcript path, or None when none exists.
+    """
+    return driver.newest_transcript(driver.transcript_dir_for(_repo_root()))
 
 
 def _spawn_marked_child():
@@ -197,12 +301,55 @@ def main(argv=None):
         default=0.05,
         help="continuous sampler polling interval in seconds",
     )
+    parser.add_argument(
+        "--observe",
+        action="store_true",
+        help="measure one phase in observer mode, driven by real tool calls in the live transcript",
+    )
+    parser.add_argument(
+        "--phase",
+        choices=(harness.PHASE_COLD, harness.PHASE_WARM),
+        default=harness.PHASE_WARM,
+        help="which phase --observe is measuring; a cold run must start before the session issues anything",
+    )
+    parser.add_argument(
+        "--transcript",
+        default=None,
+        help="transcript path to tail; defaults to the newest one for this project",
+    )
+    parser.add_argument(
+        "--max-polls",
+        type=int,
+        default=None,
+        help="stop after this many polls instead of waiting indefinitely for the required tool calls",
+    )
+    parser.add_argument(
+        "--include-sidechains",
+        action="store_true",
+        help="count subagent tool calls too, which changes what the number means",
+    )
     args = parser.parse_args(argv)
 
     if args.self_test:
         outcome = run_self_test()
         print(json.dumps(outcome, indent=2))
         return 0 if outcome["passed"] else 1
+
+    if args.observe:
+        outcome = run_observed_phase(
+            phase=args.phase,
+            plugin_root=args.plugin_root,
+            transcript=args.transcript,
+            max_polls=args.max_polls,
+            include_sidechains=args.include_sidechains,
+            sample_interval_seconds=args.sample_interval,
+        )
+        text = json.dumps(outcome, indent=2, default=str)
+        if args.json_out:
+            with open(args.json_out, "w", encoding="utf-8") as handle:
+                handle.write(text)
+        print(text)
+        return 1 if ("error" in outcome or "void_reason" in outcome) else 0
 
     report = run_measurement(args.plugin_root, args.sample_interval)
     payload = report.to_dict()
