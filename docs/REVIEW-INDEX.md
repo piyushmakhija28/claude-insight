@@ -371,10 +371,27 @@ measurement was already designed; what was undecided was which outcome the proje
 > The first load attempt produced 0 of 8 too and proved nothing, because `multiprocessing` from stdin
 > never started the workers; that run was discarded rather than counted.
 
-**#52's original entry is left standing above rather than rewritten**, because the sequence matters:
-the release was merged on an honest but wrong hypothesis, and the correction is worth more than a
-tidy record. **The lesson is not "Linux differs" — it is that a suite is only green under the command
-you actually ran**, and for weeks that command differed from CI's in three ways nobody had compared.
+> **THE DIAGNOSIS ABOVE WAS ALSO WRONG, AND THIS IS THE THIRD PASS AT THIS ROW.** The spawn-flake fix
+> is real and proven — 3 of 8 failures before, 0 of 8 after, under identical load — but **it did not
+> make CI green.** On the fix branch, `CI #157` still fails at **step 14, "Run unit tests"**, on both
+> Python versions. So the flake was *a* cause and not *the* cause, and the sentence "this is not a
+> Windows/Linux split" is **withdrawn**: something still fails on `ubuntu-latest` that has never
+> failed here, across many full runs under CI's exact command.
+>
+> **What is actually established, and nothing more:** CI's command differs from the one used through
+> the sprint in three ways, all of which were real gaps; one genuine flake was found and fixed by
+> closing a spawn race; and a Linux-only failure remains **undiagnosed**, because the run logs
+> require an authenticated session that was not available. The failing test's name is one click away
+> for anyone signed in and was never obtained.
+
+**#52 has now been wrong twice and rewritten three times, which is the most useful thing about it.**
+First it was recorded as a platform split with an unknown cause. Then a real flake was found and the
+platform explanation was discarded — too confidently, on the strength of one reproduction. Now the
+platform explanation is back, narrower, with the flake removed from it. **Each pass was honestly
+reasoned from what had just been measured, and two of the three were wrong**, which is precisely the
+failure mode this whole record exists to document: not fabrication, but conclusions outrunning their
+evidence. The lesson that survives all three passes is the smaller one — **a suite is only green
+under the command you actually ran** — and even that does not explain the remaining failure.
 
 **#53 is the sharpest instance in this record of a tool being believed over an instrument.** The
 PR-status tool was not lying; it simply did not populate a field, and an empty list reads exactly
