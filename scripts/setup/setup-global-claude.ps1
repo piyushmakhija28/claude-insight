@@ -124,9 +124,16 @@ if (-not (Test-Path $ConfigFile)) {
     exit 1
 }
 
+# The sentinel must be a string the CURRENT template still contains. It used to
+# be "3-level-flow", which v2.0.0 removed along with the UserPromptSubmit hook --
+# leaving a sentinel that can never match a machine set up from this template, so
+# every subsequent run would take the else branch and overwrite settings.json
+# again. On a post-migration machine that branch destroys the mcpServers block,
+# including the registered push gate. "stop-notifier" is the retained hook and is
+# present in both the template and any machine bootstrapped from it.
 if (Test-Path $SettingsFile) {
     $settingsContent = Get-Content $SettingsFile -Raw
-    if ($settingsContent -match "3-level-flow") {
+    if ($settingsContent -match "stop-notifier") {
         Write-Host "  [OK] Hooks already in settings.json - skipping"
     } else {
         Write-Host "  [WARN] settings.json exists but no hooks found"

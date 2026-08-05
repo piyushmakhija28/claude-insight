@@ -3,7 +3,7 @@
 **Project:** Claude Workflow Engine
 **Version:** 2.0.0
 **Type:** LangGraph Orchestration Pipeline with Call Graph Intelligence + Template Fast-Path
-**Last Updated:** 2026-08-04
+**Last Updated:** 2026-08-05
 
 ---
 
@@ -432,7 +432,7 @@ See environment variables in `.env.example`:
 
 ---
 
-**Last Updated:** 2026-08-04
+**Last Updated:** 2026-08-05
 
 
 <!-- execution-insight- -->
