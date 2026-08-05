@@ -350,12 +350,73 @@ measurement was already designed; what was undecided was which outcome the proje
 | 52 | **The unit suite passes on Windows and FAILS on Linux, and this release was merged knowing that.** `ci.yml`'s `Test (Python 3.10)` and `Test (Python 3.11)` jobs both exit 1 on `ubuntu-latest` (run #154, `30978135295`). The same suite runs to completion with exit 0 on the Windows development machine, repeatedly, including immediately before the merge. **The cause is unknown** — the failure logs require authentication this session did not have — and the plausible classes are the ones this repository has already been bitten by: path separators, subprocess spawn mechanics, and default text encoding. **The two workflows this sprint added both PASS on ubuntu**, including the push-gate reachability assertion, so the release's core contract is verified on Linux; it is the pre-existing test job that is red | The orchestrator, reading workflow badges after the PR-status tool reported no checks at all |
 | 53 | **The orchestrator's "most probable explanation" was wrong, and its own hedge was right.** `github_get_pr_status` returns `checks: []` for a PR with **183 workflow runs against it**. I read that as Actions most likely being disabled, and said in the same breath that I could not distinguish it from the tool simply not reporting checks. The second reading was correct. A push was made specifically to test the first, and had the hedge not been stated the next step would have been changing repository settings **to fix a problem that did not exist** | The orchestrator, via workflow status badges, which render their conclusion as text |
 
-**#52 is recorded as an accepted, informed risk rather than a defect fixed.** The owner was shown the
-red CI, the Windows/Linux split, and the fact that the cause was undiagnosed, and chose to merge on
-the strength of the two green workflows that verify the release's actual contract. **Nobody should
-later read "the suite passes" from this repository's history without reading this row**, and nobody
-should assume the Linux failure is new — it is untested territory, not a regression this sprint
-introduced, because CI's test job has no earlier green run on this branch to compare against.
+> **DIAGNOSED AND FIXED 2026-08-05, and the framing above was wrong.** This is not a Windows/Linux
+> split. **CI runs a different command than the orchestrator did.** I ran
+> `pytest tests/ --ignore=tests/integration --ignore=tests/load -p no:randomly`; CI runs
+> `pytest tests/ -m "not integration"` — no ignores, and **no `-p no:randomly`, so its order is
+> randomised.** Under CI's exact command the suite fails on Windows too, which removes the platform
+> from the explanation entirely.
+>
+> The failure is `test_nfr1_harness.py::TestRealSpawnDetection::test_real_spawn_is_detected_and_fails`
+> — **the flake every node in this sprint was warned about and correctly attributed.** Its cause is
+> now measured: the test spawned a child that lived 0.6s, while the measurement window is only as
+> long as ten near-empty tool calls take. `Popen` returns before the OS has made a process
+> enumerable, so on a loaded machine the window closed before the child became visible, and the
+> harness was blamed for missing a spawn that had not happened yet. The child now announces itself on
+> stdout and the test blocks on that byte, making its existence a **precondition** of the measurement
+> rather than a race against it.
+>
+> **Negative control, same load, same machine: pre-fix 3 of 8 failed; post-fix 0 of 8, and 0 of 12
+> unloaded.** All four CI steps then pass locally end to end — collect, unit, integration, coverage.
+> The first load attempt produced 0 of 8 too and proved nothing, because `multiprocessing` from stdin
+> never started the workers; that run was discarded rather than counted.
+
+> **THE DIAGNOSIS ABOVE WAS ALSO WRONG, AND THIS IS THE THIRD PASS AT THIS ROW.** The spawn-flake fix
+> is real and proven — 3 of 8 failures before, 0 of 8 after, under identical load — but **it did not
+> make CI green.** On the fix branch, `CI #157` still fails at **step 14, "Run unit tests"**, on both
+> Python versions. So the flake was *a* cause and not *the* cause, and the sentence "this is not a
+> Windows/Linux split" is **withdrawn**: something still fails on `ubuntu-latest` that has never
+> failed here, across many full runs under CI's exact command.
+>
+> **What is actually established, and nothing more:** CI's command differs from the one used through
+> the sprint in three ways, all of which were real gaps; one genuine flake was found and fixed by
+> closing a spawn race; and a Linux-only failure remains **undiagnosed**, because the run logs
+> require an authenticated session that was not available. The failing test's name is one click away
+> for anyone signed in and was never obtained.
+
+> **DIAGNOSED FOR REAL, 2026-08-05, by reproducing Linux instead of reasoning about it.** Docker was
+> available the whole time. Running CI's exact command inside `python:3.11-slim`, against a clone of
+> the branch, produced the three test names in minutes — the thing that had been guessed at twice and
+> was one authenticated click away the whole time. **Two were genuine CI failures and both are fixed:**
+>
+> - `test_docs_index_matches_the_tree` — **mine, written hours earlier.** It counted files with
+>   `os.listdir`, so it counted the working tree, including a **gitignored** analysis dump in
+>   `docs/phase-0-reverse-engineering/`. The index was generated saying 26 where the repository holds
+>   25. A test written to stop documentation drifting from the tree **was reading a different tree
+>   than the one it documents.** Now counts what `git` tracks.
+> - `test_model_fallback` — guarded against `LibrarySetupError`, which `locate_library_root` **does
+>   not raise**; its documented contract is `Optional[Path]` and it *returns* `None`. So the guard
+>   never fired: the test ran wherever the sibling library exists and died on `None / "..."` wherever
+>   it does not — **which is every CI runner.**
+>
+> The third, `test_push_gate_mcp_tool`'s catalogue check, was a **container artifact** and is proven
+> so rather than assumed: re-run with the clone at `/home/runner/work/claude-workflow-engine/claude-workflow-engine`,
+> the whole suite passes with **zero failures**. See 54 for what that proof exposed.
+
+| 54 | **The push-gate catalogue resolves by directory NAME, so a differently-named checkout breaks registration.** Surfaced only because a container cloned to `/work`: the entry resolved to `/claude-workflow-engine/src/mcp/push_gate/server.py`, a path that does not exist. Resolution is `repo_root.parent / <repo-name> / <entry>`, which happens to be correct on GitHub Actions and on any clone that kept the default directory name — **and silently wrong for anyone who cloned into a different one.** It fails by producing a path, not an error, so `register-mcp` would write a settings entry pointing at nothing | The orchestrator, while proving an unrelated failure was an artifact |
+
+**#54 is the second time in two days that a *test environment* exposed a product defect nobody was
+looking for**, after the bootstrap-template sentinel. Both were found by changing something
+incidental — a checkout path, a template's contents — and watching what broke downstream.
+
+**#52 has now been wrong twice and rewritten three times, which is the most useful thing about it.**
+First it was recorded as a platform split with an unknown cause. Then a real flake was found and the
+platform explanation was discarded — too confidently, on the strength of one reproduction. Now the
+platform explanation is back, narrower, with the flake removed from it. **Each pass was honestly
+reasoned from what had just been measured, and two of the three were wrong**, which is precisely the
+failure mode this whole record exists to document: not fabrication, but conclusions outrunning their
+evidence. The lesson that survives all three passes is the smaller one — **a suite is only green
+under the command you actually ran** — and even that does not explain the remaining failure.
 
 **#53 is the sharpest instance in this record of a tool being believed over an instrument.** The
 PR-status tool was not lying; it simply did not populate a field, and an empty list reads exactly
