@@ -680,3 +680,35 @@ measures can still fail. Three of the four below were found by attacking the cod
 suite (`pytest exit=0`, zero FAILED or ERROR lines). 3/3 mutations caught, zero survivors, file
 restored byte-for-byte. `cli.py --self-test` still returns FAIL with `plugin_count=1`, so the
 metric remains failable.
+
+---
+
+## Corrections 62-65 -- making a verdict reachable without making it unearnable (2026-08-05)
+
+Splitting "unknown" from "shown not to be the plugin" is the change that lets NFR-1 reach a
+verdict on a working machine. It is also the change most able to destroy the measurement, and
+three of the four entries below are defects in that change, caught before it shipped.
+
+| # | Correction | Found by |
+|---|-----------|----------|
+| 62 | **The orchestrator's own change made the harness report PASS where it must report FAIL.** `cli.py --self-test` spawns a real marked child and registers a component owning that marker as the plugin; a PASS means the harness missed a spawn it was told to detect. It returned **PASS with `plugin_count=0`**, the marked child neither charged to the plugin nor reported as unknown. Cause class: the proof is a statement about ANCESTRY and was being granted to a process whose OWN identity had not been read -- a process observed with no command line and no executable path might BE the plugin. The proof now requires readable identity, and an image name does not count, since a plugin entry point runs as `python.exe` like everything else. **The original PASS was never reproduced** -- 24 later runs, 10 idle and 14 under real load, all report FAIL -- so this is recorded as closing the class whose shape the failure matched, not as a confirmed repair of that race | The shipped negative control, doing exactly the job it exists for |
+| 63 | **`ppid is None` means the backend withheld the parent, not that the process is a root.** The first implementation terminated the walk there and called it a clean finish, which manufactures a proof out of a refusal to answer. Corrected before any measurement was taken, and it forced the better definition: what terminates a proof is reaching a process that **predates the measurement window**, not "a root". A chain almost always ends at a parent that has exited and is in no snapshot, so "root" was never a real terminator | The orchestrator, reading `ProcessRecord`'s own docstring instead of assuming what None meant |
+| 64 | **Stopping the walk at an unreadable ancestor under-reports the plugin.** The orchestrator's first version returned immediately on an access-denied hop. A plugin marker may sit ABOVE that hop, and missing it loses the one thing NFR-1 counts -- the dangerous direction to err in. An unreadable hop now clears the provable flag and the walk continues | An existing test, `test_access_denied_ancestor_with_no_identity_does_not_block_the_walk`, written in the previous round |
+| 65 | **The ancestry index was built from the endpoint snapshots while the records being attributed came from the sampler.** The sampler exists precisely to see processes in neither snapshot -- including the short-lived PARENTS of other short-lived processes -- so those chains broke at the first hop. A live window reported **63 processes as unknown while every one of them carried a usable parent pid**. The index now includes what the sampler saw | The orchestrator, checking whether the unknowns lacked parent ids or lacked parent records |
+
+> **What the third live measurement shows, and what it does not.** Attribution now covers 252 of
+> 345 observed processes (200 statusline, 52 Claude Code host) against 68 of 131 before, 12 are
+> proved not plugin-descended, and **plugin-attributable is 0 in all three deltas** -- a zero that
+> now means something, because markers can match (58), precedence is right (59), and the proof
+> cannot launder a plugin process (62). The verdict is still INDETERMINATE on 81 unknowns.
+>
+> **The runs are not comparable**: this window observed 345 processes against 131, and included
+> Windows lock-screen activity (`LogonUI.exe`, `LockApp.exe`, `smartscreen.exe`) that the earlier
+> one did not. Reading the two as a before/after of the same quantity would be wrong.
+>
+> The 81 break down precisely: **65 broken chains**, 9 that reached the baseline through an
+> unreadable hop, and 7 whose own command line the OS withheld. The broken chains are transient
+> intermediates -- a parent that lived less than one sampling interval is in no snapshot and no
+> sample, so its children can never be walked. That is an irreducible limit of sampling, not a
+> defect, and it argues that the measurement procedure should specify a quiet session rather than
+> that the harness should sample harder.
