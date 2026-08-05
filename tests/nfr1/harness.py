@@ -238,12 +238,17 @@ class Measurement(object):
         unattributed = len(result.unattributed)
         if unattributed > 0:
             reasons.append(
-                "%d observed process(es) could not be attributed to any component, so "
-                "they cannot be shown to not belong to the plugin" % unattributed
+                "%d observed process(es) could not be attributed, and could not be shown "
+                "not to descend from the plugin either, because their ancestry could not "
+                "be walked back to a process that predates the window" % unattributed
             )
             return VERDICT_INDETERMINATE, reasons
 
-        reasons.append("0 processes attributable to the plugin")
+        proved = len(result.not_plugin_descended)
+        reasons.append(
+            "0 processes attributable to the plugin; %d further process(es) walked back "
+            "to the pre-window baseline with no plugin anywhere on the chain" % proved
+        )
         return VERDICT_PASS, reasons
 
     def to_dict(self):
@@ -340,6 +345,8 @@ class MeasurementSession(object):
         ancestry = attribution_mod.build_ancestry_index(after)
         for pid, record in attribution_mod.build_ancestry_index(self._before).items():
             ancestry.setdefault(pid, record)
+        for pid, record in attribution_mod.index_from_records(self._sampler.seen_records().values()).items():
+            ancestry.setdefault(pid, record)
 
         endpoint_records = process_probe.endpoint_delta(self._before, after)
         sampled_records = self._sampler.sampled_delta(self._before)
@@ -349,9 +356,13 @@ class MeasurementSession(object):
             merged[record.key] = record
         union_records = sorted(merged.values(), key=lambda r: r.pid)
 
-        endpoint_attr = attribution_mod.attribute(endpoint_records, self.registry, ancestry)
-        sampled_attr = attribution_mod.attribute(sampled_records, self.registry, ancestry)
-        union_attr = attribution_mod.attribute(union_records, self.registry, ancestry)
+        baseline_pids = set(record.pid for record in self._before.records.values())
+
+        endpoint_attr = attribution_mod.attribute(
+            endpoint_records, self.registry, ancestry, baseline_pids=baseline_pids
+        )
+        sampled_attr = attribution_mod.attribute(sampled_records, self.registry, ancestry, baseline_pids=baseline_pids)
+        union_attr = attribution_mod.attribute(union_records, self.registry, ancestry, baseline_pids=baseline_pids)
 
         boundary = self.guard.evaluate(union_attr)
         sampler_summary = self._sampler.to_dict()
