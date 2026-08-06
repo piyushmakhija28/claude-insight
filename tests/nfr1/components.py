@@ -200,6 +200,36 @@ class ComponentRegistry(object):
         }
 
 
+def qualified_tail(normalised_root):
+    """Return the last two path components of a plugin root, or None.
+
+    The plugin root's absolute path is already a marker, but it only matches a
+    process that names the plugin at exactly this location. A shorter, relocatable
+    marker is wanted too -- and the obvious choice, the bare basename, is a trap.
+    This plugin's directory is literally named ``plugin``, so the basename marker
+    was the single word ``plugin``, which matches any command line mentioning it:
+    ``chrome.exe --disable-plugins`` would have been charged to the plugin.
+
+    That direction produces false FAILs rather than false passes, so it never
+    corrupted a measurement -- nothing matched it in the first real run -- but a
+    metric that can fail for the wrong reason is no better than one that cannot
+    fail at all.
+
+    Two components are enough to be distinctive while staying relocatable. A root
+    with only one component yields nothing, because there is no way to qualify it.
+
+    Args:
+        normalised_root: Plugin root, forward-slashed, without a trailing slash.
+
+    Returns:
+        str or None: Lowercase ``parent/leaf``, or None when it cannot be qualified.
+    """
+    parts = [p for p in normalised_root.split("/") if p]
+    if len(parts) < 2:
+        return None
+    return "/".join(parts[-2:]).lower()
+
+
 def build_default_registry(plugin_root=None, extra_plugin_markers=None):
     """Build the registry used by a real NFR-1 measurement.
 
@@ -218,7 +248,9 @@ def build_default_registry(plugin_root=None, extra_plugin_markers=None):
     if plugin_root:
         normalised = str(plugin_root).replace("\\", "/").rstrip("/")
         plugin_markers.append(normalised.lower())
-        plugin_markers.append(os.path.basename(normalised).lower())
+        qualified = qualified_tail(normalised)
+        if qualified:
+            plugin_markers.append(qualified)
     env_root = os.environ.get("CLAUDE_PLUGIN_ROOT")
     if env_root:
         plugin_markers.append(env_root.replace("\\", "/").lower())

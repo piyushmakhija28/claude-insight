@@ -690,3 +690,52 @@ class TestAMarkerIsNormalisedOnBothSides:
         registry = components.build_default_registry(plugin_root=None)
         offenders = [(s.key, m) for s in registry for m in s.markers if chr(92) in m]
         assert offenders == [], "markers must be stored forward-slash normalised: %r" % offenders
+
+
+class TestPluginMarkersAreSpecificEnough:
+    """A marker broad enough to match unrelated software produces false FAILs.
+
+    build_default_registry derived a marker from the plugin root's BASENAME, and
+    this plugin's directory is named `plugin`, so the marker was the single word
+    `plugin`. Any command line mentioning it -- a browser flag, an unrelated path --
+    would have been charged to the plugin. Nothing matched it during the first real
+    measurement, so no result was corrupted, but a metric that can fail for the
+    wrong reason is no better than one that cannot fail at all.
+    """
+
+    REAL_ROOT = "C:/Users/x/dev/claude-workflow-engine/plugin"
+
+    def test_an_unrelated_process_mentioning_plugins_is_not_charged(self):
+        registry = components.build_default_registry(self.REAL_ROOT)
+        record = _record(1, cmdline="chrome.exe --disable-plugins --type=renderer")
+        result = attribution_mod.attribute([record], registry)
+        assert result.plugin_count == 0, "a browser flag was charged to the plugin"
+
+    def test_the_real_plugin_path_is_still_charged(self):
+        """Specificity: tightening the marker must not stop it matching the plugin."""
+        registry = components.build_default_registry(self.REAL_ROOT)
+        record = _record(1, cmdline="python %s/scripts/pipeline_entry.py" % self.REAL_ROOT)
+        result = attribution_mod.attribute([record], registry)
+        assert result.plugin_count == 1
+
+    def test_the_qualified_marker_survives_a_relocated_checkout(self):
+        """The point of a short marker: match the plugin at a different absolute path."""
+        registry = components.build_default_registry(self.REAL_ROOT)
+        moved = "D:/elsewhere/claude-workflow-engine/plugin/scripts/entry.py"
+        result = attribution_mod.attribute([_record(1, cmdline="python " + moved)], registry)
+        assert result.plugin_count == 1
+
+    def test_no_derived_marker_is_a_bare_generic_word(self):
+        registry = components.build_default_registry(self.REAL_ROOT)
+        generic = {"plugin", "plugins", "scripts", "bin", "src", "lib", "app"}
+        for spec in registry:
+            if spec.role != components.ROLE_PLUGIN_COUNTED:
+                continue
+            offenders = [m for m in spec.markers if m in generic]
+            assert offenders == [], "generic plugin markers: %r" % offenders
+
+    def test_a_single_component_root_yields_no_qualified_marker(self):
+        assert components.qualified_tail("plugin") is None
+
+    def test_a_two_component_root_yields_the_pair(self):
+        assert components.qualified_tail("C:/claude-workflow-engine/plugin") == "claude-workflow-engine/plugin"
