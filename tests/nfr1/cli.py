@@ -175,6 +175,7 @@ def run_observed_phase(
         include_sidechains=include_sidechains,
         start_offset=start_offset,
         skip_leading=skip_leading,
+        count_completions=True,
     )
     try:
         measurement, observed = driver.drive(session, tail, required, poll_seconds=poll_seconds, max_polls=max_polls)
@@ -194,6 +195,7 @@ def run_observed_phase(
     payload = measurement.to_dict()
     payload["transcript"] = transcript
     payload["anchored_at"] = anchor_basis
+    payload["counted"] = "tool_result completions"
     payload["leading_tool_calls_skipped"] = skip_leading
     payload["observed_tool_calls"] = observed
     payload["single_phase_note"] = (

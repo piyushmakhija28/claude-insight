@@ -327,6 +327,50 @@ def iter_tool_use_events(chunk, session_id=None, include_sidechains=False):
     return events
 
 
+def iter_tool_result_ids(chunk, session_id=None, include_sidechains=False):
+    """Extract the ids of tool calls that COMPLETED, from a chunk of transcript.
+
+    A `tool_use` block records an intention and is written before the tool runs. A
+    `tool_result` block, carried on a `user` record, records the completion. The
+    difference decides whether a measurement window covers any work at all: a cold
+    run anchored on tool_use saw all ten calls the instant it opened, because their
+    records already existed, and closed after **0.19 seconds** having measured a
+    window that contained none of the execution it was supposed to bracket.
+
+    Args:
+        chunk: Text containing zero or more whole JSONL records.
+        session_id: When given, only records carrying this session id count.
+        include_sidechains: Whether subagent records count.
+
+    Returns:
+        list: tool_use_id strings, one per completed call, in order.
+    """
+    completed = []
+    for line in chunk.splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            record = json.loads(line)
+        except ValueError:
+            continue
+        if record.get("type") != "user":
+            continue
+        if session_id is not None and record.get("sessionId") != session_id:
+            continue
+        if record.get("isSidechain") and not include_sidechains:
+            continue
+        blocks = (record.get("message") or {}).get("content")
+        if not isinstance(blocks, list):
+            continue
+        for block in blocks:
+            if isinstance(block, dict) and block.get("type") == "tool_result":
+                identifier = block.get("tool_use_id")
+                if identifier:
+                    completed.append(identifier)
+    return completed
+
+
 class TranscriptTail(object):
     """Yields tool-use events appended to a transcript after construction.
 
@@ -338,12 +382,23 @@ class TranscriptTail(object):
     and completely rather than being dropped or mangled.
     """
 
-    def __init__(self, path, session_id=None, include_sidechains=False, start_offset=None, skip_leading=0):
+    def __init__(
+        self,
+        path,
+        session_id=None,
+        include_sidechains=False,
+        start_offset=None,
+        skip_leading=0,
+        count_completions=False,
+    ):
         self.path = path
         self.session_id = session_id
         self.include_sidechains = include_sidechains
         self.skip_leading = skip_leading
+        self.count_completions = count_completions
         self._skipped = 0
+        self._issued = {}
+        self._reported = set()
         if start_offset is not None:
             self._offset = start_offset
         else:
@@ -399,7 +454,18 @@ class TranscriptTail(object):
         self._pending = chunk[cut + 1 :]
         whole = chunk[: cut + 1].decode("utf-8", errors="replace")
         events = iter_tool_use_events(whole, self.session_id, self.include_sidechains)
-        return self._drop_leading(events)
+        events = self._drop_leading(events)
+        if not self.count_completions:
+            return events
+        for event in events:
+            if event.get("id"):
+                self._issued[event["id"]] = event
+        matured = []
+        for identifier in iter_tool_result_ids(whole, self.session_id, self.include_sidechains):
+            if identifier in self._issued and identifier not in self._reported:
+                self._reported.add(identifier)
+                matured.append(self._issued[identifier])
+        return matured
 
     def _drop_leading(self, events):
         """Discard the first skip_leading events ever seen by this tail.

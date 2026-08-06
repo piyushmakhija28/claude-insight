@@ -55,6 +55,29 @@ def append_calls(path, ids, session_id=SESSION):
         handle.write(json.dumps(record) + "\n")
 
 
+def append_results(path, ids, session_id=SESSION):
+    """Append one user record carrying tool_result blocks for the given call ids.
+
+    The CLI counts COMPLETIONS, not intentions: a tool_use record is written before
+    the tool runs, so a window that closed on those bracketed no execution at all.
+    A fixture that writes only uses therefore tests nothing the driver now does.
+
+    Args:
+        path: Transcript path.
+        ids: Tool-use ids whose results should be recorded.
+        session_id: Session id to stamp on the record.
+    """
+    record = {
+        "type": "user",
+        "sessionId": session_id,
+        "timestamp": "2026-08-06T00:00:00Z",
+        "isSidechain": False,
+        "message": {"content": [{"type": "tool_result", "tool_use_id": i} for i in ids]},
+    }
+    with open(path, "a", encoding="utf-8") as handle:
+        handle.write(json.dumps(record) + "\n")
+
+
 class TestObserveReachesTheDriver:
     """The CLI must call the driver, not merely import it."""
 
@@ -67,7 +90,9 @@ class TestObserveReachesTheDriver:
         def spy(session, tail, required, **kwargs):
             """Record the call, then append the calls the tail will find."""
             seen["required"] = required
-            append_calls(path, ["t%d" % i for i in range(10)])
+            ids = ["t%d" % i for i in range(10)]
+            append_calls(path, ids)
+            append_results(path, ids)
             return real_drive(session, tail, required, sleep=lambda _: None, **kwargs)
 
         monkeypatch.setattr(driver, "drive", spy)
@@ -100,6 +125,7 @@ class TestObserveReachesTheDriver:
 
         def spy(session, tail, required, **kwargs):
             append_calls(path, ["x1", "x2"], session_id="a-different-session")
+            append_results(path, ["x1", "x2"], session_id="a-different-session")
             return original(session, tail, required, sleep=lambda _: None, **kwargs)
 
         import unittest.mock
@@ -118,6 +144,7 @@ class TestObserveReportsVoidAsVoid:
 
         def spy(session, tail, required, **kwargs):
             append_calls(path, ["t1"])
+            append_results(path, ["t1"])
             tail.poll()
             with open(path, "w", encoding="utf-8") as handle:
                 handle.write("")

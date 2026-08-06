@@ -575,3 +575,81 @@ class TestAnchoringAtTheLaunchingRecord:
         user_line = json.dumps({"type": "user", "sessionId": SESSION, "text": "out.json"}) + "\n"
         path.write_bytes((launcher + user_line).encode("utf-8"))
         assert driver.find_launching_record_offset(str(path), "out.json") == 0
+
+
+def result_record(tool_ids, session_id=SESSION, sidechain=False):
+    """Build a user record carrying tool_result blocks for the given call ids."""
+    record = {
+        "type": "user",
+        "sessionId": session_id,
+        "timestamp": "2026-08-06T00:00:00Z",
+        "isSidechain": sidechain,
+        "message": {"content": [{"type": "tool_result", "tool_use_id": t} for t in tool_ids]},
+    }
+    return json.dumps(record) + "\n"
+
+
+class TestCountingCompletionsNotIntentions:
+    """A tool_use records an intention; a tool_result records that work happened.
+
+    The distinction decides whether the window covers anything. A cold run counting
+    tool_use saw all ten calls the instant it opened -- their records were already
+    written -- and closed after 0.19 seconds having bracketed none of the execution.
+    Measured on that transcript, the uses were written between +0.0s and +7.9s and
+    the results arrived between +13.8s and +19.7s.
+    """
+
+    def test_a_use_without_its_result_is_not_yet_a_completion(self, tmp_path):
+        path = tmp_path / "t.jsonl"
+        path.write_bytes(assistant_record(["t1", "t2"]).encode("utf-8"))
+        tail = driver.TranscriptTail(str(path), SESSION, start_offset=0, count_completions=True)
+        assert tail.poll() == []
+
+    def test_the_same_calls_count_once_their_results_arrive(self, tmp_path):
+        path = tmp_path / "t.jsonl"
+        path.write_bytes((assistant_record(["t1", "t2"]) + result_record(["t1", "t2"])).encode("utf-8"))
+        tail = driver.TranscriptTail(str(path), SESSION, start_offset=0, count_completions=True)
+        assert [e["id"] for e in tail.poll()] == ["t1", "t2"]
+
+    def test_counting_intentions_would_have_returned_them_immediately(self, tmp_path):
+        """The paired half, pinning the behaviour that produced a 0.19s window."""
+        path = tmp_path / "t.jsonl"
+        path.write_bytes(assistant_record(["t1", "t2"]).encode("utf-8"))
+        tail = driver.TranscriptTail(str(path), SESSION, start_offset=0, count_completions=False)
+        assert len(tail.poll()) == 2
+
+    def test_a_result_for_a_call_issued_before_the_anchor_is_ignored(self, tmp_path):
+        """Only calls this window issued may complete it."""
+        path = tmp_path / "t.jsonl"
+        earlier = assistant_record(["old"])
+        path.write_bytes((earlier + result_record(["old"])).encode("utf-8"))
+        tail = driver.TranscriptTail(
+            str(path), SESSION, start_offset=len(earlier.encode("utf-8")), count_completions=True
+        )
+        assert tail.poll() == []
+
+    def test_a_completion_is_reported_only_once(self, tmp_path):
+        path = tmp_path / "t.jsonl"
+        path.write_bytes((assistant_record(["t1"]) + result_record(["t1"])).encode("utf-8"))
+        tail = driver.TranscriptTail(str(path), SESSION, start_offset=0, count_completions=True)
+        assert len(tail.poll()) == 1
+        with open(str(path), "a", encoding="utf-8") as handle:
+            handle.write(result_record(["t1"]))
+        assert tail.poll() == []
+
+    def test_results_arriving_in_a_later_poll_still_count(self, tmp_path):
+        path = tmp_path / "t.jsonl"
+        path.write_bytes(assistant_record(["t1", "t2"]).encode("utf-8"))
+        tail = driver.TranscriptTail(str(path), SESSION, start_offset=0, count_completions=True)
+        assert tail.poll() == []
+        with open(str(path), "a", encoding="utf-8") as handle:
+            handle.write(result_record(["t1", "t2"]))
+        assert len(tail.poll()) == 2
+
+    def test_the_launching_call_is_skipped_before_completions_are_tracked(self, tmp_path):
+        """skip_leading drops the launcher, so its own result can never complete it."""
+        path = tmp_path / "t.jsonl"
+        body = assistant_record(["launch", "t1"]) + result_record(["launch", "t1"])
+        path.write_bytes(body.encode("utf-8"))
+        tail = driver.TranscriptTail(str(path), SESSION, start_offset=0, skip_leading=1, count_completions=True)
+        assert [e["id"] for e in tail.poll()] == ["t1"]
