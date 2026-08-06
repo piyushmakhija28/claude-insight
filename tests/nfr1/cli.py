@@ -203,6 +203,43 @@ def newest_transcript_for_this_project():
     return driver.newest_transcript(driver.transcript_dir_for(_repo_root()))
 
 
+def build_combined_report(cold_json, warm_json, plugin_root):
+    """Assemble one NFR-1 report from two separately observed phase files.
+
+    Cold and warm cannot be observed in the same invocation: a cold count is only
+    cold when the window opens before the session has issued anything, which means
+    a fresh session. Each phase is therefore measured on its own and written to
+    JSON, and this reads both back.
+
+    Args:
+        cold_json: Path to a cold phase written by --observe --phase cold.
+        warm_json: Path to a warm phase written by --observe --phase warm.
+        plugin_root: Installed plugin root, or None.
+
+    Returns:
+        Dict: the full NFR1Report payload.
+
+    Raises:
+        ValueError: If either file is not the phase it was supplied as, or is
+            missing anything the verdict depends on.
+    """
+    phases = {}
+    for label, path in ((harness.PHASE_COLD, cold_json), (harness.PHASE_WARM, warm_json)):
+        with open(path, "r", encoding="utf-8") as handle:
+            restored = harness.measurement_from_dict(json.load(handle))
+        if restored.phase != label:
+            raise ValueError("%s was supplied as the %s phase but records phase %r" % (path, label, restored.phase))
+        phases[label] = restored
+
+    report = harness.build_report(
+        plugin_root=plugin_root,
+        cold=phases[harness.PHASE_COLD],
+        warm=phases[harness.PHASE_WARM],
+        repo_root=_repo_root(),
+    )
+    return report.to_dict()
+
+
 def _spawn_marked_child():
     """Spawn a short-lived child process carrying the self-test marker.
 
@@ -353,12 +390,30 @@ def main(argv=None):
         default=0,
         help="discard this many leading tool calls; use 1 to exclude the launching call itself",
     )
+    parser.add_argument(
+        "--report",
+        action="store_true",
+        help="combine two separately observed phase files into one NFR-1 report",
+    )
+    parser.add_argument("--cold-json", default=None, help="cold phase file, for --report")
+    parser.add_argument("--warm-json", default=None, help="warm phase file, for --report")
     args = parser.parse_args(argv)
 
     if args.self_test:
         outcome = run_self_test()
         print(json.dumps(outcome, indent=2))
         return 0 if outcome["passed"] else 1
+
+    if args.report:
+        if not args.cold_json or not args.warm_json:
+            parser.error("--report needs both --cold-json and --warm-json")
+        payload = build_combined_report(args.cold_json, args.warm_json, args.plugin_root)
+        text = json.dumps(payload, indent=2, default=str)
+        if args.json_out:
+            with open(args.json_out, "w", encoding="utf-8") as handle:
+                handle.write(text)
+        print(text)
+        return 0
 
     if args.observe:
         outcome = run_observed_phase(
