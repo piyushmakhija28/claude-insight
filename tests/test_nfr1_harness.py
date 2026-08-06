@@ -338,6 +338,25 @@ class TestCurrentTreeState:
         payload = harness.build_report(plugin_root=None).to_dict()
         assert payload["closes_after"] == ["V2-015", "V2-027"]
 
+    def test_the_closure_note_carries_both_the_original_bar_and_the_amendment(self):
+        """The bar that was not met must survive the decision that waived it.
+
+        #259 was closed without a PASS. That was the owner's ruling, and it is
+        defensible -- but a note rewritten to read as though the bar had been
+        cleared would erase the one fact a later reader most needs. So both halves
+        are pinned: what was originally required, and what was decided instead.
+        """
+        note = harness.build_report(plugin_root=None).to_dict()["closure_note"]
+        assert "ORIGINAL BAR" in note
+        assert "never produced a pass" in note
+        assert "AMENDED 2026-08-06" in note
+        assert "A PASS was NOT produced" in note
+
+    def test_the_amendment_names_where_its_evidence_lives(self):
+        """A ruling with no reachable evidence is an assertion."""
+        note = harness.build_report(plugin_root=None).to_dict()["closure_note"]
+        assert "docs/reports/nfr1-measurement-2026-08-06.md" in note
+
 
 class TestStopHookSpawnFloor:
     """The owner ruling that an inert guarded opportunity is a pass."""

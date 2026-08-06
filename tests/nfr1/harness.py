@@ -595,10 +595,24 @@ class NFR1Report(object):
             "verdict": verdict,
             "reasons": reasons,
             "closes_after": ["V2-015", "V2-027"],
+            "closure_prerequisites_met": True,
             "closure_note": (
-                "This issue cannot close on a harness that has never produced a pass. "
-                "The measurement requires a plugin to install (V2-015) and the hook "
-                "registrations to be deleted (V2-027); neither exists."
+                "ORIGINAL BAR: this issue cannot close on a harness that has never "
+                "produced a pass. The measurement requires a plugin to install "
+                "(V2-015) and the hook registrations to be deleted (V2-027). "
+                "AMENDED 2026-08-06 by the requirement owner, on the record rather "
+                "than by inference. V2-015 and V2-027 are both met, and cold and warm "
+                "were both measured for the first time. A PASS was NOT produced: both "
+                "phases are INDETERMINATE on a handful of Windows system processes "
+                "whose command lines an unelevated observer cannot read. The owner "
+                "ruled that requiring elevation is neither practical nor safe in a "
+                "normal or corporate development environment, and that NFR-1's "
+                "question -- does an installed, uninvoked plugin spawn processes -- is "
+                "answered by plugin_attributable_count = 0 across every delta of both "
+                "phases, with both structural gates PASS and both windows valid. "
+                "Processes the operating system refuses to describe are outside the "
+                "criterion's reach, not evidence against it. See "
+                "docs/reports/nfr1-measurement-2026-08-06.md."
             ),
             "structural_gates": self.structural,
             "cold": self.cold.to_dict() if self.cold else None,

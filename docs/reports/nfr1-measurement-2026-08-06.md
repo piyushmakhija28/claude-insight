@@ -112,8 +112,35 @@ it located a latency cost paid on every tool call of every session.
 Three of four conditions are now satisfied. The fourth is blocked by nine access-denied system
 processes, and the recommended next step is an elevated run rather than an amendment.
 
-Should the elevated run still leave unknowns, the decision that follows is the owner's and
-should be recorded explicitly: whether `plugin_attributable_count = 0`, with structural gates
-PASS and a valid window in both phases, satisfies NFR-1 notwithstanding processes the operating
-system will not describe. That is an amendment to what counts as met — not something to be
-inferred from a summary.
+## 7. Amendment, and closure of #259
+
+**Ruled by the requirement owner on 2026-08-06. Recorded here rather than inferred.**
+
+The elevated run was **declined**, and the reasoning is sound: requiring Administrator rights
+is neither practical nor safe in a normal or corporate development environment, so a criterion
+that can only be satisfied under elevation is a criterion most engineers could never verify.
+
+**A PASS was not produced, and this amendment does not pretend otherwise.** Both phases are
+INDETERMINATE. What the owner ruled is that NFR-1's *question* has been answered:
+
+> Does an installed but uninvoked plugin spawn processes?
+
+Answered by `plugin_attributable_count = 0` across every delta of both phases, with both
+structural gates PASS and both windows valid. Processes the operating system refuses to
+describe are **outside the criterion's reach, not evidence against it** — a permanent property
+of unelevated measurement on Windows, not a pending task.
+
+`harness.py`'s `closure_note` now carries both halves: the original bar, and this amendment.
+Two tests pin it so a later rewrite cannot quietly erase the fact that the bar went unmet.
+
+**What this closure does not claim:**
+
+- It does not claim a PASS.
+- It does not claim every process in the window was identified — ten were not.
+- It does not claim the criterion is satisfiable as originally written on an unelevated
+  Windows machine. On the present evidence it is not, and that is the reason for the
+  amendment rather than a footnote to it.
+
+**What it does claim,** and what the evidence supports: the plugin contributes zero processes
+to a session that has installed it and not invoked it, measured twice, under conditions the
+harness itself certifies as valid.

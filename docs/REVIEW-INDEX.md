@@ -751,3 +751,36 @@ three of the four entries below are defects in that change, caught before it shi
 > pre-change sha256 afterwards. The Stop hook was deliberately **not** touched: two of the
 > turn-boundary guard's three witnesses depend on it, and removing it would leave every window
 > reporting CLEAN because nothing could see otherwise.
+
+---
+
+## Owner ruling: #259 closed by amendment, without a PASS (2026-08-06)
+
+**This is not a correction. It is a decision, recorded because it waives a bar the code itself
+set**, and a reader who finds #259 closed deserves to know that on the record rather than infer
+it from a summary.
+
+`harness.py` carried its own closure condition: *"This issue cannot close on a harness that has
+never produced a pass."* Three of its four conditions were met on 2026-08-06 -- V2-015 (a
+plugin exists and is installed), V2-027 (hook registrations deleted), and cold and warm both
+measured for the first time. **The fourth was not: no PASS was produced.** Both phases are
+INDETERMINATE on ten processes, nine of them Windows system processes whose command lines an
+unelevated observer cannot read.
+
+The owner declined the elevated run that might have cleared them, on the grounds that a
+criterion satisfiable only under Administrator rights is one most engineers in a normal or
+corporate environment could never verify. **That reasoning is sound and the ruling stands.**
+
+What the closure claims: the plugin contributes **zero processes** to a session that installed
+it and did not invoke it -- `plugin_attributable_count = 0` across every delta of both phases,
+both structural gates PASS, both windows certified valid by the harness's own turn-boundary
+guard, 10/10 tool calls counted in each.
+
+What it does not claim: a PASS; that every process in the window was identified; or that the
+criterion as originally written is satisfiable unelevated on Windows. On the present evidence
+it is not, which is the reason for the amendment rather than a footnote to it.
+
+`closure_note` now carries **both halves** -- the original bar and the amendment -- and two
+tests pin it, so a later rewrite cannot quietly turn "the bar was waived" into "the bar was
+cleared". Evidence: `docs/reports/nfr1-measurement-2026-08-06.md`, with
+`nfr1-cold-final.json`, `nfr1-warm-final.json` and `nfr1-report.json` alongside it.
