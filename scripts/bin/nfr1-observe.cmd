@@ -17,7 +17,13 @@ if "%~2"=="" goto usage
 set "REPO=%~dp0..\.."
 for %%I in ("%REPO%") do set "REPO=%%~fI"
 
-python -u "%REPO%\tests\nfr1\cli.py" --observe --phase %~1 --from-current-record --skip-leading 1 --plugin-root "%REPO%\plugin" --max-polls 900 --json-out "%~2"
+REM 3600 polls at 0.25s is a 15-minute budget. It is generous on purpose: the probe
+REM calls must outlive this observer's own startup (Bash spawn, Python boot, psutil
+REM import, a 450-process snapshot -- around 20 seconds), and if the harness runs
+REM those probes sequentially rather than in parallel their total can reach several
+REM minutes. A budget that expires first would report a short count as though the
+REM calls had never happened.
+python -u "%REPO%\tests\nfr1\cli.py" --observe --phase %~1 --from-current-record --skip-leading 1 --plugin-root "%REPO%\plugin" --max-polls 3600 --json-out "%~2"
 exit /b %ERRORLEVEL%
 
 :usage
