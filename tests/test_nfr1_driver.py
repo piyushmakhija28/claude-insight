@@ -27,7 +27,7 @@ SESSION = "session-under-measurement"
 OTHER_SESSION = "some-other-session"
 
 
-def assistant_record(tool_ids, session_id=SESSION, sidechain=False, extra_blocks=()):
+def assistant_record(tool_ids, session_id=SESSION, sidechain=False, extra_blocks=(), command=None):
     """Build one transcript record carrying the given tool-use blocks.
 
     Args:
@@ -39,7 +39,8 @@ def assistant_record(tool_ids, session_id=SESSION, sidechain=False, extra_blocks
     Returns:
         str: The record as a JSONL line, newline included.
     """
-    blocks = [{"type": "tool_use", "id": tid, "name": "Bash", "input": {}} for tid in tool_ids]
+    payload = {"command": command} if command is not None else {}
+    blocks = [{"type": "tool_use", "id": tid, "name": "Bash", "input": dict(payload)} for tid in tool_ids]
     blocks.extend(extra_blocks)
     record = {
         "type": "assistant",
@@ -507,3 +508,70 @@ class TestSkippingTheLaunchingCall:
         with open(str(path), "a", encoding="utf-8") as handle:
             handle.write(assistant_record(["b", "c"]))
         assert [e["id"] for e in tail.poll()] == ["c"]
+
+
+class TestAnchoringAtTheLaunchingRecord:
+    """Anchoring at the NEWEST assistant record lands past the batch it meant to catch.
+
+    A real cold run proved it. Claude Code writes one assistant record per tool
+    call, and writes all of a response's records BEFORE the tools execute. Eleven
+    calls issued in one response are eleven records, all on disk seconds before the
+    launcher's own process opens its window -- so the newest one is `echo c10`, not
+    the launcher. That run anchored past all ten echoes, counted zero, and polled
+    its entire budget.
+
+    The anchor must therefore be the record that launched THIS process.
+    """
+
+    def _transcript(self, tmp_path, needle="out.json"):
+        """Write a transcript shaped like the one that failed: launcher then ten calls."""
+        path = tmp_path / "t.jsonl"
+        launcher = assistant_record(["launch"], command="nfr1-observe.cmd cold %s" % needle)
+        echoes = "".join(assistant_record(["e%d" % i], command="echo c%d" % i) for i in range(1, 11))
+        path.write_bytes((launcher + echoes).encode("utf-8"))
+        return path, launcher
+
+    def test_the_launching_record_is_found_not_the_newest(self, tmp_path):
+        path, launcher = self._transcript(tmp_path)
+        found = driver.find_launching_record_offset(str(path), "out.json")
+        assert found == 0, "the launcher is the first record here"
+        assert found != driver.last_assistant_record_offset(str(path))
+
+    def test_anchoring_there_counts_all_ten_calls(self, tmp_path):
+        path, _ = self._transcript(tmp_path)
+        offset = driver.find_launching_record_offset(str(path), "out.json")
+        tail = driver.TranscriptTail(str(path), SESSION, start_offset=offset, skip_leading=1)
+        assert len(tail.poll()) == 10
+
+    def test_the_old_anchor_would_have_counted_none(self, tmp_path):
+        """The regression this exists to prevent, asserted rather than described."""
+        path, _ = self._transcript(tmp_path)
+        offset = driver.last_assistant_record_offset(str(path))
+        tail = driver.TranscriptTail(str(path), SESSION, start_offset=offset, skip_leading=1)
+        assert tail.poll() == []
+
+    def test_the_last_matching_record_wins_so_a_rerun_anchors_on_itself(self, tmp_path):
+        """A second run reusing the same output path must not anchor on the first."""
+        path = tmp_path / "t.jsonl"
+        first = assistant_record(["old"], command="nfr1-observe.cmd cold out.json")
+        middle = assistant_record(["x"], command="echo unrelated")
+        second = assistant_record(["new"], command="nfr1-observe.cmd cold out.json")
+        path.write_bytes((first + middle + second).encode("utf-8"))
+        expected = len((first + middle).encode("utf-8"))
+        assert driver.find_launching_record_offset(str(path), "out.json") == expected
+
+    def test_an_absent_needle_returns_none_so_the_caller_can_fall_back(self, tmp_path):
+        path, _ = self._transcript(tmp_path)
+        assert driver.find_launching_record_offset(str(path), "nothing-matches-this") is None
+
+    def test_an_empty_needle_returns_none_rather_than_matching_everything(self, tmp_path):
+        path, _ = self._transcript(tmp_path)
+        assert driver.find_launching_record_offset(str(path), "") is None
+
+    def test_a_non_assistant_record_carrying_the_needle_is_not_chosen(self, tmp_path):
+        """Only an assistant record can be a launching call."""
+        path = tmp_path / "t.jsonl"
+        launcher = assistant_record(["launch"], command="nfr1-observe.cmd cold out.json")
+        user_line = json.dumps({"type": "user", "sessionId": SESSION, "text": "out.json"}) + "\n"
+        path.write_bytes((launcher + user_line).encode("utf-8"))
+        assert driver.find_launching_record_offset(str(path), "out.json") == 0

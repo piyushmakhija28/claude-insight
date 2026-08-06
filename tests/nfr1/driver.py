@@ -201,6 +201,90 @@ def last_assistant_record_offset(path, window=1 << 20, max_window=1 << 25):
     return 0
 
 
+def _is_assistant_record(line):
+    """Return whether a raw JSONL line parses to an assistant record.
+
+    Parsed rather than substring-matched: a tool call whose command text happened
+    to contain the words being searched for would otherwise be mistaken for the
+    record type itself.
+
+    Args:
+        line: One raw line of the transcript, without its newline.
+
+    Returns:
+        bool
+    """
+    stripped = line.strip()
+    if not stripped.startswith(b"{"):
+        return False
+    try:
+        record = json.loads(stripped.decode("utf-8", errors="replace"))
+    except ValueError:
+        return False
+    return isinstance(record, dict) and record.get("type") == "assistant"
+
+
+def find_launching_record_offset(path, needle, window=1 << 20, max_window=1 << 25):
+    """Return the offset of the assistant record that launched this measurement.
+
+    Anchoring at the LAST assistant record was wrong, and a real cold run proved it.
+    Claude Code writes **one assistant record per tool call**, and it writes all of a
+    response's records **before** the tools execute. Eleven calls issued in a single
+    response therefore appear as eleven records, all present on disk seconds before
+    the launcher's own process opens the window. Anchoring at the last of them lands
+    past every call in the batch: the run counted zero and polled its whole budget.
+
+    So the anchor has to be the record that launched THIS process, not the newest
+    one. The needle is a distinctive substring of this invocation -- the --json-out
+    path serves, being unique per run -- and the search takes the LAST record
+    containing it, so a repeated run anchors on its own launch rather than an
+    earlier one that used the same output path.
+
+    Args:
+        path: Transcript path.
+        needle: Substring identifying this run's launching tool call.
+        window: Initial number of trailing bytes to search.
+        max_window: Give up beyond this.
+
+    Returns:
+        int or None: Offset of the launching record, or None if it was not found.
+    """
+    if not needle:
+        return None
+    probe = needle.encode("utf-8")
+    size = os.stat(path).st_size
+    while window <= max_window:
+        start = max(0, size - window)
+        with open(path, "rb") as handle:
+            handle.seek(start)
+            chunk = handle.read()
+        if start > 0:
+            cut = chunk.find(b"\n")
+            if cut == -1:
+                window *= 4
+                continue
+            offset_base = start + cut + 1
+            chunk = chunk[cut + 1 :]
+        else:
+            offset_base = 0
+        found = None
+        position = 0
+        while True:
+            newline = chunk.find(b"\n", position)
+            if newline == -1:
+                break
+            line = chunk[position:newline]
+            if probe in line and _is_assistant_record(line):
+                found = offset_base + position
+            position = newline + 1
+        if found is not None:
+            return found
+        if start == 0:
+            return None
+        window *= 4
+    return None
+
+
 def iter_tool_use_events(chunk, session_id=None, include_sidechains=False):
     """Extract tool-use events from a chunk of transcript text.
 

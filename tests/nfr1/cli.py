@@ -108,6 +108,7 @@ def run_observed_phase(
     poll_seconds=driver.DEFAULT_POLL_SECONDS,
     from_current_record=False,
     skip_leading=0,
+    anchor_needle=None,
 ):
     """Measure one phase in observer mode, driven by real tool calls.
 
@@ -135,6 +136,10 @@ def run_observed_phase(
             fires at that turn boundary, which the guard correctly rejects.
         skip_leading: Discard this many leading tool calls, normally 1 to exclude the
             call that launched the measurement.
+        anchor_needle: Distinctive substring of this run's own invocation, used to
+            find the record that launched it. Claude Code writes one record per tool
+            call and writes them all before the tools run, so anchoring at the newest
+            record lands past every call in the batch.
         sample_interval_seconds: Continuous sampler polling interval.
         poll_seconds: Transcript polling interval.
 
@@ -156,7 +161,14 @@ def run_observed_phase(
         registry=registry,
         sample_interval_seconds=sample_interval_seconds,
     )
-    start_offset = driver.last_assistant_record_offset(transcript) if from_current_record else None
+    start_offset = None
+    anchor_basis = "end_of_file"
+    if from_current_record:
+        start_offset = driver.find_launching_record_offset(transcript, anchor_needle)
+        anchor_basis = "launching_record"
+        if start_offset is None:
+            start_offset = driver.last_assistant_record_offset(transcript)
+            anchor_basis = "last_assistant_record_fallback"
     tail = driver.TranscriptTail(
         transcript,
         session_id=driver.session_id_from_path(transcript),
@@ -181,7 +193,7 @@ def run_observed_phase(
 
     payload = measurement.to_dict()
     payload["transcript"] = transcript
-    payload["anchored_at"] = "current_assistant_record" if from_current_record else "end_of_file"
+    payload["anchored_at"] = anchor_basis
     payload["leading_tool_calls_skipped"] = skip_leading
     payload["observed_tool_calls"] = observed
     payload["single_phase_note"] = (
@@ -425,6 +437,7 @@ def main(argv=None):
             sample_interval_seconds=args.sample_interval,
             from_current_record=args.from_current_record,
             skip_leading=args.skip_leading,
+            anchor_needle=args.json_out,
         )
         text = json.dumps(outcome, indent=2, default=str)
         if args.json_out:
