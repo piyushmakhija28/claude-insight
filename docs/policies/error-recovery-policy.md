@@ -115,9 +115,26 @@ Self-learning knowledge base with 13 pattern categories:
 | Encoding | cp1252 decode errors | UTF-8 everywhere |
 | Path | Backslash in paths | Forward slashes only |
 | API | Rate limiting | Exponential backoff |
-| Memory | Context window overflow | TOON compression |
+| Memory | Context window overflow | **NO WIRED RECOVERY** (see note below) |
 | Network | Connection timeout | Retry with backoff |
 | State | Missing state field | Default values |
+
+> **Context window overflow has no wired recovery. Corrected 2026-08-06.**
+>
+> This row previously prescribed **TOON compression**. TOON was removed from the engine in
+> v1.15.0 and its remaining artifacts purged in v1.15.2 — the modules
+> (`toon_compression`, `toon_schema`, `toon_format`, `toon_models`) exist only as orphaned
+> bytecode with no `.py` source. The policy went on prescribing a mechanism that had been
+> deleted, which is worse than prescribing nothing: it reads as though a recovery path exists.
+>
+> `state/context_optimizer.py::WorkflowContextOptimizer` does exist and imports cleanly, and it
+> offers token estimation and essential-field extraction. **It is not a recovery path today**:
+> its only caller is `helper_nodes/`, and nothing in the repository imports `helper_nodes`.
+>
+> The honest entry is therefore that there is no recovery. Substituting one unwired mechanism
+> for a deleted one would repeat the original mistake with a fresher name. Wiring
+> `WorkflowContextOptimizer` in, or choosing a different approach, is open work — not something
+> this table should imply is already done.
 
 ### KB Learning
 

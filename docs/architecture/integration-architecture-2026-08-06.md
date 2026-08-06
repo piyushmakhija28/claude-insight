@@ -86,6 +86,33 @@ only where `mcp-github-api` carries a deliberate idempotency fix.
 The goal: everything becomes a plugin; plugins compose; the library goes public but is reached
 only through a plugin that loads a selected subset into context.
 
+### 4.0 The execution model: in-session, not subprocess
+
+**Owner ruling, 2026-08-06: the flow runs in the active Claude Code session. No `claude -p`
+subprocesses.**
+
+This is the largest change in this document, because the engine currently does the opposite.
+`sdlc_pipeline/architecture/prompt_gen_expert_caller.py`, `todo_decomposer.py` and
+`orchestrator_agent_caller.py` each spawn the `claude` CLI and capture stdout. Step 1 alone is
+two subprocess calls, and `todo_executor` adds one per TODO.
+
+The shift is from **"Python orchestrates LLM subprocesses"** to **"the live session orchestrates
+itself, calling Python for the deterministic parts."**
+
+Three consequences, and the first two are the reason the ruling is right:
+
+1. **It removes a spawn class entirely.** Every subprocess call is a process the session pays for.
+   Today's NFR-1 work measured the cost of exactly this shape: the observer's own startup — shell
+   spawn, Python boot, imports — was around 20 seconds. Every `claude -p` call carries a
+   comparable cost, invisibly, on the pipeline's hot path.
+2. **It dissolves the content-injection problem rather than solving it.** See 4.2.
+3. It makes the plugin's commands the real entry points, which is what v2.0.0 set out to do. The
+   subprocess callers are hook-era leftovers that outlived the hooks.
+
+What this does **not** mean: Python stops mattering. Deterministic work — KG routing, catalogue
+scoring, process measurement, git and GitHub calls — stays in Python and is invoked as tooling.
+What ends is Python asking an LLM a question through a pipe and parsing the answer.
+
 ### 4.1 MCP servers as plugins — and the constraint that decides the design
 
 ADR-019 exists because bundled MCP servers **spawn eagerly on plugin enable, with zero tool
@@ -122,16 +149,53 @@ Three of the four pieces exist:
 | Inject content | — | **Missing.** `SKILL.md` bodies are loaded in exactly one place, `standards/library_adapter.py`, and only via a fixed `(project_type, framework)` map. |
 
 So the work is mostly **connection, not construction**: `select_agents()` → materialise into
-`~/.claude/` → load content into context. One genuinely new piece — content injection — plus the
-copy step.
+`~/.claude/` → the session loads it.
 
-Two constraints from today's measurements:
+**The in-session ruling (4.0) changes what "inject content" means, and makes it easier.** Under
+the subprocess model, injection meant serialising skill bodies into a prompt string and piping
+them to `claude -p` — which is why the current code passes only names: bodies are large and the
+pipe is the wrong shape for them. In the active session there is no pipe. A materialised skill
+in `~/.claude/skills/` is loaded by the session the same way any other skill is, and today's
+measurement showed that happens **without a restart** — eleven plugin skills became live
+mid-session.
 
-- **Plugin skills load without a session restart.** Observed directly: eleven plugin skills
-  became live mid-session. So materialise-then-load can work in-session.
-- **Writing into `~/.claude/skills` and `~/.claude/agents` mutates user-scope state.** It must be
-  reversible, visible, and must not accumulate silently. A capability loaded for one task should
-  not still be there three tasks later.
+So content injection is not a component to build. It is what materialisation already produces,
+once the subprocess boundary is removed. **The missing piece was never injection; it was the
+subprocess in the middle.**
+
+Two constraints remain:
+
+- **Writing into `~/.claude/skills` and `~/.claude/agents` mutates user-scope state.** This is the
+  #284 concern and it needs an explicit answer, not a note.
+- **A selection budget must be measured, not guessed.** How many agents and skills can be live
+  before quality degrades is an empirical question, and the project now has a habit of answering
+  those by measuring.
+
+### 4.2.1 Ephemeral capability lifecycle
+
+A capability loaded for one task must not still be loaded three tasks later. Without a teardown,
+`~/.claude/skills` accumulates until the selection gate is pointless — the very context blowout
+the gate exists to prevent, reached slowly instead of at once.
+
+The lifecycle needs four properties, and each is testable:
+
+| Property | Requirement |
+|---|---|
+| **Namespaced** | Materialised capabilities land under a reserved prefix, never mixed with the user's own. Anything outside that prefix is never touched. |
+| **Inventoried** | A manifest records what was materialised, when, and for which task. Teardown reads the manifest; it never pattern-matches directory names. |
+| **Reversible** | Teardown removes exactly what the manifest lists and reports what it removed. |
+| **Self-healing** | A stale manifest from a crashed session is detected and cleaned on next load, so a crash cannot leave capabilities live indefinitely. |
+
+**Where teardown runs is a real design constraint, not a detail.** The obvious hook for it is
+`Stop` — the one hook still registered. But this document's own Phase 0 finds that the Stop hook
+is already the least trustworthy component in the system: 7 of 9 of its spawn targets are absent,
+and its auto-PR path has historically committed and pushed unprompted. **Adding capability
+teardown to that hook would place a correctness-critical cleanup inside the component with the
+worst reliability record here.**
+
+Preferred instead: teardown is an explicit step of the command that materialised the capability,
+with the Stop hook used only as a **backstop that reconciles the manifest** — never as the
+primary mechanism. That keeps the guarantee inside the flow that made the mess.
 
 ### 4.3 Reconciling the engine's own implementations
 
@@ -156,13 +220,28 @@ Ordered by what unblocks what, not by size.
 **Phase 0 — stop the silent failures.** Nothing built on this foundation is trustworthy while
 imports of non-existent modules are swallowed every turn.
 
-1. Decide each dead import: wire it to the real module, or delete the path. `github_mcp_server`,
+1. **Hard-disable the Stop hook's auto-PR and auto-merge path.** *Owner ruling, 2026-08-06.*
+   Historically it committed 25 times, pushed 16, opened 35 PRs and attempted 244 merges. It is
+   currently disarmed **only by two broken imports** and it re-triggers every few minutes — it
+   fired on this very branch at 16 commits ahead. Repairing the import first would arm it.
+   The capability is not lost: the plugin already ships `/claude-workflow-engine:review`, which
+   does the same work when asked. **Removal, not repair** — and a test that fails if the path
+   returns.
+2. Decide each remaining dead import: wire it to the real module, or delete the path.
    `jira_mcp_server`, `figma_mcp_server`, the 7 absent Stop-hook scripts, `MCPPluginLoader`.
-2. **The Stop hook's auto-PR path is the urgent one.** Historically it committed 25 times, pushed
-   16 times, opened 35 PRs and attempted 244 merges. It is currently disarmed only by two broken
-   imports and it re-triggers every few minutes. Fixing the import without first deciding the
-   trigger policy would arm it.
-3. Make a swallowed import fail loudly in CI, so this class cannot recur silently.
+3. **Delete 159 orphan `.pyc` files** — compiled modules with no `.py` source, measured
+   repo-wide: 48 under `tests/`, 33 under `langgraph_engine/`, 24 under `scripts/`, 16 under
+   `src/mcp/`. They include `level2_standards`, `toon_compression`, `session-pruner`,
+   `inference_router` and `deepseek_reasoning` — all purged in v1.15.x/v1.16.0.
+   These are not merely clutter: **they make the codebase lie about what exists.** `grep` and
+   `find` report them, and this survey was misled by them twice — once tracing
+   `github_mcp_server`, once tracing the removed LLM providers. Add a CI check so orphaned
+   bytecode cannot accumulate again.
+4. Make a swallowed import fail loudly in CI, so this class cannot recur silently.
+5. Amend `intelligent-decision-engine-policy.md`, the only policy still naming removed providers
+   (an "OpenRouter consolidation" whose scripts do not exist and whose provider has zero
+   references). No standard or rule names them; the engine's own sources do not either — the
+   only remaining traces were the orphan `.pyc` files in item 3.
 
 **Phase 1 — make the record match the system.**
 
