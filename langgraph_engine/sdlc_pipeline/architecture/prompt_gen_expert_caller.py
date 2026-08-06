@@ -56,6 +56,17 @@ _TEMPLATE_FILE = _TEMPLATES_DIR / "orchestration_system_prompt.txt"
 
 _MASTER_TEMPLATE_RELPATH = "ORCHESTRATION_TEMPLATE.md"
 
+ERROR_KIND_TEMPLATE_LOAD_FAILED = "TEMPLATE_LOAD_FAILED"
+"""Emitted when the master orchestration template cannot be resolved.
+
+Distinguishes an unrecoverable failure -- without the template there is no
+orchestration to perform -- from a downstream LLM failure, where the assembled
+prompt is still valid. The caller hard-aborts on this kind rather than
+degrading to the raw user message, which would bypass KG routing, the decision
+tree and the mandatory anti-hallucination layer with only a log line to show
+for it.
+"""
+
 _RUNTIME_CONTEXT_TEMPLATE = """\
 === RUNTIME CONTEXT (injected by claude-workflow-engine) ===
 
@@ -341,7 +352,7 @@ def main():
     # Load template
     template, err = _load_template()
     if err:
-        print(json.dumps({"status": "ERROR", "error": err}))
+        print(json.dumps({"status": "ERROR", "error_kind": ERROR_KIND_TEMPLATE_LOAD_FAILED, "error": err}))
         return
 
     if DEBUG:

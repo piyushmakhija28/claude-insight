@@ -512,3 +512,81 @@ class TestStep0KgRoutingPreInjection:
         prompt_gen_calls = [c for c in captured_calls if c[0] == "prompt_gen_expert_caller"]
         assert len(prompt_gen_calls) == 1
         assert "--kg-routing-json" in prompt_gen_calls[0][1]
+
+
+# ===========================================================================
+# step1_task_analysis_node -- fail loud when the master template is missing
+# ===========================================================================
+
+
+class TestStep1TemplateLoadIsFatal:
+    """Losing the master template must stop the pipeline, not degrade it.
+
+    Falling back to the raw user message would run every downstream step with
+    no KG routing, no decision-tree traversal and no STEP 7 anti-hallucination
+    layer, while still reporting success. The abort is paired with a negative
+    test so a blanket "any ERROR is fatal" rewrite -- which would make an
+    ordinary LLM hiccup unrecoverable -- fails here.
+    """
+
+    def _script_mock(self, prompt_gen_payload):
+        def _side_effect(script_name, args=None, model_tier=None, silence_interval=None):
+            if script_name == "prompt_gen_expert_caller":
+                return prompt_gen_payload
+            if script_name == "todo_decomposer":
+                return {"status": "SUCCESS", "todo_list": []}
+            return {"status": "SUCCESS"}
+
+        return _side_effect
+
+    def test_template_load_failure_aborts_the_pipeline(self):
+        from langgraph_engine.sdlc_pipeline.architecture.prompt_gen_expert_caller import ERROR_KIND_TEMPLATE_LOAD_FAILED
+        from langgraph_engine.sdlc_pipeline.nodes.task_orchestration import (
+            OrchestrationTemplateUnavailable,
+            step1_task_analysis_node,
+        )
+
+        payload = {
+            "status": "ERROR",
+            "error_kind": ERROR_KIND_TEMPLATE_LOAD_FAILED,
+            "error": "claude-global-library not found. Expected sibling at: /nowhere",
+        }
+
+        with patch(
+            "langgraph_engine.sdlc_pipeline.helpers.call_execution_script",
+            side_effect=self._script_mock(payload),
+        ):
+            with pytest.raises(OrchestrationTemplateUnavailable) as excinfo:
+                step1_task_analysis_node({"user_message": "build a thing", "project_root": "."})
+
+        assert "claude-global-library not found" in str(excinfo.value)
+
+    def test_llm_failure_does_not_abort_and_still_falls_back(self):
+        from langgraph_engine.sdlc_pipeline.nodes.task_orchestration import step1_task_analysis_node
+
+        payload = {
+            "status": "ERROR",
+            "error": "claude CLI exited non-zero",
+            "prompt": "truncated copy of the input template",
+        }
+
+        with patch(
+            "langgraph_engine.sdlc_pipeline.helpers.call_execution_script",
+            side_effect=self._script_mock(payload),
+        ):
+            result = step1_task_analysis_node({"user_message": "build a thing", "project_root": "."})
+
+        assert result is not None
+
+    def test_success_path_is_unaffected(self):
+        from langgraph_engine.sdlc_pipeline.nodes.task_orchestration import step1_task_analysis_node
+
+        payload = {"status": "SUCCESS", "llm_response": "", "prompt": "assembled master prompt body"}
+
+        with patch(
+            "langgraph_engine.sdlc_pipeline.helpers.call_execution_script",
+            side_effect=self._script_mock(payload),
+        ):
+            result = step1_task_analysis_node({"user_message": "build a thing", "project_root": "."})
+
+        assert result is not None

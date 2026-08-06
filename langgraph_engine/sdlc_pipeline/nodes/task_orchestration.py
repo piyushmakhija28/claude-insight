@@ -35,6 +35,21 @@ except ImportError:
 from ...liveness import env_optional_seconds as _env_optional_seconds
 
 
+class OrchestrationTemplateUnavailable(RuntimeError):
+    """Raised when Step 1 cannot obtain the master orchestration template.
+
+    Deliberately fatal. The alternative -- continuing on the raw user message --
+    runs the entire pipeline with no KG routing, no decision-tree traversal and
+    no STEP 7 anti-hallucination layer, while every downstream step still
+    reports success. That failure is invisible in the output and visible only as
+    one line in a log, which is the most dangerous shape a failure can take.
+
+    ``step1_task_analysis_node`` is deliberately not wrapped in
+    ``node_error_handler``, so this propagates out of the graph rather than
+    being folded into a fallback result.
+    """
+
+
 def step1_task_analysis_node(state: FlowState) -> Dict[str, Any]:
     """Step 0 v2: prompt_gen_expert -> orchestrator_agent chain.
 
@@ -161,11 +176,14 @@ def step1_task_analysis_node(state: FlowState) -> Dict[str, Any]:
 
     _pg_status = prompt_gen_raw.get("status", "")
     if _pg_status == "ERROR":
-        # On ERROR the caller's 'prompt' field is only a truncated copy of the INPUT
-        # template, not a usable orchestration prompt, so fall back to the raw task.
-        logger.error(
-            f"[v2] Step 0 prompt_gen_expert_caller ERROR: {prompt_gen_raw.get('error', 'unknown')} -- falling back to raw task"
-        )
+        from ..architecture.prompt_gen_expert_caller import ERROR_KIND_TEMPLATE_LOAD_FAILED  # noqa: PLC0415
+
+        _pg_error = prompt_gen_raw.get("error", "unknown")
+        if prompt_gen_raw.get("error_kind") == ERROR_KIND_TEMPLATE_LOAD_FAILED:
+            raise OrchestrationTemplateUnavailable(f"Step 1 cannot build an orchestration prompt: {_pg_error}")
+        # On other ERRORs the caller's 'prompt' field is only a truncated copy of the
+        # INPUT template, not a usable orchestration prompt, so fall back to the raw task.
+        logger.error(f"[v2] Step 0 prompt_gen_expert_caller ERROR: {_pg_error} -- falling back to raw task")
         orchestration_prompt = user_message
     else:
         orchestration_prompt = prompt_gen_raw.get("llm_response", "") or prompt_gen_raw.get("prompt", "")
