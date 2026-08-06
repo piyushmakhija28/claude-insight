@@ -54,6 +54,36 @@ def _verify_prompt_schema(prompt):
 _TEMPLATES_DIR = Path(__file__).resolve().parent.parent / "templates"
 _TEMPLATE_FILE = _TEMPLATES_DIR / "orchestration_system_prompt.txt"
 
+_MASTER_TEMPLATE_RELPATH = "ORCHESTRATION_TEMPLATE.md"
+
+_RUNTIME_CONTEXT_TEMPLATE = """\
+=== RUNTIME CONTEXT (injected by claude-workflow-engine) ===
+
+This block is authoritative. Every value below was computed from the actual
+codebase before this prompt was assembled. Treat each as established fact: do
+not re-derive it, do not contradict it, and do not ask the user for it. Where a
+step of the orchestration template below would otherwise compute one of these
+values, use the value given here instead.
+
+USER REQUIREMENTS:
+%s
+
+COMPLEXITY SCORE: %s
+CODEBASE RISK   : %s
+DANGER ZONES    : %s
+AFFECTED METHODS: %s
+HOT NODES       : %s
+
+RUNTIME CONTEXT JSON:
+%s
+
+KG ROUTING (pre-resolved by KGRouter against claude-global-library):
+%s
+
+=== END RUNTIME CONTEXT -- the master orchestration template follows ===
+
+"""
+
 DEBUG = os.getenv("CLAUDE_DEBUG") == "1"
 _SILENCE_ENV_VAR = "STEP1_PROMPT_GEN_SILENCE"
 
@@ -116,14 +146,34 @@ def _parse_args(argv):
 
 
 def _load_template():
-    """Load orchestration_system_prompt.txt. Returns (text, error)."""
-    if not _TEMPLATE_FILE.exists():
-        return None, "Template file not found: " + str(_TEMPLATE_FILE)
+    """Load the master ORCHESTRATION_TEMPLATE.md from claude-global-library.
+
+    Resolved through the 3-tier ``ResourceResolver`` chain (local sibling ->
+    opt-in GitHub -> typed hard-fail), so the library stays the single source of
+    truth for orchestration.
+
+    There is deliberately no fallback to the in-repo
+    ``orchestration_system_prompt.txt``. That file is a fork of this template
+    that drifted to 198 lines against the master's 1,996 and lost nine steps
+    along the way -- including STEP 7, the anti-hallucination layer the master
+    marks "MANDATORY for ALL projects -- NO exceptions". Serving it silently
+    when the library is unreachable would reintroduce exactly the drift this
+    loader exists to remove, and would do so invisibly. A missing library is
+    reported as an error instead.
+
+    Returns:
+        Tuple of (template_text, error_message); exactly one element is None.
+    """
     try:
-        content = _TEMPLATE_FILE.read_text(encoding="utf-8", errors="replace")
-        return content, None
+        from langgraph_engine.library import build_default_resolver
+
+        resource = build_default_resolver().fetch_kg_file(_MASTER_TEMPLATE_RELPATH)
+        return resource.content, None
     except Exception as exc:
-        return None, "Failed to read template: " + str(exc)
+        return None, "Failed to load %s from claude-global-library: %s" % (
+            _MASTER_TEMPLATE_RELPATH,
+            exc,
+        )
 
 
 def _render_kg_routing_block(kg_routing):
@@ -161,7 +211,18 @@ def _render_kg_routing_block(kg_routing):
 
 
 def _build_filled_prompt(template, args):
-    """Fill the 8 placeholders in the template with runtime values."""
+    """Prepend the runtime-context grounding block to the master template.
+
+    The master ORCHESTRATION_TEMPLATE.md is a standalone instruction document,
+    not a parameterised prompt -- the braces inside it (``{slug}``, ``{N}``,
+    ``{date}``) are path patterns and authoring instructions the orchestrator
+    fills itself, not substitution slots. Rewriting them here would corrupt the
+    template. The eight runtime values the engine computes are therefore
+    delivered as an authoritative header block ahead of the template body.
+
+    Returns:
+        The grounding block followed by the unmodified master template.
+    """
     call_graph = {}
     try:
         call_graph = json.loads(args["call_graph_json"]) if args["call_graph_json"] else {}
@@ -201,17 +262,18 @@ def _build_filled_prompt(template, args):
         tier = "high"
     complexity_display = str(complexity) + "/25 (" + tier + ")"
 
-    filled = template
-    filled = filled.replace("{user_requirements}", args["task_description"])
-    filled = filled.replace("{runtime_context_json_block}", runtime_block)
-    filled = filled.replace("{complexity_score_display}", complexity_display)
-    filled = filled.replace("{codebase_risk_level}", str(risk_level))
-    filled = filled.replace("{codebase_danger_zones}", danger_zones_str)
-    filled = filled.replace("{codebase_affected_methods}", affected_str)
-    filled = filled.replace("{codebase_hot_nodes}", hot_nodes_str)
-    filled = filled.replace("{kg_routing_block}", _render_kg_routing_block(kg_routing))
+    grounding = _RUNTIME_CONTEXT_TEMPLATE % (
+        args["task_description"],
+        complexity_display,
+        str(risk_level),
+        danger_zones_str,
+        affected_str,
+        hot_nodes_str,
+        runtime_block,
+        _render_kg_routing_block(kg_routing),
+    )
 
-    return filled
+    return grounding + template
 
 
 def _call_claude_cli(prompt):

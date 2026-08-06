@@ -368,27 +368,32 @@ class TestParseArgsKgRouting:
 
 
 class TestBuildFilledPromptKgRoutingBlock:
+    """Runtime grounding is prepended to the master template, not substituted in.
+
+    ORCHESTRATION_TEMPLATE.md is a standalone instruction document: its braces
+    are path patterns (``knowledge-graph/{slug}/agents.json``) and authoring
+    directives (``Detected {N} domains``) that the orchestrator fills itself.
+    The stand-in below carries the same shape so a regression to placeholder
+    substitution corrupts it and fails a test.
+    """
+
     _TEMPLATE = (
-        "TASK: {user_requirements}\n"
-        "RUNTIME: {runtime_context_json_block}\n"
-        "COMPLEXITY: {complexity_score_display}\n"
-        "RISK: {codebase_risk_level}\n"
-        "DZ: {codebase_danger_zones}\n"
-        "AM: {codebase_affected_methods}\n"
-        "HN: {codebase_hot_nodes}\n"
-        "KG ROUTING:\n{kg_routing_block}\n"
+        "### STEP 0 - LEAN KG LOAD\n"
+        "Read knowledge-graph/{slug}/agents.json for each detected domain.\n"
+        'Report: "Detected {N} domains from {X} agents (built: {date})."\n'
+        "### STEP 7 - ANTI-HALLUCINATION LAYER (MANDATORY)\n"
     )
 
-    def _base_args(self, kg_routing_json):
+    def _base_args(self, kg_routing_json, call_graph_json="{}"):
         return {
             "task_description": "do the thing",
             "complexity_score": 5,
-            "call_graph_json": "{}",
+            "call_graph_json": call_graph_json,
             "kg_routing_json": kg_routing_json,
             "runtime_context_json": "{}",
         }
 
-    def test_resolved_routing_substitutes_agent_grounding(self):
+    def test_resolved_routing_grounding_reaches_prompt(self):
         kg_routing = {
             "status": "resolved",
             "domain": "healthcare",
@@ -398,20 +403,48 @@ class TestBuildFilledPromptKgRoutingBlock:
             "persona_markdown": "persona body",
         }
         filled = _build_filled_prompt(self._TEMPLATE, self._base_args(json.dumps(kg_routing)))
-        assert "{kg_routing_block}" not in filled
         assert "clinical-systems-engineer" in filled
         assert "hl7-fhir-core" in filled
+        assert "healthcare" in filled
 
-    def test_unresolved_routing_substitutes_legacy_note(self):
+    def test_unresolved_routing_emits_legacy_note(self):
         kg_routing = {"status": "unresolved", "notes": "no match"}
         filled = _build_filled_prompt(self._TEMPLATE, self._base_args(json.dumps(kg_routing)))
-        assert "{kg_routing_block}" not in filled
         assert "legacy path" in filled
+        assert "clinical-systems-engineer" not in filled
 
     def test_malformed_kg_routing_json_does_not_raise(self):
         filled = _build_filled_prompt(self._TEMPLATE, self._base_args("not valid json"))
-        assert "{kg_routing_block}" not in filled
         assert "legacy path" in filled
+
+    def test_master_template_body_is_passed_through_unmodified(self):
+        """The template must survive byte-for-byte, braces included.
+
+        This is the guard against reverting to ``str.replace()`` substitution:
+        rewriting ``{slug}`` or ``{N}`` would corrupt the master's own path
+        patterns and authoring directives.
+        """
+        filled = _build_filled_prompt(self._TEMPLATE, self._base_args("{}"))
+        assert filled.endswith(self._TEMPLATE)
+        assert "knowledge-graph/{slug}/agents.json" in filled
+        assert "{N} domains from {X} agents" in filled
+
+    def test_runtime_values_reach_prompt(self):
+        call_graph = json.dumps(
+            {
+                "risk_level": "HIGH",
+                "danger_zones": ["auth/login"],
+                "affected_methods": ["verify_token"],
+                "hot_nodes": ["AuthService"],
+            }
+        )
+        filled = _build_filled_prompt(self._TEMPLATE, self._base_args("{}", call_graph))
+        assert "do the thing" in filled
+        assert "5/25" in filled
+        assert "HIGH" in filled
+        assert "auth/login" in filled
+        assert "verify_token" in filled
+        assert "AuthService" in filled
 
 
 # ===========================================================================
