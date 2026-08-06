@@ -383,3 +383,127 @@ class TestBoundsAreOptIn:
         session = _FakeSession()
         _, observed = driver.drive(session, _ScriptedTail([]), 10, deadline=0.0, sleep=lambda _: None)
         assert observed == []
+
+
+class TestAnchoringAtTheCurrentAssistantRecord:
+    """A window opened at EOF cannot see the calls of the record that launched it.
+
+    That is not cosmetic. The criterion wants ten tool calls inside ONE response turn,
+    and the retained Stop hook fires at every turn boundary, so launching in one turn
+    and calling in the next produces a window the turn-boundary guard rejects -- which
+    is exactly what happened on the first attempt at a real measurement. Anchoring at
+    the last assistant record is what lets a single message do both.
+    """
+
+    def test_the_offset_finder_locates_the_last_assistant_record(self, tmp_path):
+        """Written as bytes on purpose.
+
+        Real transcripts are LF-only -- measured against a live one -- but
+        Path.write_text translates newlines on Windows, which silently shifts every
+        offset this test asserts on and makes the fixture disagree with production.
+        """
+        path = tmp_path / "t.jsonl"
+        first = assistant_record(["a1"])
+        user_line = json.dumps({"type": "user", "sessionId": SESSION}) + "\n"
+        second = assistant_record(["b1"])
+        path.write_bytes((first + user_line + second).encode("utf-8"))
+        offset = driver.last_assistant_record_offset(str(path))
+        assert offset == len((first + user_line).encode("utf-8"))
+
+    def test_a_crlf_transcript_is_still_located_correctly(self, tmp_path):
+        """Transcripts are LF today, but a stripped record must not depend on that."""
+        path = tmp_path / "t.jsonl"
+        first = assistant_record(["a1"]).replace("\n", "\r\n")
+        second = assistant_record(["b1"]).replace("\n", "\r\n")
+        path.write_bytes((first + second).encode("utf-8"))
+        assert driver.last_assistant_record_offset(str(path)) == len(first.encode("utf-8"))
+
+    def test_anchoring_counts_the_launching_records_calls(self, tmp_path):
+        path = tmp_path / "t.jsonl"
+        path.write_text(assistant_record(["t1", "t2", "t3"]), encoding="utf-8")
+        tail = driver.TranscriptTail(str(path), SESSION, start_offset=driver.last_assistant_record_offset(str(path)))
+        assert [e["id"] for e in tail.poll()] == ["t1", "t2", "t3"]
+
+    def test_without_anchoring_the_same_calls_are_invisible(self, tmp_path):
+        """The paired half, and the defect this option exists to fix."""
+        path = tmp_path / "t.jsonl"
+        path.write_text(assistant_record(["t1", "t2", "t3"]), encoding="utf-8")
+        tail = driver.TranscriptTail(str(path), SESSION)
+        assert tail.poll() == []
+
+    def test_an_empty_transcript_anchors_at_zero(self, tmp_path):
+        path = tmp_path / "t.jsonl"
+        path.write_text("", encoding="utf-8")
+        assert driver.last_assistant_record_offset(str(path)) == 0
+
+    def test_a_transcript_with_no_assistant_record_anchors_at_zero(self, tmp_path):
+        path = tmp_path / "t.jsonl"
+        path.write_text(json.dumps({"type": "user", "sessionId": SESSION}) + "\n", encoding="utf-8")
+        assert driver.last_assistant_record_offset(str(path)) == 0
+
+    def test_the_finder_widens_its_window_past_a_large_trailing_record(self, tmp_path):
+        """The search reads backwards in windows, so a big tail must not hide the anchor.
+
+        The target sits AFTER a leading filler line on purpose. An earlier version of
+        this test put it at offset 0, where "found it" and "gave up and returned 0" are
+        the same answer -- a mutation that removed the widening loop entirely passed it.
+        """
+        path = tmp_path / "t.jsonl"
+        head = json.dumps({"type": "user", "sessionId": SESSION, "pad": "h" * 100}) + "\n"
+        target = assistant_record(["t1"])
+        filler = json.dumps({"type": "user", "sessionId": SESSION, "pad": "x" * 4000}) + "\n"
+        path.write_bytes((head + target + filler * 400).encode("utf-8"))
+        found = driver.last_assistant_record_offset(str(path), window=1024)
+        assert found == len(head.encode("utf-8"))
+        assert found != 0, "a fixture whose answer is 0 cannot detect a finder that gives up"
+
+
+class TestSkippingTheLaunchingCall:
+    """The launching call began before the window opened and must not be counted."""
+
+    def test_skip_leading_drops_exactly_that_many(self, tmp_path):
+        path = tmp_path / "t.jsonl"
+        path.write_text(assistant_record(["launch", "t1", "t2"]), encoding="utf-8")
+        tail = driver.TranscriptTail(
+            str(path),
+            SESSION,
+            start_offset=driver.last_assistant_record_offset(str(path)),
+            skip_leading=1,
+        )
+        assert [e["id"] for e in tail.poll()] == ["t1", "t2"]
+
+    def test_skip_leading_zero_drops_nothing(self, tmp_path):
+        """Specificity: the drop must be opt-in, not a silent off-by-one."""
+        path = tmp_path / "t.jsonl"
+        path.write_text(assistant_record(["launch", "t1"]), encoding="utf-8")
+        tail = driver.TranscriptTail(str(path), SESSION, start_offset=driver.last_assistant_record_offset(str(path)))
+        assert [e["id"] for e in tail.poll()] == ["launch", "t1"]
+
+    def test_the_skip_budget_is_spent_once_not_per_poll(self, tmp_path):
+        """A per-poll skip would silently eat one real call from every later batch."""
+        path = tmp_path / "t.jsonl"
+        path.write_text(assistant_record(["launch"]), encoding="utf-8")
+        tail = driver.TranscriptTail(
+            str(path),
+            SESSION,
+            start_offset=driver.last_assistant_record_offset(str(path)),
+            skip_leading=1,
+        )
+        assert tail.poll() == []
+        with open(str(path), "a", encoding="utf-8") as handle:
+            handle.write(assistant_record(["t1", "t2"]))
+        assert [e["id"] for e in tail.poll()] == ["t1", "t2"]
+
+    def test_a_skip_larger_than_the_first_batch_carries_over(self, tmp_path):
+        path = tmp_path / "t.jsonl"
+        path.write_text(assistant_record(["a"]), encoding="utf-8")
+        tail = driver.TranscriptTail(
+            str(path),
+            SESSION,
+            start_offset=driver.last_assistant_record_offset(str(path)),
+            skip_leading=2,
+        )
+        assert tail.poll() == []
+        with open(str(path), "a", encoding="utf-8") as handle:
+            handle.write(assistant_record(["b", "c"]))
+        assert [e["id"] for e in tail.poll()] == ["c"]

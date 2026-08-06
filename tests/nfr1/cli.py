@@ -106,6 +106,8 @@ def run_observed_phase(
     include_sidechains=False,
     sample_interval_seconds=0.05,
     poll_seconds=driver.DEFAULT_POLL_SECONDS,
+    from_current_record=False,
+    skip_leading=0,
 ):
     """Measure one phase in observer mode, driven by real tool calls.
 
@@ -126,6 +128,13 @@ def run_observed_phase(
         required: Tool calls the criterion requires inside the window.
         max_polls: Optional cap on poll iterations before giving up.
         include_sidechains: Whether subagent tool calls count.
+        from_current_record: Anchor the tail at the start of the transcript's last
+            assistant record instead of at end-of-file, so a single assistant message
+            can carry both this launch and the tool calls being measured. Without it
+            the launch must happen in an earlier turn, and the retained Stop hook
+            fires at that turn boundary, which the guard correctly rejects.
+        skip_leading: Discard this many leading tool calls, normally 1 to exclude the
+            call that launched the measurement.
         sample_interval_seconds: Continuous sampler polling interval.
         poll_seconds: Transcript polling interval.
 
@@ -147,10 +156,13 @@ def run_observed_phase(
         registry=registry,
         sample_interval_seconds=sample_interval_seconds,
     )
+    start_offset = driver.last_assistant_record_offset(transcript) if from_current_record else None
     tail = driver.TranscriptTail(
         transcript,
         session_id=driver.session_id_from_path(transcript),
         include_sidechains=include_sidechains,
+        start_offset=start_offset,
+        skip_leading=skip_leading,
     )
     try:
         measurement, observed = driver.drive(session, tail, required, poll_seconds=poll_seconds, max_polls=max_polls)
@@ -169,6 +181,8 @@ def run_observed_phase(
 
     payload = measurement.to_dict()
     payload["transcript"] = transcript
+    payload["anchored_at"] = "current_assistant_record" if from_current_record else "end_of_file"
+    payload["leading_tool_calls_skipped"] = skip_leading
     payload["observed_tool_calls"] = observed
     payload["single_phase_note"] = (
         "this is one phase, not an NFR-1 report. Assembling a report from two "
@@ -328,6 +342,17 @@ def main(argv=None):
         action="store_true",
         help="count subagent tool calls too, which changes what the number means",
     )
+    parser.add_argument(
+        "--from-current-record",
+        action="store_true",
+        help="anchor the tail at the last assistant record so one message can launch and be measured",
+    )
+    parser.add_argument(
+        "--skip-leading",
+        type=int,
+        default=0,
+        help="discard this many leading tool calls; use 1 to exclude the launching call itself",
+    )
     args = parser.parse_args(argv)
 
     if args.self_test:
@@ -343,6 +368,8 @@ def main(argv=None):
             max_polls=args.max_polls,
             include_sidechains=args.include_sidechains,
             sample_interval_seconds=args.sample_interval,
+            from_current_record=args.from_current_record,
+            skip_leading=args.skip_leading,
         )
         text = json.dumps(outcome, indent=2, default=str)
         if args.json_out:

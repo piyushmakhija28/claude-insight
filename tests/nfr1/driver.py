@@ -141,6 +141,66 @@ def session_id_from_path(path):
     return os.path.splitext(os.path.basename(path))[0]
 
 
+def last_assistant_record_offset(path, window=1 << 20, max_window=1 << 25):
+    """Return the byte offset where the transcript's last assistant record begins.
+
+    A window opened at end-of-file cannot see the tool calls of the assistant record
+    that launched it, because that record was written before the tool ran. That is not
+    a detail: the criterion requires ten tool calls inside ONE response turn, and the
+    retained Stop hook fires at every turn boundary, so launching in one turn and
+    calling in the next produces a window the turn-boundary guard correctly rejects.
+    Anchoring here instead lets a single assistant message carry both the launch and
+    the calls.
+
+    The file is read backwards in growing windows rather than whole, because a real
+    transcript runs to tens of megabytes.
+
+    Args:
+        path: Transcript path.
+        window: Initial number of trailing bytes to search.
+        max_window: Give up and return 0 beyond this.
+
+    Returns:
+        int: Offset of the last assistant record, or 0 if none was found.
+    """
+    size = os.stat(path).st_size
+    while window <= max_window:
+        start = max(0, size - window)
+        with open(path, "rb") as handle:
+            handle.seek(start)
+            chunk = handle.read()
+        if start > 0:
+            cut = chunk.find(b"\n")
+            if cut == -1:
+                window *= 4
+                continue
+            offset_base = start + cut + 1
+            chunk = chunk[cut + 1 :]
+        else:
+            offset_base = 0
+        found = None
+        position = 0
+        while True:
+            newline = chunk.find(b"\n", position)
+            if newline == -1:
+                break
+            line = chunk[position:newline].strip()
+            if line.startswith(b"{"):
+                try:
+                    record = json.loads(line.decode("utf-8", errors="replace"))
+                except ValueError:
+                    record = None
+                if isinstance(record, dict) and record.get("type") == "assistant":
+                    found = offset_base + position
+            position = newline + 1
+        if found is not None:
+            return found
+        if start == 0:
+            return 0
+        window *= 4
+    return 0
+
+
 def iter_tool_use_events(chunk, session_id=None, include_sidechains=False):
     """Extract tool-use events from a chunk of transcript text.
 
@@ -194,11 +254,16 @@ class TranscriptTail(object):
     and completely rather than being dropped or mangled.
     """
 
-    def __init__(self, path, session_id=None, include_sidechains=False):
+    def __init__(self, path, session_id=None, include_sidechains=False, start_offset=None, skip_leading=0):
         self.path = path
         self.session_id = session_id
         self.include_sidechains = include_sidechains
-        self._offset = os.stat(path).st_size if os.path.exists(path) else 0
+        self.skip_leading = skip_leading
+        self._skipped = 0
+        if start_offset is not None:
+            self._offset = start_offset
+        else:
+            self._offset = os.stat(path).st_size if os.path.exists(path) else 0
         self._pending = b""
         self._anchor = self._read_anchor(self._offset)
 
@@ -249,7 +314,30 @@ class TranscriptTail(object):
             return []
         self._pending = chunk[cut + 1 :]
         whole = chunk[: cut + 1].decode("utf-8", errors="replace")
-        return iter_tool_use_events(whole, self.session_id, self.include_sidechains)
+        events = iter_tool_use_events(whole, self.session_id, self.include_sidechains)
+        return self._drop_leading(events)
+
+    def _drop_leading(self, events):
+        """Discard the first skip_leading events ever seen by this tail.
+
+        Anchoring at the current assistant record makes that record's own tool calls
+        visible, and one of them is the call that launched the measurement. It began
+        before the window opened, so counting it would credit the window with a call it
+        did not contain. Dropping it is explicit rather than inferred, because the tail
+        cannot know its own tool-use id.
+
+        Args:
+            events: Events just read, in order.
+
+        Returns:
+            list: The events that remain after the leading ones are discarded.
+        """
+        if self._skipped >= self.skip_leading:
+            return events
+        remaining = self.skip_leading - self._skipped
+        dropped = min(remaining, len(events))
+        self._skipped += dropped
+        return events[dropped:]
 
 
 def drive(session, tail, required, poll_seconds=DEFAULT_POLL_SECONDS, max_polls=None, deadline=None, sleep=None):
