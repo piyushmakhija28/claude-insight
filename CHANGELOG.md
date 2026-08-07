@@ -9,6 +9,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [2.1.0] - 2026-08-07
+
+**Step 1 emits its prompt instead of executing it, and three things that were only
+documented became things that are also checked.** The engine runs inside a hook
+subprocess, so it cannot act in the session it is serving -- it can only hand that
+session something to run. Phase 2's TODO decomposition and per-TODO agent execution
+re-derived work the master template already specifies, and did so fail-silently, so
+both are gone along with the three scripts behind them.
+
+MINOR rather than MAJOR: every removal below was verified to have no caller or
+reader before it was made, and `runtime_verification`'s two dropped exports had no
+consumer outside their own tests. It is not the v2.0.0 situation, where every
+installation was affected and none upgraded silently.
+
+The through-line of the release is that **enforcement beats audit**. The audit that
+scheduled this work missed a doc-count gap of 99 files, a flag promised in five
+documents and implemented in none, and two documentation fixes that survived only
+inside an orphaned package. Tests found all four.
+
 ### Added
 
 - **Step 1 now verifies the orchestration prompt it emits.** `verify_orchestration_prompt()` existed, was exported and had four unit tests, and was called by nothing; it is now wired in at the point the prompt is stored, and its findings are recorded on `orchestrator_result["prompt_warnings"]` and logged. The gap it closes is narrow and specific: both degraded paths in the node already log (an `ERROR` from prompt-gen, and an empty response), so this is not for those. It is for a response that is **non-empty and therefore silent** but not a usable prompt — a truncated template, the wrong file, a stub — which until now was indistinguishable from a good one. Warnings are never fatal: `STEP1_CONTRACT` documents the short raw-task fallback as a legitimate degraded path, and it trips both checks by design, so failing here would convert a recoverable run into a dead one.
