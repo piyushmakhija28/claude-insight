@@ -3,7 +3,7 @@
 **Project:** Claude Workflow Engine
 **Version:** 2.0.0
 **Type:** LangGraph Orchestration Pipeline with Call Graph Intelligence + Template Fast-Path
-**Last Updated:** 2026-08-06
+**Last Updated:** 2026-08-07
 
 ---
 
@@ -68,7 +68,10 @@ Level 2: SDLC Execution Core (9 active steps: Steps 0-8)
     |   |  v1.13: Step 0 = 2 subprocess calls (~30s planning)
     |   |  v1.14: Step 0 = 2 subprocess calls (claude CLI, ~15s planning)
     |   |  v1.20: monolithic orchestrator call REPLACED by a TODO-decomposition
-    |   |         pipeline: prompt_gen -> todo_decomposer -> todo_executor  <-- CURRENT
+    |   |         pipeline: prompt_gen -> todo_decomposer -> todo_executor
+    |   |  2026-08-07: TODO decomposition and execution REMOVED. Step 1 assembles
+    |   |         the prompt and emits it; it no longer runs anything. The three
+    |   |         scripts were deleted.   prompt_gen -> emit  <-- CURRENT
     |   |
     |   |-- Phase 1: prompt_gen_expert_caller  (assembles the prompt; no LLM call)
     |   |     Reads: ORCHESTRATION_TEMPLATE.md from the sibling claude-global-library,
@@ -88,15 +91,17 @@ Level 2: SDLC Execution Core (9 active steps: Steps 0-8)
     |   |       KG routing summary   <- KGRouter pre-injection (FR-3)
     |   |     Stores: state["orchestration_prompt"]
     |   |
-    |   |-- Phase 2: todo_decomposer -> execute_todo_list (todo_executor)
-    |         todo_decomposer:   orchestration_prompt -> ordered todo_list
-    |                            (phases, depends_on, one self-contained prompt per agent)
-    |         execute_todo_list: runs each TODO via orchestrator_agent_caller
-    |                            (per-TODO claude CLI call), capturing stdout per TODO
-    |         Stores: state["orchestration_prompt"], state["todo_list"],
-    |                 state["todo_results"], state["orchestrator_result"]
-    |         Env vars: STEP1_PROMPT_GEN_TIMEOUT (default 60s)
-    |                   STEP1_TODO_DECOMPOSER_TIMEOUT (default 90s)
+    |   |-- Phase 2: emit
+    |         The node runs inside a hook subprocess, so it cannot execute in the
+    |         session it is serving -- it can only hand that session something to
+    |         run. The master template's STEP 13 already produces the MULTI-AGENT
+    |         PROMPT BUNDLE, so decomposing the prompt again here was re-deriving
+    |         work that belongs in the template.
+    |         Stores: state["orchestration_prompt"] and state["orchestrator_result"],
+    |                 the latter a record of WHAT WAS EMITTED, not what was executed:
+    |                 mode, prompt_chars, template_source, library_version
+    |                 (the claude-global-library VERSION, read through the resolver;
+    |                  degrades to "unknown" rather than failing the step)
     |
     |-- Step 2: Issue Tracking -- GitHub Issue + Jira Issue creation (ENABLE_JIRA, dual-linked)
     |-- Step 3: Branch & Workspace Setup (Jira key: feature/PROJ-123)
@@ -206,10 +211,7 @@ Level 2: SDLC Execution Core (9 active steps: Steps 0-8)
 | Input Validator | src/mcp/input_validator.py | Null-byte strip, length limit, prompt injection detection |
 | Secrets Scanner | scripts/secrets_check.py | CI gate: 6 regex patterns, exit 1 on finding |
 | Pin Requirements | scripts/pin_requirements.py | Generates requirements.pinned.txt + requirements.bounds.txt |
-| PromptGen Caller | langgraph_engine/sdlc_pipeline/architecture/prompt_gen_expert_caller.py | Step 1 Phase 1: fills orchestration template via claude CLI |
-| TODO Decomposer | langgraph_engine/sdlc_pipeline/architecture/todo_decomposer.py | Step 1 Phase 2a: orchestration_prompt -> ordered todo_list (claude CLI) |
-| TODO Executor | langgraph_engine/sdlc_pipeline/architecture/todo_executor.py | Step 1 Phase 2b: runs each TODO via orchestrator_agent_caller |
-| Orchestrator Caller | langgraph_engine/sdlc_pipeline/architecture/orchestrator_agent_caller.py | Step 1 Phase 2: executes one TODO's agent prompt via claude CLI (per-TODO) |
+| PromptGen Caller | langgraph_engine/sdlc_pipeline/architecture/prompt_gen_expert_caller.py | Step 1 Phase 1: assembles the orchestration prompt from the master template (no LLM call) |
 
 ### MCP Servers (13 servers, 295 tools) -- All Extracted to Separate Repos
 
@@ -437,7 +439,7 @@ See environment variables in `.env.example`:
 
 ---
 
-**Last Updated:** 2026-08-06
+**Last Updated:** 2026-08-07
 
 
 <!-- execution-insight- -->

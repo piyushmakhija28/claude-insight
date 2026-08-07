@@ -147,7 +147,7 @@ flowchart TD
     subgraph S0["Step 1 : Task Orchestration & Planning  ~15s"]
         direction TB
         C1["Assemble : PromptGen Expert (no LLM call)\nprompt_gen_expert_caller.py\nReads: ORCHESTRATION_TEMPLATE.md from claude-global-library\nPrepends grounding header: user requirements\nruntime context JSON\ncomplexity score\ncodebase risk\ndanger zones\nhot nodes\nKG routing summary\nOutputs: state orchestration_prompt"]
-        C2["Call 2 : Orchestrator Agent ~30-90s\norchestrator_agent_caller.py\nReads: orchestration_prompt via temp file\nExecutes: solution-architect\nconsensus, squad agents, QA\nStreams live to terminal\nOutputs: state orchestrator_result"]
+        C2["Emit : no subprocess, no LLM call\nReads: orchestration_prompt\nExecutes: nothing — the node runs inside a\nhook subprocess and cannot act in the\nsession it is serving\nOutputs: state orchestrator_result\n(mode, prompt_chars, template_source,\nlibrary_version) — a record of what was\nemitted, not of what was executed"]
         C1 --> C2
     end
 
