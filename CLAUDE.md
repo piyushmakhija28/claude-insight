@@ -20,7 +20,7 @@ Claude Workflow Engine is a 3-level LangGraph-based orchestration pipeline for a
 | **Status** | Active Development |
 | **Primary Location** | langgraph_engine/ |
 | **MCP Servers** | 13 servers -- all in separate repos under [techdeveloper-org](https://github.com/orgs/techdeveloper-org/repositories); 1 also keeps an in-engine copy in `src/mcp/` |
-| **Total Python Files** | 253 (langgraph_engine/); 493 repo-wide |
+| **Total Python Files** | 248 (langgraph_engine/); 488 repo-wide |
 | **Test Files** | 100 (91 unit, 5 integration, 3 e2e, 1 load) |
 | **Call Graph** | 578 classes, 3,985 methods, 4 languages (Python/Java/TS/Kotlin) |
 
@@ -141,7 +141,7 @@ Level 2: SDLC Execution Core (9 active steps: Steps 0-8)
 |   +-- project_session.py            # Session utilities (imported by hook packages)
 |   +-- policy_tracking_helper.py     # Policy tracking (imported by hook packages)
 +-- langgraph_engine/                 # Core orchestration engine (REPO ROOT -- sibling of scripts/, NOT nested under it)
-|   +-- core/  state/  routing/  helper_nodes/          # LazyLoader/ErrorHandler, FlowState, routing, helper nodes
+|   +-- core/  state/  routing/                         # LazyLoader/ErrorHandler, FlowState, routing
 |   +-- diagrams/ (+drawio/)  parsers/  integrations/   # Strategy/Factory: UML gens, 4 lang parsers, GitHub/Jira/Figma/Jenkins
 |   +-- analysis/ context/ engine_logging/ github/ metrics/ quality/ security/ skills/ standards/   # domain subpackages (v1.20 migration)
 |   +-- build_dependency_resolver/  runtime_verification/   # build-dep parsers; node contracts + verifier
@@ -177,7 +177,6 @@ Level 2: SDLC Execution Core (9 active steps: Steps 0-8)
 | State Package | langgraph_engine/state/ | FlowState, StepKeys, reducers, WorkflowContextOptimizer |
 | Core Package | langgraph_engine/core/ | LazyLoader, get_logger, node_error_handler, NodeResult, create_step_node |
 | Routing Package | langgraph_engine/routing/ | All routing functions split by level |
-| Helper Nodes | langgraph_engine/helper_nodes/ | Orphaned package -- no live importers anywhere in the repo (confirmed by repo-wide grep); kept internally consistent but scheduled for removal in a follow-up cleanup |
 | Graph Factory | langgraph_engine/orchestrator.py | create_flow_graph(hook_mode): single canonical StateGraph factory (verify_node runtime-verification wrapping applied here) |
 | Diagrams Package | langgraph_engine/diagrams/ | Strategy Pattern: DiagramFactory + 13 generators |
 | Parsers Package | langgraph_engine/parsers/ | Abstract Factory: ParserRegistry + 4 language parsers |

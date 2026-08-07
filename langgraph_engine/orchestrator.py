@@ -145,9 +145,9 @@ def step5_retry_increment_node(state: FlowState) -> dict:
 
 
 def optimize_context_after_level1(state: FlowState) -> dict:
-    """Optimize context after Level 1 completes before passing to Level 3.
+    """Optimize context after Level 1 completes before passing to Level 2.
 
-    Stores full Level 1 output in workflow_memory, passes only summary to Level 3.
+    Stores full Level 1 output in workflow_memory, passes only summary to Level 2.
     This keeps context clean while preserving full data for fallback/debugging.
     """
     # Store full level 1 output
@@ -161,7 +161,7 @@ def optimize_context_after_level1(state: FlowState) -> dict:
 
     state = WorkflowContextOptimizer.store_step_output(state, "level1_output", level1_output)
 
-    # Build optimized context for Level 3
+    # Build optimized context for Level 2
     optimized = WorkflowContextOptimizer.build_optimized_context(state)
     state["workflow_context_optimized"] = optimized
 
@@ -191,7 +191,7 @@ def save_workflow_memory(state: FlowState) -> dict:
         memory = state.get(StepKeys.WORKFLOW_MEMORY, {})
 
         if memory and session_id != "unknown":
-            # Save to ~/.claude/memory/sessions/{session_id}/workflow-memory.json
+            # Save to ~/.claude/memory/logs/sessions/{session_id}/workflow-memory.json
             memory_dir = _ORCHESTRATOR_CLAUDE_HOME / "memory" / "logs" / "sessions" / session_id
             memory_dir.mkdir(parents=True, exist_ok=True)
 
