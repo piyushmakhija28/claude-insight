@@ -62,8 +62,22 @@ class TestTheTranscriptDirectoryIsResolvedCorrectly:
     """
 
     def test_a_windows_drive_letter_yields_a_doubled_hyphen(self):
+        """The drive letter's colon and the separator after it each yield a hyphen.
+
+        Asserted with endswith rather than startswith because project_slug calls
+        os.path.abspath, and "C:\\Users\\x" is only an absolute path on Windows. On
+        Linux it is relative, so abspath prepends the working directory and the
+        slug begins with the checkout path instead. The original startswith form
+        passed on the Windows machine it was written on and could never pass on
+        the Linux runner, which is what CI caught.
+
+        endswith rather than `in` because abspath only ever PREPENDS, so the
+        transform under test still has to produce the exact tail on both
+        platforms -- a regression that mangled the drive-letter mapping would
+        still fail here.
+        """
         slug = driver.project_slug("C:" + os.sep + "Users" + os.sep + "x")
-        assert slug.startswith("C--Users"), slug
+        assert slug.endswith("C--Users-x"), slug
 
     def test_dots_in_a_directory_name_become_hyphens(self):
         slug = driver.project_slug("C:" + os.sep + "w" + os.sep + "tool-4.27.0-new")
