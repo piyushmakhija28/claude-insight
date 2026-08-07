@@ -20,6 +20,7 @@ Python 3.8+ compatible. ASCII-only (cp1252-safe).
 """
 
 import logging
+import os
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
@@ -1389,14 +1390,30 @@ def refresh_call_graph_if_stale(state, project_root):
     cached pre-implementation snapshot (e.g. step1_impact_analysis) should
     call this helper instead of reading state directly.
 
+    FORCE_GRAPH_REBUILD=1 bypasses the flag and always rebuilds. That is the
+    mitigation ADR-002 records for its own stated risk: if call_graph_stale is
+    never set -- because the node that sets it crashed -- the guard cannot fire
+    and Step 5 reviews an outdated snapshot in silence. An operator recovering
+    from that has no in-state signal to correct, so the override has to come
+    from outside the state. RUNBOOK_STALE_GRAPH.md Option B is this variable.
+
+    It was documented in five files and implemented in none of them until
+    2026-08-07, so the runbook's recovery step did nothing when an operator ran
+    it. Only "1" enables it; any other value, including "0" and unset, leaves
+    the stale-flag behaviour untouched.
+
     Args:
         state:        FlowState dict (or any dict with call_graph_stale key).
         project_root: Project root directory (str or Path).
 
     Returns:
-        dict - fresh snapshot from snapshot_call_graph() when stale,
+        dict - fresh snapshot from snapshot_call_graph() when forced or stale,
                best available cached snapshot otherwise (never raises).
     """
+    if os.getenv("FORCE_GRAPH_REBUILD", "0") == "1":
+        logger.debug("refresh_call_graph_if_stale: FORCE_GRAPH_REBUILD=1, rebuilding graph")
+        return snapshot_call_graph(project_root)
+
     if state.get("call_graph_stale"):
         logger.debug("refresh_call_graph_if_stale: flag set, rebuilding graph")
         return snapshot_call_graph(project_root)
