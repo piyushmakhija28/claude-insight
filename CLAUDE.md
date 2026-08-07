@@ -20,8 +20,8 @@ Claude Workflow Engine is a 3-level LangGraph-based orchestration pipeline for a
 | **Status** | Active Development |
 | **Primary Location** | langgraph_engine/ |
 | **MCP Servers** | 13 servers -- all in separate repos under [techdeveloper-org](https://github.com/orgs/techdeveloper-org/repositories); 1 also keeps an in-engine copy in `src/mcp/` |
-| **Total Python Files** | 248 (langgraph_engine/); 489 repo-wide |
-| **Test Files** | 101 (92 unit, 5 integration, 3 e2e, 1 load) |
+| **Total Python Files** | 248 (langgraph_engine/); 490 repo-wide |
+| **Test Files** | 102 (93 unit, 5 integration, 3 e2e, 1 load) |
 | **Call Graph** | 578 classes, 3,985 methods, 4 languages (Python/Java/TS/Kotlin) |
 
 ---
@@ -304,7 +304,7 @@ All integrations are configurable via environment variables (default: disabled):
 | `ENABLE_JENKINS` | `0` | Jenkins build validation (Step 5) |
 | `ENABLE_SONARQUBE` | `0` | SonarQube scan after implementation (Step 4) |
 | `ENABLE_FIGMA` | `0` | Figma design-to-code pipeline (Steps 4,5,6 -- extraction/injection now inside Step 1 template) |
-| `ENABLE_CI` | `false` | GitHub Actions CI pipeline |
+| `ENABLE_CI` | `true` | GitHub Actions CI pipeline. A **repo variable**, not a process env var: `ci.yml` reads `vars.ENABLE_CI` and falls back to `true`, so CI runs unless it is explicitly set to `false` |
 | `ENABLE_HEALTH_SERVER` | `0` | Start HTTP /health + /readiness on HEALTH_PORT (8080) |
 | `ENABLE_METRICS` | `0` | Start Prometheus /metrics server on METRICS_PORT (9090) |
 | `ENABLE_TRACING` | `0` | Enable OpenTelemetry tracing (OTLP to OTEL_EXPORTER_OTLP_ENDPOINT) |

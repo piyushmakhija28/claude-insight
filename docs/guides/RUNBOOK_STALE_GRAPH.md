@@ -68,14 +68,15 @@ signals `refresh_call_graph_if_stale()` to rebuild before serving data.
 
 ### Option A — Automatic (standard path)
 
-Ensure `FORCE_GRAPH_REBUILD` is not set to `0` (it defaults to rebuilding on
-stale). If someone disabled it for debugging, re-enable:
+Rebuilding on a stale graph is unconditional: it is driven by the
+`call_graph_stale` state flag, not by any environment variable, so there is
+nothing to re-enable. `FORCE_GRAPH_REBUILD` only ever *adds* a rebuild — setting
+it to `0` or leaving it unset does not switch the stale path off.
 
-```bash
-unset FORCE_GRAPH_REBUILD
-```
+Re-run the pipeline from Step 10 onward and let the flag do its work.
 
-Re-run the pipeline from Step 10 onward.
+If that does not help, the flag itself is probably not being set — which is the
+case Option B exists for.
 
 ### Option B — Force full rebuild
 
