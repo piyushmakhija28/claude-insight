@@ -53,9 +53,11 @@ class OrchestrationTemplateUnavailable(RuntimeError):
 def step1_task_analysis_node(state: FlowState) -> Dict[str, Any]:
     """Step 0 v2: prompt_gen_expert -> orchestrator_agent chain.
 
-    Phase 1: calls prompt_gen_expert_caller (fast, captured stdout) to build
-    an orchestration prompt enriched with combined_complexity_score and
-    CallGraph risk data. Uses claude CLI subprocess internally.
+    Phase 1: calls prompt_gen_expert_caller (fast, captured stdout), which
+    resolves the master orchestration template from claude-global-library and
+    prepends a runtime-context header carrying combined_complexity_score,
+    CallGraph risk data and the KG route. It assembles the prompt only -- no
+    LLM runs in this phase.
 
     Phase 2: decomposes the orchestration prompt into a TODO list
     (todo_decomposer) and executes each TODO via orchestrator_agent_caller
@@ -133,7 +135,7 @@ def step1_task_analysis_node(state: FlowState) -> Dict[str, Any]:
         logger.debug("[v2] Step 0 standards selection pre-injection skipped (fail-open): {}", _std_exc)
         standards_selection_result = {}
 
-    # --- PHASE 1: prompt_gen_expert_caller (claude CLI subprocess) ---
+    # --- PHASE 1: prompt_gen_expert_caller (assembles the prompt; no LLM call) ---
     # This line used to read STEP1_PROMPT_GEN_TIMEOUT (default 60) and apply it
     # below as "+ 15", composing a 75-second wall-clock abort on the Step 1
     # pipeline path against a claude CLI whose latency nothing here controls.
@@ -196,10 +198,15 @@ def step1_task_analysis_node(state: FlowState) -> Dict[str, Any]:
             )
 
     # --- PHASE 2: todo_decomposer -> execute_todo_list (per-TODO orchestrator calls) ---
+    # Phase 1 no longer runs an LLM, so what arrives here is the master orchestration
+    # template plus its runtime-context header -- not a generated bundle. Describing it
+    # as one would tell the reader the MULTI-AGENT PROMPT BUNDLE already exists when
+    # producing it is still the work to be done.
     _full_prompt = (
-        "You are orchestrator-agent. Below is a fully generated orchestration prompt "
-        "with a MULTI-AGENT PROMPT BUNDLE containing per-agent execution prompts.\n\n"
-        "--- BEGIN ORCHESTRATION PROMPT ---\n\n" + orchestration_prompt + "\n\n--- END ORCHESTRATION PROMPT ---"
+        "You are orchestrator-agent. Below is the master orchestration template, preceded "
+        "by an authoritative runtime-context header. Follow the template to produce the "
+        "orchestration plan and its MULTI-AGENT PROMPT BUNDLE.\n\n"
+        "--- BEGIN ORCHESTRATION TEMPLATE ---\n\n" + orchestration_prompt + "\n\n--- END ORCHESTRATION TEMPLATE ---"
     )
 
     orch_result: Dict[str, Any] = {}
@@ -234,11 +241,25 @@ def step1_task_analysis_node(state: FlowState) -> Dict[str, Any]:
                 silence_interval=_env_optional_seconds("STEP1_TODO_DECOMPOSER_SILENCE"),
             )
         except Exception as _decomp_exc:
-            logger.warning("[v2] Step 0 todo_decomposer failed (fail-open): {}", _decomp_exc)
-            _decomp_raw = {"status": "FALLBACK", "todo_list": []}
+            _decomp_raw = {"status": "ERROR", "error": str(_decomp_exc), "todo_list": []}
 
+        # call_execution_script never raises -- it reports failure as a status dict
+        # (ERROR / FAILED / NO_PROGRESS / SCRIPT_NOT_FOUND). The status must therefore
+        # be inspected explicitly; relying on the except above meant every script-level
+        # failure fell through to an empty TODO list with no diagnostic at all.
+        _phase2_errors = []
+        _decomp_status = str(_decomp_raw.get("status", "")).upper()
         _todo_list = _decomp_raw.get("todo_list", [])
-        logger.info("[v2] Step 0 todo_decomposer: {} todos", len(_todo_list))
+
+        if _decomp_status != "SUCCESS":
+            _decomp_msg = "todo_decomposer returned status=%s: %s" % (
+                _decomp_status or "MISSING",
+                _decomp_raw.get("error", "no error reported"),
+            )
+            logger.error("[v2] Step 1 {}", _decomp_msg)
+            _phase2_errors.append(_decomp_msg)
+        else:
+            logger.info("[v2] Step 1 todo_decomposer: {} todos", len(_todo_list))
 
         # Step 2b: execute each TODO via orchestrator_agent_caller
         _todo_results = []
@@ -248,7 +269,9 @@ def step1_task_analysis_node(state: FlowState) -> Dict[str, Any]:
 
                 _todo_results = _exec_todos(state, _todo_list, step_number=0)
             except Exception as _exec_exc:
-                logger.warning("[v2] Step 0 execute_todo_list failed (fail-open): {}", _exec_exc)
+                _exec_msg = "execute_todo_list raised: %s" % _exec_exc
+                logger.error("[v2] Step 1 {}", _exec_msg)
+                _phase2_errors.append(_exec_msg)
                 _todo_results = []
 
         # Step 2c: merge todo results into orch_result
@@ -256,12 +279,14 @@ def step1_task_analysis_node(state: FlowState) -> Dict[str, Any]:
             str(r.get("result", {}).get("llm_response", "") or r.get("error", "")) for r in _todo_results
         )
         orch_result = {
-            "success": True,
+            "success": not _phase2_errors,
             "todo_list": _todo_list,
             "todo_results": _todo_results,
             "llm_response": _merged_output,
             "agent_output": {"merged_from_todos": len(_todo_results)},
         }
+        if _phase2_errors:
+            orch_result["errors"] = _phase2_errors
         _lifted = _lift_todo_agent_output(_todo_results)
         if _lifted:
             orch_result.update(_lifted)

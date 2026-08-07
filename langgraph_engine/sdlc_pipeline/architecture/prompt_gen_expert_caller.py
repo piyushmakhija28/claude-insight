@@ -2,50 +2,38 @@
 """
 Level 3 - Prompt Generation Expert Caller
 
-Reads CLI args, loads the orchestration system prompt template,
-fills the 8 placeholders (including the KG ROUTING grounding block from
-FR-3's KGRouter pre-injection), calls the claude CLI subprocess, and writes
-JSON to stdout.
+Reads CLI args, resolves the master ORCHESTRATION_TEMPLATE.md from
+claude-global-library, prepends the runtime grounding block (call-graph risk,
+complexity and the KG ROUTING summary from FR-3's KGRouter pre-injection), and
+writes the assembled prompt to stdout as JSON.
+
+This script assembles a prompt; it does not execute one. It previously spawned
+`claude -p` and captured the child's stdout, which cannot work against the
+master template: that template's save-and-stop protocol explicitly forbids
+printing the generated prompt and requires writing it to docs/ instead.
+Execution belongs to the active Claude Code session.
 
 Invoked by: call_execution_script("prompt_gen_expert_caller", args)
-Output: JSON with keys: status, prompt, llm_response, error (on failure)
-
-Environment:
-  STEP1_PROMPT_GEN_SILENCE  seconds of claude CLI silence tolerated before the
-                            child is treated as stuck (default: unbounded)
-
-The former STEP1_PROMPT_GEN_TIMEOUT killed the claude CLI after a fixed 60
-seconds regardless of whether it was working. Its replacement measures silence
-rather than duration and defaults to no bound at all, per NFR-2 / ADR-016.
+Output: JSON with keys: status, prompt, llm_response, error (on failure).
+  'llm_response' is always empty -- the caller reads `llm_response or prompt`,
+  so the assembled prompt is what travels downstream.
 """
 
 import json
 import logging
 import os
-import shutil
 import sys
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
-# Schema verifier (best-effort; non-blocking when import fails)
+# Import bootstrap: put the repo root on sys.path so absolute
+# langgraph_engine.* imports resolve when this file runs as a script.
 # ---------------------------------------------------------------------------
 _SCRIPTS_DIR = Path(__file__).resolve().parent.parent.parent.parent
 if str(_SCRIPTS_DIR) not in sys.path:
     sys.path.insert(0, str(_SCRIPTS_DIR))
-
-
-def _verify_prompt_schema(prompt):
-    """Return list of error strings from schema_verifier (empty = valid)."""
-    if os.getenv("ENABLE_RUNTIME_VERIFICATION", "0") != "1":
-        return []
-    try:
-        from langgraph_engine.runtime_verification.schema_verifier import verify_orchestration_prompt
-
-        return verify_orchestration_prompt(prompt or "")
-    except Exception:
-        return []
 
 
 # ---------------------------------------------------------------------------
@@ -96,7 +84,6 @@ KG ROUTING (pre-resolved by KGRouter against claude-global-library):
 """
 
 DEBUG = os.getenv("CLAUDE_DEBUG") == "1"
-_SILENCE_ENV_VAR = "STEP1_PROMPT_GEN_SILENCE"
 
 
 # ---------------------------------------------------------------------------
@@ -287,50 +274,6 @@ def _build_filled_prompt(template, args):
     return grounding + template
 
 
-def _call_claude_cli(prompt):
-    """Call claude CLI in headless print mode via stdin. Returns (response_text, error).
-
-    Bounded by progress rather than by elapsed time: the CLI is left alone for as
-    long as it keeps producing output, and only silence -- and only when an
-    operator has configured an interval -- ends it. The circuit breaker observes
-    the outcome so that a systemically failing CLI stops being called at all,
-    which is the mechanism that replaces the deadline this used to carry.
-    """
-    from langgraph_engine.liveness import BreakerOpen, NoProgress, env_optional_seconds, run_supervised
-
-    claude_path = shutil.which("claude")
-    if not claude_path:
-        return None, "claude CLI binary not found in PATH"
-
-    if DEBUG:
-        print("[prompt_gen_expert_caller] Running: claude CLI -p", file=sys.stderr, flush=True)
-
-    try:
-        result = run_supervised(
-            [claude_path, "-p"],
-            input=prompt,
-            lease_interval=env_optional_seconds(_SILENCE_ENV_VAR),
-            lease_name="prompt_gen_claude_cli",
-            breaker_name="claude_cli",
-        )
-
-        if result.returncode != 0 and not result.stdout:
-            stderr_preview = (result.stderr or "")[:300]
-            return None, "claude CLI non-zero exit (%d): %s" % (result.returncode, stderr_preview)
-
-        response_text = (result.stdout or "").strip()
-        if response_text:
-            return response_text, None
-        return None, "claude CLI returned empty response"
-
-    except BreakerOpen as exc:
-        return None, "claude CLI circuit breaker open, call not attempted: " + str(exc)
-    except NoProgress as exc:
-        return None, "claude CLI made no progress: " + str(exc)
-    except Exception as exc:
-        return None, "claude CLI call failed: " + str(exc)
-
-
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
@@ -361,44 +304,22 @@ def main():
     # Fill placeholders
     filled_prompt = _build_filled_prompt(template, args)
 
-    if DEBUG:
-        print("[prompt_gen_expert_caller] Calling claude CLI", file=sys.stderr, flush=True)
-
-    # Call claude CLI subprocess
-    llm_response, err = _call_claude_cli(filled_prompt)
-    if err:
-        print(json.dumps({"status": "ERROR", "error": err, "prompt": filled_prompt[:500]}))
-        return
-
-    if DEBUG:
-        print("[prompt_gen_expert_caller] claude CLI responded", file=sys.stderr, flush=True)
-
-    # Schema verification (non-blocking)
-    schema_errors = _verify_prompt_schema(llm_response)
-    if schema_errors:
-        print(
-            "[prompt_gen_expert_caller] schema warnings: " + "; ".join(schema_errors),
-            file=sys.stderr,
-            flush=True,
-        )
-
-    # Try to parse response as JSON (it should be per template instructions)
-    parsed_plan = None
-    try:
-        if llm_response and "{" in llm_response:
-            json_start = llm_response.index("{")
-            json_end = llm_response.rindex("}") + 1
-            parsed_plan = json.loads(llm_response[json_start:json_end])
-    except Exception:
-        parsed_plan = None
-
+    # No LLM call. This script assembles the orchestration prompt and returns it;
+    # executing it belongs to the active Claude Code session, not to a nested
+    # `claude -p` subprocess. The master template's own save-and-stop protocol
+    # forbids printing a generated prompt, so capturing one from a child's stdout
+    # was never going to work against it.
+    #
+    # 'llm_response' is kept as an empty string rather than dropped: the caller
+    # reads `llm_response or prompt`, so an empty value routes the assembled
+    # prompt downstream and the existing contract holds unchanged.
     result = {
         "status": "SUCCESS",
         "prompt": filled_prompt,
-        "llm_response": llm_response,
-        "parsed_plan": parsed_plan,
+        "llm_response": "",
+        "parsed_plan": None,
         "complexity_score": args["complexity_score"],
-        "schema_warnings": schema_errors,
+        "schema_warnings": [],
     }
 
     print(json.dumps(result, ensure_ascii=True))
