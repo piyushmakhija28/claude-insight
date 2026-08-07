@@ -146,7 +146,7 @@ flowchart TD
 
     subgraph S0["Step 1 : Task Orchestration & Planning  ~15s"]
         direction TB
-        C1["Call 1 : PromptGen Expert ~10s\nprompt_gen_expert_caller.py\nReads: orchestration_system_prompt.txt\nInjects: user_requirements\nruntime_context_json_block\ncomplexity_score_display\ncodebase_risk_level\ncodebase_danger_zones\ncodebase_hot_nodes\nOutputs: state orchestration_prompt"]
+        C1["Assemble : PromptGen Expert (no LLM call)\nprompt_gen_expert_caller.py\nReads: ORCHESTRATION_TEMPLATE.md from claude-global-library\nPrepends grounding header: user requirements\nruntime context JSON\ncomplexity score\ncodebase risk\ndanger zones\nhot nodes\nKG routing summary\nOutputs: state orchestration_prompt"]
         C2["Call 2 : Orchestrator Agent ~30-90s\norchestrator_agent_caller.py\nReads: orchestration_prompt via temp file\nExecutes: solution-architect\nconsensus, squad agents, QA\nStreams live to terminal\nOutputs: state orchestrator_result"]
         C1 --> C2
     end

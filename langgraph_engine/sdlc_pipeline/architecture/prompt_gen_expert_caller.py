@@ -39,9 +39,6 @@ if str(_SCRIPTS_DIR) not in sys.path:
 # ---------------------------------------------------------------------------
 # Constants
 # ---------------------------------------------------------------------------
-_TEMPLATES_DIR = Path(__file__).resolve().parent.parent / "templates"
-_TEMPLATE_FILE = _TEMPLATES_DIR / "orchestration_system_prompt.txt"
-
 _MASTER_TEMPLATE_RELPATH = "ORCHESTRATION_TEMPLATE.md"
 
 ERROR_KIND_TEMPLATE_LOAD_FAILED = "TEMPLATE_LOAD_FAILED"
@@ -150,14 +147,14 @@ def _load_template():
     opt-in GitHub -> typed hard-fail), so the library stays the single source of
     truth for orchestration.
 
-    There is deliberately no fallback to the in-repo
-    ``orchestration_system_prompt.txt``. That file is a fork of this template
-    that drifted to 198 lines against the master's 1,996 and lost nine steps
-    along the way -- including STEP 7, the anti-hallucination layer the master
-    marks "MANDATORY for ALL projects -- NO exceptions". Serving it silently
-    when the library is unreachable would reintroduce exactly the drift this
-    loader exists to remove, and would do so invisibly. A missing library is
-    reported as an error instead.
+    There is deliberately no fallback template. The engine used to carry its own
+    ``templates/orchestration_system_prompt.txt``, a fork of this master that had
+    drifted to 198 lines against its 1,996 and lost nine steps along the way --
+    including STEP 7, the anti-hallucination layer the master marks "MANDATORY
+    for ALL projects -- NO exceptions". That file has been deleted rather than
+    kept as a fallback: serving it when the library is unreachable would
+    reintroduce, invisibly, exactly the drift this loader exists to remove. A
+    missing library is reported as an error instead.
 
     Returns:
         Tuple of (template_text, error_message); exactly one element is None.

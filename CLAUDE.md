@@ -3,7 +3,7 @@
 **Project:** Claude Workflow Engine
 **Version:** 2.0.0
 **Type:** LangGraph Orchestration Pipeline with Call Graph Intelligence + Template Fast-Path
-**Last Updated:** 2026-08-05
+**Last Updated:** 2026-08-06
 
 ---
 
@@ -70,17 +70,22 @@ Level 2: SDLC Execution Core (9 active steps: Steps 0-8)
     |   |  v1.20: monolithic orchestrator call REPLACED by a TODO-decomposition
     |   |         pipeline: prompt_gen -> todo_decomposer -> todo_executor  <-- CURRENT
     |   |
-    |   |-- Phase 1: prompt_gen_expert_caller  (claude CLI subprocess, stdout captured)
-    |   |     Reads: sdlc_pipeline/templates/orchestration_system_prompt.txt
-    |   |     Injects into template:
-    |   |       {user_requirements}          <- state["task_description"]
-    |   |       {runtime_context_json_block} <- call graph + complexity (from Step 0 + Level 1)
-    |   |       {complexity_score_display}   <- state["combined_complexity_score"] (1-25)
-    |   |       {codebase_risk_level}        <- call_graph_metrics["risk_level"]
-    |   |       {codebase_danger_zones}      <- call_graph_metrics["danger_zones"][:3]
-    |   |       {codebase_affected_methods}  <- call_graph_metrics["affected_methods"]
-    |   |       {codebase_hot_nodes}         <- call_graph_metrics["hot_nodes"][:5]
-    |   |     claude CLI generates: complete orchestration prompt (agents, phases, contracts)
+    |   |-- Phase 1: prompt_gen_expert_caller  (assembles the prompt; no LLM call)
+    |   |     Reads: ORCHESTRATION_TEMPLATE.md from the sibling claude-global-library,
+    |   |            resolved through the 3-tier ResourceResolver chain. There is no
+    |   |            fallback: a missing library raises, it does not degrade.
+    |   |     The master template is a standalone instruction document, not a
+    |   |     parameterised prompt -- its braces are path patterns and authoring
+    |   |     directives the orchestrator fills itself. Runtime values are therefore
+    |   |     PREPENDED as an authoritative grounding header, never substituted in:
+    |   |       user requirements    <- state["task_description"]
+    |   |       runtime context JSON <- call graph + complexity (from Step 0 + Level 1)
+    |   |       complexity score     <- state["combined_complexity_score"] (1-25)
+    |   |       codebase risk        <- call_graph_metrics["risk_level"]
+    |   |       danger zones         <- call_graph_metrics["danger_zones"]
+    |   |       affected methods     <- call_graph_metrics["affected_methods"]
+    |   |       hot nodes            <- call_graph_metrics["hot_nodes"]
+    |   |       KG routing summary   <- KGRouter pre-injection (FR-3)
     |   |     Stores: state["orchestration_prompt"]
     |   |
     |   |-- Phase 2: todo_decomposer -> execute_todo_list (todo_executor)
@@ -432,7 +437,7 @@ See environment variables in `.env.example`:
 
 ---
 
-**Last Updated:** 2026-08-05
+**Last Updated:** 2026-08-06
 
 
 <!-- execution-insight- -->

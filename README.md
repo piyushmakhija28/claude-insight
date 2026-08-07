@@ -288,8 +288,8 @@ flowchart LR
 
     subgraph C1["Call 1 · PromptGen Expert (~10s)"]
         direction TB
-        T["Reads: orchestration_system_prompt.txt"]
-        I["Injects:\n{user_requirements}\n{runtime_context_json_block}\n{complexity_score_display}\n{codebase_risk_level}\n{codebase_hot_nodes}"]
+        T["Reads: ORCHESTRATION_TEMPLATE.md\nfrom claude-global-library"]
+        I["Prepends grounding header:\nuser requirements\nruntime context JSON\ncomplexity score\ncodebase risk\nhot nodes\nKG routing summary"]
         O1["Outputs: state[orchestration_prompt]"]
         T --> I --> O1
     end
@@ -415,7 +415,6 @@ claude-workflow-engine/           # 369 Python files total
 │   │   ├── subgraph.py           # StateGraph + _run_step helper
 │   │   ├── nodes/                # Step node wrappers + step implementation facades
 │   │   ├── architecture/         # prompt_gen_expert_caller, orchestrator_agent_caller
-│   │   ├── templates/            # orchestration_system_prompt.txt
 │   │   ├── sonarqube/            # SonarQube Facade: api_client, lightweight, aggregator, auto_fixer
 │   │   ├── documentation_manager.py
 │   │   ├── figma_workflow.py
@@ -843,4 +842,4 @@ Key rules:
 
 ---
 
-**Version:** 2.0.0 | **Last Updated:** 2026-08-05
+**Version:** 2.0.0 | **Last Updated:** 2026-08-06
