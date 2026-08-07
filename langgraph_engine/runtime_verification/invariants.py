@@ -55,11 +55,17 @@ LEVEL_TRANSITION_GUARDS: Dict[Tuple[str, str], List[PreconditionSpec]] = {
             required=True,
             min_val=200,  # min length for str
         ),
+        # orchestrator_result has always been written as a dict by
+        # step1_task_analysis_node, never a string. This guard asked for a str of
+        # at least 50 characters and would have rejected every real run; it never
+        # fired only because ENABLE_RUNTIME_VERIFICATION defaults to 0, so the
+        # whole guard set is dormant. node_contracts.py described the same key
+        # correctly as a dict, so the two disagreed with each other as well.
+        # Corrected 2026-08-07 to match what the node actually produces.
         PreconditionSpec(
             key="orchestrator_result",
-            expected_type=str,
+            expected_type=dict,
             required=True,
-            min_val=50,  # min length for str
         ),
     ],
 }

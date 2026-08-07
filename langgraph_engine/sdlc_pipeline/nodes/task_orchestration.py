@@ -35,6 +35,27 @@ except ImportError:
 from ...liveness import env_optional_seconds as _env_optional_seconds
 
 
+def _library_version() -> str:
+    """Read the claude-global-library VERSION through the resolver chain.
+
+    Recorded alongside the emitted prompt so a trace can be tied back to the
+    exact library revision that produced it -- the master template lives there,
+    not here, so the engine's own version says nothing about what was emitted.
+
+    Returns:
+        The version string, or "unknown" if the library cannot be reached. This
+        is metadata for traces, never a gate: a missing version must not fail a
+        step that has already produced a valid prompt.
+    """
+    try:
+        from ...library import build_default_resolver
+
+        return build_default_resolver().fetch_kg_file("VERSION").content.strip()
+    except Exception as exc:
+        logger.debug("[v2] Step 1 library version unavailable: {}", exc)
+        return "unknown"
+
+
 class OrchestrationTemplateUnavailable(RuntimeError):
     """Raised when Step 1 cannot obtain the master orchestration template.
 
@@ -59,17 +80,15 @@ def step1_task_analysis_node(state: FlowState) -> Dict[str, Any]:
     CallGraph risk data and the KG route. It assembles the prompt only -- no
     LLM runs in this phase.
 
-    Phase 2: decomposes the orchestration prompt into a TODO list
-    (todo_decomposer) and executes each TODO via orchestrator_agent_caller
-    (todo_executor), capturing stdout per TODO. Uses claude CLI subprocess
-    internally.
+    Phase 2: emits the assembled prompt for the active session to execute, and
+    records what was emitted in orchestrator_result. It no longer decomposes the
+    prompt or runs agents itself -- the master template's STEP 13 produces the
+    multi-agent bundle, and this node runs inside a hook subprocess that cannot
+    execute in the session it is serving.
 
     Post-call: populates migration fields so Steps 8-14 receive correct data.
     """
     import json as _json
-    import tempfile
-
-    DEBUG = os.getenv("CLAUDE_DEBUG") == "1"
 
     # --- PRE-INJECTION A: combined_complexity_score from Level 1 (1-25 scale) ---
     # Do NOT re-compute; read directly from state. Scale is 1-25, not 1-10.
@@ -197,7 +216,15 @@ def step1_task_analysis_node(state: FlowState) -> Dict[str, Any]:
                 f"[v2] Step 0 prompt_gen_expert_caller: orchestration_prompt length={len(orchestration_prompt)}"
             )
 
-    # --- PHASE 2: todo_decomposer -> execute_todo_list (per-TODO orchestrator calls) ---
+    # --- PHASE 2: emit the assembled prompt; the active session executes it ---
+    # This phase used to decompose the prompt into a TODO list via todo_decomposer
+    # and run each TODO through orchestrator_agent_caller, each a nested `claude -p`
+    # subprocess. Both are gone. The master template's STEP 13 produces the
+    # MULTI-AGENT PROMPT BUNDLE itself, so a separate decomposition call re-derived
+    # what the template already specifies; and the pipeline is a subprocess of a
+    # hook, so it cannot "run in the session" -- it can only hand the session
+    # something to run. orchestrator_result now records what was emitted rather
+    # than what was executed.
     # Phase 1 no longer runs an LLM, so what arrives here is the master orchestration
     # template plus its runtime-context header -- not a generated bundle. Describing it
     # as one would tell the reader the MULTI-AGENT PROMPT BUNDLE already exists when
@@ -209,97 +236,18 @@ def step1_task_analysis_node(state: FlowState) -> Dict[str, Any]:
         "--- BEGIN ORCHESTRATION TEMPLATE ---\n\n" + orchestration_prompt + "\n\n--- END ORCHESTRATION TEMPLATE ---"
     )
 
-    orch_result: Dict[str, Any] = {}
-    _prompt_file = ""
-    try:
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False, encoding="utf-8") as _tf:
-            _tf.write(_full_prompt)
-            _prompt_file = _tf.name
-
-        if DEBUG:
-            logger.debug("[v2] Step 0 orchestration prompt written to {}", _prompt_file)
-
-        # Step 2a: decompose orchestration prompt into TODO list
-        _decomp_args = [
-            "--orchestration-prompt-file=%s" % _prompt_file,
-            "--complexity-score=%s" % complexity_score,
-        ]
-        _decomp_raw: Dict[str, Any] = {}
-        try:
-            import importlib as _il2
-
-            _helpers_mod2 = _il2.import_module("langgraph_engine.sdlc_pipeline.helpers")
-            _call_exec = _helpers_mod2.call_execution_script
-        except Exception:
-            from ..helpers import call_execution_script as _call_exec  # noqa: PLC0415
-
-        try:
-            _decomp_raw = _call_exec(
-                "todo_decomposer",
-                _decomp_args,
-                model_tier="fast",
-                silence_interval=_env_optional_seconds("STEP1_TODO_DECOMPOSER_SILENCE"),
-            )
-        except Exception as _decomp_exc:
-            _decomp_raw = {"status": "ERROR", "error": str(_decomp_exc), "todo_list": []}
-
-        # call_execution_script never raises -- it reports failure as a status dict
-        # (ERROR / FAILED / NO_PROGRESS / SCRIPT_NOT_FOUND). The status must therefore
-        # be inspected explicitly; relying on the except above meant every script-level
-        # failure fell through to an empty TODO list with no diagnostic at all.
-        _phase2_errors = []
-        _decomp_status = str(_decomp_raw.get("status", "")).upper()
-        _todo_list = _decomp_raw.get("todo_list", [])
-
-        if _decomp_status != "SUCCESS":
-            _decomp_msg = "todo_decomposer returned status=%s: %s" % (
-                _decomp_status or "MISSING",
-                _decomp_raw.get("error", "no error reported"),
-            )
-            logger.error("[v2] Step 1 {}", _decomp_msg)
-            _phase2_errors.append(_decomp_msg)
-        else:
-            logger.info("[v2] Step 1 todo_decomposer: {} todos", len(_todo_list))
-
-        # Step 2b: execute each TODO via orchestrator_agent_caller
-        _todo_results = []
-        if _todo_list:
-            try:
-                from ..architecture.todo_executor import execute_todo_list as _exec_todos  # noqa: PLC0415
-
-                _todo_results = _exec_todos(state, _todo_list, step_number=0)
-            except Exception as _exec_exc:
-                _exec_msg = "execute_todo_list raised: %s" % _exec_exc
-                logger.error("[v2] Step 1 {}", _exec_msg)
-                _phase2_errors.append(_exec_msg)
-                _todo_results = []
-
-        # Step 2c: merge todo results into orch_result
-        _merged_output = "\n\n".join(
-            str(r.get("result", {}).get("llm_response", "") or r.get("error", "")) for r in _todo_results
-        )
-        orch_result = {
-            "success": not _phase2_errors,
-            "todo_list": _todo_list,
-            "todo_results": _todo_results,
-            "llm_response": _merged_output,
-            "agent_output": {"merged_from_todos": len(_todo_results)},
-        }
-        if _phase2_errors:
-            orch_result["errors"] = _phase2_errors
-        _lifted = _lift_todo_agent_output(_todo_results)
-        if _lifted:
-            orch_result.update(_lifted)
-
-    except Exception as _orch_exc:
-        logger.warning("[v2] Step 0 orchestrator block failed (fail-open): {}", _orch_exc)
-        orch_result = {"success": False, "error": str(_orch_exc)}
-    finally:
-        if _prompt_file:
-            try:
-                Path(_prompt_file).unlink(missing_ok=True)
-            except OSError as exc:
-                logger.debug(f"[step0] temp prompt file cleanup skipped: {exc}")
+    orch_result: Dict[str, Any] = {
+        "mode": "emitted",
+        "success": True,
+        "prompt_chars": len(_full_prompt),
+        "template_source": "claude-global-library/ORCHESTRATION_TEMPLATE.md",
+        "library_version": _library_version(),
+    }
+    logger.info(
+        "[v2] Step 1 emitted orchestration prompt: {} chars, library v{}",
+        orch_result["prompt_chars"],
+        orch_result["library_version"],
+    )
 
     # --- Build result from orchestrator output + migration fields ---
     result = _map_step1_result_to_state(state, orchestration_prompt, orch_result)
@@ -316,8 +264,6 @@ def step1_task_analysis_node(state: FlowState) -> Dict[str, Any]:
         result["standards_count"] = standards_selection_result.get("total_loaded", 0)
     result["orchestration_prompt"] = orchestration_prompt
     result["orchestrator_result"] = orch_result
-    result["todo_list"] = orch_result.get("todo_list", [])
-    result["todo_results"] = orch_result.get("todo_results", [])
 
     # Apply call graph complexity boost from orchestration_pre_analysis_node
     # (legacy boost path -- pre_analysis uses 1-10 scale boost on top of step1_complexity)
@@ -341,47 +287,6 @@ def step1_task_analysis_node(state: FlowState) -> Dict[str, Any]:
         logger.debug(f"[step0] call-graph complexity boost skipped: {exc}")
 
     return result
-
-
-def _lift_todo_agent_output(todo_results):
-    """Promote structured task-analysis fields from per-TODO orchestrator output.
-
-    The TODO-decomposition path nests each orchestrator result under
-    ``todo_results[i]['result']`` and any structured payload under its
-    ``agent_output`` key. This lifts recognized analysis fields to a flat
-    dict so _map_step1_result_to_state can populate the Step 0 migration
-    fields instead of falling back to constant defaults. Returns an empty
-    dict when no structured fields are present (the common case for pure
-    execution TODOs), leaving the defaults in place.
-    """
-    recognized = (
-        "task_type",
-        "reasoning",
-        "tasks",
-        "task_count",
-        "model_recommendation",
-        "selected_skill",
-        "selected_agent",
-        "skills",
-        "agents",
-        "skill_definition",
-        "agent_definition",
-        "execution_prompt",
-    )
-    lifted = {}
-    for entry in todo_results or []:
-        result = entry.get("result") if isinstance(entry, dict) else None
-        if not isinstance(result, dict):
-            continue
-        sources = [result]
-        nested = result.get("agent_output")
-        if isinstance(nested, dict):
-            sources.append(nested)
-        for source in sources:
-            for key in recognized:
-                if key in source and key not in lifted:
-                    lifted[key] = source[key]
-    return lifted
 
 
 def _map_step1_result_to_state(
