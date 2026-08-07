@@ -5,14 +5,9 @@ Covers: happy path, empty input, whitespace-only, too-short, error-string detect
 
 Constants under test:
     _MIN_PROMPT_LEN = 200
-    _MIN_RESULT_LEN = 50
-    _ERROR_PREFIXES: tuple of lowercase prefix strings
 """
 
-from langgraph_engine.runtime_verification.schema_verifier import (
-    verify_orchestration_prompt,
-    verify_orchestrator_result,
-)
+from langgraph_engine.runtime_verification.schema_verifier import verify_orchestration_prompt
 
 # ---------------------------------------------------------------------------
 # verify_orchestration_prompt -- 4 tests
@@ -69,48 +64,3 @@ def test_verify_orchestration_prompt_too_short():
     assert any(
         "short" in e.lower() or "200" in e or "min" in e.lower() for e in errors
     ), f"Expected a length-related error in {errors}"
-
-
-# ---------------------------------------------------------------------------
-# verify_orchestrator_result -- 3 tests
-# ---------------------------------------------------------------------------
-
-
-def test_verify_orchestrator_result_valid():
-    """A non-error result with length >= 50 must return no errors."""
-    # Arrange: 25 chars of prefix + 80 padding = 105 chars total, no error prefix
-    result = "Implementation complete. " + "y" * 80
-    assert len(result) == 105  # sanity check
-
-    # Act
-    errors = verify_orchestrator_result(result)
-
-    # Assert
-    assert errors == [], f"Expected no errors but got: {errors}"
-
-
-def test_verify_orchestrator_result_empty():
-    """An empty result string must produce at least one error."""
-    # Act
-    errors = verify_orchestrator_result("")
-
-    # Assert
-    assert len(errors) >= 1
-
-
-def test_verify_orchestrator_result_error_string():
-    """A result that starts with an error prefix must be flagged.
-
-    'Error: connection refused...' lowercases to 'error:...' which matches
-    _ERROR_PREFIXES entry 'error:'.  The returned error message must contain
-    the word 'error' so the caller can identify the category of failure.
-    """
-    # Arrange
-    result = "Error: connection refused to claude API"
-
-    # Act
-    errors = verify_orchestrator_result(result)
-
-    # Assert
-    assert len(errors) >= 1
-    assert any("error" in e.lower() for e in errors), f"Expected an error-detection message in {errors}"

@@ -294,7 +294,7 @@ def _map_step1_result_to_state(
     orchestration_prompt: str,
     orch_result: Dict[str, Any],
 ) -> Dict[str, Any]:
-    """Map orchestrator_agent_caller output to FlowState migration fields.
+    """Map this node's emitted-prompt result to FlowState migration fields.
 
     Populates all fields that Steps 1, 3, 4, 5, 6, 7 previously wrote so that
     Steps 8-14 continue to receive the correct state keys regardless of which
@@ -303,7 +303,9 @@ def _map_step1_result_to_state(
     Args:
         state: Current pipeline state (read-only reference for fallback values).
         orchestration_prompt: The prompt text produced by prompt_gen_expert_caller.
-        orch_result: Parsed JSON dict returned by orchestrator_agent_caller.
+        orch_result: The emission record this node builds -- mode, prompt_chars,
+            template_source and library_version. It was once the parsed JSON
+            returned by orchestrator_agent_caller, which no longer exists.
 
     Returns:
         A flat dict of state updates ready to merge into FlowState.

@@ -1,26 +1,18 @@
-"""Structural schema verifiers for Step-0 orchestration outputs.
+"""Structural schema verifiers for Step 1 orchestration outputs.
 
-Lightweight (no-LLM) checks that the orchestration prompt, decomposed todo_list,
-and orchestrator result are well-formed. Each returns a list of error strings
-(empty = valid) for the Step-0 callers to log.
+A lightweight (no-LLM) check that the orchestration prompt is well-formed,
+returning a list of error strings (empty = valid) for the caller to log.
+
+This module once also covered a decomposed todo_list and an orchestrator result.
+Both described the pre-2026-08-07 Step 1, which decomposed its prompt into TODOs
+and executed them; neither shape is produced any more.
 """
 
 from __future__ import annotations
 
 from typing import List
 
-_ERROR_PREFIXES = (
-    "error:",
-    "exception:",
-    "traceback",
-    "failed:",
-    "connectionerror",
-    "timeout:",
-    "ratelimiterror",
-)
-
 _MIN_PROMPT_LEN = 200
-_MIN_RESULT_LEN = 50
 
 
 def verify_orchestration_prompt(prompt: str) -> List[str]:
@@ -36,21 +28,4 @@ def verify_orchestration_prompt(prompt: str) -> List[str]:
         errors.append("orchestration_prompt too short: %d chars (min %d)" % (len(prompt), _MIN_PROMPT_LEN))
     if "Phase" not in prompt:
         errors.append("orchestration_prompt missing 'Phase' keyword -- may not be a valid orchestration prompt")
-    return errors
-
-
-def verify_orchestrator_result(result: str) -> List[str]:
-    """Validate structure of the orchestrator agent result from orchestrator_agent_caller.
-
-    Returns a list of error strings. Empty list means the result is valid.
-    """
-    errors: List[str] = []
-    if not result or not result.strip():
-        errors.append("orchestrator_result is empty")
-        return errors
-    if len(result) < _MIN_RESULT_LEN:
-        errors.append("orchestrator_result too short: %d chars (min %d)" % (len(result), _MIN_RESULT_LEN))
-    stripped_lower = result.strip().lower()
-    if any(stripped_lower.startswith(prefix) for prefix in _ERROR_PREFIXES):
-        errors.append("orchestrator_result appears to be an error string: %r" % result[:80])
     return errors
