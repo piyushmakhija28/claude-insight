@@ -7,7 +7,7 @@
 [![PyPI](https://img.shields.io/badge/PyPI-claude--workflow--engine-orange)](https://pypi.org/project/claude-workflow-engine/)
 [![CI](https://github.com/techdeveloper-org/claude-workflow-engine/actions/workflows/ci.yml/badge.svg)](https://github.com/techdeveloper-org/claude-workflow-engine/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/License-MIT-yellow)](LICENSE)
-[![Tests](https://img.shields.io/badge/Tests-45%20files%20·%204%20integration-brightgreen)](tests/)
+[![Tests](https://img.shields.io/badge/Tests-100%20files%20·%205%20integration-brightgreen)](tests/)
 [![Discussions](https://img.shields.io/badge/Discussions-GitHub-blueviolet)](../../discussions)
 
 ---
@@ -461,13 +461,13 @@ claude-workflow-engine/           # 369 Python files total
 ├── policies/                     # non-.md policy state only (failure-kb.json) — see note below
 │   └── 03-execution-system/failure-prevention/failure-kb.json
 │
-├── tests/                        # 44 test_*.py files (56 total Python files)
-│   ├── test_*.py                 # 36 unit tests
-│   ├── integration/              # 4 integration tests (GitHub, MCP, runtime verification)
+├── tests/                        # 100 test_*.py files (121 total Python files)
+│   ├── test_*.py                 # 91 unit tests
+│   ├── integration/              # 5 integration tests (GitHub, MCP, runtime verification)
 │   ├── e2e/                      # 3 end-to-end scenario tests
 │   └── load/                     # 1 concurrency / load test
 │
-├── docs/                         # 156 files — architecture docs, ADRs, runbooks, ALL policy/rule
+├── docs/                         # 255 files — architecture docs, ADRs, runbooks, ALL policy/rule
 │                                 # .md files (flattened here, no subfolders), CONTRIBUTING.md,
 │                                 # CODE_OF_CONDUCT.md, and the GitHub issue/PR templates
 ├── uml/                          # Regenerated per pipeline run (13 types, Mermaid/PlantUML)
@@ -620,12 +620,12 @@ ENABLE_HEALTH_SERVER=1 ENABLE_METRICS=1 LOG_FORMAT=json \
 
 ## Testing
 
-44 test_*.py files (56 total Python files in `tests/` including conftest and `__init__` files):
+100 test_*.py files (121 total Python files in `tests/` including conftest and `__init__` files):
 
 | Category | Files | Notes |
 |---|:---:|---|
-| Unit tests | 36 | In `tests/test_*.py` — no external dependencies required |
-| Integration tests | 4 | `tests/integration/` — require live GitHub token or MCP servers |
+| Unit tests | 91 | In `tests/test_*.py` — no external dependencies required |
+| Integration tests | 5 | `tests/integration/` — require live GitHub token or MCP servers |
 | E2E tests | 3 | `tests/e2e/` — require full pipeline environment |
 | Load tests | 1 | `tests/load/` — enabled with `RUN_LOAD_TESTS=1` |
 
