@@ -236,13 +236,34 @@ def step1_task_analysis_node(state: FlowState) -> Dict[str, Any]:
         "--- BEGIN ORCHESTRATION TEMPLATE ---\n\n" + orchestration_prompt + "\n\n--- END ORCHESTRATION TEMPLATE ---"
     )
 
+    # Structural check on what is about to be emitted. Both degraded paths above
+    # already log -- an ERROR from prompt_gen, or an empty response -- so this is
+    # not here to catch those. It is here for the case neither covers: a response
+    # that is non-empty and therefore silent, but not a usable orchestration
+    # prompt (a truncated template, the wrong file, a stub). Until now that was
+    # indistinguishable from a good prompt.
+    #
+    # Warnings are recorded and logged, never fatal. The raw-task fallback is a
+    # legitimate degraded path -- STEP1_CONTRACT documents it as such -- and it
+    # trips both checks by design, so failing here would turn a recoverable run
+    # into a dead one.
+    from ...runtime_verification.schema_verifier import verify_orchestration_prompt  # noqa: PLC0415
+
+    prompt_warnings = verify_orchestration_prompt(orchestration_prompt)
+
     orch_result: Dict[str, Any] = {
         "mode": "emitted",
         "success": True,
         "prompt_chars": len(_full_prompt),
         "template_source": "claude-global-library/ORCHESTRATION_TEMPLATE.md",
         "library_version": _library_version(),
+        "prompt_warnings": prompt_warnings,
     }
+    if prompt_warnings:
+        logger.warning(
+            "[v2] Step 1 emitted a structurally questionable orchestration prompt: {}",
+            "; ".join(prompt_warnings),
+        )
     logger.info(
         "[v2] Step 1 emitted orchestration prompt: {} chars, library v{}",
         orch_result["prompt_chars"],

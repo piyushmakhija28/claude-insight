@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **Step 1 now verifies the orchestration prompt it emits.** `verify_orchestration_prompt()` existed, was exported and had four unit tests, and was called by nothing; it is now wired in at the point the prompt is stored, and its findings are recorded on `orchestrator_result["prompt_warnings"]` and logged. The gap it closes is narrow and specific: both degraded paths in the node already log (an `ERROR` from prompt-gen, and an empty response), so this is not for those. It is for a response that is **non-empty and therefore silent** but not a usable prompt — a truncated template, the wrong file, a stub — which until now was indistinguishable from a good one. Warnings are never fatal: `STEP1_CONTRACT` documents the short raw-task fallback as a legitimate degraded path, and it trips both checks by design, so failing here would convert a recoverable run into a dead one.
+
 ### Removed
 
 - **`langgraph_engine/helper_nodes/` is deleted** (5 modules, 538 lines). All nine of its public node functions were also defined in `orchestrator.py`, which is the module the graph actually wires, and nothing imported the package -- it was an extraction that was started and never completed. Two documentation corrections existed **only** in the orphaned copy and were ported to `orchestrator.py` before the deletion rather than discarded with it: `save_workflow_memory`'s comment named `~/.claude/memory/sessions/` while its code writes to `memory/logs/sessions/`, and `optimize_context_after_level1` still said "Level 3" in three places, a level that stopped existing in the `06b0463` rename. The live module had the stale text in both cases.
