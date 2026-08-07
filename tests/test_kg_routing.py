@@ -458,8 +458,6 @@ class TestStep0KgRoutingPreInjection:
             captured_calls.append((script_name, args))
             if script_name == "prompt_gen_expert_caller":
                 return {"status": "SUCCESS", "llm_response": "orchestration prompt body", "prompt": "raw"}
-            if script_name == "todo_decomposer":
-                return {"status": "SUCCESS", "todo_list": []}
             return {"status": "SUCCESS"}
 
         return _side_effect
@@ -533,8 +531,6 @@ class TestStep1TemplateLoadIsFatal:
         def _side_effect(script_name, args=None, model_tier=None, silence_interval=None):
             if script_name == "prompt_gen_expert_caller":
                 return prompt_gen_payload
-            if script_name == "todo_decomposer":
-                return {"status": "SUCCESS", "todo_list": []}
             return {"status": "SUCCESS"}
 
         return _side_effect

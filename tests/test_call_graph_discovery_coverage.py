@@ -270,20 +270,23 @@ class TestSdlcPipelineCanary:
         )
 
     def test_canary_tree_is_not_trivially_small(self, default_build):
-        """The canary holds at least the 44 files present after the 2026-08-07 purge.
+        """The canary holds at least the 41 files present after the 2026-08-07 purges.
 
-        45 when first measured on 2026-08-01. sdlc_pipeline/templates/ was deleted
-        on 2026-08-07, once Step 1 began resolving the master orchestration template
-        from claude-global-library, and its __init__.py went with it.
+        45 when first measured on 2026-08-01, then 44, now 41. Two deliberate
+        deletions account for all four, both on 2026-08-07: sdlc_pipeline/templates/
+        went once Step 1 began resolving the master orchestration template from
+        claude-global-library (1 file), and architecture/{todo_decomposer,
+        todo_executor, orchestrator_agent_caller}.py went once Step 1 stopped
+        executing the prompt it emits (3 files).
 
         The floor guards against the canary tree collapsing to something trivial; it
         is not a pin on an exact file count. Completeness is proven separately by
         test_canary_symmetric_difference_is_empty, which compares the analysed set
-        against a live enumeration -- so lowering this number by one to match a
-        deliberate deletion cannot mask a discovery regression.
+        against a live enumeration -- so lowering this number to match a deliberate
+        deletion cannot mask a discovery regression.
         """
         analysed = {path for path in default_build.analysed_files if path.startswith(CANARY_PREFIX)}
-        assert len(analysed) >= 44
+        assert len(analysed) >= 41
 
 
 # ---------------------------------------------------------------------------
