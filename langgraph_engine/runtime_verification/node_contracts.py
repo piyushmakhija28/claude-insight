@@ -55,31 +55,20 @@ PROMPT_GEN_CONTRACT = NodeContract(
 )
 
 # ---------------------------------------------------------------------------
-# orchestrator_agent_caller (Step 0 Phase 2)
-#
-# Reads:  orchestration_prompt (produced by prompt_gen phase, min 200 chars)
-# Writes: orchestrator_result (dict with task breakdown + agent plan)
-# ---------------------------------------------------------------------------
-ORCHESTRATOR_CONTRACT = NodeContract(
-    node_name="orchestrator_agent_caller",
-    preconditions=[
-        PreconditionSpec(key="orchestration_prompt", expected_type=str, required=True, min_val=200),
-    ],
-    postconditions=[
-        PostconditionSpec(key="orchestrator_result", non_null=True, min_length=0),
-    ],
-)
-
-# ---------------------------------------------------------------------------
 # step1_task_analysis_node (fused prompt_gen + orchestrator, v1.14+)
 #
 # The prompt-gen and orchestrator phases run inside a single node, so
-# orchestration_prompt is produced internally and is NOT present on entry --
-# the separate PROMPT_GEN / ORCHESTRATOR contracts above (kept for their phase
-# semantics) do not fit the fused node. The precondition guards the real node
-# input (user_message); the postconditions guarantee both phase outputs. A short
-# raw-task fallback is a legitimate degraded path, so orchestration_prompt is
-# only required non-empty, not the 200-char "useful prompt" bar.
+# orchestration_prompt is produced internally and is NOT present on entry -- the
+# separate PROMPT_GEN contract above (kept for its phase semantics) does not fit
+# the fused node. The precondition guards the real node input (user_message);
+# the postconditions guarantee both phase outputs. A short raw-task fallback is
+# a legitimate degraded path, so orchestration_prompt is only required
+# non-empty, not the 200-char "useful prompt" bar.
+#
+# An ORCHESTRATOR_CONTRACT sat beside PROMPT_GEN until 2026-08-07, describing an
+# orchestrator_agent_caller node. That script is gone, and a contract naming a
+# node that cannot run is not dormant -- it is wrong, and the registry would
+# have offered it for lookup under a name nothing can produce.
 # ---------------------------------------------------------------------------
 STEP1_CONTRACT = NodeContract(
     node_name="step1_task_analysis_node",
@@ -99,6 +88,5 @@ STEP1_CONTRACT = NodeContract(
 NODE_CONTRACT_REGISTRY = {
     PRE_ANALYSIS_CONTRACT.node_name: PRE_ANALYSIS_CONTRACT,
     PROMPT_GEN_CONTRACT.node_name: PROMPT_GEN_CONTRACT,
-    ORCHESTRATOR_CONTRACT.node_name: ORCHESTRATOR_CONTRACT,
     STEP1_CONTRACT.node_name: STEP1_CONTRACT,
 }

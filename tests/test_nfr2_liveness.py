@@ -618,18 +618,37 @@ class TestGateOnTheRealTree:
         assert exempted[0].path == "langgraph_engine/llm_call.py"
 
     def test_the_named_adr_016_sites_no_longer_carry_a_fixed_timeout(self, gate):
-        """ADR-016's own enumeration of 6 application sites, re-checked against the tree."""
-        named = (
+        """ADR-016's own enumeration of 6 application sites, re-checked against the tree.
+
+        ADR-016 enumerated 6 ``timeout=`` application sites across 5 files
+        (``task_orchestration.py`` carries two). Three of those files were deleted on
+        2026-08-07 when Step 1 stopped executing the prompt it emits, so the
+        enumeration no longer maps one-to-one onto the tree.
+
+        The names are kept rather than dropped. A deleted file trivially carries no
+        fixed timeout, but erasing it from the enumeration would also erase the only
+        record that the site ever existed, and nothing would then notice if one
+        reappeared. So the tuple is split by what each name now asserts: the surviving
+        files are still scanned, and the retired ones are asserted absent. A rename
+        that silently moved a surviving file would fail on ``unreadable``; a retired
+        file that came back would fail on ``still_present``.
+        """
+        surviving = (
             "langgraph_engine/sdlc_pipeline/architecture/prompt_gen_expert_caller.py",
+            "langgraph_engine/sdlc_pipeline/nodes/task_orchestration.py",
+        )
+        retired = (
             "langgraph_engine/sdlc_pipeline/architecture/todo_decomposer.py",
             "langgraph_engine/sdlc_pipeline/architecture/orchestrator_agent_caller.py",
             "langgraph_engine/sdlc_pipeline/architecture/todo_executor.py",
-            "langgraph_engine/sdlc_pipeline/nodes/task_orchestration.py",
         )
-        files = [REPO_ROOT / path for path in named]
+        files = [REPO_ROOT / path for path in surviving]
         sites, unreadable = gate.scan(files, REPO_ROOT)
         assert unreadable == []
         assert [site.record() for site in sites if site.value_class in gate.FAILING_VALUE_CLASSES] == []
+
+        still_present = [path for path in retired if (REPO_ROOT / path).exists()]
+        assert still_present == [], "a retired Step 1 Phase 2 script is back on disk: {}".format(still_present)
 
     def test_no_pipeline_module_still_names_a_retired_timeout_variable(self):
         """The retired env vars must be gone from the modules that used to read them.

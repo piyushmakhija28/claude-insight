@@ -2,7 +2,8 @@
 
 Validates that:
   - Verifier singleton is reused across multiple node calls in full mode
-  - ORCHESTRATOR_CONTRACT precondition enforces orchestration_prompt min_length=200
+  - PROMPT_GEN_CONTRACT preconditions are enforced (orchestration_prompt min_length=200,
+    and a required user_message that is reported when absent)
   - Strict-mode gate (STRICT_RUNTIME_VERIFICATION=1) sets passed=False on violations
     without raising an exception (ADR-3)
   - Non-strict mode gate allows violations through without blocking
@@ -48,48 +49,55 @@ def test_verifier_singleton_reused_across_node_calls(monkeypatch):
 
 
 # ===========================================================================
-# Test 2: ORCHESTRATOR_CONTRACT passes with long prompt
+# Test 2: PROMPT_GEN_CONTRACT passes with long prompt
+#
+# Tests 2 and 3 exercise the verifier's precondition machinery -- register a
+# contract, check a state against it, assert on the violations -- rather than
+# anything specific to the node named in the contract. They used
+# ORCHESTRATOR_CONTRACT until it was deleted on 2026-08-07 along with the
+# orchestrator_agent_caller script. PROMPT_GEN_CONTRACT carries the identical
+# orchestration_prompt >= 200 precondition and names a node that still exists,
+# so the pair is repointed rather than dropped: what they cover is unchanged.
 # ===========================================================================
 
 
-def test_orchestrator_contract_passes_with_long_prompt(monkeypatch):
-    """ORCHESTRATOR_CONTRACT precondition satisfied when orchestration_prompt >= 200 chars."""
+def test_prompt_gen_contract_passes_with_long_prompt(monkeypatch):
+    """PROMPT_GEN_CONTRACT precondition satisfied when orchestration_prompt >= 200 chars."""
     monkeypatch.setenv("ENABLE_RUNTIME_VERIFICATION", "1")
     monkeypatch.setenv("CLAUDE_HOOK_MODE", "0")
 
-    from langgraph_engine.runtime_verification.node_contracts import ORCHESTRATOR_CONTRACT
+    from langgraph_engine.runtime_verification.node_contracts import PROMPT_GEN_CONTRACT
     from langgraph_engine.runtime_verification.verifier import RuntimeVerifier
 
     verifier = RuntimeVerifier.get_instance()
-    verifier.register(ORCHESTRATOR_CONTRACT)
+    verifier.register(PROMPT_GEN_CONTRACT)
 
-    state = {"orchestration_prompt": _LONG_PROMPT}
-    violations = verifier.check_preconditions(ORCHESTRATOR_CONTRACT.node_name, state)
+    state = {"user_message": "build a thing", "orchestration_prompt": _LONG_PROMPT}
+    violations = verifier.check_preconditions(PROMPT_GEN_CONTRACT.node_name, state)
 
     assert violations == []
 
 
 # ===========================================================================
-# Test 3: ORCHESTRATOR_CONTRACT fails with short prompt
+# Test 3: PROMPT_GEN_CONTRACT fails on a missing required input
 # ===========================================================================
 
 
-def test_orchestrator_contract_fails_with_short_prompt(monkeypatch):
-    """ORCHESTRATOR_CONTRACT precondition fails when orchestration_prompt < 200 chars."""
+def test_prompt_gen_contract_fails_without_user_message(monkeypatch):
+    """PROMPT_GEN_CONTRACT precondition fails when its required user_message is absent."""
     monkeypatch.setenv("ENABLE_RUNTIME_VERIFICATION", "1")
     monkeypatch.setenv("CLAUDE_HOOK_MODE", "0")
 
-    from langgraph_engine.runtime_verification.node_contracts import ORCHESTRATOR_CONTRACT
+    from langgraph_engine.runtime_verification.node_contracts import PROMPT_GEN_CONTRACT
     from langgraph_engine.runtime_verification.verifier import RuntimeVerifier
 
     verifier = RuntimeVerifier.get_instance()
-    verifier.register(ORCHESTRATOR_CONTRACT)
+    verifier.register(PROMPT_GEN_CONTRACT)
 
-    state = {"orchestration_prompt": "short"}
-    violations = verifier.check_preconditions(ORCHESTRATOR_CONTRACT.node_name, state)
+    state = {"orchestration_prompt": _LONG_PROMPT}
+    violations = verifier.check_preconditions(PROMPT_GEN_CONTRACT.node_name, state)
 
     assert len(violations) >= 1
-    # Short string is a range violation -- severity is ERROR
     assert any(v["severity"] in ("ERROR", "CRITICAL") for v in violations)
 
 
@@ -115,7 +123,7 @@ def test_strict_mode_gate_sets_passed_false_on_violations(monkeypatch):
         "verification_report": {
             "violations": [
                 {
-                    "node_name": "orchestrator_agent_caller",
+                    "node_name": "step1_task_analysis_node",
                     "check_type": "precondition",
                     "key": "orchestration_prompt",
                     "message": "too short",
@@ -160,7 +168,7 @@ def test_non_strict_mode_gate_does_not_block_on_violations(monkeypatch):
         "verification_report": {
             "violations": [
                 {
-                    "node_name": "orchestrator_agent_caller",
+                    "node_name": "step1_task_analysis_node",
                     "check_type": "precondition",
                     "key": "orchestration_prompt",
                     "message": "too short",

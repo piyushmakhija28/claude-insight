@@ -111,8 +111,8 @@ flowchart TD
 
     subgraph S0["Step 1 : Task Orchestration & Planning ~15s"]
         direction LR
-        C1["Call 1: prompt_gen_expert_caller\nfills orchestration template"]
-        C2["Call 2: orchestrator_agent_caller\nexecutes full plan, streamed live"]
+        C1["Phase 1: prompt_gen_expert_caller\nassembles the orchestration prompt\nfrom the master template"]
+        C2["Phase 2: emit\nstores the prompt and a record of\nwhat was emitted — it does not execute"]
         C1 --> C2
     end
 
@@ -288,8 +288,8 @@ flowchart LR
 
     subgraph C1["Call 1 · PromptGen Expert (~10s)"]
         direction TB
-        T["Reads: orchestration_system_prompt.txt"]
-        I["Injects:\n{user_requirements}\n{runtime_context_json_block}\n{complexity_score_display}\n{codebase_risk_level}\n{codebase_hot_nodes}"]
+        T["Reads: ORCHESTRATION_TEMPLATE.md\nfrom claude-global-library"]
+        I["Prepends grounding header:\nuser requirements\nruntime context JSON\ncomplexity score\ncodebase risk\nhot nodes\nKG routing summary"]
         O1["Outputs: state[orchestration_prompt]"]
         T --> I --> O1
     end
@@ -414,8 +414,7 @@ claude-workflow-engine/           # 369 Python files total
 │   ├── sdlc_pipeline/              # Level 2: SDLC Execution Core, 9-step execution
 │   │   ├── subgraph.py           # StateGraph + _run_step helper
 │   │   ├── nodes/                # Step node wrappers + step implementation facades
-│   │   ├── architecture/         # prompt_gen_expert_caller, orchestrator_agent_caller
-│   │   ├── templates/            # orchestration_system_prompt.txt
+│   │   ├── architecture/         # prompt_gen_expert_caller + code-graph/task-breakdown helpers
 │   │   ├── sonarqube/            # SonarQube Facade: api_client, lightweight, aggregator, auto_fixer
 │   │   ├── documentation_manager.py
 │   │   ├── figma_workflow.py
@@ -843,4 +842,4 @@ Key rules:
 
 ---
 
-**Version:** 2.0.0 | **Last Updated:** 2026-08-05
+**Version:** 2.0.0 | **Last Updated:** 2026-08-07

@@ -237,12 +237,16 @@ def _build_diff_summary(modified_files: List[str], project_root: str) -> str:
 def _default_caller(prompt: str) -> Tuple[Optional[str], Optional[str]]:
     """Call the real `claude` CLI in headless print mode via stdin.
 
-    Mirrors the subprocess pattern used by
-    ``sdlc_pipeline/architecture/prompt_gen_expert_caller.py``'s
-    ``_call_claude_cli`` (also duplicated in ``orchestrator_agent_caller.py``
-    and ``todo_decomposer.py``): resolve the binary via ``shutil.which``,
-    run with a bounded timeout, and always return a ``(text, error)`` tuple
-    rather than raising, so gate evaluation stays fail-open.
+    Resolves the binary via ``shutil.which``, runs it with a bounded timeout, and
+    always returns a ``(text, error)`` tuple rather than raising, so gate
+    evaluation stays fail-open.
+
+    This was once one of four copies of that pattern, and the docstring named the
+    other three. All three are gone -- ``prompt_gen_expert_caller`` stopped
+    spawning the CLI when Step 1 began assembling its prompt directly, and
+    ``orchestrator_agent_caller`` and ``todo_decomposer`` were deleted with the
+    rest of Step 1 Phase 2. This is now the only copy, so it is described on its
+    own terms rather than as a mirror of code that no longer exists.
 
     Returns:
         (response_text, error) -- exactly one of the two is non-None.

@@ -164,6 +164,56 @@ def default_stop_log_path():
     return os.path.join(home, ".claude", "memory", "logs", "stop-notifier.log")
 
 
+def compute_verdict(crossed, tool_calls, plugin_count, unattributed_count, not_plugin_descended_count):
+    """Decide one phase's verdict from the five numbers that determine it.
+
+    This lives outside Measurement because a measurement restored from JSON has to
+    reach the same verdict as the live one it came from, and the only safe way to
+    guarantee that is to make both call the same function. A second copy of this
+    ladder would be free to drift, and the direction it would drift in is toward
+    a pass, because that is the branch with the fewest conditions.
+
+    Args:
+        crossed: Whether the window spanned a response-turn boundary.
+        tool_calls: Tool calls the driver recorded inside the window.
+        plugin_count: Processes attributable to the plugin.
+        unattributed_count: Processes whose relationship to the plugin is unknown.
+        not_plugin_descended_count: Processes shown not to descend from the plugin.
+
+    Returns:
+        Tuple of (verdict, list of reason strings).
+    """
+    reasons = []
+    if crossed:
+        reasons.append("window spanned a response-turn boundary, which the criterion forbids")
+        return VERDICT_INDETERMINATE, reasons
+
+    if tool_calls != REQUIRED_TOOL_CALLS:
+        reasons.append(
+            "criterion requires exactly %d tool calls in the window; the driver "
+            "recorded %d" % (REQUIRED_TOOL_CALLS, tool_calls)
+        )
+        return VERDICT_INDETERMINATE, reasons
+
+    if plugin_count > 0:
+        reasons.append("%d process(es) attributable to the plugin; pass requires 0" % plugin_count)
+        return VERDICT_FAIL, reasons
+
+    if unattributed_count > 0:
+        reasons.append(
+            "%d observed process(es) could not be attributed, and could not be shown "
+            "not to descend from the plugin either, because their ancestry could not "
+            "be walked back to a process that predates the window" % unattributed_count
+        )
+        return VERDICT_INDETERMINATE, reasons
+
+    reasons.append(
+        "0 processes attributable to the plugin; %d further process(es) walked back "
+        "to the pre-window baseline with no plugin anywhere on the chain" % not_plugin_descended_count
+    )
+    return VERDICT_PASS, reasons
+
+
 class Measurement(object):
     """One cold or warm measurement over a single response turn.
 
@@ -218,33 +268,14 @@ class Measurement(object):
         Returns:
             Tuple of (verdict, list of reason strings).
         """
-        reasons = []
-        if self.turn_boundary.get("crossed"):
-            reasons.append("window spanned a response-turn boundary, which the criterion forbids")
-            return VERDICT_INDETERMINATE, reasons
-
-        if self.tool_calls != REQUIRED_TOOL_CALLS:
-            reasons.append(
-                "criterion requires exactly %d tool calls in the window; the driver "
-                "recorded %d" % (REQUIRED_TOOL_CALLS, self.tool_calls)
-            )
-            return VERDICT_INDETERMINATE, reasons
-
         result = self.authoritative_attribution
-        if result.plugin_count > 0:
-            reasons.append("%d process(es) attributable to the plugin; pass requires 0" % result.plugin_count)
-            return VERDICT_FAIL, reasons
-
-        unattributed = len(result.unattributed)
-        if unattributed > 0:
-            reasons.append(
-                "%d observed process(es) could not be attributed to any component, so "
-                "they cannot be shown to not belong to the plugin" % unattributed
-            )
-            return VERDICT_INDETERMINATE, reasons
-
-        reasons.append("0 processes attributable to the plugin")
-        return VERDICT_PASS, reasons
+        return compute_verdict(
+            crossed=bool(self.turn_boundary.get("crossed")),
+            tool_calls=self.tool_calls,
+            plugin_count=result.plugin_count,
+            unattributed_count=len(result.unattributed),
+            not_plugin_descended_count=len(result.not_plugin_descended),
+        )
 
     def to_dict(self):
         """Return a JSON-serialisable view of this measurement."""
@@ -266,6 +297,91 @@ class Measurement(object):
             ),
             "probe": self.probe_summary,
         }
+
+
+class RestoredMeasurement(object):
+    """A measurement read back from JSON, carrying only what was serialised.
+
+    A genuinely cold phase can only be observed at the very start of a fresh
+    session, so cold and warm are necessarily taken by two separate invocations.
+    Combining them into one report therefore needs a measurement to survive a trip
+    through JSON -- which nothing provided, and which is why two observed phases
+    could not previously be reported together.
+
+    This does NOT pretend to rebuild the live object. AttributionResult.to_dict()
+    deliberately serialises counts plus the unattributed processes in full, not
+    every attribution, so the original cannot be reconstructed and any class
+    claiming to do so would be inventing the difference. What it does instead is
+    keep the recorded payload verbatim and answer verdict() from the same numbers,
+    through the same compute_verdict() the live object uses.
+
+    Attributes:
+        payload: The measurement dict exactly as it was serialised.
+        phase: PHASE_COLD or PHASE_WARM.
+    """
+
+    REQUIRED_KEYS = ("phase", "tool_calls_recorded", "turn_boundary", "union_delta")
+    REQUIRED_UNION_KEYS = (
+        "plugin_attributable_count",
+        "unattributed_count",
+        "not_plugin_descended_count",
+    )
+
+    def __init__(self, payload):
+        missing = [k for k in self.REQUIRED_KEYS if k not in payload]
+        if missing:
+            raise ValueError("measurement JSON is missing required keys: %s" % ", ".join(missing))
+        union = payload["union_delta"]
+        missing_union = [k for k in self.REQUIRED_UNION_KEYS if k not in union]
+        if missing_union:
+            raise ValueError("measurement JSON union_delta is missing: %s" % ", ".join(missing_union))
+        if payload["phase"] not in (PHASE_COLD, PHASE_WARM):
+            raise ValueError("measurement JSON carries an unknown phase: %r" % (payload["phase"],))
+        self.payload = payload
+        self.phase = payload["phase"]
+
+    @property
+    def tool_calls(self):
+        """Return the tool-call count recorded when the window was observed."""
+        return self.payload["tool_calls_recorded"]
+
+    def verdict(self):
+        """Return the same verdict the live measurement reached.
+
+        Returns:
+            Tuple of (verdict, list of reason strings).
+        """
+        union = self.payload["union_delta"]
+        return compute_verdict(
+            crossed=bool(self.payload["turn_boundary"].get("crossed")),
+            tool_calls=self.payload["tool_calls_recorded"],
+            plugin_count=union["plugin_attributable_count"],
+            unattributed_count=union["unattributed_count"],
+            not_plugin_descended_count=union["not_plugin_descended_count"],
+        )
+
+    def to_dict(self):
+        """Return the recorded payload, flagged so a reader knows it was restored."""
+        restored = dict(self.payload)
+        restored["restored_from_json"] = True
+        return restored
+
+
+def measurement_from_dict(payload):
+    """Restore a measurement previously written by Measurement.to_dict().
+
+    Args:
+        payload: The dict a measurement was serialised to.
+
+    Returns:
+        RestoredMeasurement.
+
+    Raises:
+        ValueError: If the payload is missing anything the verdict depends on.
+            Defaulting a missing count to zero would turn absent evidence into a
+            pass, which is the one outcome this harness exists to prevent.
+    """
+    return RestoredMeasurement(payload)
 
 
 class MeasurementSession(object):
@@ -340,6 +456,8 @@ class MeasurementSession(object):
         ancestry = attribution_mod.build_ancestry_index(after)
         for pid, record in attribution_mod.build_ancestry_index(self._before).items():
             ancestry.setdefault(pid, record)
+        for pid, record in attribution_mod.index_from_records(self._sampler.seen_records().values()).items():
+            ancestry.setdefault(pid, record)
 
         endpoint_records = process_probe.endpoint_delta(self._before, after)
         sampled_records = self._sampler.sampled_delta(self._before)
@@ -349,9 +467,13 @@ class MeasurementSession(object):
             merged[record.key] = record
         union_records = sorted(merged.values(), key=lambda r: r.pid)
 
-        endpoint_attr = attribution_mod.attribute(endpoint_records, self.registry, ancestry)
-        sampled_attr = attribution_mod.attribute(sampled_records, self.registry, ancestry)
-        union_attr = attribution_mod.attribute(union_records, self.registry, ancestry)
+        baseline_pids = set(record.pid for record in self._before.records.values())
+
+        endpoint_attr = attribution_mod.attribute(
+            endpoint_records, self.registry, ancestry, baseline_pids=baseline_pids
+        )
+        sampled_attr = attribution_mod.attribute(sampled_records, self.registry, ancestry, baseline_pids=baseline_pids)
+        union_attr = attribution_mod.attribute(union_records, self.registry, ancestry, baseline_pids=baseline_pids)
 
         boundary = self.guard.evaluate(union_attr)
         sampler_summary = self._sampler.to_dict()
@@ -473,10 +595,24 @@ class NFR1Report(object):
             "verdict": verdict,
             "reasons": reasons,
             "closes_after": ["V2-015", "V2-027"],
+            "closure_prerequisites_met": True,
             "closure_note": (
-                "This issue cannot close on a harness that has never produced a pass. "
-                "The measurement requires a plugin to install (V2-015) and the hook "
-                "registrations to be deleted (V2-027); neither exists."
+                "ORIGINAL BAR: this issue cannot close on a harness that has never "
+                "produced a pass. The measurement requires a plugin to install "
+                "(V2-015) and the hook registrations to be deleted (V2-027). "
+                "AMENDED 2026-08-06 by the requirement owner, on the record rather "
+                "than by inference. V2-015 and V2-027 are both met, and cold and warm "
+                "were both measured for the first time. A PASS was NOT produced: both "
+                "phases are INDETERMINATE on a handful of Windows system processes "
+                "whose command lines an unelevated observer cannot read. The owner "
+                "ruled that requiring elevation is neither practical nor safe in a "
+                "normal or corporate development environment, and that NFR-1's "
+                "question -- does an installed, uninvoked plugin spawn processes -- is "
+                "answered by plugin_attributable_count = 0 across every delta of both "
+                "phases, with both structural gates PASS and both windows valid. "
+                "Processes the operating system refuses to describe are outside the "
+                "criterion's reach, not evidence against it. See "
+                "docs/reports/nfr1-measurement-2026-08-06.md."
             ),
             "structural_gates": self.structural,
             "cold": self.cold.to_dict() if self.cold else None,

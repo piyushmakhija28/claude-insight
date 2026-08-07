@@ -23,6 +23,23 @@ The role split is the load-bearing part.
 Unattributed processes are deliberately not a role. They are reported as their own
 bucket by the attribution module and drive an INDETERMINATE verdict, because a process
 the harness cannot identify cannot be shown to not belong to the plugin.
+
+Two OBSERVED entries (statusline_hook, claude_code_host) were added to cover non-plugin
+process sources a real measurement window on this machine showed. Deliberately NOT
+covered, because no specific marker for them could be measured rather than guessed:
+
+    node.exe    A prior brief for this change assumed node.exe was the Claude Code host
+                process. Direct measurement on this machine (tests/nfr1/process_probe.py
+                snapshot, cross-checked by parent-pid chain) showed the opposite: the
+                Claude Code CLI here runs as claude.exe, and every node.exe present
+                belonged to unrelated npm/vite dev servers with no Claude Code ancestor
+                at all. Marking node.exe as the host would have been wrong on this
+                machine, not merely unspecific, so it carries no marker in either
+                direction and stays unattributed.
+    chrome.exe  Ordinary browser activity unconnected to the plugin, the engine, or
+                Claude Code. There is no component it should be charged to; it is
+                reported as unattributed noise, which is the correct and complete
+                treatment for it.
 """
 
 import os
@@ -41,6 +58,8 @@ KEY_RETAINED_USER_HOOKS = "retained_user_hooks"
 KEY_ENGINE = "engine_non_plugin"
 KEY_MCP_USER_SCOPE = "mcp_user_scope"
 KEY_HARNESS_SELF = "harness_self"
+KEY_STATUSLINE_HOOK = "statusline_hook"
+KEY_CLAUDE_CODE_HOST = "claude_code_host"
 
 
 class ExclusionPolicyError(ValueError):
@@ -53,8 +72,13 @@ class ComponentSpec(object):
     Attributes:
         key: Stable identifier used in reports.
         role: One of VALID_ROLES.
-        markers: Lowercase substrings matched against a process's name, executable
-            path and command line. Any hit attributes the process to this component.
+        markers: Lowercase, forward-slash substrings matched against a process's name,
+            executable path and command line. Any hit attributes the process to this
+            component. Markers are normalised on both case and path separator at
+            construction, and matches() normalises the process text the same way, so a
+            marker written with Windows backslashes still matches. Normalising only one
+            side is how a marker becomes silently dead -- it never matches, the
+            component collects nothing, and nothing reports that it stopped working.
         justification: Why this component carries its role. Required for the permitted
             exclusion so the carve-out can never be widened silently.
         description: Human-readable summary for the report.
@@ -69,12 +93,20 @@ class ComponentSpec(object):
             raise ValueError("component %r claims the permitted exclusion without a justification" % key)
         self.key = key
         self.role = role
-        self.markers = tuple(m.lower() for m in markers if m)
+        self.markers = tuple(m.lower().replace("\\", "/") for m in markers if m)
         self.justification = justification
         self.description = description
 
     def matches(self, record):
         """Return the marker that identifies this record, or None.
+
+        Comparison text is backslash-normalised to forward slashes before the
+        substring check, matching the normalisation build_default_registry already
+        applies to plugin_root-derived markers. Without this, a marker built from a
+        path on one separator convention could never match a process reported on the
+        other: Windows commonly reports command lines and executable paths with
+        backslashes, and a marker normalised to forward slashes is not a substring of
+        text that still has backslashes, or vice versa.
 
         Args:
             record: A ProcessRecord to test.
@@ -84,7 +116,7 @@ class ComponentSpec(object):
         """
         if record.cmdline is None and record.exe is None and not record.name:
             return None
-        text = record.search_text()
+        text = record.search_text().replace("\\", "/")
         for marker in self.markers:
             if marker in text:
                 return marker
@@ -168,6 +200,36 @@ class ComponentRegistry(object):
         }
 
 
+def qualified_tail(normalised_root):
+    """Return the last two path components of a plugin root, or None.
+
+    The plugin root's absolute path is already a marker, but it only matches a
+    process that names the plugin at exactly this location. A shorter, relocatable
+    marker is wanted too -- and the obvious choice, the bare basename, is a trap.
+    This plugin's directory is literally named ``plugin``, so the basename marker
+    was the single word ``plugin``, which matches any command line mentioning it:
+    ``chrome.exe --disable-plugins`` would have been charged to the plugin.
+
+    That direction produces false FAILs rather than false passes, so it never
+    corrupted a measurement -- nothing matched it in the first real run -- but a
+    metric that can fail for the wrong reason is no better than one that cannot
+    fail at all.
+
+    Two components are enough to be distinctive while staying relocatable. A root
+    with only one component yields nothing, because there is no way to qualify it.
+
+    Args:
+        normalised_root: Plugin root, forward-slashed, without a trailing slash.
+
+    Returns:
+        str or None: Lowercase ``parent/leaf``, or None when it cannot be qualified.
+    """
+    parts = [p for p in normalised_root.split("/") if p]
+    if len(parts) < 2:
+        return None
+    return "/".join(parts[-2:]).lower()
+
+
 def build_default_registry(plugin_root=None, extra_plugin_markers=None):
     """Build the registry used by a real NFR-1 measurement.
 
@@ -186,7 +248,9 @@ def build_default_registry(plugin_root=None, extra_plugin_markers=None):
     if plugin_root:
         normalised = str(plugin_root).replace("\\", "/").rstrip("/")
         plugin_markers.append(normalised.lower())
-        plugin_markers.append(os.path.basename(normalised).lower())
+        qualified = qualified_tail(normalised)
+        if qualified:
+            plugin_markers.append(qualified)
     env_root = os.environ.get("CLAUDE_PLUGIN_ROOT")
     if env_root:
         plugin_markers.append(env_root.replace("\\", "/").lower())
@@ -250,6 +314,44 @@ def build_default_registry(plugin_root=None, extra_plugin_markers=None):
                 "The harness's own scaffolding, including any process the PowerShell "
                 "fallback backend spawns. Isolated so measurement apparatus never "
                 "contaminates another component's count."
+            ),
+        )
+    )
+    registry.register(
+        ComponentSpec(
+            key=KEY_STATUSLINE_HOOK,
+            role=ROLE_OBSERVED,
+            markers=["statusline-command.sh"],
+            description=(
+                "Claude Code's own statusline, run on a timer by the Claude Code host "
+                "process, never by the plugin. The marker names the retained script "
+                "itself rather than the bash.exe/sh.exe interpreter that runs it, "
+                "because the interpreter name is shared by countless unrelated "
+                "processes and is exactly the kind of marker Part 1 of this change "
+                "exists to stop from swallowing a plugin-spawned process."
+            ),
+        )
+    )
+    registry.register(
+        ComponentSpec(
+            key=KEY_CLAUDE_CODE_HOST,
+            role=ROLE_OBSERVED,
+            markers=["claude.exe"],
+            description=(
+                "The Claude Code CLI host process itself (observed on this machine as "
+                "C:\\Users\\<user>\\.local\\bin\\claude.exe), plus every console host and "
+                "shell it spawns to run a tool call (conhost.exe, sh.exe, cmd.exe, and "
+                "any bash.exe not already claimed by the statusline marker above), "
+                "attributed here by ANCESTRY rather than by their own name. Those "
+                "interpreter and console-host names are generic and shared by "
+                "unrelated software, so this component intentionally carries no "
+                "marker for any of them; a process reaches this component only by "
+                "having claude.exe somewhere in its ancestor chain. Processes that a "
+                "real measurement window shows running under claude.exe but NOT "
+                "reachable by ancestry (or where the host's own binary name differs "
+                "from claude.exe on a given machine) are left unattributed rather than "
+                "guessed at; see the module docstring for what this deliberately does "
+                "not cover."
             ),
         )
     )

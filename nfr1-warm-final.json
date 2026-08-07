@@ -1,0 +1,392 @@
+{
+  "phase": "warm",
+  "verdict": "INDETERMINATE",
+  "reasons": [
+    "4 observed process(es) could not be attributed, and could not be shown not to descend from the plugin either, because their ancestry could not be walked back to a process that predates the window"
+  ],
+  "tool_calls_recorded": 10,
+  "tool_calls_required": 10,
+  "turn_boundary": {
+    "crossed": false,
+    "witnesses": [
+      {
+        "witness": "stop_log",
+        "path": "C:\\Users\\techd\\.claude\\memory\\logs\\stop-notifier.log",
+        "watched": true,
+        "baseline": [
+          10633,
+          1785999493.374911
+        ],
+        "current": [
+          10633,
+          1785999493.374911
+        ],
+        "fired": false
+      },
+      {
+        "witness": "stop_process",
+        "fired": false,
+        "excluded_processes_observed": 0,
+        "note": "a process attributed to the retained Stop or Notification hook appeared inside the window, which is only possible across a turn boundary"
+      },
+      {
+        "witness": "declared",
+        "fired": false,
+        "reasons": []
+      }
+    ],
+    "effect": "window stayed inside a single response turn"
+  },
+  "endpoint_delta": {
+    "observed_process_count": 4,
+    "counts_by_component": {
+      "plugin": 0,
+      "retained_user_hooks": 0,
+      "mcp_user_scope": 0,
+      "engine_non_plugin": 0,
+      "harness_self": 0,
+      "statusline_hook": 0,
+      "claude_code_host": 0,
+      "__unattributed__": 3,
+      "__not_plugin_descended__": 1
+    },
+    "plugin_attributable_count": 0,
+    "permitted_exclusion_count": 0,
+    "unattributed_count": 3,
+    "not_plugin_descended_count": 1,
+    "access_denied_count": 3,
+    "unattributed_processes": [
+      {
+        "process": {
+          "pid": 16304,
+          "ppid": 2564,
+          "name": "MoUsoCoreWorker.exe",
+          "exe": "C:\\Windows\\UUS\\amd64\\MoUsoCoreWorker.exe",
+          "cmdline": null,
+          "create_token": "1785999815.439101",
+          "access_denied": true
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "operating system withheld the command line and executable path, so the process cannot be shown to not belong to the plugin"
+      },
+      {
+        "process": {
+          "pid": 35204,
+          "ppid": 1640,
+          "name": "svchost.exe",
+          "exe": "C:\\Windows\\System32\\svchost.exe",
+          "cmdline": null,
+          "create_token": "1785999648.984749",
+          "access_denied": true
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "operating system withheld the command line and executable path, so the process cannot be shown to not belong to the plugin"
+      },
+      {
+        "process": {
+          "pid": 41584,
+          "ppid": 1820,
+          "name": "WmiPrvSE.exe",
+          "exe": "C:\\Windows\\System32\\wbem\\WmiPrvSE.exe",
+          "cmdline": null,
+          "create_token": "1785999710.725033",
+          "access_denied": true
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "operating system withheld the command line and executable path, so the process cannot be shown to not belong to the plugin"
+      }
+    ],
+    "attribution_bases": {
+      "direct": 0,
+      "ancestry": 0,
+      "none": 4
+    }
+  },
+  "sampled_delta": {
+    "observed_process_count": 52,
+    "counts_by_component": {
+      "plugin": 0,
+      "retained_user_hooks": 0,
+      "mcp_user_scope": 0,
+      "engine_non_plugin": 0,
+      "harness_self": 0,
+      "statusline_hook": 0,
+      "claude_code_host": 47,
+      "__unattributed__": 4,
+      "__not_plugin_descended__": 1
+    },
+    "plugin_attributable_count": 0,
+    "permitted_exclusion_count": 0,
+    "unattributed_count": 4,
+    "not_plugin_descended_count": 1,
+    "access_denied_count": 3,
+    "unattributed_processes": [
+      {
+        "process": {
+          "pid": 15228,
+          "ppid": 1820,
+          "name": "backgroundTaskHost.exe",
+          "exe": "C:\\Windows\\System32\\backgroundTaskHost.exe",
+          "cmdline": "C:\\WINDOWS\\system32\\backgroundTaskHost.exe -ServerName:App.AppXe9cvj1thv1hmcw0cs98xm3r97tyzy2xs.mca",
+          "create_token": "1785999582.214991",
+          "access_denied": false
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "could not be attributed: plugin ancestry was neither established nor ruled out, because the walk ended terminated_but_a_hop_was_unreadable"
+      },
+      {
+        "process": {
+          "pid": 16304,
+          "ppid": 2564,
+          "name": "MoUsoCoreWorker.exe",
+          "exe": "C:\\Windows\\UUS\\amd64\\MoUsoCoreWorker.exe",
+          "cmdline": null,
+          "create_token": "1785999815.439101",
+          "access_denied": true
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "operating system withheld the command line and executable path, so the process cannot be shown to not belong to the plugin"
+      },
+      {
+        "process": {
+          "pid": 35204,
+          "ppid": 1640,
+          "name": "svchost.exe",
+          "exe": "C:\\Windows\\System32\\svchost.exe",
+          "cmdline": null,
+          "create_token": "1785999648.984749",
+          "access_denied": true
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "operating system withheld the command line and executable path, so the process cannot be shown to not belong to the plugin"
+      },
+      {
+        "process": {
+          "pid": 41584,
+          "ppid": 1820,
+          "name": "WmiPrvSE.exe",
+          "exe": "C:\\Windows\\System32\\wbem\\WmiPrvSE.exe",
+          "cmdline": null,
+          "create_token": "1785999710.725033",
+          "access_denied": true
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "operating system withheld the command line and executable path, so the process cannot be shown to not belong to the plugin"
+      }
+    ],
+    "attribution_bases": {
+      "direct": 0,
+      "ancestry": 47,
+      "none": 5
+    }
+  },
+  "union_delta": {
+    "observed_process_count": 52,
+    "counts_by_component": {
+      "plugin": 0,
+      "retained_user_hooks": 0,
+      "mcp_user_scope": 0,
+      "engine_non_plugin": 0,
+      "harness_self": 0,
+      "statusline_hook": 0,
+      "claude_code_host": 47,
+      "__unattributed__": 4,
+      "__not_plugin_descended__": 1
+    },
+    "plugin_attributable_count": 0,
+    "permitted_exclusion_count": 0,
+    "unattributed_count": 4,
+    "not_plugin_descended_count": 1,
+    "access_denied_count": 3,
+    "unattributed_processes": [
+      {
+        "process": {
+          "pid": 15228,
+          "ppid": 1820,
+          "name": "backgroundTaskHost.exe",
+          "exe": "C:\\Windows\\System32\\backgroundTaskHost.exe",
+          "cmdline": "C:\\WINDOWS\\system32\\backgroundTaskHost.exe -ServerName:App.AppXe9cvj1thv1hmcw0cs98xm3r97tyzy2xs.mca",
+          "create_token": "1785999582.214991",
+          "access_denied": false
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "could not be attributed: plugin ancestry was neither established nor ruled out, because the walk ended terminated_but_a_hop_was_unreadable"
+      },
+      {
+        "process": {
+          "pid": 16304,
+          "ppid": 2564,
+          "name": "MoUsoCoreWorker.exe",
+          "exe": "C:\\Windows\\UUS\\amd64\\MoUsoCoreWorker.exe",
+          "cmdline": null,
+          "create_token": "1785999815.439101",
+          "access_denied": true
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "operating system withheld the command line and executable path, so the process cannot be shown to not belong to the plugin"
+      },
+      {
+        "process": {
+          "pid": 35204,
+          "ppid": 1640,
+          "name": "svchost.exe",
+          "exe": "C:\\Windows\\System32\\svchost.exe",
+          "cmdline": null,
+          "create_token": "1785999648.984749",
+          "access_denied": true
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "operating system withheld the command line and executable path, so the process cannot be shown to not belong to the plugin"
+      },
+      {
+        "process": {
+          "pid": 41584,
+          "ppid": 1820,
+          "name": "WmiPrvSE.exe",
+          "exe": "C:\\Windows\\System32\\wbem\\WmiPrvSE.exe",
+          "cmdline": null,
+          "create_token": "1785999710.725033",
+          "access_denied": true
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "operating system withheld the command line and executable path, so the process cannot be shown to not belong to the plugin"
+      }
+    ],
+    "attribution_bases": {
+      "direct": 0,
+      "ancestry": 47,
+      "none": 5
+    }
+  },
+  "authoritative_source": "union_delta",
+  "authoritative_source_rationale": "union of the endpoint and sampled deltas; neither source alone is sound, and preferring one lets the other's blind spot become a pass",
+  "probe": {
+    "before": {
+      "captured_at": 1785999590.196492,
+      "backend": "psutil",
+      "is_perturbing": false,
+      "process_count": 471,
+      "enumeration_errors": 0,
+      "enumeration_error_samples": []
+    },
+    "after": {
+      "captured_at": 1785999835.9144769,
+      "backend": "psutil",
+      "is_perturbing": false,
+      "process_count": 468,
+      "enumeration_errors": 0,
+      "enumeration_error_samples": []
+    },
+    "sampler": {
+      "interval_seconds": 0.05,
+      "poll_count": 1428,
+      "observed_blind_spot_seconds": 0.05,
+      "blind_spot_note": "a process whose entire lifetime is shorter than the polling interval can still be missed; sampling narrows this window, it does not close it",
+      "errors": [],
+      "contributed_observations": true
+    },
+    "backend_is_perturbing": false,
+    "window_seconds": 245.71798491477966
+  },
+  "transcript": "C:\\Users\\techd\\.claude\\projects\\C--Users-techd-Documents-workspace-spring-tool-suite-4-4-27-0-new-claude-workflow-engine\\902b38cf-1965-4072-bec8-1a69d3ddb049.jsonl",
+  "anchored_at": "last_assistant_record_fallback",
+  "counted": "tool_result completions",
+  "leading_tool_calls_skipped": 1,
+  "observed_tool_calls": [
+    {
+      "id": "toolu_01M8pMi6c45UKjKg6Ymm8RxR",
+      "name": "Bash",
+      "timestamp": "2026-08-06T06:59:38.238Z"
+    },
+    {
+      "id": "toolu_01KTKZUsfUerotD4UfzLYhTF",
+      "name": "Bash",
+      "timestamp": "2026-08-06T06:59:38.784Z"
+    },
+    {
+      "id": "toolu_01KpDe8LmYQtanAjVMZ9Vrmt",
+      "name": "Bash",
+      "timestamp": "2026-08-06T06:59:39.331Z"
+    },
+    {
+      "id": "toolu_016hUphhthkvj2pdTM1VaHQM",
+      "name": "Bash",
+      "timestamp": "2026-08-06T06:59:39.875Z"
+    },
+    {
+      "id": "toolu_01HBobci2i21UDjCX1TktAEi",
+      "name": "Bash",
+      "timestamp": "2026-08-06T06:59:40.424Z"
+    },
+    {
+      "id": "toolu_01T7THiehVzrjeLcFfDRywBX",
+      "name": "Bash",
+      "timestamp": "2026-08-06T06:59:40.969Z"
+    },
+    {
+      "id": "toolu_01M1P8L5C5cVFhzZdkQqi9v3",
+      "name": "Bash",
+      "timestamp": "2026-08-06T06:59:41.514Z"
+    },
+    {
+      "id": "toolu_01MKmgjxgJLDryNUgnykMPUb",
+      "name": "Bash",
+      "timestamp": "2026-08-06T06:59:42.061Z"
+    },
+    {
+      "id": "toolu_01GxdsummNKeQoBsiVikCXzi",
+      "name": "Bash",
+      "timestamp": "2026-08-06T06:59:42.612Z"
+    },
+    {
+      "id": "toolu_01T8LNnRqBraimU4DsZLqnN9",
+      "name": "Bash",
+      "timestamp": "2026-08-06T06:59:42.833Z"
+    }
+  ],
+  "single_phase_note": "this is one phase, not an NFR-1 report. Assembling a report from two separately observed phases needs a Measurement that can round-trip through JSON, which harness.py does not provide; build_report takes Measurement objects only. Until that exists, the phases cannot be combined across invocations."
+}

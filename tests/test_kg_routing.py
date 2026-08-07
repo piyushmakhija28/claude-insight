@@ -368,27 +368,32 @@ class TestParseArgsKgRouting:
 
 
 class TestBuildFilledPromptKgRoutingBlock:
+    """Runtime grounding is prepended to the master template, not substituted in.
+
+    ORCHESTRATION_TEMPLATE.md is a standalone instruction document: its braces
+    are path patterns (``knowledge-graph/{slug}/agents.json``) and authoring
+    directives (``Detected {N} domains``) that the orchestrator fills itself.
+    The stand-in below carries the same shape so a regression to placeholder
+    substitution corrupts it and fails a test.
+    """
+
     _TEMPLATE = (
-        "TASK: {user_requirements}\n"
-        "RUNTIME: {runtime_context_json_block}\n"
-        "COMPLEXITY: {complexity_score_display}\n"
-        "RISK: {codebase_risk_level}\n"
-        "DZ: {codebase_danger_zones}\n"
-        "AM: {codebase_affected_methods}\n"
-        "HN: {codebase_hot_nodes}\n"
-        "KG ROUTING:\n{kg_routing_block}\n"
+        "### STEP 0 - LEAN KG LOAD\n"
+        "Read knowledge-graph/{slug}/agents.json for each detected domain.\n"
+        'Report: "Detected {N} domains from {X} agents (built: {date})."\n'
+        "### STEP 7 - ANTI-HALLUCINATION LAYER (MANDATORY)\n"
     )
 
-    def _base_args(self, kg_routing_json):
+    def _base_args(self, kg_routing_json, call_graph_json="{}"):
         return {
             "task_description": "do the thing",
             "complexity_score": 5,
-            "call_graph_json": "{}",
+            "call_graph_json": call_graph_json,
             "kg_routing_json": kg_routing_json,
             "runtime_context_json": "{}",
         }
 
-    def test_resolved_routing_substitutes_agent_grounding(self):
+    def test_resolved_routing_grounding_reaches_prompt(self):
         kg_routing = {
             "status": "resolved",
             "domain": "healthcare",
@@ -398,20 +403,48 @@ class TestBuildFilledPromptKgRoutingBlock:
             "persona_markdown": "persona body",
         }
         filled = _build_filled_prompt(self._TEMPLATE, self._base_args(json.dumps(kg_routing)))
-        assert "{kg_routing_block}" not in filled
         assert "clinical-systems-engineer" in filled
         assert "hl7-fhir-core" in filled
+        assert "healthcare" in filled
 
-    def test_unresolved_routing_substitutes_legacy_note(self):
+    def test_unresolved_routing_emits_legacy_note(self):
         kg_routing = {"status": "unresolved", "notes": "no match"}
         filled = _build_filled_prompt(self._TEMPLATE, self._base_args(json.dumps(kg_routing)))
-        assert "{kg_routing_block}" not in filled
         assert "legacy path" in filled
+        assert "clinical-systems-engineer" not in filled
 
     def test_malformed_kg_routing_json_does_not_raise(self):
         filled = _build_filled_prompt(self._TEMPLATE, self._base_args("not valid json"))
-        assert "{kg_routing_block}" not in filled
         assert "legacy path" in filled
+
+    def test_master_template_body_is_passed_through_unmodified(self):
+        """The template must survive byte-for-byte, braces included.
+
+        This is the guard against reverting to ``str.replace()`` substitution:
+        rewriting ``{slug}`` or ``{N}`` would corrupt the master's own path
+        patterns and authoring directives.
+        """
+        filled = _build_filled_prompt(self._TEMPLATE, self._base_args("{}"))
+        assert filled.endswith(self._TEMPLATE)
+        assert "knowledge-graph/{slug}/agents.json" in filled
+        assert "{N} domains from {X} agents" in filled
+
+    def test_runtime_values_reach_prompt(self):
+        call_graph = json.dumps(
+            {
+                "risk_level": "HIGH",
+                "danger_zones": ["auth/login"],
+                "affected_methods": ["verify_token"],
+                "hot_nodes": ["AuthService"],
+            }
+        )
+        filled = _build_filled_prompt(self._TEMPLATE, self._base_args("{}", call_graph))
+        assert "do the thing" in filled
+        assert "5/25" in filled
+        assert "HIGH" in filled
+        assert "auth/login" in filled
+        assert "verify_token" in filled
+        assert "AuthService" in filled
 
 
 # ===========================================================================
@@ -425,8 +458,6 @@ class TestStep0KgRoutingPreInjection:
             captured_calls.append((script_name, args))
             if script_name == "prompt_gen_expert_caller":
                 return {"status": "SUCCESS", "llm_response": "orchestration prompt body", "prompt": "raw"}
-            if script_name == "todo_decomposer":
-                return {"status": "SUCCESS", "todo_list": []}
             return {"status": "SUCCESS"}
 
         return _side_effect
@@ -479,3 +510,79 @@ class TestStep0KgRoutingPreInjection:
         prompt_gen_calls = [c for c in captured_calls if c[0] == "prompt_gen_expert_caller"]
         assert len(prompt_gen_calls) == 1
         assert "--kg-routing-json" in prompt_gen_calls[0][1]
+
+
+# ===========================================================================
+# step1_task_analysis_node -- fail loud when the master template is missing
+# ===========================================================================
+
+
+class TestStep1TemplateLoadIsFatal:
+    """Losing the master template must stop the pipeline, not degrade it.
+
+    Falling back to the raw user message would run every downstream step with
+    no KG routing, no decision-tree traversal and no STEP 7 anti-hallucination
+    layer, while still reporting success. The abort is paired with a negative
+    test so a blanket "any ERROR is fatal" rewrite -- which would make an
+    ordinary LLM hiccup unrecoverable -- fails here.
+    """
+
+    def _script_mock(self, prompt_gen_payload):
+        def _side_effect(script_name, args=None, model_tier=None, silence_interval=None):
+            if script_name == "prompt_gen_expert_caller":
+                return prompt_gen_payload
+            return {"status": "SUCCESS"}
+
+        return _side_effect
+
+    def test_template_load_failure_aborts_the_pipeline(self):
+        from langgraph_engine.sdlc_pipeline.architecture.prompt_gen_expert_caller import ERROR_KIND_TEMPLATE_LOAD_FAILED
+        from langgraph_engine.sdlc_pipeline.nodes.task_orchestration import (
+            OrchestrationTemplateUnavailable,
+            step1_task_analysis_node,
+        )
+
+        payload = {
+            "status": "ERROR",
+            "error_kind": ERROR_KIND_TEMPLATE_LOAD_FAILED,
+            "error": "claude-global-library not found. Expected sibling at: /nowhere",
+        }
+
+        with patch(
+            "langgraph_engine.sdlc_pipeline.helpers.call_execution_script",
+            side_effect=self._script_mock(payload),
+        ):
+            with pytest.raises(OrchestrationTemplateUnavailable) as excinfo:
+                step1_task_analysis_node({"user_message": "build a thing", "project_root": "."})
+
+        assert "claude-global-library not found" in str(excinfo.value)
+
+    def test_llm_failure_does_not_abort_and_still_falls_back(self):
+        from langgraph_engine.sdlc_pipeline.nodes.task_orchestration import step1_task_analysis_node
+
+        payload = {
+            "status": "ERROR",
+            "error": "claude CLI exited non-zero",
+            "prompt": "truncated copy of the input template",
+        }
+
+        with patch(
+            "langgraph_engine.sdlc_pipeline.helpers.call_execution_script",
+            side_effect=self._script_mock(payload),
+        ):
+            result = step1_task_analysis_node({"user_message": "build a thing", "project_root": "."})
+
+        assert result is not None
+
+    def test_success_path_is_unaffected(self):
+        from langgraph_engine.sdlc_pipeline.nodes.task_orchestration import step1_task_analysis_node
+
+        payload = {"status": "SUCCESS", "llm_response": "", "prompt": "assembled master prompt body"}
+
+        with patch(
+            "langgraph_engine.sdlc_pipeline.helpers.call_execution_script",
+            side_effect=self._script_mock(payload),
+        ):
+            result = step1_task_analysis_node({"user_message": "build a thing", "project_root": "."})
+
+        assert result is not None

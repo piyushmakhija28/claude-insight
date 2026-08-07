@@ -8,7 +8,7 @@ Coverage:
   - preflight_guard -> level1   (auto_fix_complete: bool, required)
   - level1 -> level3         (combined_complexity_score: 1-25, session_synced: bool)
   - pre_analysis -> step0    (pre_analysis_result: dict, call_graph_metrics: dict)
-  - step0 -> step8           (orchestration_prompt: str >=200, orchestrator_result: str >=50)
+  - step0 -> step8           (orchestration_prompt: str >=200, orchestrator_result: dict)
 
 Happy path: violations == []
 Error path: len(violations) >= 1, check_type == "transition"
@@ -134,21 +134,41 @@ def test_guard_pre0_to_step1_fail():
 
 # ---------------------------------------------------------------------------
 # Guard: step0 -> step8
-# PreconditionSpec: orchestration_prompt (str, min_val=200), orchestrator_result (str, min_val=50)
+# PreconditionSpec: orchestration_prompt (str, min_val=200), orchestrator_result (dict)
 # ---------------------------------------------------------------------------
 
 
 def test_guard_step1_to_step2_pass():
-    """
-    orchestration_prompt must be >= 200 chars and orchestrator_result >= 50 chars.
+    """orchestration_prompt must be >= 200 chars; orchestrator_result must be a dict.
 
-    The invariants.py comment says: "for str: min_val = minimum string length"
-    The verifier uses len(val) for str in the range check.
+    This test previously passed a 60-character string for orchestrator_result,
+    matching a spec that declared it `str` with min_val=50. The node has always
+    written a dict, so the spec -- and this test with it -- described something
+    that never existed. Both were corrected on 2026-08-07.
     """
     state = {
         "orchestration_prompt": "Phase A " + "x" * 195,  # 8 + 195 = 203 chars >= 200
-        "orchestrator_result": "y" * 60,  # 60 chars >= 50
+        "orchestrator_result": {"mode": "emitted", "success": True, "prompt_chars": 2027},
     }
     verifier = RuntimeVerifier.get_instance()
     violations = verifier.check_level_transition("step0", "step8", state)
     assert violations == []
+
+
+def test_guard_step1_to_step2_rejects_string_orchestrator_result():
+    """A string orchestrator_result is rejected, not silently accepted.
+
+    The pair to the test above, and the one that was missing: with only a pass
+    case on record, the spec could declare any type at all and nothing would
+    notice. That is exactly how `str, min_val=50` survived against a node that
+    emits a dict.
+    """
+    state = {
+        "orchestration_prompt": "Phase A " + "x" * 195,
+        "orchestrator_result": "y" * 60,
+    }
+    verifier = RuntimeVerifier.get_instance()
+    violations = verifier.check_level_transition("step0", "step8", state)
+    assert [
+        v for v in violations if v["key"] == "orchestrator_result"
+    ], "a str orchestrator_result must be reported as a violation, got: %r" % (violations,)

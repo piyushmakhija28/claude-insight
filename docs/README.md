@@ -7,7 +7,7 @@ permits: `README.md`, `CLAUDE.md`, `SRS.md`, `CHANGELOG.md` and `VERSION`.
 | Folder | Contains | Files |
 |---|---|---|
 | [`api/`](api/) | API specifications | 1 |
-| [`architecture/`](architecture/) | Architecture and design | 18 |
+| [`architecture/`](architecture/) | Architecture and design | 19 |
 | [`contributing/`](contributing/) | Contribution and community files | 5 |
 | [`guides/`](guides/) | How-to guides and runbooks | 21 |
 | [`phase-0-requirements/`](phase-0-requirements/) | Requirements and sequencing | 7 |
@@ -21,7 +21,7 @@ permits: `README.md`, `CLAUDE.md`, `SRS.md`, `CHANGELOG.md` and `VERSION`.
 | [`phase-8-alignment/`](phase-8-alignment/) | Pre-implementation alignment | 4 |
 | [`policies/`](policies/) | Pipeline policies | 46 |
 | [`releases/`](releases/) | Per-release design notes | 7 |
-| [`reports/`](reports/) | Investigations and audits | 25 |
+| [`reports/`](reports/) | Investigations and audits | 26 |
 | [`standards/`](standards/) | Coding and testing standards | 52 |
 
 ---

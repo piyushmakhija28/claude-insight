@@ -60,8 +60,6 @@ def _mock_call_execution_script(captured_calls):
         captured_calls.append((script_name, args))
         if script_name == "prompt_gen_expert_caller":
             return {"status": "SUCCESS", "llm_response": "orchestration prompt body", "prompt": "raw"}
-        if script_name == "todo_decomposer":
-            return {"status": "SUCCESS", "todo_list": []}
         return {"status": "SUCCESS"}
 
     return _side_effect

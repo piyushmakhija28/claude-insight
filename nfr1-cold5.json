@@ -1,0 +1,2942 @@
+{
+  "phase": "cold",
+  "verdict": "INDETERMINATE",
+  "reasons": [
+    "79 observed process(es) could not be attributed, and could not be shown not to descend from the plugin either, because their ancestry could not be walked back to a process that predates the window"
+  ],
+  "tool_calls_recorded": 10,
+  "tool_calls_required": 10,
+  "turn_boundary": {
+    "crossed": false,
+    "witnesses": [
+      {
+        "witness": "stop_log",
+        "path": "C:\\Users\\techd\\.claude\\memory\\logs\\stop-notifier.log",
+        "watched": true,
+        "baseline": [
+          9097,
+          1785997479.504712
+        ],
+        "current": [
+          9097,
+          1785997479.504712
+        ],
+        "fired": false
+      },
+      {
+        "witness": "stop_process",
+        "fired": false,
+        "excluded_processes_observed": 0,
+        "note": "a process attributed to the retained Stop or Notification hook appeared inside the window, which is only possible across a turn boundary"
+      },
+      {
+        "witness": "declared",
+        "fired": false,
+        "reasons": []
+      }
+    ],
+    "effect": "window stayed inside a single response turn"
+  },
+  "endpoint_delta": {
+    "observed_process_count": 5,
+    "counts_by_component": {
+      "plugin": 0,
+      "retained_user_hooks": 0,
+      "mcp_user_scope": 0,
+      "engine_non_plugin": 0,
+      "harness_self": 0,
+      "statusline_hook": 0,
+      "claude_code_host": 0,
+      "__unattributed__": 3,
+      "__not_plugin_descended__": 2
+    },
+    "plugin_attributable_count": 0,
+    "permitted_exclusion_count": 0,
+    "unattributed_count": 3,
+    "not_plugin_descended_count": 2,
+    "access_denied_count": 3,
+    "unattributed_processes": [
+      {
+        "process": {
+          "pid": 26904,
+          "ppid": 1820,
+          "name": "WmiPrvSE.exe",
+          "exe": "C:\\Windows\\System32\\wbem\\WmiPrvSE.exe",
+          "cmdline": null,
+          "create_token": "1785998115.926056",
+          "access_denied": true
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "operating system withheld the command line and executable path, so the process cannot be shown to not belong to the plugin"
+      },
+      {
+        "process": {
+          "pid": 35256,
+          "ppid": 2564,
+          "name": "MoUsoCoreWorker.exe",
+          "exe": "C:\\Windows\\UUS\\amd64\\MoUsoCoreWorker.exe",
+          "cmdline": null,
+          "create_token": "1785998155.248266",
+          "access_denied": true
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "operating system withheld the command line and executable path, so the process cannot be shown to not belong to the plugin"
+      },
+      {
+        "process": {
+          "pid": 36368,
+          "ppid": 1640,
+          "name": "svchost.exe",
+          "exe": "C:\\Windows\\System32\\svchost.exe",
+          "cmdline": null,
+          "create_token": "1785997848.678871",
+          "access_denied": true
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "operating system withheld the command line and executable path, so the process cannot be shown to not belong to the plugin"
+      }
+    ],
+    "attribution_bases": {
+      "direct": 0,
+      "ancestry": 0,
+      "none": 5
+    }
+  },
+  "sampled_delta": {
+    "observed_process_count": 146,
+    "counts_by_component": {
+      "plugin": 0,
+      "retained_user_hooks": 0,
+      "mcp_user_scope": 0,
+      "engine_non_plugin": 0,
+      "harness_self": 0,
+      "statusline_hook": 0,
+      "claude_code_host": 45,
+      "__unattributed__": 79,
+      "__not_plugin_descended__": 22
+    },
+    "plugin_attributable_count": 0,
+    "permitted_exclusion_count": 0,
+    "unattributed_count": 79,
+    "not_plugin_descended_count": 22,
+    "access_denied_count": 22,
+    "unattributed_processes": [
+      {
+        "process": {
+          "pid": 532,
+          "ppid": 40940,
+          "name": "sh.exe",
+          "exe": "C:\\Program Files\\Git\\usr\\bin\\sh.exe",
+          "cmdline": "C:\\Program Files\\Git\\usr\\bin\\sh.exe /c/Users/techd/AppData/Roaming/npm/ng completion script",
+          "create_token": "1785997915.172766",
+          "access_denied": false
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "could not be attributed: plugin ancestry was neither established nor ruled out, because the walk ended broken_chain"
+      },
+      {
+        "process": {
+          "pid": 2336,
+          "ppid": 29704,
+          "name": "node.exe",
+          "exe": "C:\\Program Files\\nodejs\\node.exe",
+          "cmdline": "C:\\Program Files\\nodejs\\node.exe C:\\Users\\techd\\AppData\\Roaming\\npm/node_modules/@angular/cli/bin/ng.js completion script",
+          "create_token": "1785997979.719378",
+          "access_denied": false
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "could not be attributed: plugin ancestry was neither established nor ruled out, because the walk ended broken_chain"
+      },
+      {
+        "process": {
+          "pid": 3592,
+          "ppid": 29100,
+          "name": "cmd.exe",
+          "exe": "C:\\Windows\\System32\\cmd.exe",
+          "cmdline": "C:\\WINDOWS\\system32\\cmd.exe /d /s /c npm --version",
+          "create_token": "1785998050.721474",
+          "access_denied": false
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "could not be attributed: plugin ancestry was neither established nor ruled out, because the walk ended broken_chain"
+      },
+      {
+        "process": {
+          "pid": 3784,
+          "ppid": 40216,
+          "name": "cmd.exe",
+          "exe": "C:\\Windows\\System32\\cmd.exe",
+          "cmdline": "C:\\WINDOWS\\system32\\cmd.exe /d /s /c npm --version",
+          "create_token": "1785997754.945370",
+          "access_denied": false
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "could not be attributed: plugin ancestry was neither established nor ruled out, because the walk ended broken_chain"
+      },
+      {
+        "process": {
+          "pid": 4248,
+          "ppid": 20112,
+          "name": "conhost.exe",
+          "exe": "C:\\Windows\\System32\\conhost.exe",
+          "cmdline": null,
+          "create_token": "1785997653.412185",
+          "access_denied": true
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "operating system withheld the command line and executable path, so the process cannot be shown to not belong to the plugin"
+      },
+      {
+        "process": {
+          "pid": 5284,
+          "ppid": 30740,
+          "name": "powershell.exe",
+          "exe": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+          "cmdline": null,
+          "create_token": "1785997678.388815",
+          "access_denied": true
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "operating system withheld the command line and executable path, so the process cannot be shown to not belong to the plugin"
+      },
+      {
+        "process": {
+          "pid": 6624,
+          "ppid": 7468,
+          "name": "SearchProtocolHost.exe",
+          "exe": "C:\\Windows\\System32\\SearchProtocolHost.exe",
+          "cmdline": null,
+          "create_token": "1785998051.771155",
+          "access_denied": true
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "operating system withheld the command line and executable path, so the process cannot be shown to not belong to the plugin"
+      },
+      {
+        "process": {
+          "pid": 6788,
+          "ppid": 16748,
+          "name": "cmd.exe",
+          "exe": "C:\\Windows\\System32\\cmd.exe",
+          "cmdline": "C:\\WINDOWS\\system32\\cmd.exe /d /s /c npm --version",
+          "create_token": "1785997711.372986",
+          "access_denied": false
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "could not be attributed: plugin ancestry was neither established nor ruled out, because the walk ended broken_chain"
+      },
+      {
+        "process": {
+          "pid": 6924,
+          "ppid": 11152,
+          "name": "conhost.exe",
+          "exe": "C:\\Windows\\System32\\conhost.exe",
+          "cmdline": null,
+          "create_token": "1785997703.411667",
+          "access_denied": true
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "operating system withheld the command line and executable path, so the process cannot be shown to not belong to the plugin"
+      },
+      {
+        "process": {
+          "pid": 7056,
+          "ppid": 39228,
+          "name": "sh.exe",
+          "exe": "C:\\Program Files\\Git\\usr\\bin\\sh.exe",
+          "cmdline": "C:\\Program Files\\Git\\usr\\bin\\sh.exe /c/Users/techd/AppData/Roaming/npm/ng completion script",
+          "create_token": "1785997753.082323",
+          "access_denied": false
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "could not be attributed: plugin ancestry was neither established nor ruled out, because the walk ended broken_chain"
+      },
+      {
+        "process": {
+          "pid": 7384,
+          "ppid": 23432,
+          "name": "node.exe",
+          "exe": "C:\\Program Files\\nodejs\\node.exe",
+          "cmdline": "C:\\Program Files\\nodejs\\\\node.exe C:\\Program Files\\nodejs\\\\node_modules\\npm\\bin\\npm-cli.js --version",
+          "create_token": "1785997672.914588",
+          "access_denied": false
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "could not be attributed: plugin ancestry was neither established nor ruled out, because the walk ended broken_chain"
+      },
+      {
+        "process": {
+          "pid": 7504,
+          "ppid": 20752,
+          "name": "sh.exe",
+          "exe": "C:\\Program Files\\Git\\usr\\bin\\sh.exe",
+          "cmdline": "C:\\Program Files\\Git\\usr\\bin\\sh.exe /c/Users/techd/AppData/Roaming/npm/ng completion script",
+          "create_token": "1785997670.679825",
+          "access_denied": false
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "could not be attributed: plugin ancestry was neither established nor ruled out, because the walk ended broken_chain"
+      },
+      {
+        "process": {
+          "pid": 9860,
+          "ppid": 9956,
+          "name": "node.exe",
+          "exe": "C:\\Program Files\\nodejs\\node.exe",
+          "cmdline": "C:\\Program Files\\nodejs\\\\node.exe C:\\Program Files\\nodejs\\\\node_modules\\npm\\bin\\npm-prefix.js",
+          "create_token": "1785997755.040216",
+          "access_denied": false
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "could not be attributed: plugin ancestry was neither established nor ruled out, because the walk ended broken_chain"
+      },
+      {
+        "process": {
+          "pid": 9956,
+          "ppid": 3784,
+          "name": "cmd.exe",
+          "exe": "C:\\Windows\\System32\\cmd.exe",
+          "cmdline": "C:\\WINDOWS\\system32\\cmd.exe /c CALL C:\\Program Files\\nodejs\\\\node.exe C:\\Program Files\\nodejs\\\\node_modules\\npm\\bin\\npm-prefix.js",
+          "create_token": "1785997755.006787",
+          "access_denied": false
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "could not be attributed: plugin ancestry was neither established nor ruled out, because the walk ended broken_chain"
+      },
+      {
+        "process": {
+          "pid": 10620,
+          "ppid": 11316,
+          "name": "task.exe",
+          "exe": "C:\\Program Files\\Intel\\SUR\\QUEENCREEK\\x64\\task.exe",
+          "cmdline": null,
+          "create_token": "1785997776.787213",
+          "access_denied": true
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "operating system withheld the command line and executable path, so the process cannot be shown to not belong to the plugin"
+      },
+      {
+        "process": {
+          "pid": 11152,
+          "ppid": 30740,
+          "name": "powershell.exe",
+          "exe": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+          "cmdline": null,
+          "create_token": "1785997703.391453",
+          "access_denied": true
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "operating system withheld the command line and executable path, so the process cannot be shown to not belong to the plugin"
+      },
+      {
+        "process": {
+          "pid": 11316,
+          "ppid": 16596,
+          "name": "cmd.exe",
+          "exe": "C:\\Windows\\System32\\cmd.exe",
+          "cmdline": null,
+          "create_token": "1785997776.714426",
+          "access_denied": true
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "operating system withheld the command line and executable path, so the process cannot be shown to not belong to the plugin"
+      },
+      {
+        "process": {
+          "pid": 11748,
+          "ppid": 16596,
+          "name": "conhost.exe",
+          "exe": "C:\\Windows\\System32\\conhost.exe",
+          "cmdline": null,
+          "create_token": "1785997775.465280",
+          "access_denied": true
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "operating system withheld the command line and executable path, so the process cannot be shown to not belong to the plugin"
+      },
+      {
+        "process": {
+          "pid": 12708,
+          "ppid": 32620,
+          "name": "node.exe",
+          "exe": "C:\\Program Files\\nodejs\\node.exe",
+          "cmdline": "C:\\Program Files\\nodejs\\node.exe C:\\Users\\techd\\AppData\\Roaming\\npm/node_modules/@angular/cli/bin/ng.js completion script",
+          "create_token": "1785997671.073044",
+          "access_denied": false
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "could not be attributed: plugin ancestry was neither established nor ruled out, because the walk ended broken_chain"
+      },
+      {
+        "process": {
+          "pid": 12756,
+          "ppid": 6788,
+          "name": "cmd.exe",
+          "exe": "C:\\Windows\\System32\\cmd.exe",
+          "cmdline": "C:\\WINDOWS\\system32\\cmd.exe /c CALL C:\\Program Files\\nodejs\\\\node.exe C:\\Program Files\\nodejs\\\\node_modules\\npm\\bin\\npm-prefix.js",
+          "create_token": "1785997711.427966",
+          "access_denied": false
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "could not be attributed: plugin ancestry was neither established nor ruled out, because the walk ended broken_chain"
+      },
+      {
+        "process": {
+          "pid": 13372,
+          "ppid": 3204,
+          "name": "taskhostw.exe",
+          "exe": "C:\\Windows\\System32\\taskhostw.exe",
+          "cmdline": "taskhostw.exe CreativeId:18=128000000001615609;CourtesyOverrideRuleName:4=none;",
+          "create_token": "1785998041.747346",
+          "access_denied": false
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "could not be attributed: plugin ancestry was neither established nor ruled out, because the walk ended terminated_but_a_hop_was_unreadable"
+      },
+      {
+        "process": {
+          "pid": 13604,
+          "ppid": 29704,
+          "name": "sh.exe",
+          "exe": "C:\\Program Files\\Git\\usr\\bin\\sh.exe",
+          "cmdline": "C:\\Program Files\\Git\\usr\\bin\\sh.exe /c/Users/techd/AppData/Roaming/npm/ng completion script",
+          "create_token": "1785997979.260170",
+          "access_denied": false
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "could not be attributed: plugin ancestry was neither established nor ruled out, because the walk ended broken_chain"
+      },
+      {
+        "process": {
+          "pid": 14304,
+          "ppid": 3592,
+          "name": "cmd.exe",
+          "exe": "C:\\Windows\\System32\\cmd.exe",
+          "cmdline": "C:\\WINDOWS\\system32\\cmd.exe /c CALL C:\\Program Files\\nodejs\\\\node.exe C:\\Program Files\\nodejs\\\\node_modules\\npm\\bin\\npm-prefix.js",
+          "create_token": "1785998050.787886",
+          "access_denied": false
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "could not be attributed: plugin ancestry was neither established nor ruled out, because the walk ended broken_chain"
+      },
+      {
+        "process": {
+          "pid": 15204,
+          "ppid": 1820,
+          "name": "RuntimeBroker.exe",
+          "exe": "C:\\Windows\\System32\\RuntimeBroker.exe",
+          "cmdline": "C:\\Windows\\System32\\RuntimeBroker.exe -Embedding",
+          "create_token": "1785997645.809672",
+          "access_denied": false
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "could not be attributed: plugin ancestry was neither established nor ruled out, because the walk ended terminated_but_a_hop_was_unreadable"
+      },
+      {
+        "process": {
+          "pid": 16044,
+          "ppid": 21968,
+          "name": "cmd.exe",
+          "exe": "C:\\Windows\\System32\\cmd.exe",
+          "cmdline": "C:\\WINDOWS\\system32\\cmd.exe /d /s /c npm --version",
+          "create_token": "1785997857.815577",
+          "access_denied": false
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "could not be attributed: plugin ancestry was neither established nor ruled out, because the walk ended broken_chain"
+      },
+      {
+        "process": {
+          "pid": 16404,
+          "ppid": 27996,
+          "name": "cmd.exe",
+          "exe": "C:\\Windows\\System32\\cmd.exe",
+          "cmdline": "C:\\WINDOWS\\system32\\cmd.exe /c CALL C:\\Program Files\\nodejs\\\\node.exe C:\\Program Files\\nodejs\\\\node_modules\\npm\\bin\\npm-prefix.js",
+          "create_token": "1785997917.314095",
+          "access_denied": false
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "could not be attributed: plugin ancestry was neither established nor ruled out, because the walk ended broken_chain"
+      },
+      {
+        "process": {
+          "pid": 16420,
+          "ppid": 6788,
+          "name": "node.exe",
+          "exe": "C:\\Program Files\\nodejs\\node.exe",
+          "cmdline": "C:\\Program Files\\nodejs\\\\node.exe C:\\Program Files\\nodejs\\\\node_modules\\npm\\bin\\npm-cli.js --version",
+          "create_token": "1785997711.685301",
+          "access_denied": false
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "could not be attributed: plugin ancestry was neither established nor ruled out, because the walk ended broken_chain"
+      },
+      {
+        "process": {
+          "pid": 16596,
+          "ppid": 3204,
+          "name": "powershell.exe",
+          "exe": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+          "cmdline": null,
+          "create_token": "1785997775.428552",
+          "access_denied": true
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "operating system withheld the command line and executable path, so the process cannot be shown to not belong to the plugin"
+      },
+      {
+        "process": {
+          "pid": 16748,
+          "ppid": 27468,
+          "name": "node.exe",
+          "exe": "C:\\Program Files\\nodejs\\node.exe",
+          "cmdline": "C:\\Program Files\\nodejs\\node.exe C:\\Users\\techd\\AppData\\Roaming\\npm/node_modules/@angular/cli/bin/ng.js completion script",
+          "create_token": "1785997709.680020",
+          "access_denied": false
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "could not be attributed: plugin ancestry was neither established nor ruled out, because the walk ended broken_chain"
+      },
+      {
+        "process": {
+          "pid": 17632,
+          "ppid": 5284,
+          "name": "conhost.exe",
+          "exe": "C:\\Windows\\System32\\conhost.exe",
+          "cmdline": null,
+          "create_token": "1785997678.408368",
+          "access_denied": true
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "operating system withheld the command line and executable path, so the process cannot be shown to not belong to the plugin"
+      },
+      {
+        "process": {
+          "pid": 18352,
+          "ppid": 3784,
+          "name": "node.exe",
+          "exe": "C:\\Program Files\\nodejs\\node.exe",
+          "cmdline": "C:\\Program Files\\nodejs\\\\node.exe C:\\Program Files\\nodejs\\\\node_modules\\npm\\bin\\npm-cli.js --version",
+          "create_token": "1785997755.226907",
+          "access_denied": false
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "could not be attributed: plugin ancestry was neither established nor ruled out, because the walk ended broken_chain"
+      },
+      {
+        "process": {
+          "pid": 18868,
+          "ppid": 14304,
+          "name": "node.exe",
+          "exe": "C:\\Program Files\\nodejs\\node.exe",
+          "cmdline": "C:\\Program Files\\nodejs\\\\node.exe C:\\Program Files\\nodejs\\\\node_modules\\npm\\bin\\npm-prefix.js",
+          "create_token": "1785998050.830043",
+          "access_denied": false
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "could not be attributed: plugin ancestry was neither established nor ruled out, because the walk ended broken_chain"
+      },
+      {
+        "process": {
+          "pid": 20112,
+          "ppid": 30740,
+          "name": "powershell.exe",
+          "exe": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+          "cmdline": null,
+          "create_token": "1785997653.394358",
+          "access_denied": true
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "operating system withheld the command line and executable path, so the process cannot be shown to not belong to the plugin"
+      },
+      {
+        "process": {
+          "pid": 20308,
+          "ppid": 25608,
+          "name": "node.exe",
+          "exe": "C:\\Program Files\\nodejs\\node.exe",
+          "cmdline": "C:\\Program Files\\nodejs\\\\node.exe C:\\Program Files\\nodejs\\\\node_modules\\npm\\bin\\npm-prefix.js",
+          "create_token": "1785997672.737042",
+          "access_denied": false
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "could not be attributed: plugin ancestry was neither established nor ruled out, because the walk ended broken_chain"
+      },
+      {
+        "process": {
+          "pid": 20752,
+          "ppid": 32620,
+          "name": "sh.exe",
+          "exe": "C:\\Program Files\\Git\\usr\\bin\\sh.exe",
+          "cmdline": "C:\\Program Files\\Git\\usr\\bin\\sh.exe /c/Users/techd/AppData/Roaming/npm/ng completion script",
+          "create_token": "1785997670.655047",
+          "access_denied": false
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "could not be attributed: plugin ancestry was neither established nor ruled out, because the walk ended broken_chain"
+      },
+      {
+        "process": {
+          "pid": 20784,
+          "ppid": 39272,
+          "name": "sh.exe",
+          "exe": "C:\\Program Files\\Git\\usr\\bin\\sh.exe",
+          "cmdline": "C:\\Program Files\\Git\\usr\\bin\\sh.exe /c/Users/techd/AppData/Roaming/npm/ng completion script",
+          "create_token": "1785997855.626366",
+          "access_denied": false
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "could not be attributed: plugin ancestry was neither established nor ruled out, because the walk ended broken_chain"
+      },
+      {
+        "process": {
+          "pid": 21004,
+          "ppid": 11316,
+          "name": "conhost.exe",
+          "exe": "C:\\Windows\\System32\\conhost.exe",
+          "cmdline": null,
+          "create_token": "1785997776.731784",
+          "access_denied": true
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "operating system withheld the command line and executable path, so the process cannot be shown to not belong to the plugin"
+      },
+      {
+        "process": {
+          "pid": 21968,
+          "ppid": 20784,
+          "name": "node.exe",
+          "exe": "C:\\Program Files\\nodejs\\node.exe",
+          "cmdline": "C:\\Program Files\\nodejs\\node.exe C:\\Users\\techd\\AppData\\Roaming\\npm/node_modules/@angular/cli/bin/ng.js completion script",
+          "create_token": "1785997856.025651",
+          "access_denied": false
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "could not be attributed: plugin ancestry was neither established nor ruled out, because the walk ended broken_chain"
+      },
+      {
+        "process": {
+          "pid": 22248,
+          "ppid": 10620,
+          "name": "esrv.exe",
+          "exe": "C:\\Program Files\\Intel\\SUR\\QUEENCREEK\\x64\\esrv.exe",
+          "cmdline": "C:\\Program Files\\Intel\\SUR\\QUEENCREEK\\x64\\esrv.exe --start --start_options_handle 1156",
+          "create_token": "1785997776.934761",
+          "access_denied": false
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "could not be attributed: plugin ancestry was neither established nor ruled out, because the walk ended terminated_but_a_hop_was_unreadable"
+      },
+      {
+        "process": {
+          "pid": 22564,
+          "ppid": 30740,
+          "name": "powershell.exe",
+          "exe": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+          "cmdline": null,
+          "create_token": "1785997728.379203",
+          "access_denied": true
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "operating system withheld the command line and executable path, so the process cannot be shown to not belong to the plugin"
+      },
+      {
+        "process": {
+          "pid": 23084,
+          "ppid": 532,
+          "name": "sh.exe",
+          "exe": "C:\\Program Files\\Git\\usr\\bin\\sh.exe",
+          "cmdline": "C:\\Program Files\\Git\\usr\\bin\\sh.exe /c/Users/techd/AppData/Roaming/npm/ng completion script",
+          "create_token": "1785997915.206794",
+          "access_denied": false
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "could not be attributed: plugin ancestry was neither established nor ruled out, because the walk ended broken_chain"
+      },
+      {
+        "process": {
+          "pid": 23432,
+          "ppid": 12708,
+          "name": "cmd.exe",
+          "exe": "C:\\Windows\\System32\\cmd.exe",
+          "cmdline": "C:\\WINDOWS\\system32\\cmd.exe /d /s /c npm --version",
+          "create_token": "1785997672.660093",
+          "access_denied": false
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "could not be attributed: plugin ancestry was neither established nor ruled out, because the walk ended broken_chain"
+      },
+      {
+        "process": {
+          "pid": 23928,
+          "ppid": 27996,
+          "name": "node.exe",
+          "exe": "C:\\Program Files\\nodejs\\node.exe",
+          "cmdline": "C:\\Program Files\\nodejs\\\\node.exe C:\\Program Files\\nodejs\\\\node_modules\\npm\\bin\\npm-cli.js --version",
+          "create_token": "1785997917.628138",
+          "access_denied": false
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "could not be attributed: plugin ancestry was neither established nor ruled out, because the walk ended broken_chain"
+      },
+      {
+        "process": {
+          "pid": 24024,
+          "ppid": 532,
+          "name": "node.exe",
+          "exe": "C:\\Program Files\\nodejs\\node.exe",
+          "cmdline": "C:\\Program Files\\nodejs\\node.exe C:\\Users\\techd\\AppData\\Roaming\\npm/node_modules/@angular/cli/bin/ng.js completion script",
+          "create_token": "1785997915.533939",
+          "access_denied": false
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "could not be attributed: plugin ancestry was neither established nor ruled out, because the walk ended broken_chain"
+      },
+      {
+        "process": {
+          "pid": 24120,
+          "ppid": 1820,
+          "name": "WmiPrvSE.exe",
+          "exe": "C:\\Windows\\System32\\wbem\\WmiPrvSE.exe",
+          "cmdline": null,
+          "create_token": "1785997905.540742",
+          "access_denied": true
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "operating system withheld the command line and executable path, so the process cannot be shown to not belong to the plugin"
+      },
+      {
+        "process": {
+          "pid": 25368,
+          "ppid": 15100,
+          "name": "sh.exe",
+          "exe": "C:\\Program Files\\Git\\usr\\bin\\sh.exe",
+          "cmdline": "C:\\Program Files\\Git\\usr\\bin\\sh.exe /c/Users/techd/AppData/Roaming/npm/ng completion script",
+          "create_token": "1785998048.507860",
+          "access_denied": false
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "could not be attributed: plugin ancestry was neither established nor ruled out, because the walk ended broken_chain"
+      },
+      {
+        "process": {
+          "pid": 25392,
+          "ppid": 16044,
+          "name": "node.exe",
+          "exe": "C:\\Program Files\\nodejs\\node.exe",
+          "cmdline": "C:\\Program Files\\nodejs\\\\node.exe C:\\Program Files\\nodejs\\\\node_modules\\npm\\bin\\npm-cli.js --version",
+          "create_token": "1785997858.176618",
+          "access_denied": false
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "could not be attributed: plugin ancestry was neither established nor ruled out, because the walk ended broken_chain"
+      },
+      {
+        "process": {
+          "pid": 25812,
+          "ppid": 3592,
+          "name": "node.exe",
+          "exe": "C:\\Program Files\\nodejs\\node.exe",
+          "cmdline": "C:\\Program Files\\nodejs\\\\node.exe C:\\Program Files\\nodejs\\\\node_modules\\npm\\bin\\npm-cli.js --version",
+          "create_token": "1785998051.120608",
+          "access_denied": false
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "could not be attributed: plugin ancestry was neither established nor ruled out, because the walk ended broken_chain"
+      },
+      {
+        "process": {
+          "pid": 26436,
+          "ppid": 3204,
+          "name": "OfficeC2RClient.exe",
+          "exe": "C:\\Program Files\\Common Files\\microsoft shared\\ClickToRun\\OfficeC2RClient.exe",
+          "cmdline": null,
+          "create_token": "1785997854.589600",
+          "access_denied": true
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "operating system withheld the command line and executable path, so the process cannot be shown to not belong to the plugin"
+      },
+      {
+        "process": {
+          "pid": 26904,
+          "ppid": 1820,
+          "name": "WmiPrvSE.exe",
+          "exe": "C:\\Windows\\System32\\wbem\\WmiPrvSE.exe",
+          "cmdline": null,
+          "create_token": "1785998115.926056",
+          "access_denied": true
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "operating system withheld the command line and executable path, so the process cannot be shown to not belong to the plugin"
+      },
+      {
+        "process": {
+          "pid": 27468,
+          "ppid": 16216,
+          "name": "sh.exe",
+          "exe": "C:\\Program Files\\Git\\usr\\bin\\sh.exe",
+          "cmdline": "C:\\Program Files\\Git\\usr\\bin\\sh.exe /c/Users/techd/AppData/Roaming/npm/ng completion script",
+          "create_token": "1785997709.226820",
+          "access_denied": false
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "could not be attributed: plugin ancestry was neither established nor ruled out, because the walk ended broken_chain"
+      },
+      {
+        "process": {
+          "pid": 27996,
+          "ppid": 24024,
+          "name": "cmd.exe",
+          "exe": "C:\\Windows\\System32\\cmd.exe",
+          "cmdline": "C:\\WINDOWS\\system32\\cmd.exe /d /s /c npm --version",
+          "create_token": "1785997917.259602",
+          "access_denied": false
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "could not be attributed: plugin ancestry was neither established nor ruled out, because the walk ended broken_chain"
+      },
+      {
+        "process": {
+          "pid": 29100,
+          "ppid": 25368,
+          "name": "node.exe",
+          "exe": "C:\\Program Files\\nodejs\\node.exe",
+          "cmdline": "C:\\Program Files\\nodejs\\node.exe C:\\Users\\techd\\AppData\\Roaming\\npm/node_modules/@angular/cli/bin/ng.js completion script",
+          "create_token": "1785998049.077534",
+          "access_denied": false
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "could not be attributed: plugin ancestry was neither established nor ruled out, because the walk ended broken_chain"
+      },
+      {
+        "process": {
+          "pid": 29468,
+          "ppid": 30860,
+          "name": "cmd.exe",
+          "exe": "C:\\Windows\\System32\\cmd.exe",
+          "cmdline": "C:\\WINDOWS\\system32\\cmd.exe /c CALL C:\\Program Files\\nodejs\\\\node.exe C:\\Program Files\\nodejs\\\\node_modules\\npm\\bin\\npm-prefix.js",
+          "create_token": "1785997803.511160",
+          "access_denied": false
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "could not be attributed: plugin ancestry was neither established nor ruled out, because the walk ended broken_chain"
+      },
+      {
+        "process": {
+          "pid": 29664,
+          "ppid": 1820,
+          "name": "backgroundTaskHost.exe",
+          "exe": "C:\\Windows\\System32\\backgroundTaskHost.exe",
+          "cmdline": "C:\\WINDOWS\\system32\\backgroundTaskHost.exe -ServerName:App.AppXgx81f4t0vjvane7r4dtetjeh80p3nbpg.mca",
+          "create_token": "1785997775.631629",
+          "access_denied": false
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "could not be attributed: plugin ancestry was neither established nor ruled out, because the walk ended terminated_but_a_hop_was_unreadable"
+      },
+      {
+        "process": {
+          "pid": 29704,
+          "ppid": 2992,
+          "name": "sh.exe",
+          "exe": "C:\\Program Files\\Git\\usr\\bin\\sh.exe",
+          "cmdline": "C:\\Program Files\\Git\\usr\\bin\\sh.exe /c/Users/techd/AppData/Roaming/npm/ng completion script",
+          "create_token": "1785997979.215737",
+          "access_denied": false
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "could not be attributed: plugin ancestry was neither established nor ruled out, because the walk ended broken_chain"
+      },
+      {
+        "process": {
+          "pid": 29988,
+          "ppid": 35956,
+          "name": "cmd.exe",
+          "exe": "C:\\Windows\\System32\\cmd.exe",
+          "cmdline": "C:\\WINDOWS\\system32\\cmd.exe /d /s /c npm --version",
+          "create_token": "1785998124.672363",
+          "access_denied": false
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "could not be attributed: plugin ancestry was neither established nor ruled out, because the walk ended broken_chain"
+      },
+      {
+        "process": {
+          "pid": 30788,
+          "ppid": 22564,
+          "name": "conhost.exe",
+          "exe": "C:\\Windows\\System32\\conhost.exe",
+          "cmdline": null,
+          "create_token": "1785997728.396018",
+          "access_denied": true
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "operating system withheld the command line and executable path, so the process cannot be shown to not belong to the plugin"
+      },
+      {
+        "process": {
+          "pid": 30856,
+          "ppid": 30860,
+          "name": "node.exe",
+          "exe": "C:\\Program Files\\nodejs\\node.exe",
+          "cmdline": "C:\\Program Files\\nodejs\\\\node.exe C:\\Program Files\\nodejs\\\\node_modules\\npm\\bin\\npm-cli.js --version",
+          "create_token": "1785997803.735432",
+          "access_denied": false
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "could not be attributed: plugin ancestry was neither established nor ruled out, because the walk ended broken_chain"
+      },
+      {
+        "process": {
+          "pid": 30860,
+          "ppid": 32960,
+          "name": "cmd.exe",
+          "exe": "C:\\Windows\\System32\\cmd.exe",
+          "cmdline": "C:\\WINDOWS\\system32\\cmd.exe /d /s /c npm --version",
+          "create_token": "1785997803.466903",
+          "access_denied": false
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "could not be attributed: plugin ancestry was neither established nor ruled out, because the walk ended broken_chain"
+      },
+      {
+        "process": {
+          "pid": 31568,
+          "ppid": 35416,
+          "name": "sh.exe",
+          "exe": "C:\\Program Files\\Git\\usr\\bin\\sh.exe",
+          "cmdline": "C:\\Program Files\\Git\\usr\\bin\\sh.exe /c/Users/techd/AppData/Roaming/npm/ng completion script",
+          "create_token": "1785997801.707469",
+          "access_denied": false
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "could not be attributed: plugin ancestry was neither established nor ruled out, because the walk ended broken_chain"
+      },
+      {
+        "process": {
+          "pid": 32076,
+          "ppid": 41168,
+          "name": "node.exe",
+          "exe": "C:\\Program Files\\nodejs\\node.exe",
+          "cmdline": "C:\\Program Files\\nodejs\\\\node.exe C:\\Program Files\\nodejs\\\\node_modules\\npm\\bin\\npm-cli.js --version",
+          "create_token": "1785997981.829791",
+          "access_denied": false
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "could not be attributed: plugin ancestry was neither established nor ruled out, because the walk ended broken_chain"
+      },
+      {
+        "process": {
+          "pid": 32620,
+          "ppid": 18188,
+          "name": "sh.exe",
+          "exe": "C:\\Program Files\\Git\\usr\\bin\\sh.exe",
+          "cmdline": "C:\\Program Files\\Git\\usr\\bin\\sh.exe /c/Users/techd/AppData/Roaming/npm/ng completion script",
+          "create_token": "1785997670.623533",
+          "access_denied": false
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "could not be attributed: plugin ancestry was neither established nor ruled out, because the walk ended broken_chain"
+      },
+      {
+        "process": {
+          "pid": 32960,
+          "ppid": 31568,
+          "name": "node.exe",
+          "exe": "C:\\Program Files\\nodejs\\node.exe",
+          "cmdline": "C:\\Program Files\\nodejs\\node.exe C:\\Users\\techd\\AppData\\Roaming\\npm/node_modules/@angular/cli/bin/ng.js completion script",
+          "create_token": "1785997801.981389",
+          "access_denied": false
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "could not be attributed: plugin ancestry was neither established nor ruled out, because the walk ended broken_chain"
+      },
+      {
+        "process": {
+          "pid": 35216,
+          "ppid": 29468,
+          "name": "node.exe",
+          "exe": "C:\\Program Files\\nodejs\\node.exe",
+          "cmdline": "C:\\Program Files\\nodejs\\\\node.exe C:\\Program Files\\nodejs\\\\node_modules\\npm\\bin\\npm-prefix.js",
+          "create_token": "1785997803.548418",
+          "access_denied": false
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "could not be attributed: plugin ancestry was neither established nor ruled out, because the walk ended broken_chain"
+      },
+      {
+        "process": {
+          "pid": 35256,
+          "ppid": 2564,
+          "name": "MoUsoCoreWorker.exe",
+          "exe": "C:\\Windows\\UUS\\amd64\\MoUsoCoreWorker.exe",
+          "cmdline": null,
+          "create_token": "1785998155.248266",
+          "access_denied": true
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "operating system withheld the command line and executable path, so the process cannot be shown to not belong to the plugin"
+      },
+      {
+        "process": {
+          "pid": 35956,
+          "ppid": 38716,
+          "name": "node.exe",
+          "exe": "C:\\Program Files\\nodejs\\node.exe",
+          "cmdline": "C:\\Program Files\\nodejs\\node.exe C:\\Users\\techd\\AppData\\Roaming\\npm/node_modules/@angular/cli/bin/ng.js completion script",
+          "create_token": "1785998123.087200",
+          "access_denied": false
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "could not be attributed: plugin ancestry was neither established nor ruled out, because the walk ended broken_chain"
+      },
+      {
+        "process": {
+          "pid": 36368,
+          "ppid": 1640,
+          "name": "svchost.exe",
+          "exe": "C:\\Windows\\System32\\svchost.exe",
+          "cmdline": null,
+          "create_token": "1785997848.678871",
+          "access_denied": true
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "operating system withheld the command line and executable path, so the process cannot be shown to not belong to the plugin"
+      },
+      {
+        "process": {
+          "pid": 36836,
+          "ppid": 37868,
+          "name": "node.exe",
+          "exe": "C:\\Program Files\\nodejs\\node.exe",
+          "cmdline": "C:\\Program Files\\nodejs\\\\node.exe C:\\Program Files\\nodejs\\\\node_modules\\npm\\bin\\npm-prefix.js",
+          "create_token": "1785998124.934510",
+          "access_denied": false
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "could not be attributed: plugin ancestry was neither established nor ruled out, because the walk ended broken_chain"
+      },
+      {
+        "process": {
+          "pid": 37280,
+          "ppid": 2564,
+          "name": "MoUsoCoreWorker.exe",
+          "exe": "C:\\Windows\\UUS\\amd64\\MoUsoCoreWorker.exe",
+          "cmdline": null,
+          "create_token": "1785997854.534702",
+          "access_denied": true
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "operating system withheld the command line and executable path, so the process cannot be shown to not belong to the plugin"
+      },
+      {
+        "process": {
+          "pid": 37516,
+          "ppid": 1640,
+          "name": "sppsvc.exe",
+          "exe": "C:\\Windows\\System32\\sppsvc.exe",
+          "cmdline": null,
+          "create_token": "1785997647.043767",
+          "access_denied": true
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "operating system withheld the command line and executable path, so the process cannot be shown to not belong to the plugin"
+      },
+      {
+        "process": {
+          "pid": 37836,
+          "ppid": 3960,
+          "name": "ProcInfo.exe",
+          "exe": "C:\\Windows\\System32\\DriverStore\\FileRepository\\hpanalyticscomp.inf_amd64_0f2b4c962c16d743\\x64\\Provider Data Sources\\ProcInfo\\ProcInfo.exe",
+          "cmdline": null,
+          "create_token": "1785998113.211382",
+          "access_denied": true
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "operating system withheld the command line and executable path, so the process cannot be shown to not belong to the plugin"
+      },
+      {
+        "process": {
+          "pid": 37912,
+          "ppid": 41640,
+          "name": "node.exe",
+          "exe": "C:\\Program Files\\nodejs\\node.exe",
+          "cmdline": "C:\\Program Files\\nodejs\\\\node.exe C:\\Program Files\\nodejs\\\\node_modules\\npm\\bin\\npm-prefix.js",
+          "create_token": "1785997981.577165",
+          "access_denied": false
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "could not be attributed: plugin ancestry was neither established nor ruled out, because the walk ended broken_chain"
+      },
+      {
+        "process": {
+          "pid": 38300,
+          "ppid": 16044,
+          "name": "cmd.exe",
+          "exe": "C:\\Windows\\System32\\cmd.exe",
+          "cmdline": "C:\\WINDOWS\\system32\\cmd.exe /c CALL C:\\Program Files\\nodejs\\\\node.exe C:\\Program Files\\nodejs\\\\node_modules\\npm\\bin\\npm-prefix.js",
+          "create_token": "1785997857.882170",
+          "access_denied": false
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "could not be attributed: plugin ancestry was neither established nor ruled out, because the walk ended broken_chain"
+      },
+      {
+        "process": {
+          "pid": 38716,
+          "ppid": 12332,
+          "name": "sh.exe",
+          "exe": "C:\\Program Files\\Git\\usr\\bin\\sh.exe",
+          "cmdline": "C:\\Program Files\\Git\\usr\\bin\\sh.exe /c/Users/techd/AppData/Roaming/npm/ng completion script",
+          "create_token": "1785998122.701838",
+          "access_denied": false
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "could not be attributed: plugin ancestry was neither established nor ruled out, because the walk ended broken_chain"
+      },
+      {
+        "process": {
+          "pid": 39228,
+          "ppid": 27912,
+          "name": "sh.exe",
+          "exe": "C:\\Program Files\\Git\\usr\\bin\\sh.exe",
+          "cmdline": "C:\\Program Files\\Git\\usr\\bin\\sh.exe /c/Users/techd/AppData/Roaming/npm/ng completion script",
+          "create_token": "1785997753.057785",
+          "access_denied": false
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "could not be attributed: plugin ancestry was neither established nor ruled out, because the walk ended broken_chain"
+      },
+      {
+        "process": {
+          "pid": 40216,
+          "ppid": 39228,
+          "name": "node.exe",
+          "exe": "C:\\Program Files\\nodejs\\node.exe",
+          "cmdline": "C:\\Program Files\\nodejs\\node.exe C:\\Users\\techd\\AppData\\Roaming\\npm/node_modules/@angular/cli/bin/ng.js completion script",
+          "create_token": "1785997753.456787",
+          "access_denied": false
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "could not be attributed: plugin ancestry was neither established nor ruled out, because the walk ended broken_chain"
+      },
+      {
+        "process": {
+          "pid": 41168,
+          "ppid": 2336,
+          "name": "cmd.exe",
+          "exe": "C:\\Windows\\System32\\cmd.exe",
+          "cmdline": "C:\\WINDOWS\\system32\\cmd.exe /d /s /c npm --version",
+          "create_token": "1785997981.474240",
+          "access_denied": false
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "could not be attributed: plugin ancestry was neither established nor ruled out, because the walk ended broken_chain"
+      },
+      {
+        "process": {
+          "pid": 41816,
+          "ppid": 29988,
+          "name": "node.exe",
+          "exe": "C:\\Program Files\\nodejs\\node.exe",
+          "cmdline": "C:\\Program Files\\nodejs\\\\node.exe C:\\Program Files\\nodejs\\\\node_modules\\npm\\bin\\npm-cli.js --version",
+          "create_token": "1785998125.187729",
+          "access_denied": false
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "could not be attributed: plugin ancestry was neither established nor ruled out, because the walk ended broken_chain"
+      }
+    ],
+    "attribution_bases": {
+      "direct": 0,
+      "ancestry": 45,
+      "none": 101
+    }
+  },
+  "union_delta": {
+    "observed_process_count": 147,
+    "counts_by_component": {
+      "plugin": 0,
+      "retained_user_hooks": 0,
+      "mcp_user_scope": 0,
+      "engine_non_plugin": 0,
+      "harness_self": 0,
+      "statusline_hook": 0,
+      "claude_code_host": 45,
+      "__unattributed__": 79,
+      "__not_plugin_descended__": 23
+    },
+    "plugin_attributable_count": 0,
+    "permitted_exclusion_count": 0,
+    "unattributed_count": 79,
+    "not_plugin_descended_count": 23,
+    "access_denied_count": 22,
+    "unattributed_processes": [
+      {
+        "process": {
+          "pid": 532,
+          "ppid": 40940,
+          "name": "sh.exe",
+          "exe": "C:\\Program Files\\Git\\usr\\bin\\sh.exe",
+          "cmdline": "C:\\Program Files\\Git\\usr\\bin\\sh.exe /c/Users/techd/AppData/Roaming/npm/ng completion script",
+          "create_token": "1785997915.172766",
+          "access_denied": false
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "could not be attributed: plugin ancestry was neither established nor ruled out, because the walk ended broken_chain"
+      },
+      {
+        "process": {
+          "pid": 2336,
+          "ppid": 29704,
+          "name": "node.exe",
+          "exe": "C:\\Program Files\\nodejs\\node.exe",
+          "cmdline": "C:\\Program Files\\nodejs\\node.exe C:\\Users\\techd\\AppData\\Roaming\\npm/node_modules/@angular/cli/bin/ng.js completion script",
+          "create_token": "1785997979.719378",
+          "access_denied": false
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "could not be attributed: plugin ancestry was neither established nor ruled out, because the walk ended broken_chain"
+      },
+      {
+        "process": {
+          "pid": 3592,
+          "ppid": 29100,
+          "name": "cmd.exe",
+          "exe": "C:\\Windows\\System32\\cmd.exe",
+          "cmdline": "C:\\WINDOWS\\system32\\cmd.exe /d /s /c npm --version",
+          "create_token": "1785998050.721474",
+          "access_denied": false
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "could not be attributed: plugin ancestry was neither established nor ruled out, because the walk ended broken_chain"
+      },
+      {
+        "process": {
+          "pid": 3784,
+          "ppid": 40216,
+          "name": "cmd.exe",
+          "exe": "C:\\Windows\\System32\\cmd.exe",
+          "cmdline": "C:\\WINDOWS\\system32\\cmd.exe /d /s /c npm --version",
+          "create_token": "1785997754.945370",
+          "access_denied": false
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "could not be attributed: plugin ancestry was neither established nor ruled out, because the walk ended broken_chain"
+      },
+      {
+        "process": {
+          "pid": 4248,
+          "ppid": 20112,
+          "name": "conhost.exe",
+          "exe": "C:\\Windows\\System32\\conhost.exe",
+          "cmdline": null,
+          "create_token": "1785997653.412185",
+          "access_denied": true
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "operating system withheld the command line and executable path, so the process cannot be shown to not belong to the plugin"
+      },
+      {
+        "process": {
+          "pid": 5284,
+          "ppid": 30740,
+          "name": "powershell.exe",
+          "exe": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+          "cmdline": null,
+          "create_token": "1785997678.388815",
+          "access_denied": true
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "operating system withheld the command line and executable path, so the process cannot be shown to not belong to the plugin"
+      },
+      {
+        "process": {
+          "pid": 6624,
+          "ppid": 7468,
+          "name": "SearchProtocolHost.exe",
+          "exe": "C:\\Windows\\System32\\SearchProtocolHost.exe",
+          "cmdline": null,
+          "create_token": "1785998051.771155",
+          "access_denied": true
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "operating system withheld the command line and executable path, so the process cannot be shown to not belong to the plugin"
+      },
+      {
+        "process": {
+          "pid": 6788,
+          "ppid": 16748,
+          "name": "cmd.exe",
+          "exe": "C:\\Windows\\System32\\cmd.exe",
+          "cmdline": "C:\\WINDOWS\\system32\\cmd.exe /d /s /c npm --version",
+          "create_token": "1785997711.372986",
+          "access_denied": false
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "could not be attributed: plugin ancestry was neither established nor ruled out, because the walk ended broken_chain"
+      },
+      {
+        "process": {
+          "pid": 6924,
+          "ppid": 11152,
+          "name": "conhost.exe",
+          "exe": "C:\\Windows\\System32\\conhost.exe",
+          "cmdline": null,
+          "create_token": "1785997703.411667",
+          "access_denied": true
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "operating system withheld the command line and executable path, so the process cannot be shown to not belong to the plugin"
+      },
+      {
+        "process": {
+          "pid": 7056,
+          "ppid": 39228,
+          "name": "sh.exe",
+          "exe": "C:\\Program Files\\Git\\usr\\bin\\sh.exe",
+          "cmdline": "C:\\Program Files\\Git\\usr\\bin\\sh.exe /c/Users/techd/AppData/Roaming/npm/ng completion script",
+          "create_token": "1785997753.082323",
+          "access_denied": false
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "could not be attributed: plugin ancestry was neither established nor ruled out, because the walk ended broken_chain"
+      },
+      {
+        "process": {
+          "pid": 7384,
+          "ppid": 23432,
+          "name": "node.exe",
+          "exe": "C:\\Program Files\\nodejs\\node.exe",
+          "cmdline": "C:\\Program Files\\nodejs\\\\node.exe C:\\Program Files\\nodejs\\\\node_modules\\npm\\bin\\npm-cli.js --version",
+          "create_token": "1785997672.914588",
+          "access_denied": false
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "could not be attributed: plugin ancestry was neither established nor ruled out, because the walk ended broken_chain"
+      },
+      {
+        "process": {
+          "pid": 7504,
+          "ppid": 20752,
+          "name": "sh.exe",
+          "exe": "C:\\Program Files\\Git\\usr\\bin\\sh.exe",
+          "cmdline": "C:\\Program Files\\Git\\usr\\bin\\sh.exe /c/Users/techd/AppData/Roaming/npm/ng completion script",
+          "create_token": "1785997670.679825",
+          "access_denied": false
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "could not be attributed: plugin ancestry was neither established nor ruled out, because the walk ended broken_chain"
+      },
+      {
+        "process": {
+          "pid": 9860,
+          "ppid": 9956,
+          "name": "node.exe",
+          "exe": "C:\\Program Files\\nodejs\\node.exe",
+          "cmdline": "C:\\Program Files\\nodejs\\\\node.exe C:\\Program Files\\nodejs\\\\node_modules\\npm\\bin\\npm-prefix.js",
+          "create_token": "1785997755.040216",
+          "access_denied": false
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "could not be attributed: plugin ancestry was neither established nor ruled out, because the walk ended broken_chain"
+      },
+      {
+        "process": {
+          "pid": 9956,
+          "ppid": 3784,
+          "name": "cmd.exe",
+          "exe": "C:\\Windows\\System32\\cmd.exe",
+          "cmdline": "C:\\WINDOWS\\system32\\cmd.exe /c CALL C:\\Program Files\\nodejs\\\\node.exe C:\\Program Files\\nodejs\\\\node_modules\\npm\\bin\\npm-prefix.js",
+          "create_token": "1785997755.006787",
+          "access_denied": false
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "could not be attributed: plugin ancestry was neither established nor ruled out, because the walk ended broken_chain"
+      },
+      {
+        "process": {
+          "pid": 10620,
+          "ppid": 11316,
+          "name": "task.exe",
+          "exe": "C:\\Program Files\\Intel\\SUR\\QUEENCREEK\\x64\\task.exe",
+          "cmdline": null,
+          "create_token": "1785997776.787213",
+          "access_denied": true
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "operating system withheld the command line and executable path, so the process cannot be shown to not belong to the plugin"
+      },
+      {
+        "process": {
+          "pid": 11152,
+          "ppid": 30740,
+          "name": "powershell.exe",
+          "exe": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+          "cmdline": null,
+          "create_token": "1785997703.391453",
+          "access_denied": true
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "operating system withheld the command line and executable path, so the process cannot be shown to not belong to the plugin"
+      },
+      {
+        "process": {
+          "pid": 11316,
+          "ppid": 16596,
+          "name": "cmd.exe",
+          "exe": "C:\\Windows\\System32\\cmd.exe",
+          "cmdline": null,
+          "create_token": "1785997776.714426",
+          "access_denied": true
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "operating system withheld the command line and executable path, so the process cannot be shown to not belong to the plugin"
+      },
+      {
+        "process": {
+          "pid": 11748,
+          "ppid": 16596,
+          "name": "conhost.exe",
+          "exe": "C:\\Windows\\System32\\conhost.exe",
+          "cmdline": null,
+          "create_token": "1785997775.465280",
+          "access_denied": true
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "operating system withheld the command line and executable path, so the process cannot be shown to not belong to the plugin"
+      },
+      {
+        "process": {
+          "pid": 12708,
+          "ppid": 32620,
+          "name": "node.exe",
+          "exe": "C:\\Program Files\\nodejs\\node.exe",
+          "cmdline": "C:\\Program Files\\nodejs\\node.exe C:\\Users\\techd\\AppData\\Roaming\\npm/node_modules/@angular/cli/bin/ng.js completion script",
+          "create_token": "1785997671.073044",
+          "access_denied": false
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "could not be attributed: plugin ancestry was neither established nor ruled out, because the walk ended broken_chain"
+      },
+      {
+        "process": {
+          "pid": 12756,
+          "ppid": 6788,
+          "name": "cmd.exe",
+          "exe": "C:\\Windows\\System32\\cmd.exe",
+          "cmdline": "C:\\WINDOWS\\system32\\cmd.exe /c CALL C:\\Program Files\\nodejs\\\\node.exe C:\\Program Files\\nodejs\\\\node_modules\\npm\\bin\\npm-prefix.js",
+          "create_token": "1785997711.427966",
+          "access_denied": false
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "could not be attributed: plugin ancestry was neither established nor ruled out, because the walk ended broken_chain"
+      },
+      {
+        "process": {
+          "pid": 13372,
+          "ppid": 3204,
+          "name": "taskhostw.exe",
+          "exe": "C:\\Windows\\System32\\taskhostw.exe",
+          "cmdline": "taskhostw.exe CreativeId:18=128000000001615609;CourtesyOverrideRuleName:4=none;",
+          "create_token": "1785998041.747346",
+          "access_denied": false
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "could not be attributed: plugin ancestry was neither established nor ruled out, because the walk ended terminated_but_a_hop_was_unreadable"
+      },
+      {
+        "process": {
+          "pid": 13604,
+          "ppid": 29704,
+          "name": "sh.exe",
+          "exe": "C:\\Program Files\\Git\\usr\\bin\\sh.exe",
+          "cmdline": "C:\\Program Files\\Git\\usr\\bin\\sh.exe /c/Users/techd/AppData/Roaming/npm/ng completion script",
+          "create_token": "1785997979.260170",
+          "access_denied": false
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "could not be attributed: plugin ancestry was neither established nor ruled out, because the walk ended broken_chain"
+      },
+      {
+        "process": {
+          "pid": 14304,
+          "ppid": 3592,
+          "name": "cmd.exe",
+          "exe": "C:\\Windows\\System32\\cmd.exe",
+          "cmdline": "C:\\WINDOWS\\system32\\cmd.exe /c CALL C:\\Program Files\\nodejs\\\\node.exe C:\\Program Files\\nodejs\\\\node_modules\\npm\\bin\\npm-prefix.js",
+          "create_token": "1785998050.787886",
+          "access_denied": false
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "could not be attributed: plugin ancestry was neither established nor ruled out, because the walk ended broken_chain"
+      },
+      {
+        "process": {
+          "pid": 15204,
+          "ppid": 1820,
+          "name": "RuntimeBroker.exe",
+          "exe": "C:\\Windows\\System32\\RuntimeBroker.exe",
+          "cmdline": "C:\\Windows\\System32\\RuntimeBroker.exe -Embedding",
+          "create_token": "1785997645.809672",
+          "access_denied": false
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "could not be attributed: plugin ancestry was neither established nor ruled out, because the walk ended terminated_but_a_hop_was_unreadable"
+      },
+      {
+        "process": {
+          "pid": 16044,
+          "ppid": 21968,
+          "name": "cmd.exe",
+          "exe": "C:\\Windows\\System32\\cmd.exe",
+          "cmdline": "C:\\WINDOWS\\system32\\cmd.exe /d /s /c npm --version",
+          "create_token": "1785997857.815577",
+          "access_denied": false
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "could not be attributed: plugin ancestry was neither established nor ruled out, because the walk ended broken_chain"
+      },
+      {
+        "process": {
+          "pid": 16404,
+          "ppid": 27996,
+          "name": "cmd.exe",
+          "exe": "C:\\Windows\\System32\\cmd.exe",
+          "cmdline": "C:\\WINDOWS\\system32\\cmd.exe /c CALL C:\\Program Files\\nodejs\\\\node.exe C:\\Program Files\\nodejs\\\\node_modules\\npm\\bin\\npm-prefix.js",
+          "create_token": "1785997917.314095",
+          "access_denied": false
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "could not be attributed: plugin ancestry was neither established nor ruled out, because the walk ended broken_chain"
+      },
+      {
+        "process": {
+          "pid": 16420,
+          "ppid": 6788,
+          "name": "node.exe",
+          "exe": "C:\\Program Files\\nodejs\\node.exe",
+          "cmdline": "C:\\Program Files\\nodejs\\\\node.exe C:\\Program Files\\nodejs\\\\node_modules\\npm\\bin\\npm-cli.js --version",
+          "create_token": "1785997711.685301",
+          "access_denied": false
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "could not be attributed: plugin ancestry was neither established nor ruled out, because the walk ended broken_chain"
+      },
+      {
+        "process": {
+          "pid": 16596,
+          "ppid": 3204,
+          "name": "powershell.exe",
+          "exe": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+          "cmdline": null,
+          "create_token": "1785997775.428552",
+          "access_denied": true
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "operating system withheld the command line and executable path, so the process cannot be shown to not belong to the plugin"
+      },
+      {
+        "process": {
+          "pid": 16748,
+          "ppid": 27468,
+          "name": "node.exe",
+          "exe": "C:\\Program Files\\nodejs\\node.exe",
+          "cmdline": "C:\\Program Files\\nodejs\\node.exe C:\\Users\\techd\\AppData\\Roaming\\npm/node_modules/@angular/cli/bin/ng.js completion script",
+          "create_token": "1785997709.680020",
+          "access_denied": false
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "could not be attributed: plugin ancestry was neither established nor ruled out, because the walk ended broken_chain"
+      },
+      {
+        "process": {
+          "pid": 17632,
+          "ppid": 5284,
+          "name": "conhost.exe",
+          "exe": "C:\\Windows\\System32\\conhost.exe",
+          "cmdline": null,
+          "create_token": "1785997678.408368",
+          "access_denied": true
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "operating system withheld the command line and executable path, so the process cannot be shown to not belong to the plugin"
+      },
+      {
+        "process": {
+          "pid": 18352,
+          "ppid": 3784,
+          "name": "node.exe",
+          "exe": "C:\\Program Files\\nodejs\\node.exe",
+          "cmdline": "C:\\Program Files\\nodejs\\\\node.exe C:\\Program Files\\nodejs\\\\node_modules\\npm\\bin\\npm-cli.js --version",
+          "create_token": "1785997755.226907",
+          "access_denied": false
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "could not be attributed: plugin ancestry was neither established nor ruled out, because the walk ended broken_chain"
+      },
+      {
+        "process": {
+          "pid": 18868,
+          "ppid": 14304,
+          "name": "node.exe",
+          "exe": "C:\\Program Files\\nodejs\\node.exe",
+          "cmdline": "C:\\Program Files\\nodejs\\\\node.exe C:\\Program Files\\nodejs\\\\node_modules\\npm\\bin\\npm-prefix.js",
+          "create_token": "1785998050.830043",
+          "access_denied": false
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "could not be attributed: plugin ancestry was neither established nor ruled out, because the walk ended broken_chain"
+      },
+      {
+        "process": {
+          "pid": 20112,
+          "ppid": 30740,
+          "name": "powershell.exe",
+          "exe": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+          "cmdline": null,
+          "create_token": "1785997653.394358",
+          "access_denied": true
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "operating system withheld the command line and executable path, so the process cannot be shown to not belong to the plugin"
+      },
+      {
+        "process": {
+          "pid": 20308,
+          "ppid": 25608,
+          "name": "node.exe",
+          "exe": "C:\\Program Files\\nodejs\\node.exe",
+          "cmdline": "C:\\Program Files\\nodejs\\\\node.exe C:\\Program Files\\nodejs\\\\node_modules\\npm\\bin\\npm-prefix.js",
+          "create_token": "1785997672.737042",
+          "access_denied": false
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "could not be attributed: plugin ancestry was neither established nor ruled out, because the walk ended broken_chain"
+      },
+      {
+        "process": {
+          "pid": 20752,
+          "ppid": 32620,
+          "name": "sh.exe",
+          "exe": "C:\\Program Files\\Git\\usr\\bin\\sh.exe",
+          "cmdline": "C:\\Program Files\\Git\\usr\\bin\\sh.exe /c/Users/techd/AppData/Roaming/npm/ng completion script",
+          "create_token": "1785997670.655047",
+          "access_denied": false
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "could not be attributed: plugin ancestry was neither established nor ruled out, because the walk ended broken_chain"
+      },
+      {
+        "process": {
+          "pid": 20784,
+          "ppid": 39272,
+          "name": "sh.exe",
+          "exe": "C:\\Program Files\\Git\\usr\\bin\\sh.exe",
+          "cmdline": "C:\\Program Files\\Git\\usr\\bin\\sh.exe /c/Users/techd/AppData/Roaming/npm/ng completion script",
+          "create_token": "1785997855.626366",
+          "access_denied": false
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "could not be attributed: plugin ancestry was neither established nor ruled out, because the walk ended broken_chain"
+      },
+      {
+        "process": {
+          "pid": 21004,
+          "ppid": 11316,
+          "name": "conhost.exe",
+          "exe": "C:\\Windows\\System32\\conhost.exe",
+          "cmdline": null,
+          "create_token": "1785997776.731784",
+          "access_denied": true
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "operating system withheld the command line and executable path, so the process cannot be shown to not belong to the plugin"
+      },
+      {
+        "process": {
+          "pid": 21968,
+          "ppid": 20784,
+          "name": "node.exe",
+          "exe": "C:\\Program Files\\nodejs\\node.exe",
+          "cmdline": "C:\\Program Files\\nodejs\\node.exe C:\\Users\\techd\\AppData\\Roaming\\npm/node_modules/@angular/cli/bin/ng.js completion script",
+          "create_token": "1785997856.025651",
+          "access_denied": false
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "could not be attributed: plugin ancestry was neither established nor ruled out, because the walk ended broken_chain"
+      },
+      {
+        "process": {
+          "pid": 22248,
+          "ppid": 10620,
+          "name": "esrv.exe",
+          "exe": "C:\\Program Files\\Intel\\SUR\\QUEENCREEK\\x64\\esrv.exe",
+          "cmdline": "C:\\Program Files\\Intel\\SUR\\QUEENCREEK\\x64\\esrv.exe --start --start_options_handle 1156",
+          "create_token": "1785997776.934761",
+          "access_denied": false
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "could not be attributed: plugin ancestry was neither established nor ruled out, because the walk ended terminated_but_a_hop_was_unreadable"
+      },
+      {
+        "process": {
+          "pid": 22564,
+          "ppid": 30740,
+          "name": "powershell.exe",
+          "exe": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+          "cmdline": null,
+          "create_token": "1785997728.379203",
+          "access_denied": true
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "operating system withheld the command line and executable path, so the process cannot be shown to not belong to the plugin"
+      },
+      {
+        "process": {
+          "pid": 23084,
+          "ppid": 532,
+          "name": "sh.exe",
+          "exe": "C:\\Program Files\\Git\\usr\\bin\\sh.exe",
+          "cmdline": "C:\\Program Files\\Git\\usr\\bin\\sh.exe /c/Users/techd/AppData/Roaming/npm/ng completion script",
+          "create_token": "1785997915.206794",
+          "access_denied": false
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "could not be attributed: plugin ancestry was neither established nor ruled out, because the walk ended broken_chain"
+      },
+      {
+        "process": {
+          "pid": 23432,
+          "ppid": 12708,
+          "name": "cmd.exe",
+          "exe": "C:\\Windows\\System32\\cmd.exe",
+          "cmdline": "C:\\WINDOWS\\system32\\cmd.exe /d /s /c npm --version",
+          "create_token": "1785997672.660093",
+          "access_denied": false
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "could not be attributed: plugin ancestry was neither established nor ruled out, because the walk ended broken_chain"
+      },
+      {
+        "process": {
+          "pid": 23928,
+          "ppid": 27996,
+          "name": "node.exe",
+          "exe": "C:\\Program Files\\nodejs\\node.exe",
+          "cmdline": "C:\\Program Files\\nodejs\\\\node.exe C:\\Program Files\\nodejs\\\\node_modules\\npm\\bin\\npm-cli.js --version",
+          "create_token": "1785997917.628138",
+          "access_denied": false
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "could not be attributed: plugin ancestry was neither established nor ruled out, because the walk ended broken_chain"
+      },
+      {
+        "process": {
+          "pid": 24024,
+          "ppid": 532,
+          "name": "node.exe",
+          "exe": "C:\\Program Files\\nodejs\\node.exe",
+          "cmdline": "C:\\Program Files\\nodejs\\node.exe C:\\Users\\techd\\AppData\\Roaming\\npm/node_modules/@angular/cli/bin/ng.js completion script",
+          "create_token": "1785997915.533939",
+          "access_denied": false
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "could not be attributed: plugin ancestry was neither established nor ruled out, because the walk ended broken_chain"
+      },
+      {
+        "process": {
+          "pid": 24120,
+          "ppid": 1820,
+          "name": "WmiPrvSE.exe",
+          "exe": "C:\\Windows\\System32\\wbem\\WmiPrvSE.exe",
+          "cmdline": null,
+          "create_token": "1785997905.540742",
+          "access_denied": true
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "operating system withheld the command line and executable path, so the process cannot be shown to not belong to the plugin"
+      },
+      {
+        "process": {
+          "pid": 25368,
+          "ppid": 15100,
+          "name": "sh.exe",
+          "exe": "C:\\Program Files\\Git\\usr\\bin\\sh.exe",
+          "cmdline": "C:\\Program Files\\Git\\usr\\bin\\sh.exe /c/Users/techd/AppData/Roaming/npm/ng completion script",
+          "create_token": "1785998048.507860",
+          "access_denied": false
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "could not be attributed: plugin ancestry was neither established nor ruled out, because the walk ended broken_chain"
+      },
+      {
+        "process": {
+          "pid": 25392,
+          "ppid": 16044,
+          "name": "node.exe",
+          "exe": "C:\\Program Files\\nodejs\\node.exe",
+          "cmdline": "C:\\Program Files\\nodejs\\\\node.exe C:\\Program Files\\nodejs\\\\node_modules\\npm\\bin\\npm-cli.js --version",
+          "create_token": "1785997858.176618",
+          "access_denied": false
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "could not be attributed: plugin ancestry was neither established nor ruled out, because the walk ended broken_chain"
+      },
+      {
+        "process": {
+          "pid": 25812,
+          "ppid": 3592,
+          "name": "node.exe",
+          "exe": "C:\\Program Files\\nodejs\\node.exe",
+          "cmdline": "C:\\Program Files\\nodejs\\\\node.exe C:\\Program Files\\nodejs\\\\node_modules\\npm\\bin\\npm-cli.js --version",
+          "create_token": "1785998051.120608",
+          "access_denied": false
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "could not be attributed: plugin ancestry was neither established nor ruled out, because the walk ended broken_chain"
+      },
+      {
+        "process": {
+          "pid": 26436,
+          "ppid": 3204,
+          "name": "OfficeC2RClient.exe",
+          "exe": "C:\\Program Files\\Common Files\\microsoft shared\\ClickToRun\\OfficeC2RClient.exe",
+          "cmdline": null,
+          "create_token": "1785997854.589600",
+          "access_denied": true
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "operating system withheld the command line and executable path, so the process cannot be shown to not belong to the plugin"
+      },
+      {
+        "process": {
+          "pid": 26904,
+          "ppid": 1820,
+          "name": "WmiPrvSE.exe",
+          "exe": "C:\\Windows\\System32\\wbem\\WmiPrvSE.exe",
+          "cmdline": null,
+          "create_token": "1785998115.926056",
+          "access_denied": true
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "operating system withheld the command line and executable path, so the process cannot be shown to not belong to the plugin"
+      },
+      {
+        "process": {
+          "pid": 27468,
+          "ppid": 16216,
+          "name": "sh.exe",
+          "exe": "C:\\Program Files\\Git\\usr\\bin\\sh.exe",
+          "cmdline": "C:\\Program Files\\Git\\usr\\bin\\sh.exe /c/Users/techd/AppData/Roaming/npm/ng completion script",
+          "create_token": "1785997709.226820",
+          "access_denied": false
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "could not be attributed: plugin ancestry was neither established nor ruled out, because the walk ended broken_chain"
+      },
+      {
+        "process": {
+          "pid": 27996,
+          "ppid": 24024,
+          "name": "cmd.exe",
+          "exe": "C:\\Windows\\System32\\cmd.exe",
+          "cmdline": "C:\\WINDOWS\\system32\\cmd.exe /d /s /c npm --version",
+          "create_token": "1785997917.259602",
+          "access_denied": false
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "could not be attributed: plugin ancestry was neither established nor ruled out, because the walk ended broken_chain"
+      },
+      {
+        "process": {
+          "pid": 29100,
+          "ppid": 25368,
+          "name": "node.exe",
+          "exe": "C:\\Program Files\\nodejs\\node.exe",
+          "cmdline": "C:\\Program Files\\nodejs\\node.exe C:\\Users\\techd\\AppData\\Roaming\\npm/node_modules/@angular/cli/bin/ng.js completion script",
+          "create_token": "1785998049.077534",
+          "access_denied": false
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "could not be attributed: plugin ancestry was neither established nor ruled out, because the walk ended broken_chain"
+      },
+      {
+        "process": {
+          "pid": 29468,
+          "ppid": 30860,
+          "name": "cmd.exe",
+          "exe": "C:\\Windows\\System32\\cmd.exe",
+          "cmdline": "C:\\WINDOWS\\system32\\cmd.exe /c CALL C:\\Program Files\\nodejs\\\\node.exe C:\\Program Files\\nodejs\\\\node_modules\\npm\\bin\\npm-prefix.js",
+          "create_token": "1785997803.511160",
+          "access_denied": false
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "could not be attributed: plugin ancestry was neither established nor ruled out, because the walk ended broken_chain"
+      },
+      {
+        "process": {
+          "pid": 29664,
+          "ppid": 1820,
+          "name": "backgroundTaskHost.exe",
+          "exe": "C:\\Windows\\System32\\backgroundTaskHost.exe",
+          "cmdline": "C:\\WINDOWS\\system32\\backgroundTaskHost.exe -ServerName:App.AppXgx81f4t0vjvane7r4dtetjeh80p3nbpg.mca",
+          "create_token": "1785997775.631629",
+          "access_denied": false
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "could not be attributed: plugin ancestry was neither established nor ruled out, because the walk ended terminated_but_a_hop_was_unreadable"
+      },
+      {
+        "process": {
+          "pid": 29704,
+          "ppid": 2992,
+          "name": "sh.exe",
+          "exe": "C:\\Program Files\\Git\\usr\\bin\\sh.exe",
+          "cmdline": "C:\\Program Files\\Git\\usr\\bin\\sh.exe /c/Users/techd/AppData/Roaming/npm/ng completion script",
+          "create_token": "1785997979.215737",
+          "access_denied": false
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "could not be attributed: plugin ancestry was neither established nor ruled out, because the walk ended broken_chain"
+      },
+      {
+        "process": {
+          "pid": 29988,
+          "ppid": 35956,
+          "name": "cmd.exe",
+          "exe": "C:\\Windows\\System32\\cmd.exe",
+          "cmdline": "C:\\WINDOWS\\system32\\cmd.exe /d /s /c npm --version",
+          "create_token": "1785998124.672363",
+          "access_denied": false
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "could not be attributed: plugin ancestry was neither established nor ruled out, because the walk ended broken_chain"
+      },
+      {
+        "process": {
+          "pid": 30788,
+          "ppid": 22564,
+          "name": "conhost.exe",
+          "exe": "C:\\Windows\\System32\\conhost.exe",
+          "cmdline": null,
+          "create_token": "1785997728.396018",
+          "access_denied": true
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "operating system withheld the command line and executable path, so the process cannot be shown to not belong to the plugin"
+      },
+      {
+        "process": {
+          "pid": 30856,
+          "ppid": 30860,
+          "name": "node.exe",
+          "exe": "C:\\Program Files\\nodejs\\node.exe",
+          "cmdline": "C:\\Program Files\\nodejs\\\\node.exe C:\\Program Files\\nodejs\\\\node_modules\\npm\\bin\\npm-cli.js --version",
+          "create_token": "1785997803.735432",
+          "access_denied": false
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "could not be attributed: plugin ancestry was neither established nor ruled out, because the walk ended broken_chain"
+      },
+      {
+        "process": {
+          "pid": 30860,
+          "ppid": 32960,
+          "name": "cmd.exe",
+          "exe": "C:\\Windows\\System32\\cmd.exe",
+          "cmdline": "C:\\WINDOWS\\system32\\cmd.exe /d /s /c npm --version",
+          "create_token": "1785997803.466903",
+          "access_denied": false
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "could not be attributed: plugin ancestry was neither established nor ruled out, because the walk ended broken_chain"
+      },
+      {
+        "process": {
+          "pid": 31568,
+          "ppid": 35416,
+          "name": "sh.exe",
+          "exe": "C:\\Program Files\\Git\\usr\\bin\\sh.exe",
+          "cmdline": "C:\\Program Files\\Git\\usr\\bin\\sh.exe /c/Users/techd/AppData/Roaming/npm/ng completion script",
+          "create_token": "1785997801.707469",
+          "access_denied": false
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "could not be attributed: plugin ancestry was neither established nor ruled out, because the walk ended broken_chain"
+      },
+      {
+        "process": {
+          "pid": 32076,
+          "ppid": 41168,
+          "name": "node.exe",
+          "exe": "C:\\Program Files\\nodejs\\node.exe",
+          "cmdline": "C:\\Program Files\\nodejs\\\\node.exe C:\\Program Files\\nodejs\\\\node_modules\\npm\\bin\\npm-cli.js --version",
+          "create_token": "1785997981.829791",
+          "access_denied": false
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "could not be attributed: plugin ancestry was neither established nor ruled out, because the walk ended broken_chain"
+      },
+      {
+        "process": {
+          "pid": 32620,
+          "ppid": 18188,
+          "name": "sh.exe",
+          "exe": "C:\\Program Files\\Git\\usr\\bin\\sh.exe",
+          "cmdline": "C:\\Program Files\\Git\\usr\\bin\\sh.exe /c/Users/techd/AppData/Roaming/npm/ng completion script",
+          "create_token": "1785997670.623533",
+          "access_denied": false
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "could not be attributed: plugin ancestry was neither established nor ruled out, because the walk ended broken_chain"
+      },
+      {
+        "process": {
+          "pid": 32960,
+          "ppid": 31568,
+          "name": "node.exe",
+          "exe": "C:\\Program Files\\nodejs\\node.exe",
+          "cmdline": "C:\\Program Files\\nodejs\\node.exe C:\\Users\\techd\\AppData\\Roaming\\npm/node_modules/@angular/cli/bin/ng.js completion script",
+          "create_token": "1785997801.981389",
+          "access_denied": false
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "could not be attributed: plugin ancestry was neither established nor ruled out, because the walk ended broken_chain"
+      },
+      {
+        "process": {
+          "pid": 35216,
+          "ppid": 29468,
+          "name": "node.exe",
+          "exe": "C:\\Program Files\\nodejs\\node.exe",
+          "cmdline": "C:\\Program Files\\nodejs\\\\node.exe C:\\Program Files\\nodejs\\\\node_modules\\npm\\bin\\npm-prefix.js",
+          "create_token": "1785997803.548418",
+          "access_denied": false
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "could not be attributed: plugin ancestry was neither established nor ruled out, because the walk ended broken_chain"
+      },
+      {
+        "process": {
+          "pid": 35256,
+          "ppid": 2564,
+          "name": "MoUsoCoreWorker.exe",
+          "exe": "C:\\Windows\\UUS\\amd64\\MoUsoCoreWorker.exe",
+          "cmdline": null,
+          "create_token": "1785998155.248266",
+          "access_denied": true
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "operating system withheld the command line and executable path, so the process cannot be shown to not belong to the plugin"
+      },
+      {
+        "process": {
+          "pid": 35956,
+          "ppid": 38716,
+          "name": "node.exe",
+          "exe": "C:\\Program Files\\nodejs\\node.exe",
+          "cmdline": "C:\\Program Files\\nodejs\\node.exe C:\\Users\\techd\\AppData\\Roaming\\npm/node_modules/@angular/cli/bin/ng.js completion script",
+          "create_token": "1785998123.087200",
+          "access_denied": false
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "could not be attributed: plugin ancestry was neither established nor ruled out, because the walk ended broken_chain"
+      },
+      {
+        "process": {
+          "pid": 36368,
+          "ppid": 1640,
+          "name": "svchost.exe",
+          "exe": "C:\\Windows\\System32\\svchost.exe",
+          "cmdline": null,
+          "create_token": "1785997848.678871",
+          "access_denied": true
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "operating system withheld the command line and executable path, so the process cannot be shown to not belong to the plugin"
+      },
+      {
+        "process": {
+          "pid": 36836,
+          "ppid": 37868,
+          "name": "node.exe",
+          "exe": "C:\\Program Files\\nodejs\\node.exe",
+          "cmdline": "C:\\Program Files\\nodejs\\\\node.exe C:\\Program Files\\nodejs\\\\node_modules\\npm\\bin\\npm-prefix.js",
+          "create_token": "1785998124.934510",
+          "access_denied": false
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "could not be attributed: plugin ancestry was neither established nor ruled out, because the walk ended broken_chain"
+      },
+      {
+        "process": {
+          "pid": 37280,
+          "ppid": 2564,
+          "name": "MoUsoCoreWorker.exe",
+          "exe": "C:\\Windows\\UUS\\amd64\\MoUsoCoreWorker.exe",
+          "cmdline": null,
+          "create_token": "1785997854.534702",
+          "access_denied": true
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "operating system withheld the command line and executable path, so the process cannot be shown to not belong to the plugin"
+      },
+      {
+        "process": {
+          "pid": 37516,
+          "ppid": 1640,
+          "name": "sppsvc.exe",
+          "exe": "C:\\Windows\\System32\\sppsvc.exe",
+          "cmdline": null,
+          "create_token": "1785997647.043767",
+          "access_denied": true
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "operating system withheld the command line and executable path, so the process cannot be shown to not belong to the plugin"
+      },
+      {
+        "process": {
+          "pid": 37836,
+          "ppid": 3960,
+          "name": "ProcInfo.exe",
+          "exe": "C:\\Windows\\System32\\DriverStore\\FileRepository\\hpanalyticscomp.inf_amd64_0f2b4c962c16d743\\x64\\Provider Data Sources\\ProcInfo\\ProcInfo.exe",
+          "cmdline": null,
+          "create_token": "1785998113.211382",
+          "access_denied": true
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "operating system withheld the command line and executable path, so the process cannot be shown to not belong to the plugin"
+      },
+      {
+        "process": {
+          "pid": 37912,
+          "ppid": 41640,
+          "name": "node.exe",
+          "exe": "C:\\Program Files\\nodejs\\node.exe",
+          "cmdline": "C:\\Program Files\\nodejs\\\\node.exe C:\\Program Files\\nodejs\\\\node_modules\\npm\\bin\\npm-prefix.js",
+          "create_token": "1785997981.577165",
+          "access_denied": false
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "could not be attributed: plugin ancestry was neither established nor ruled out, because the walk ended broken_chain"
+      },
+      {
+        "process": {
+          "pid": 38300,
+          "ppid": 16044,
+          "name": "cmd.exe",
+          "exe": "C:\\Windows\\System32\\cmd.exe",
+          "cmdline": "C:\\WINDOWS\\system32\\cmd.exe /c CALL C:\\Program Files\\nodejs\\\\node.exe C:\\Program Files\\nodejs\\\\node_modules\\npm\\bin\\npm-prefix.js",
+          "create_token": "1785997857.882170",
+          "access_denied": false
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "could not be attributed: plugin ancestry was neither established nor ruled out, because the walk ended broken_chain"
+      },
+      {
+        "process": {
+          "pid": 38716,
+          "ppid": 12332,
+          "name": "sh.exe",
+          "exe": "C:\\Program Files\\Git\\usr\\bin\\sh.exe",
+          "cmdline": "C:\\Program Files\\Git\\usr\\bin\\sh.exe /c/Users/techd/AppData/Roaming/npm/ng completion script",
+          "create_token": "1785998122.701838",
+          "access_denied": false
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "could not be attributed: plugin ancestry was neither established nor ruled out, because the walk ended broken_chain"
+      },
+      {
+        "process": {
+          "pid": 39228,
+          "ppid": 27912,
+          "name": "sh.exe",
+          "exe": "C:\\Program Files\\Git\\usr\\bin\\sh.exe",
+          "cmdline": "C:\\Program Files\\Git\\usr\\bin\\sh.exe /c/Users/techd/AppData/Roaming/npm/ng completion script",
+          "create_token": "1785997753.057785",
+          "access_denied": false
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "could not be attributed: plugin ancestry was neither established nor ruled out, because the walk ended broken_chain"
+      },
+      {
+        "process": {
+          "pid": 40216,
+          "ppid": 39228,
+          "name": "node.exe",
+          "exe": "C:\\Program Files\\nodejs\\node.exe",
+          "cmdline": "C:\\Program Files\\nodejs\\node.exe C:\\Users\\techd\\AppData\\Roaming\\npm/node_modules/@angular/cli/bin/ng.js completion script",
+          "create_token": "1785997753.456787",
+          "access_denied": false
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "could not be attributed: plugin ancestry was neither established nor ruled out, because the walk ended broken_chain"
+      },
+      {
+        "process": {
+          "pid": 41168,
+          "ppid": 2336,
+          "name": "cmd.exe",
+          "exe": "C:\\Windows\\System32\\cmd.exe",
+          "cmdline": "C:\\WINDOWS\\system32\\cmd.exe /d /s /c npm --version",
+          "create_token": "1785997981.474240",
+          "access_denied": false
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "could not be attributed: plugin ancestry was neither established nor ruled out, because the walk ended broken_chain"
+      },
+      {
+        "process": {
+          "pid": 41816,
+          "ppid": 29988,
+          "name": "node.exe",
+          "exe": "C:\\Program Files\\nodejs\\node.exe",
+          "cmdline": "C:\\Program Files\\nodejs\\\\node.exe C:\\Program Files\\nodejs\\\\node_modules\\npm\\bin\\npm-cli.js --version",
+          "create_token": "1785998125.187729",
+          "access_denied": false
+        },
+        "component": "__unattributed__",
+        "role": null,
+        "basis": "none",
+        "marker": null,
+        "via_pid": null,
+        "reason": "could not be attributed: plugin ancestry was neither established nor ruled out, because the walk ended broken_chain"
+      }
+    ],
+    "attribution_bases": {
+      "direct": 0,
+      "ancestry": 45,
+      "none": 102
+    }
+  },
+  "authoritative_source": "union_delta",
+  "authoritative_source_rationale": "union of the endpoint and sampled deltas; neither source alone is sound, and preferring one lets the other's blind spot become a pass",
+  "probe": {
+    "before": {
+      "captured_at": 1785997650.5575767,
+      "backend": "psutil",
+      "is_perturbing": false,
+      "process_count": 474,
+      "enumeration_errors": 0,
+      "enumeration_error_samples": []
+    },
+    "after": {
+      "captured_at": 1785998201.4419036,
+      "backend": "psutil",
+      "is_perturbing": false,
+      "process_count": 469,
+      "enumeration_errors": 0,
+      "enumeration_error_samples": []
+    },
+    "sampler": {
+      "interval_seconds": 0.05,
+      "poll_count": 2991,
+      "observed_blind_spot_seconds": 0.05,
+      "blind_spot_note": "a process whose entire lifetime is shorter than the polling interval can still be missed; sampling narrows this window, it does not close it",
+      "errors": [],
+      "contributed_observations": true
+    },
+    "backend_is_perturbing": false,
+    "window_seconds": 550.8843269348145
+  },
+  "transcript": "C:\\Users\\techd\\.claude\\projects\\C--Users-techd-Documents-workspace-spring-tool-suite-4-4-27-0-new-claude-workflow-engine\\1c4cdf62-de78-44aa-aaa5-3770b851d487.jsonl",
+  "anchored_at": "launching_record",
+  "counted": "tool_result completions",
+  "leading_tool_calls_skipped": 1,
+  "observed_tool_calls": [
+    {
+      "id": "toolu_01FdLaLkHwjqUn9VFYqfSofh",
+      "name": "Bash",
+      "timestamp": "2026-08-06T06:27:01.913Z"
+    },
+    {
+      "id": "toolu_01JorpRULDL539bdL1NGisCo",
+      "name": "Bash",
+      "timestamp": "2026-08-06T06:27:02.453Z"
+    },
+    {
+      "id": "toolu_019vM72yjFxm9AF8t3rdypT3",
+      "name": "Bash",
+      "timestamp": "2026-08-06T06:27:03.000Z"
+    },
+    {
+      "id": "toolu_01Cyv5GXeBL9dkWa34CsKzas",
+      "name": "Bash",
+      "timestamp": "2026-08-06T06:27:03.546Z"
+    },
+    {
+      "id": "toolu_01SSfV7VpaUnpDNasyKzTkYQ",
+      "name": "Bash",
+      "timestamp": "2026-08-06T06:27:04.096Z"
+    },
+    {
+      "id": "toolu_012g7nWL7jdoYn9MrYWntyVE",
+      "name": "Bash",
+      "timestamp": "2026-08-06T06:27:04.640Z"
+    },
+    {
+      "id": "toolu_01Bi59ynjhwsngkQuTv6v94X",
+      "name": "Bash",
+      "timestamp": "2026-08-06T06:27:05.231Z"
+    },
+    {
+      "id": "toolu_016rW727h7bFLLmoobXcLmK3",
+      "name": "Bash",
+      "timestamp": "2026-08-06T06:27:05.779Z"
+    },
+    {
+      "id": "toolu_01RS12NHJEvfEaubjgo5gqUB",
+      "name": "Bash",
+      "timestamp": "2026-08-06T06:27:06.283Z"
+    },
+    {
+      "id": "toolu_01TqEoGSP3WD2misWG8cdGqY",
+      "name": "Bash",
+      "timestamp": "2026-08-06T06:27:09.494Z"
+    }
+  ],
+  "single_phase_note": "this is one phase, not an NFR-1 report. Assembling a report from two separately observed phases needs a Measurement that can round-trip through JSON, which harness.py does not provide; build_report takes Measurement objects only. Until that exists, the phases cannot be combined across invocations."
+}

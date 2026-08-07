@@ -581,3 +581,206 @@ requirement set, sized, or assigned. **This is a decision for you** (see section
 on FR-25 and FR-26" with the "(proposed)" hedge dropped — present-tense-as-existing framing, the
 exact leak `hallucination_report_sequencing.json` was checking for, committed in the document that
 catalogues that defect class. Found by the Phase 5 SRS agent contradicting its own brief.*
+
+---
+
+## Corrections 55-57 -- building the NFR-1 measurement driver (2026-08-05)
+
+Three defects, all found by a check rather than by review, and all in work authored in this
+same pass.
+
+| # | Correction | Found by |
+|---|-----------|----------|
+| 55 | **The driver's append-only check only caught the transcript getting SMALLER, and an in-place rewrite of equal-or-greater size sailed straight past it.** `TranscriptTail.poll` compared `st_size` against its offset. Rewriting one three-call record as two one-call records leaves the file no smaller, so the check passed and the tail resumed reading from an offset that now landed **mid-record** -- desynchronised silently, with no error and no signal. Replaced by re-reading the 64 bytes before the offset and comparing them to what was consumed, which detects both shapes. Two further latent bugs came out of the same fix: the tail read in **text mode**, where `tell()` returns an opaque cookie that was being compared to `st_size` as if it were a byte offset, and a chunk ending mid-character would have been mangled by decoding before splitting on newlines. Both fixed by reading bytes and decoding only whole lines | The orchestrator, writing the *specificity* half of a test -- the paired assertion, not the one the test was written for |
+| 56 | **Two of the orchestrator's own assertions could not fail, and only mutation testing said so.** Deleting the tool_use dedup, and deleting the record-type filter, both left the suite green. The dedup was unreachable because no test ever re-read consumed bytes; the record-type test used a `user` record with an **empty** block list, so an empty result proved nothing about the filter. Rewritten: the filter test now puts a real `tool_use` block in a non-assistant record, paired against the identical block in an assistant record. The dedup was **deleted outright** rather than given a test, because the rewrite fix made it genuinely unreachable | A mutation harness run against the orchestrator's own test file |
+| 57 | **A test whose only exit is the behaviour under test does not fail when that behaviour is removed -- it hangs.** `test_the_void_propagates_out_of_drive` called `drive()` with no poll bound, relying on `TranscriptRewritten` to end the loop. With the integrity check mutated away, `drive` span forever: **442 seconds of CPU** before it was killed, stalling the whole mutation run. In CI that is a stuck job, not a red one, which is strictly worse than a failure. Every `drive()` call in the tests now carries an explicit bound, and the mutation harness now bounds each run at 90s and reports a timeout as a **survivor**, never as a catch | The mutation harness, by hanging on its own first mutation |
+
+> **57 has a second half that was the orchestrator's process error, not the code's.** While that
+> mutation run held `driver.py` in its mutated state, the orchestrator ran the test suite against
+> the same file and read the resulting failure as a **bug in the driver**, then spent a debugging
+> cycle reproducing it. The file was simply mutated at the time. **Do not run a suite against a file
+> another process owns** -- and when a result contradicts a mechanism that was just verified, check
+> what else is writing to the file before believing the result. This is the same class as 53:
+> believing an instrument without asking what state it was in.
+
+> **What the round is worth stating plainly:** the driver's logic was reviewed, re-read, and
+> reasoned about before any of these three were found, and review found **none of them**. 55 came
+> from a paired assertion, 56 from mutation, 57 from a bounded harness. After the fixes, a 12-mutation
+> run catches 12 and survives 0. That number is the claim; the reasoning that preceded it was not.
+
+### What the first real observation showed (2026-08-05)
+
+The driver was run against this live session and **observed ten real tool calls** -- real
+`toolu_` ids, real timestamps, window closed on the count rather than on a bound, turn boundary
+not crossed. So the harness's long-standing reason for INDETERMINATE ("the driver recorded 0")
+is gone.
+
+**It still returns INDETERMINATE, for a different and more interesting reason**, and this one is
+not a defect in the driver:
+
+| delta | observed | plugin-attributable | unattributed |
+|-------|----------|--------------------|--------------|
+| endpoint | 4 | **0** | 4 |
+| sampled | 85 | **0** | 85 |
+| union | 88 | **0** | 88 |
+
+Zero processes were attributable to the plugin. The blocker is the 88 the registry cannot name,
+and they fall into three classes:
+
+- **40 `bash.exe` -- 22 of them running `~/.claude/statusline-command.sh`.** That is Claude Code's
+  own statusline firing on a timer. It has nothing to do with the plugin and no marker declares it.
+- **16 `conhost.exe`, 8 `sh.exe`, 6 `cmd.exe`.** Console hosts and shells -- largely spawned by
+  **the ten tool calls the criterion itself requires**. The act of driving the measurement spawns
+  the processes the measurement then cannot account for.
+- **12 `node.exe`, 6 `chrome.exe`.** Claude Code itself, and unrelated user activity on the machine.
+
+**So NFR-1 as currently instrumented cannot reach PASS on a working machine**, independent of the
+plugin and independent of the hook deletion. `unattributed > 0` is guaranteed by the statusline
+alone. Reaching a verdict needs two things that are **decisions, not fixes**: permitted-exclusion
+components covering Claude Code's own periodic work and the tool-call shells, and a quiet machine
+for the rest. Declaring what counts as "the plugin spawning a process" is a scope judgement of the
+same kind as the ADR-020 / FR-31 ruling, so it is recorded here rather than decided.
+
+**The driver does not close #259.** It makes the harness *capable* of a measurement it could not
+previously take -- observer mode now has something to drive it, wired into `cli.py --observe` and
+tested for reachability rather than merely present. **No measurement has been taken.** Taking one
+requires the plugin install that is deliberately still un-run, and a genuinely cold phase requires a
+separate invocation against a fresh session. A further gap is recorded rather than closed: two
+observed phases **cannot be combined into one report**, because `build_report` takes `Measurement`
+objects and `harness.py` provides no way to read one back from JSON.
+
+---
+
+## Corrections 58-61 -- securing NFR-1 attribution (2026-08-05)
+
+Follow-on from 55-57. The driver made NFR-1 measurable; this round asked whether the thing it
+measures can still fail. Three of the four below were found by attacking the code, not reading it.
+
+| # | Correction | Found by |
+|---|-----------|----------|
+| 58 | **The plugin's own marker could never match a real Windows process, so `plugin_count` was structurally zero and NFR-1 could not fail.** `build_default_registry()` normalises `plugin_root`-derived markers to forward slashes and lowercase. `ComponentSpec.matches()` compared them against `record.search_text()` **unnormalised** -- and Windows reports command lines and executable paths with backslashes. A marker of `c:/users/.../plugins/cwe` is not a substring of `C:\Users\...\plugins\cwe\entry.py`. **Any NFR-1 result of "0 processes attributable to the plugin" taken on Windows before this fix measured nothing.** This is older than this sprint. The harness's own `--self-test` could not catch it because its synthetic marker (`nfr1_selftest_spawn_marker`) contains no path separator, so it never exercised the asymmetry | The adversarial verification pass, dispatched specifically to attack the failability property |
+| 59 | **Plugin-first precedence was landed, tested green, and still silently coupled to registration order.** A mutation deleting the plugin-first *direct* match left every test in the new suite passing, because `KEY_PLUGIN` happens to be registered first and the pre-existing first-match-wins search found it anyway. The property the change existed to establish -- that correctness does not depend on registry order -- was therefore **unproven by its own test suite**. Closed with an adversarial registry that registers an OBSERVED component *before* the plugin. Mutation table went from 2/3 to 3/3 caught | The orchestrator, mutating the implementer's change against the implementer's tests |
+| 60 | **Fixing one side of the normalisation made any backslash marker silently dead.** Once `matches()` normalised the process text, a marker written with Windows separators could never be found in it -- there were no backslashes left to find. No error, no warning: the component just stops collecting, which reads identically to "that component spawned nothing". On a plugin marker that is 58 again by the opposite route. Markers are now normalised at construction too, so both sides agree. The one existing backslash marker (`tests\nfr1`) had a forward-slash twin, so nothing was actually lost -- verified rather than assumed | The orchestrator, checking what the 58 fix broke on the other side |
+| 61 | **The orchestrator's brief asserted `node.exe` was the Claude Code host, and it is not.** The implementing agent measured it: the CLI on this machine runs as `claude.exe`, and every `node.exe` in the window belonged to unrelated npm/vite dev servers with no Claude Code ancestor. Had the brief been followed, `node.exe` would have been declared a marker that was **wrong on this machine**, not merely unspecific. The agent left it unattributed and said so | The implementing agent, contradicting its brief -- which is what briefs should invite |
+
+> **What 58 means for everything measured before it.** The harness has never been able to attribute
+> a plugin process on Windows. It was never wrong to say "0 plugin-attributable processes" -- there
+> was no plugin installed -- but that zero was **not evidence**, and any reading of it as evidence
+> was unearned. The first measurement that can mean anything is the one taken after this fix.
+
+> **The interlock this round created, stated plainly so nobody removes half of it.** The plugin's
+> entry points are themselves spawned by `claude.exe`, so **every plugin process has the
+> `claude_code_host` marker in its ancestry**. Plugin-first precedence is now the only thing
+> preventing every plugin process from being charged to that OBSERVED component. Declaring
+> `claude_code_host` without plugin-first precedence would be strictly worse than declaring
+> nothing. The two must not be separated, and correction 59's adversarial-registry test is what
+> holds them together.
+
+**Verification for this round:** 2523 passed / 50 skipped / 11 xfailed / 0 failed on the full unit
+suite (`pytest exit=0`, zero FAILED or ERROR lines). 3/3 mutations caught, zero survivors, file
+restored byte-for-byte. `cli.py --self-test` still returns FAIL with `plugin_count=1`, so the
+metric remains failable.
+
+---
+
+## Corrections 62-65 -- making a verdict reachable without making it unearnable (2026-08-05)
+
+Splitting "unknown" from "shown not to be the plugin" is the change that lets NFR-1 reach a
+verdict on a working machine. It is also the change most able to destroy the measurement, and
+three of the four entries below are defects in that change, caught before it shipped.
+
+| # | Correction | Found by |
+|---|-----------|----------|
+| 62 | **The orchestrator's own change made the harness report PASS where it must report FAIL.** `cli.py --self-test` spawns a real marked child and registers a component owning that marker as the plugin; a PASS means the harness missed a spawn it was told to detect. It returned **PASS with `plugin_count=0`**, the marked child neither charged to the plugin nor reported as unknown. Cause class: the proof is a statement about ANCESTRY and was being granted to a process whose OWN identity had not been read -- a process observed with no command line and no executable path might BE the plugin. The proof now requires readable identity, and an image name does not count, since a plugin entry point runs as `python.exe` like everything else. **The original PASS was never reproduced** -- 24 later runs, 10 idle and 14 under real load, all report FAIL -- so this is recorded as closing the class whose shape the failure matched, not as a confirmed repair of that race | The shipped negative control, doing exactly the job it exists for |
+| 63 | **`ppid is None` means the backend withheld the parent, not that the process is a root.** The first implementation terminated the walk there and called it a clean finish, which manufactures a proof out of a refusal to answer. Corrected before any measurement was taken, and it forced the better definition: what terminates a proof is reaching a process that **predates the measurement window**, not "a root". A chain almost always ends at a parent that has exited and is in no snapshot, so "root" was never a real terminator | The orchestrator, reading `ProcessRecord`'s own docstring instead of assuming what None meant |
+| 64 | **Stopping the walk at an unreadable ancestor under-reports the plugin.** The orchestrator's first version returned immediately on an access-denied hop. A plugin marker may sit ABOVE that hop, and missing it loses the one thing NFR-1 counts -- the dangerous direction to err in. An unreadable hop now clears the provable flag and the walk continues | An existing test, `test_access_denied_ancestor_with_no_identity_does_not_block_the_walk`, written in the previous round |
+| 65 | **The ancestry index was built from the endpoint snapshots while the records being attributed came from the sampler.** The sampler exists precisely to see processes in neither snapshot -- including the short-lived PARENTS of other short-lived processes -- so those chains broke at the first hop. A live window reported **63 processes as unknown while every one of them carried a usable parent pid**. The index now includes what the sampler saw | The orchestrator, checking whether the unknowns lacked parent ids or lacked parent records |
+
+> **What the third live measurement shows, and what it does not.** Attribution now covers 252 of
+> 345 observed processes (200 statusline, 52 Claude Code host) against 68 of 131 before, 12 are
+> proved not plugin-descended, and **plugin-attributable is 0 in all three deltas** -- a zero that
+> now means something, because markers can match (58), precedence is right (59), and the proof
+> cannot launder a plugin process (62). The verdict is still INDETERMINATE on 81 unknowns.
+>
+> **The runs are not comparable**: this window observed 345 processes against 131, and included
+> Windows lock-screen activity (`LogonUI.exe`, `LockApp.exe`, `smartscreen.exe`) that the earlier
+> one did not. Reading the two as a before/after of the same quantity would be wrong.
+>
+> The 81 break down precisely: **65 broken chains**, 9 that reached the baseline through an
+> unreadable hop, and 7 whose own command line the OS withheld. The broken chains are transient
+> intermediates -- a parent that lived less than one sampling interval is in no snapshot and no
+> sample, so its children can never be walked. That is an irreducible limit of sampling, not a
+> defect, and it argues that the measurement procedure should specify a quiet session rather than
+> that the harness should sample harder.
+
+---
+
+## Corrections 66-68 -- the first valid measurement, and how this record gets written (2026-08-06)
+
+| # | Correction | Found by |
+|---|-----------|----------|
+| 66 | **A mutation survived because the test's expected answer and its failure answer were the same number.** The widening-window test for `last_assistant_record_offset` placed its target assistant record at byte **0**, so "searched backwards, widened, found it" and "gave up and returned 0" are indistinguishable. A mutation deleting the widening loop entirely passed it. The fixture now puts a filler line ahead of the target so the expected offset is non-zero, and the test asserts `found != 0` explicitly. **The general shape is worth naming: a fixture whose correct answer equals the function's failure value cannot detect that failure** | The mutation harness, on the run that was meant to confirm the feature |
+| 67 | **A test fixture used `Path.write_text`, which translates newlines on Windows and shifted every byte offset it asserted on.** The finder was right and the test was wrong -- 273 against an expected 271, exactly two bytes for two CRLF line endings. Real transcripts were then measured and are **LF-only**, so the fixture had also stopped resembling production. Fixtures now write bytes. This is the **sixth** instance of silent newline translation in this record (see 51); it has never once been the code's fault and always the writing tool's default | The failing assertion, once its two-byte discrepancy was read rather than patched around |
+| 68 | **The orchestrator was not following this repository's own token policies while writing this file.** `docs/policies/file-management-policy.md` §3 requires structure-read then targeted read then **Edit, never Write**, for files over 500 lines, and `tool-optimization-policy.md` sets `cache_after_n_reads = 3`. This record is 700+ lines and was appended to four times by reading the whole file and writing the whole file back from a Python heredoc; `tests/nfr1/driver.py` was once rewritten with `Write` where targeted `Edit`s belonged; and several modules were re-read well past three times without caching their structure. Because the full-file rewrites happened inside a subprocess the **conversation's** token cost was near zero, which is precisely why it went unnoticed -- but a full-file rewrite is also the exact mechanism behind every newline flip in this record. This entry was written using the policy's own pattern: read the last twelve lines, then `Edit` to append | The repository owner, pointing at the policies and asking whether they were understood |
+
+---
+
+## Corrections 69-71 -- installing the plugin, and what the first grounded measurement showed (2026-08-06)
+
+| # | Correction | Found by |
+|---|-----------|----------|
+| 69 | **The plugin's marker set included the bare word `plugin`, which would have charged unrelated software to the plugin.** `build_default_registry` appended `os.path.basename(plugin_root)`, and this plugin's directory is literally named `plugin`. `chrome.exe --disable-plugins` would have counted. This errs toward false FAILs rather than false passes, so no measurement was corrupted -- nothing matched it in the first real run -- but **a metric that can fail for the wrong reason is no better than one that cannot fail at all**, and it was shipped. Replaced with the last two path components, `claude-workflow-engine/plugin`, which stays relocatable while being distinctive; a root with fewer than two components now yields no such marker at all | The orchestrator, checking whether `plugin_count = 0` from the first plugin-grounded measurement actually meant anything |
+| 70 | **The orchestrator declared the plugin uninstalled, then declared it not loaded, and was wrong both times.** First it read `installed_plugins.json`, saw `{"plugins": {}}` and reported the install had failed -- while `settings.json` already carried both `extraKnownMarketplaces` and `enabledPlugins`, exactly what the spike measured an install to write. Then it read `claude plugin list` reporting "No plugins installed" and concluded a session restart was needed -- and moments later the plugin's eleven skills appeared in the session, live, with no restart. **For a marketplace sourced from a local directory, neither `installed_plugins.json` nor `claude plugin list` is the source of truth**; both remained empty while the plugin was demonstrably running. The load-bearing evidence was the skills themselves | The skills listing changing under the orchestrator mid-turn, contradicting what it had just asserted twice |
+| 71 | **The measurement's own tool calls are a dominant source of the processes it cannot attribute.** With the machine idle, a 25-second probe observed **one** new process; the measurement window over ten tool calls observed **eighty**. The difference is the criterion's own ten calls, each spawning a `cmd.exe` -> `bash.exe` wrapper chain whose intermediates die faster than one sampling interval, breaking the ancestry walk. Claude Code's statusline was the other large contributor -- a shell pipeline spawning `jq`/`sed`/`head`/`tail` every few seconds -- and disabling it dropped observed processes from 144 to 81 while `statusline_hook` attributions went to zero. **Neither is a defect in the harness.** They bound what a sampling-based instrument can establish on Windows, and they are the reason the verdict is INDETERMINATE while `plugin_count` is 0 | The orchestrator, after an idle-churn probe made the window's own contribution impossible to attribute to the machine |
+
+> **What the first plugin-grounded measurement established, stated exactly.** Plugin installed and
+> loaded, structural gates **PASS** (`adr019_no_bundled_mcp`, `adr010_no_bundled_hooks`), window
+> valid -- 10/10 tool calls, turn boundary clean on all three witnesses -- and
+> **`plugin_attributable_count` = 0 across the endpoint, sampled and union deltas.**
+>
+> That zero is no longer trivially true. It could not have been read before correction 58, because
+> plugin markers could not match a Windows command line at all; it could have been laundered before
+> correction 59's precedence fix; and it could have been over-claimed before correction 69 narrowed
+> the marker. The verdict remains INDETERMINATE, and per correction 71 that is a statement about the
+> machine, not about the plugin.
+
+> **Two live-settings changes were made, both with the owner's explicit authorisation, and both
+> reversed.** `stop-notifier.log` was archived (2.24 MB to a verified 120 KB gzip, 24,128 lines
+> preserved) and truncated in place. The `statusLine` key was renamed to park it for one
+> measurement and then restored -- `settings.json` verified **byte-for-byte identical** to its
+> pre-change sha256 afterwards. The Stop hook was deliberately **not** touched: two of the
+> turn-boundary guard's three witnesses depend on it, and removing it would leave every window
+> reporting CLEAN because nothing could see otherwise.
+
+---
+
+## Owner ruling: #259 closed by amendment, without a PASS (2026-08-06)
+
+**This is not a correction. It is a decision, recorded because it waives a bar the code itself
+set**, and a reader who finds #259 closed deserves to know that on the record rather than infer
+it from a summary.
+
+`harness.py` carried its own closure condition: *"This issue cannot close on a harness that has
+never produced a pass."* Three of its four conditions were met on 2026-08-06 -- V2-015 (a
+plugin exists and is installed), V2-027 (hook registrations deleted), and cold and warm both
+measured for the first time. **The fourth was not: no PASS was produced.** Both phases are
+INDETERMINATE on ten processes, nine of them Windows system processes whose command lines an
+unelevated observer cannot read.
+
+The owner declined the elevated run that might have cleared them, on the grounds that a
+criterion satisfiable only under Administrator rights is one most engineers in a normal or
+corporate environment could never verify. **That reasoning is sound and the ruling stands.**
+
+What the closure claims: the plugin contributes **zero processes** to a session that installed
+it and did not invoke it -- `plugin_attributable_count = 0` across every delta of both phases,
+both structural gates PASS, both windows certified valid by the harness's own turn-boundary
+guard, 10/10 tool calls counted in each.
+
+What it does not claim: a PASS; that every process in the window was identified; or that the
+criterion as originally written is satisfiable unelevated on Windows. On the present evidence
+it is not, which is the reason for the amendment rather than a footnote to it.
+
+`closure_note` now carries **both halves** -- the original bar and the amendment -- and two
+tests pin it, so a later rewrite cannot quietly turn "the bar was waived" into "the bar was
+cleared". Evidence: `docs/reports/nfr1-measurement-2026-08-06.md`, with
+`nfr1-cold-final.json`, `nfr1-warm-final.json` and `nfr1-report.json` alongside it.
