@@ -259,105 +259,39 @@ def verify_prompt_integrity(state: FlowState) -> bool:
 
 
 def synthesize_prompt_with_flow_data(state: FlowState) -> dict:
-    """Synthesize comprehensive prompt using all collected 3-level flow data.
+    """Report that prompt synthesis is unavailable.
 
-    SYNTHESIS PROCESS:
-    1. Collect data from all levels
-    2. Call PromptGenerator.synthesize_with_flow_data()
-    3. Create comprehensive prompt
-    4. Return synthesized prompt for actual work
+    This function used to load a PromptGenerator from
+    ``scripts/architecture/03-execution-system/00-prompt-generation/prompt-generation-policy.py``
+    and build a synthesised prompt from the whole flow. That file was deleted on
+    2026-05-04 in 683c23a, so the dynamic import has raised on every run since,
+    and the ninety lines of flow-data assembly that followed it were unreachable
+    the entire time. They are removed here rather than left to read as live code.
+
+    What replaced them, and why it is not a fallback: the old except-branch
+    returned ``state[USER_MESSAGE]`` under the key ``synthesized_prompt``, and
+    flow_trace_converter writes that key to ``current-synthesis.txt`` and reports
+    "Synthesis: Generated (N chars)". So for three months the trace claimed a
+    synthesis had been produced while writing out the raw task. Returning empty
+    lets the consumer's own guard skip the file, which is the honest outcome --
+    nothing was synthesised, so nothing should be reported as synthesised.
+
+    The per-run stderr WARNING is gone with it. It announced a permanent
+    condition as though it were an incident, on every single run.
+
+    Args:
+        state: Pipeline state (unused; kept for the node signature).
+
+    Returns:
+        dict: Empty ``synthesized_prompt`` and metadata naming the cause.
     """
-    try:
-        import importlib.util
-        import sys
-        from pathlib import Path
-
-        # Import PromptGenerator from prompt-generation-policy.py
-        scripts_path = (
-            Path(__file__).parent.parent / "scripts" / "architecture" / "03-execution-system" / "00-prompt-generation"
-        )
-        spec = importlib.util.spec_from_file_location(
-            "prompt_generation_policy", scripts_path / "prompt-generation-policy.py"
-        )
-        pg_module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(pg_module)
-
-        generator = pg_module.PromptGenerator()
-
-        # Prepare flow data for synthesis - use ACTUAL pipeline results
-        # Collect validated tasks for TodoList
-        validated_tasks = state.get(StepKeys.TASKS_VALIDATED, [])
-        raw_tasks = state.get(StepKeys.TASKS, {}).get("tasks", [])
-        all_tasks = validated_tasks if validated_tasks else raw_tasks
-
-        # Collect plan phases
-        plan_exec = state.get(StepKeys.PLAN_EXECUTION, {})
-        plan_phases = plan_exec.get("phases", []) if isinstance(plan_exec, dict) else []
-
-        flow_data = {
-            "level0_preflight": {
-                "unicode_check": state.get(StepKeys.UNICODE_CHECK, False),
-                "encoding_check": state.get(StepKeys.ENCODING_CHECK, False),
-                "windows_path_check": state.get(StepKeys.WINDOWS_PATH_CHECK, False),
-            },
-            "level1_context_sync": {
-                "context_percentage": state.get(StepKeys.CONTEXT_PERCENTAGE, 0),
-                "session_chain_loaded": state.get(StepKeys.SESSION_CHAIN_LOADED, False),
-                "patterns_detected": state.get(StepKeys.PATTERNS_DETECTED, []),
-                "project_type": state.get(StepKeys.DETECTED_FRAMEWORK, "Unknown"),
-            },
-            "standards": {
-                "standards_count": state.get(StepKeys.STANDARDS_COUNT, 0),
-                "is_java_project": state.get(StepKeys.IS_JAVA_PROJECT, False),
-                "java_standards_loaded": state.get(StepKeys.JAVA_STANDARDS_LOADED, False),
-            },
-            "level2_sdlc_pipeline": {
-                "task_type": state.get(StepKeys.TASK_TYPE, "General"),
-                "complexity": state.get(StepKeys.COMPLEXITY, 5),
-                "suggested_model": state.get(StepKeys.SELECTED_MODEL, "complex_reasoning"),
-                "plan_mode_suggested": state.get(StepKeys.PLAN_REQUIRED, False),
-                "reasoning": state.get(StepKeys.REASONING, ""),
-                "tasks": all_tasks,
-                "task_count": len(all_tasks),
-                "plan_phases": plan_phases,
-                "selected_skill": state.get(StepKeys.SKILL, ""),
-                "selected_agent": state.get(StepKeys.AGENT, ""),
-                "selected_skills": state.get(StepKeys.SKILLS, []),
-                "selected_agents": state.get(StepKeys.AGENTS, []),
-                "skill_definition": state.get(StepKeys.SKILL_DEFINITION, ""),
-                "agent_definition": state.get(StepKeys.AGENT_DEFINITION, ""),
-            },
-        }
-
-        # SYNTHESIS: Create comprehensive prompt
-        # Priority: user_message > user_message_original > env var CURRENT_USER_MESSAGE
-        import os
-
-        user_msg = (
-            state.get(StepKeys.USER_MESSAGE)
-            or state.get(StepKeys.USER_MESSAGE_ORIGINAL)
-            or os.environ.get("CURRENT_USER_MESSAGE", "")
-        )
-        synthesis_result = generator.synthesize_with_flow_data(user_msg, flow_data)
-
-        return {
-            "synthesized_prompt": synthesis_result.get("synthesized_prompt", ""),
-            "synthesis_metadata": {
-                "original_message": synthesis_result.get("original_message"),
-                "context_level": synthesis_result.get("context_level"),
-                "data_used": synthesis_result.get("data_used"),
-            },
-        }
-
-    except Exception as e:
-        import sys
-
-        print(f"[WARNING] Prompt synthesis failed: {e}", file=sys.stderr)
-        # Fallback: return original message
-        return {
-            "synthesized_prompt": state.get(StepKeys.USER_MESSAGE, ""),
-            "synthesis_metadata": {"status": "fallback"},
-        }
+    return {
+        "synthesized_prompt": "",
+        "synthesis_metadata": {
+            "status": "unavailable",
+            "reason": "prompt-generation-policy.py was removed in 683c23a (2026-05-04)",
+        },
+    }
 
 
 def output_node(state: FlowState) -> dict:
