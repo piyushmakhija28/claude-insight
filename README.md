@@ -2,9 +2,8 @@
 
 > Automate your entire software development lifecycle — from task to merged PR — using Claude AI.
 
-[![Version](https://img.shields.io/badge/Version-1.20.3-blue)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/Version-2.1.0-blue)](CHANGELOG.md)
 [![Python](https://img.shields.io/badge/Python-3.10%2B-green)](https://python.org)
-[![PyPI](https://img.shields.io/badge/PyPI-claude--workflow--engine-orange)](https://pypi.org/project/claude-workflow-engine/)
 [![CI](https://github.com/techdeveloper-org/claude-workflow-engine/actions/workflows/ci.yml/badge.svg)](https://github.com/techdeveloper-org/claude-workflow-engine/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/License-MIT-yellow)](LICENSE)
 [![Tests](https://img.shields.io/badge/Tests-102%20files%20·%205%20integration-brightgreen)](tests/)
@@ -23,13 +22,13 @@ Most AI coding tools generate code and stop there. This engine does what a full 
 | **Core Generation** | | | | |
 | Code generation | Yes | Yes | Yes | Yes |
 | Unit test generation (Python/Java/TS/Kotlin) | Yes | — | Partial | — |
-| Documentation update (Step 13) | Yes | — | — | — |
+| Documentation update (Step 7) | Yes | — | — | — |
 | **Planning & Analysis** | | | | |
 | Task analysis + complexity scoring [1-25] | Yes | — | — | Partial |
 | Call graph impact analysis (pre-change) | Yes | — | — | — |
 | Breaking change detection (graph diff) | Yes | — | — | — |
 | Multi-language call graph (Python/Java/TS/Kotlin) | Yes | — | — | — |
-| Template fast-path (bypass Step 0, ~0s planning) | Yes | — | — | — |
+| Template fast-path (skips Step 1 planning, ~0s) | Yes | — | — | — |
 | **GitHub / Jira SDLC** | | | | |
 | GitHub issue creation | Yes | — | — | — |
 | Dual issue tracking (GitHub + Jira) | Yes | — | — | — |
@@ -71,11 +70,9 @@ Most AI coding tools generate code and stop there. This engine does what a full 
 
 ### Install
 
-```bash
-# From PyPI (recommended)
-pip install claude-workflow-engine
+Not published to PyPI. Install from source:
 
-# From source
+```bash
 git clone https://github.com/techdeveloper-org/claude-workflow-engine
 cd claude-workflow-engine
 pip install -r requirements.txt
@@ -85,18 +82,44 @@ cp .env.example .env
 
 ### Run
 
+Since v2.0.0 the pipeline does **not** start on its own. It runs only when a caller
+explicitly declares which of six commands it stands in for, and it refuses otherwise.
+There is no environment variable that disables this and no opt-out flag — the reasoning
+is in `scripts/pipeline_invocation.py`.
+
+**The supported route is the plugin.** Its commands declare the invocation for you:
+
+```
+/claude-workflow-engine:plan          Steps 0-1  — analyse and decompose, change nothing
+/claude-workflow-engine:implement     Steps 2-4  — issue, branch, code
+/claude-workflow-engine:review        Steps 5-6  — PR, automated review, close the issue
+/claude-workflow-engine:document      Step 7     — docs and diagrams
+/claude-workflow-engine:release       Step 8     — telemetry and summary
+/claude-workflow-engine:run-pipeline  Steps 0-8  — all of it, in order
+```
+
+MCP-backed capabilities stay unreachable until you run
+`/claude-workflow-engine:register-mcp` once.
+
+**Direct CLI** — for a container entry point or a manual run, declare the command
+yourself with `--invoked-by=`:
+
 ```bash
-# Hook Mode (default) — runs analysis + creates GitHub issue + branch
-python scripts/3-level-flow.py --message "Fix the login timeout bug"
+# Hook Mode (default) — analysis, GitHub issue, branch
+python scripts/3-level-flow.py --invoked-by=implement --message "Fix the login timeout bug"
 
-# Full Mode — runs all 8 active steps end-to-end (implements + PR + closes issue)
-CLAUDE_HOOK_MODE=0 python scripts/3-level-flow.py --message "Fix the login timeout bug"
+# Full Mode — all 9 active steps end-to-end (implements + PR + closes issue)
+CLAUDE_HOOK_MODE=0 python scripts/3-level-flow.py --invoked-by=run-pipeline \
+  --message "Fix the login timeout bug"
 
-# Template Fast-Path — skip Step 0 planning entirely
-python scripts/3-level-flow.py \
+# Template Fast-Path — Step 0 detects the template and skips Step 1 planning
+python scripts/3-level-flow.py --invoked-by=run-pipeline \
   --message "Add document Q&A feature" \
   --orchestration-template=orchestration_template.example.json
 ```
+
+Omitting `--invoked-by=` prints `[REFUSED]` and exits 0 without running anything. A
+misspelled command name exits 2, so a typo costs an error rather than a silent no-op.
 
 ### What happens when you run it
 
@@ -318,78 +341,55 @@ Pre-fill a JSON orchestration template once, and every subsequent run skips Step
 python scripts/3-level-flow.py \
   --message "add document Q&A feature" \
   --orchestration-template=orchestration_template.example.json
-# Planning time: ~0s (template loaded, Step 0 bypassed)
+# Planning time: ~0s (Step 0 detects the template and skips Step 1)
 ```
 
 See `orchestration_template.example.json` for the full field reference.
 
 ---
 
-## Hook System
+## Hooks — what happened to them
 
-> Interactive version of this section + the pipeline diagram above: [Pipeline & Hook Architecture](https://claude.ai/code/artifact/6045b61f-00e5-411d-a2a6-d62b267ba29c)
+**v2.0.0 deleted the enforcement hooks.** `PreToolUse`, `PostToolUse` and
+`UserPromptSubmit` are no longer registered in the user-scope `settings.json`; the
+`hooks` object holds exactly `Stop` and `Notification`, and those two were proved
+unchanged by comparing canonical-JSON digests rather than merely checking they were
+still present.
 
-Claude Code exposes 9 hook events. This project registers **4 of them** in `~/.claude/settings.json`. The table below was produced by tracing every registered entry point down to which internal policy modules actually execute, not by reading the prose docs — `docs/policies/hook-system-policy.md` has drifted from the real wiring (see Findings below).
+If you are looking for the previous version of this section — a nine-row registration
+table, a per-policy breakdown and four findings about dead abstractions — it described
+that deleted architecture and has been removed rather than corrected. `git log` has it.
 
-### Registration Status
+### What replaced them
 
-| Event | Registered | Entry Point | Wired Policies |
-|---|:---:|---|---|
-| `UserPromptSubmit` | Yes | `scripts/3-level-flow.py` | Runs the full 3-level pipeline; also the only entry point driving `src/mcp/session_hooks.py` |
-| `PreToolUse` | Yes | `hooks/pre-tool-enforcer.py` → `pre_tool_enforcer/core.py` | 12 / 13 loaded policies wired (1 dead — see Findings) |
-| `PostToolUse` | Yes | `hooks/post-tool-tracker.py` → `post_tool_tracker/core.py` | 6 / 6 wired |
-| `Stop` | Yes | `hooks/stop-notifier.py` → `stop_notifier/core.py` | `voice.py` + `post_impl.py` fully wired |
-| `SessionStart` | **No** | — | — |
-| `SessionEnd` | **No** | — | — |
-| `SubagentStop` | **No** | — | — |
-| `PreCompact` | **No** | — | — |
-| `Notification` | **No** | — | — |
-
-```mermaid
-flowchart TD
-    subgraph REG["Registered — settings.json"]
-        direction TB
-        UPS["UserPromptSubmit\n→ scripts/3-level-flow.py"]
-        PRE["PreToolUse\n→ hooks/pre-tool-enforcer.py"]
-        POST["PostToolUse\n→ hooks/post-tool-tracker.py"]
-        STOP["Stop\n→ hooks/stop-notifier.py"]
-    end
-
-    UPS --> PIPE["Full 3-level LangGraph pipeline\n+ session_hooks.py bridge"]
-    PRE --> PREP["pre_tool_enforcer/core.py\n12/13 policies wired · 1 dead\nPolicyRegistry loaded, never used"]
-    POST --> POSTP["post_tool_tracker/core.py\n6/6 policies wired"]
-    STOP --> STOPP["stop_notifier/core.py\nvoice.py + post_impl.py wired\n+ session save/archive/prune\n(SessionEnd-shaped work)"]
-
-    subgraph MISS["Never registered — no entry, no orphaned code"]
-        direction LR
-        SS["SessionStart"] ~~~ SE["SessionEnd"] ~~~ SA["SubagentStop"] ~~~ PC["PreCompact"] ~~~ NT["Notification"]
-    end
-
-    style REG  fill:#dcfce7,stroke:#16a34a
-    style MISS fill:#fee2e2,stroke:#dc2626
-    style PREP fill:#fef3c7,stroke:#d97706
-```
-
-### PreToolUse — full policy breakdown
-
-`pre_tool_enforcer/core.py` loads all 13 files under `hooks/pre_tool_enforcer/policies/`:
-
-| Policy | Status |
+| Was | Is now |
 |---|---|
-| `checkpoint.py`, `task_breakdown.py`, `skill_selection.py`, `context_read.py`, `level1_sync.py`, `python_unicode.py`, `bash_commands.py`, `grep_opt.py`, `read_opt.py`, `agent_persona.py` | Wired — blocking (`_BLOCKING_POLICIES`, core.py:470-481) |
-| `skill_context.py`, `failure_kb.py` | Wired — non-blocking hints (core.py:543-549, 562-568) |
-| `write_edit.py` | **Loaded, never called** — see Findings #2 |
+| `UserPromptSubmit` started the pipeline on every prompt | Nothing starts it implicitly. A caller declares one of six commands (see [Run](#run)) or it refuses |
+| `PreToolUse` blocked unsafe pushes | An MCP-side push gate, plus ADR-020's three-layer control: prevention on the path the plugin owns, detection on the manual-edit path that has no interception point |
+| `PostToolUse` tracked progress | MCP tools, called explicitly |
 
-### PostToolUse — full policy breakdown
+The ordering mattered: the replacement push gate was registered and proved reachable by
+completing a real `tools/call` **before** `PreToolUse` was deleted. Removing the hook
+while its replacement existed only in the repository would have left a machine with no
+push gate at all.
 
-All 6 files under `hooks/post_tool_tracker/policies/` are loaded and invoked: `uncommitted_push.py`, `post_merge_update.py`, `task_tracking.py`, `phase_complexity.py`, `task_breakdown_clear.py`, `skill_selection_clear.py`.
+### The code is still here, and is not wired
 
-### Findings
+`hooks/` still contains `pre_tool_enforcer/`, `post_tool_tracker/` and `stop_notifier/`.
+None of it is registered. Treat it as reference material, not as behaviour you are
+getting — nothing in the plugin or in `scripts/3-level-flow.py` reaches it.
 
-1. **`PolicyRegistry` is a dead abstraction.** `hooks/pre_tool_enforcer/registry.py` defines a `PolicyRegistry` class meant to register and run policies generically. `core.py:182` imports it, but nothing in the repo ever instantiates it — `core.py` hand-builds its own `_BLOCKING_POLICIES` list instead. Either wire real policies through it or delete it.
-2. **`write_edit.py` never executes.** Loaded and wrapped at `core.py:216` / `367-369`, but no call site in `main()` reaches it — and its own body is a stub that always returns `False`. A second, non-stub-looking copy also sits unused directly in the `pre-tool-enforcer.py` shim (lines 204-222), likewise never called. Two dead implementations of the same check.
-3. **No dedicated `SessionEnd` hook.** `stop_notifier/core.py` runs session archiving, pruning, and preference tracking on every `Stop` event — work a real `SessionEnd` hook would own instead. Since `Stop` fires on every response (not just session close), this logic runs far more often than necessary.
-4. **`docs/policies/hook-system-policy.md` no longer matches the implementation.** It describes a `script-chain-executor.py` dispatcher and a `hook-downloader.py` sync-from-repo model — neither file exists in the repo anymore. Its example `settings.json` snippets point at `~/.claude/scripts/...py`, while the real registration points directly into this repo's `hooks/...py`. Its policy counts ("8" PreToolUse checks, "6" PostToolUse functions) use a different taxonomy than the actual files and only coincidentally match on PostToolUse.
+### The plugin ships zero hooks, deliberately
+
+Plugin hooks merge into a flat, session-wide pipeline with no per-plugin label, so a
+user cannot disable one plugin's hook without disabling everyone's. Shipping one would
+give you less control than you have now. This is ADR-010, and a CI job
+(`Plugin conformance (ADR-010 / ADR-019 CRITICAL)`) fails the build if a `hooks/`
+directory or a `hooks.json` ever appears under the plugin root.
+
+The consequence is worth stating plainly: **nothing is enforced in a session where you
+do not invoke a command.** That is the intended trade-off of the hook-free design, not
+a regression.
 
 ---
 
@@ -538,7 +538,7 @@ All options are set via environment variables. Copy `.env.example` and fill in:
 | Variable | Default | Description |
 |---|---|---|
 | `ENABLE_JIRA` | `0` | Dual GitHub+Jira issue tracking |
-| `ENABLE_JENKINS` | `0` | Jenkins build validation in Step 11 |
+| `ENABLE_JENKINS` | `0` | Jenkins build validation in Step 5 |
 | `ENABLE_SONARQUBE` | `0` | SonarQube scan after implementation |
 | `ENABLE_FIGMA` | `0` | Figma design-to-code pipeline |
 | `ENABLE_CI` | `false` | GitHub Actions CI pipeline |
@@ -570,18 +570,18 @@ All integrations follow the same create → update → close lifecycle pattern w
 ```
 Step 8:  CREATE   Jira issue created, cross-linked to GitHub Issue
 Step 9:  BRANCH   Branch named from Jira key (feature/proj-123)
-Step 10: UPDATE   Transition → "In Progress", add start comment
-Step 11: LINK     PR linked in Jira, transition → "In Review"
-Step 12: CLOSE    Transition → "Done", add implementation summary
+Step 4:  UPDATE   Transition → "In Progress", add start comment
+Step 5:  LINK     PR linked in Jira, transition → "In Review"
+Step 6:  CLOSE    Transition → "Done", add implementation summary
 ```
 
 ### Figma (`ENABLE_FIGMA=1`)
 
 ```
-Step 0:  EXTRACT  Components + design tokens extracted into orchestration prompt
-Step 10: COMMENT  "Implementation started" with component list
-Step 11: REVIEW   Design fidelity checklist in code review
-Step 12: COMMENT  "Implementation complete" with PR link
+Step 1:  EXTRACT  Components + design tokens extracted into orchestration prompt
+Step 4:  COMMENT  "Implementation started" with component list
+Step 5:  REVIEW   Design fidelity checklist in code review
+Step 6:  COMMENT  "Implementation complete" with PR link
 ```
 
 ---
@@ -674,7 +674,7 @@ Numbers from the project's internal version history. All measurements taken on a
 | v1.13.0 | 9 | ~2 (subprocess) | ~30s | Removed Steps 1, 3, 4, 5, 6, 7 |
 | v1.14.0 | 8 | 2 (subprocess) | ~15s | Step 0 = template fill + orchestrator (claude CLI) |
 | v1.16.0 | 8 | 2 (subprocess) | ~15s | Level 2 purged — standards read from policies/ directly |
-| **current** | **8** | **2** | **~15s** | Template fast-path: **~0s** (Step 0 bypassed entirely) |
+| **current** | **9** | **2** | **~15s** | Template fast-path: **~0s** (Step 1 skipped entirely) |
 
 **Planning overhead reduced by 80%** (75s → 15s) across 4 versions without any loss of output quality.
 
@@ -687,7 +687,7 @@ Numbers from the project's internal version history. All measurements taken on a
 | AST navigation | Skip irrelevant functions/classes in large files | 40-60% |
 | Smart read | Read only the slice the agent needs (not whole file) | 20-40% |
 | Context dedup | Deduplicate repeated state / schema definitions | 10-20% |
-| **Combined** | Applied across all 8 active steps | **60-85%** |
+| **Combined** | Applied across all 9 active steps | **60-85%** |
 
 ### Call Graph Intelligence
 
@@ -696,7 +696,7 @@ The AST-based call graph (578 classes, 3,985 methods across Python, Java, TypeSc
 | Capability | Without Call Graph | With Call Graph |
 |------------|:-----------------:|:---------------:|
 | Impact scope before change | Manual review | Automatic: `hot_nodes`, `danger_zones`, `affected_methods` |
-| Breaking change detection | File diff only | Method-level graph diff (before/after Step 10) |
+| Breaking change detection | File diff only | Method-level graph diff (before/after Step 4) |
 | Complexity scoring | Heuristic (1-10) | `combined_complexity_score` [1-25] = heuristic × 0.3 + graph × 0.7 |
 | Multi-language support | Python only | Python (AST) + Java, TypeScript, Kotlin (regex) |
 
@@ -842,4 +842,4 @@ Key rules:
 
 ---
 
-**Version:** 2.1.0 | **Last Updated:** 2026-08-07
+**Version:** 2.1.0 | **Last Updated:** 2026-08-08
