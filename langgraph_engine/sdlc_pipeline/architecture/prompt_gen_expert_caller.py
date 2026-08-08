@@ -171,6 +171,58 @@ def _load_template():
         )
 
 
+def _render_sample(items, total=None, limit=10):
+    """Render up to ``limit`` items, stating how many were left out.
+
+    The caller sends a sample rather than the full list, because the full lists
+    reach a million characters on a large repository and a command line cannot
+    carry that on Windows. The count travels with the sample so the grounding
+    header can say "10 of 940" instead of presenting ten as if they were all --
+    a truncation the reader cannot see is worse than no truncation, because the
+    prompt then asserts something false about the codebase.
+
+    Args:
+        items: The sample to render.
+        total: How many existed before sampling. None means unknown, in which
+            case the sample is assumed complete -- which is what an older caller
+            that sends no total implies.
+        limit: Maximum entries to render.
+
+    Returns:
+        str: Comma-joined entries, suffixed with the omitted count, or "none".
+    """
+    if not items:
+        return "none"
+    shown = list(items)[:limit]
+    rendered = ", ".join(_entry_label(entry) for entry in shown)
+    if total is not None and total > len(shown):
+        return "%s (showing %d of %d)" % (rendered, len(shown), total)
+    return rendered
+
+
+def _entry_label(entry):
+    """Return the human-meaningful name for one call-graph entry.
+
+    The analyser yields dicts -- ``fqn``, ``callers_count``,
+    ``callers_count_high_confidence``, and ``risk`` for affected methods -- not
+    strings. The previous code joined them directly, which raises
+    ``TypeError: sequence item 0: expected str instance, dict found``. That never
+    surfaced because the argument carrying them exceeded the Windows command-line
+    limit and the caller died before rendering; one bug stood in front of the
+    other. Falling back to str() rather than requiring the key, so a shape change
+    degrades to an ugly line instead of an exception in prompt assembly.
+
+    Args:
+        entry: A call-graph entry, normally a dict carrying ``fqn``.
+
+    Returns:
+        str: The entry's fully-qualified name, or its string form.
+    """
+    if isinstance(entry, dict):
+        return str(entry.get("fqn") or entry.get("name") or entry)
+    return str(entry)
+
+
 def _render_kg_routing_block(kg_routing):
     """Render the KG ROUTING grounding block for the ``{kg_routing_block}``
     placeholder.
@@ -241,9 +293,9 @@ def _build_filled_prompt(template, args):
     affected_methods = call_graph.get("affected_methods", [])
     hot_nodes = call_graph.get("hot_nodes", [])
 
-    danger_zones_str = ", ".join(danger_zones) if danger_zones else "none"
-    affected_str = ", ".join(affected_methods[:10]) if affected_methods else "none"
-    hot_nodes_str = ", ".join(hot_nodes[:10]) if hot_nodes else "none"
+    danger_zones_str = _render_sample(danger_zones, call_graph.get("danger_zones_total"))
+    affected_str = _render_sample(affected_methods, call_graph.get("affected_methods_total"))
+    hot_nodes_str = _render_sample(hot_nodes, call_graph.get("hot_nodes_total"))
 
     runtime_block = json.dumps(runtime_context, indent=2, ensure_ascii=True)
 
