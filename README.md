@@ -6,7 +6,7 @@
 [![Python](https://img.shields.io/badge/Python-3.10%2B-green)](https://python.org)
 [![CI](https://github.com/techdeveloper-org/claude-workflow-engine/actions/workflows/ci.yml/badge.svg)](https://github.com/techdeveloper-org/claude-workflow-engine/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/License-MIT-yellow)](LICENSE)
-[![Tests](https://img.shields.io/badge/Tests-102%20files%20·%205%20integration-brightgreen)](tests/)
+[![Tests](https://img.shields.io/badge/Tests-103%20files%20·%205%20integration-brightgreen)](tests/)
 [![Discussions](https://img.shields.io/badge/Discussions-GitHub-blueviolet)](../../discussions)
 
 ---
@@ -106,20 +106,28 @@ yourself with `--invoked-by=`:
 
 ```bash
 # Hook Mode (default) — analysis, GitHub issue, branch
-python scripts/3-level-flow.py --invoked-by=implement --message "Fix the login timeout bug"
+python scripts/3-level-flow.py --invoked-by=implement --message="Fix the login timeout bug"
 
 # Full Mode — all 9 active steps end-to-end (implements + PR + closes issue)
 CLAUDE_HOOK_MODE=0 python scripts/3-level-flow.py --invoked-by=run-pipeline \
-  --message "Fix the login timeout bug"
+  --message="Fix the login timeout bug"
 
 # Template Fast-Path — Step 0 detects the template and skips Step 1 planning
 python scripts/3-level-flow.py --invoked-by=run-pipeline \
-  --message "Add document Q&A feature" \
+  --message="Add document Q&A feature" \
   --orchestration-template=orchestration_template.example.json
 ```
 
-Omitting `--invoked-by=` prints `[REFUSED]` and exits 0 without running anything. A
-misspelled command name exits 2, so a typo costs an error rather than a silent no-op.
+Both flags need the **equals form**. The parser matches on the `--message=` prefix, so a
+space-separated `--message "..."` is silently ignored: the run proceeds with an empty
+task, the orchestration prompt comes out empty, and Steps 2 and 3 skip while the run
+still reports OK.
+
+`--invoked-by=` selects nothing — it only authorizes. Mode comes from
+`CLAUDE_HOOK_MODE`, and the per-command step ranges listed above are the plugin
+dispatcher's doing, not this flag's. Omitting it prints `[REFUSED]` and exits 0 without
+running anything; a misspelled command name exits 2, so a typo costs an error rather
+than a silent no-op.
 
 ### What happens when you run it
 
@@ -175,7 +183,7 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-    START(["Task Input\npython scripts/3-level-flow.py --task ..."])
+    START(["Task Input\npython scripts/3-level-flow.py --invoked-by=... --message=..."])
 
     subgraph LM1["Level 0 : Pre-Flight Sanity Guard"]
         direction LR
@@ -335,11 +343,11 @@ flowchart LR
 
 ### Template Fast-Path
 
-Pre-fill a JSON orchestration template once, and every subsequent run skips Step 0 entirely:
+Pre-fill a JSON orchestration template once, and Step 0 detects it and skips Step 1 planning:
 
 ```bash
-python scripts/3-level-flow.py \
-  --message "add document Q&A feature" \
+python scripts/3-level-flow.py --invoked-by=run-pipeline \
+  --message="add document Q&A feature" \
   --orchestration-template=orchestration_template.example.json
 # Planning time: ~0s (Step 0 detects the template and skips Step 1)
 ```
@@ -461,8 +469,8 @@ claude-workflow-engine/           # 369 Python files total
 ├── policies/                     # non-.md policy state only (failure-kb.json) — see note below
 │   └── 03-execution-system/failure-prevention/failure-kb.json
 │
-├── tests/                        # 102 test_*.py files (123 total Python files)
-│   ├── test_*.py                 # 93 unit tests
+├── tests/                        # 103 test_*.py files (124 total Python files)
+│   ├── test_*.py                 # 94 unit tests
 │   ├── integration/              # 5 integration tests (GitHub, MCP, runtime verification)
 │   ├── e2e/                      # 3 end-to-end scenario tests
 │   └── load/                     # 1 concurrency / load test
@@ -593,7 +601,7 @@ Step 6:  COMMENT  "Implementation complete" with PR link
 ```bash
 docker build -t claude-workflow-engine .
 docker run --env-file .env claude-workflow-engine \
-  python scripts/3-level-flow.py --message "your task"
+  python scripts/3-level-flow.py --invoked-by=run-pipeline --message="your task"
 ```
 
 ### Docker Compose
@@ -613,18 +621,18 @@ kubectl apply -f k8s/secret.yaml -f k8s/configmap.yaml \
 
 ```bash
 ENABLE_HEALTH_SERVER=1 ENABLE_METRICS=1 LOG_FORMAT=json \
-  python scripts/3-level-flow.py --message "your task"
+  python scripts/3-level-flow.py --invoked-by=run-pipeline --message="your task"
 ```
 
 ---
 
 ## Testing
 
-102 test_*.py files (123 total Python files in `tests/` including conftest and `__init__` files):
+103 test_*.py files (124 total Python files in `tests/` including conftest and `__init__` files):
 
 | Category | Files | Notes |
 |---|:---:|---|
-| Unit tests | 93 | In `tests/test_*.py` — no external dependencies required |
+| Unit tests | 94 | In `tests/test_*.py` — no external dependencies required |
 | Integration tests | 5 | `tests/integration/` — require live GitHub token or MCP servers |
 | E2E tests | 3 | `tests/e2e/` — require full pipeline environment |
 | Load tests | 1 | `tests/load/` — enabled with `RUN_LOAD_TESTS=1` |

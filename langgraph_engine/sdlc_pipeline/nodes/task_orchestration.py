@@ -161,11 +161,28 @@ def step1_task_analysis_node(state: FlowState) -> Dict[str, Any]:
     # NFR-2 / ADR-016 replace it: unbounded unless an operator configures a
     # silence interval, which measures no-progress rather than duration.
     _pg_silence = _env_optional_seconds("STEP1_PROMPT_GEN_SILENCE")
+    # Send a sample, not the whole graph. These lists go across a process
+    # boundary as a command-line argument, and on this repository they serialise
+    # to 1,031,711 characters -- 5,527 affected methods and 940 danger zones.
+    # Windows caps a command line at 32,767, so every Step 1 run on Windows died
+    # with WinError 206, fell back to the raw task, and left orchestration_prompt
+    # empty; Steps 2 and 3 then skipped issue and branch creation and the whole
+    # SDLC chain quietly did nothing while the run reported OK.
+    #
+    # Capping here rather than transporting it all and discarding it there.
+    # prompt_gen_expert_caller already rendered only affected_methods[:10], so
+    # that half of this is byte-identical to what it produced before. danger_zones
+    # it rendered in full, so the totals travel alongside the sample and the
+    # grounding header states how many were omitted -- a cap that hides its own
+    # size is how a prompt starts lying about the codebase it describes.
+    _CG_SAMPLE = 10
     _call_graph_json = _json.dumps(
         {
             "risk_level": call_graph_risk_level,
-            "danger_zones": call_graph_danger_zones,
-            "affected_methods": call_graph_affected_methods,
+            "danger_zones": call_graph_danger_zones[:_CG_SAMPLE],
+            "danger_zones_total": len(call_graph_danger_zones),
+            "affected_methods": call_graph_affected_methods[:_CG_SAMPLE],
+            "affected_methods_total": len(call_graph_affected_methods),
         }
     )
     _kg_routing_json = _json.dumps(kg_routing_result)
