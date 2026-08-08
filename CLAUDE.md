@@ -157,8 +157,8 @@ Level 2: SDLC Execution Core (9 active steps: Steps 0-8)
 +-- k8s/                              # Kubernetes manifests (deployment, service, hpa, configmap, secret)
 +-- tests/                            # 45 test files (37 unit, 4 integration, 3 e2e, 1 load)
 +-- docs/                             # ALL documentation, segregated by kind -- see docs/README.md for the index
-|   +-- standards/ (52)               # numbered rules 01-46 + per-language standards; mirrors ~/.claude/rules/ (that copy is what Standards loads)
-|   +-- policies/ (46)                # one file per pipeline policy; mirrors ~/.claude/policies/ (that copy is what get_policies_dir() reads)
+|   +-- standards/ (52)               # numbered rules 01-46 + per-language standards; the loaded copy is ~/.claude/rules/, NOT this one
+|   +-- policies/ (46)                # pipeline policy documentation. NOT a mirror of ~/.claude/policies/ -- see the note below
 |   +-- architecture/ (17)            # ADRs, pipeline/level design, flow diagrams, orchestration prompt
 |   +-- guides/ (14)                  # getting started, deployment, testing, troubleshooting, runbooks
 |   +-- reports/ (20)                 # point-in-time investigations, audits, migration notes
@@ -167,6 +167,24 @@ Level 2: SDLC Execution Core (9 active steps: Steps 0-8)
 |   +-- api/ (1)  phase-1-architecture/ (2)   # OpenAPI spec; original phase-1 HLD + feasibility
 +-- uml/  drawio/                     # Auto-generated UML + draw.io diagrams (13 types each)
 ```
+
+#### `docs/policies/` and `~/.claude/policies/` are two different things
+
+This file used to call them mirrors. They are not, and had drifted apart by 25 files
+when that was checked on 2026-08-08: 18 names in `docs/policies/` are absent from the
+machine, and 7 on the machine are in no repository at all -- several of them for
+plan-mode and skill-agent-selection, which v1.15.2 purged.
+
+They are not meant to match. `docs/policies/` is **documentation** of what the pipeline
+does at each step (`quality-gate-policy.md`, `pr-code-review-policy.md`), and nothing
+loads it. `~/.claude/policies/` is the **runtime corpus** that `get_policies_dir()`
+reads, and the standards selector consumes a narrow slice of it -- the
+`02-standards-system/` tier plus language-mapped files. Calling them mirrors invited
+the assumption that editing one affected the other, which it never did in either
+direction.
+
+`CLAUDE_POLICIES_DIR` overrides the runtime location. The 7 machine-only files are
+unversioned: if that machine is lost, so are they.
 
 ### Key Components
 
