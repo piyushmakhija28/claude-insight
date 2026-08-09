@@ -100,11 +100,53 @@ def _flatten(data: dict, prefix: str = "") -> dict[str, str]:
     return out
 
 
+# Values that mean "you were supposed to fill this in". The shipped
+# workflow-config.json carries them, so an untouched config injects them exactly
+# as if they were real credentials.
+#
+# This is deliberately narrow. A false positive here rejects a working secret and
+# breaks a setup that was fine, which is worse than the bug it guards against, so
+# nothing is matched on length, entropy or character class -- only on shapes no
+# real credential has. A real GitHub token starts ghp_/gho_/github_pat_ and a real
+# API key is not spelled CHANGEME.
+_PLACEHOLDER_PREFIXES = ("your_", "your-", "my_", "replace_", "replaceme", "changeme", "change_me", "todo", "xxx")
+
+
+def _is_placeholder(value: str) -> bool:
+    """Return True when a config value is an unfilled template, not a secret.
+
+    Args:
+        value: The raw value read from workflow-config.json.
+
+    Returns:
+        bool: True if the value should be treated as absent.
+    """
+    if not isinstance(value, str):
+        return False
+    stripped = value.strip()
+    if not stripped:
+        return True
+    if stripped.startswith("<") and stripped.endswith(">"):
+        return True
+    return stripped.lower().startswith(_PLACEHOLDER_PREFIXES)
+
+
 def load_workflow_config(path: Path | None = None) -> dict[str, str]:
     """Load workflow-config.json and inject into os.environ (no-override).
 
     Covers any remaining os.environ.get() call sites that have not yet
     been migrated to use get_section() directly.
+
+    Unfilled template values are skipped rather than injected. The reason is
+    specific and was expensive: the shipped config carries
+    ``"github": {"token": "YOUR_GITHUB_TOKEN"}``, this function injected it into
+    GITHUB_TOKEN, and that one string then defeated BOTH GitHub backends at once
+    -- the MCP client authenticated with it and got 401 Bad credentials, and the
+    gh CLI fallback also lost, because gh prefers an environment token over its
+    own keyring and reported itself unauthenticated. `gh auth login` therefore
+    appeared to do nothing, and Step 2 fell back to "no GitHub backend available"
+    on every run. Injecting nothing leaves the keyring reachable, which is the
+    working path.
 
     Returns a dict of env-var-name -> value pairs that were injected.
     """
@@ -114,10 +156,27 @@ def load_workflow_config(path: Path | None = None) -> dict[str, str]:
 
     flat = _flatten(raw)
     injected: dict[str, str] = {}
+    skipped: list[str] = []
 
     for json_key, env_key in _MAPPING.items():
-        if json_key in flat and env_key not in os.environ:
-            os.environ[env_key] = flat[json_key]
-            injected[env_key] = flat[json_key]
+        if json_key not in flat or env_key in os.environ:
+            continue
+        value = flat[json_key]
+        if _is_placeholder(value):
+            skipped.append(json_key)
+            continue
+        os.environ[env_key] = value
+        injected[env_key] = value
+
+    # Said out loud, because a value silently ignored is indistinguishable from a
+    # value that was never read -- and the reader is someone wondering why their
+    # config has no effect.
+    if skipped:
+        import sys  # noqa: PLC0415
+
+        print(
+            "[config_loader] ignored %d unfilled placeholder value(s): %s" % (len(skipped), ", ".join(sorted(skipped))),
+            file=sys.stderr,
+        )
 
     return injected
