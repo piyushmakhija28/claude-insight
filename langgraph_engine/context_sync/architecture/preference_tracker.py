@@ -37,6 +37,27 @@ from langgraph_engine.core.claude_paths import display_path
 # Minimum number of appearances across sessions to register as a preference
 MIN_OCCURRENCES = 3
 
+# Bounds on how much session history one run may read.
+#
+# This function used to read EVERY .md/.txt/.json/.log file under every session
+# directory, fully into memory, with no bound of any kind. A stack sampler run on
+# 2026-08-09 measured 106 of a 184-second pipeline run inside _read_file. The
+# directory it walks is ~/.claude/memory/logs/sessions, which on the machine that
+# found this held 4.4 GB across 1,658 session directories -- 11,050 matching text
+# files, read in full, on every run. The cost grows with every run the engine
+# performs, because each run writes another session directory that the next run
+# then reads, and it had already pushed one run past the entry point's
+# 300-second orchestration cap.
+#
+# What the reading is FOR sets the bound. track_preferences lowercases the text and
+# asks whether known skill and agent names appear in it, then keeps anything seen
+# in at least MIN_OCCURRENCES sessions. That is a frequency heuristic over recent
+# behaviour: the hundred-and-fifty-first megabyte of a single log cannot change a
+# preference that three separate sessions did not already establish, and a session
+# from six months ago is not evidence about what the user prefers now.
+MAX_SESSIONS_SCANNED = 25
+MAX_FILE_BYTES = 1_000_000
+
 # Output file for storing learned preferences
 PREFERENCES_FILE = Path.home() / ".claude" / "memory" / "user-preferences.json"
 
@@ -207,26 +228,66 @@ def _collect_session_texts(sessions_dir: Path) -> List[str]:
         return texts
 
     text_extensions = {".md", ".txt", ".json", ".log"}
+    truncated_files = 0
+    skipped_sessions = 0
 
     def _read_file(path: Path) -> Optional[str]:
+        """Read at most MAX_FILE_BYTES of one file."""
         try:
-            return path.read_text(encoding="utf-8", errors="replace")
+            with path.open("r", encoding="utf-8", errors="replace") as handle:
+                content = handle.read(MAX_FILE_BYTES)
         except OSError:
             return None
+        return content
 
-    for item in sessions_dir.iterdir():
-        if item.is_file():
-            if item.suffix.lower() in text_extensions:
-                content = _read_file(item)
+    try:
+        entries = list(sessions_dir.iterdir())
+    except OSError:
+        return texts
+
+    loose_files = [e for e in entries if e.is_file() and e.suffix.lower() in text_extensions]
+    session_dirs = [e for e in entries if e.is_dir()]
+
+    # Newest first, so the cap drops the oldest sessions rather than an arbitrary
+    # set. mtime is used rather than the name because session directory names are
+    # UUID-bearing and do not sort chronologically.
+    try:
+        session_dirs.sort(key=lambda p: p.stat().st_mtime, reverse=True)
+    except OSError:
+        pass
+    if len(session_dirs) > MAX_SESSIONS_SCANNED:
+        skipped_sessions = len(session_dirs) - MAX_SESSIONS_SCANNED
+        session_dirs = session_dirs[:MAX_SESSIONS_SCANNED]
+
+    for item in loose_files:
+        content = _read_file(item)
+        if content:
+            if len(content) == MAX_FILE_BYTES:
+                truncated_files += 1
+            texts.append(content)
+
+    for session_dir in session_dirs:
+        try:
+            subitems = list(session_dir.iterdir())
+        except OSError:
+            continue
+        for subitem in subitems:
+            if subitem.is_file() and subitem.suffix.lower() in text_extensions:
+                content = _read_file(subitem)
                 if content:
+                    if len(content) == MAX_FILE_BYTES:
+                        truncated_files += 1
                     texts.append(content)
-        elif item.is_dir():
-            # One level deeper (session subdirectory)
-            for subitem in item.iterdir():
-                if subitem.is_file() and subitem.suffix.lower() in text_extensions:
-                    content = _read_file(subitem)
-                    if content:
-                        texts.append(content)
+
+    # A cap that hides its own size turns a sampled result into one that reads as
+    # complete. Reported on stderr rather than through a logger because this module
+    # is loaded by path as a standalone script and has no logger of its own.
+    if skipped_sessions or truncated_files:
+        print(
+            "[preference_tracker] sampled history: skipped %d older session(s), "
+            "truncated %d file(s) at %d bytes" % (skipped_sessions, truncated_files, MAX_FILE_BYTES),
+            file=sys.stderr,
+        )
 
     return texts
 
