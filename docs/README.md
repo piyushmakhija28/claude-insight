@@ -19,7 +19,7 @@ permits: `README.md`, `CLAUDE.md`, `SRS.md`, `CHANGELOG.md` and `VERSION`.
 | [`phase-6-sprint/`](phase-6-sprint/) | Sprint plan and issue drafts | 4 |
 | [`phase-7-routing/`](phase-7-routing/) | Issue-to-agent routing | 4 |
 | [`phase-8-alignment/`](phase-8-alignment/) | Pre-implementation alignment | 4 |
-| [`policies/`](policies/) | Pipeline policies | 46 |
+| [`policies/`](policies/) | Pipeline policies | 44 |
 | [`releases/`](releases/) | Per-release design notes | 7 |
 | [`reports/`](reports/) | Investigations and audits | 26 |
 | [`standards/`](standards/) | Coding and testing standards | 52 |

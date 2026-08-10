@@ -475,7 +475,7 @@ claude-workflow-engine/           # 369 Python files total
 │   ├── e2e/                      # 3 end-to-end scenario tests
 │   └── load/                     # 1 concurrency / load test
 │
-├── docs/                         # 255 files — architecture docs, ADRs, runbooks, ALL policy/rule
+├── docs/                         # 253 files — architecture docs, ADRs, runbooks, ALL policy/rule
 │                                 # .md files (flattened here, no subfolders), CONTRIBUTING.md,
 │                                 # CODE_OF_CONDUCT.md, and the GitHub issue/PR templates
 ├── uml/                          # Regenerated per pipeline run (13 types, Mermaid/PlantUML)
@@ -850,4 +850,4 @@ Key rules:
 
 ---
 
-**Version:** 2.1.0 | **Last Updated:** 2026-08-08
+**Version:** 2.1.0 | **Last Updated:** 2026-08-10
