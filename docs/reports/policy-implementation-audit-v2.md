@@ -1,8 +1,15 @@
 # Policy Implementation Audit v2 (Deliverable 1)
 
-Generated 2026-08-01, reshaped 2026-08-02. The Deliverable-1 record for the 46-policy corpus:
-one row per policy, with status, evidence, post-plugin plan, the basis for that plan, and
-verification provenance. Consumed by V2-005 through V2-008.
+Generated 2026-08-01, reshaped 2026-08-02, re-based on the 44-policy corpus 2026-08-10. The
+Deliverable-1 record for the `docs/policies/` corpus: one row per policy, with status, evidence,
+post-plugin plan, the basis for that plan, and verification provenance. Consumed by V2-005
+through V2-008.
+
+**The corpus was 46 policies until 2026-08-10.** PR #308 replaced three session policies with
+one, so the matrix is 44 rows. The three retired rows' findings are preserved verbatim in
+section 1.4, not deleted with the rows: a policy being rewritten does not falsify a measurement
+of the old policy's implementation. Every count in this document that reasons about those rows
+was recomputed, and each such passage says what it changed from.
 
 ## Provenance of this document, and what read pass it does and does not rest on
 
@@ -43,20 +50,28 @@ CITED. No row was upgraded to MEASURED merely because the column exists.
 
 ---
 
-## 1. The 46-row policy implementation matrix
+## 1. The 44-row policy implementation matrix
 
-**Row count: 46.** Counted from the enumeration below, not asserted independently. The rows
+**Row count: 44.** Counted from the enumeration below, not asserted independently. The rows
 were generated programmatically from the 46 records in
 `docs/phase-0-reverse-engineering/policy_enforcement_raw.json`, with the row count asserted
 at generation time, so a summary-versus-enumeration mismatch cannot arise here. That is this
 project's most-caught defect class (corrections #9-13).
 
+**The raw JSON is no longer a mirror of the matrix, and is not being re-generated.** It still
+carries its original 46 records. Three of them (`session-chaining`, `session-memory`,
+`session-pruning`) name policies PR #308 removed from `docs/policies/` on 2026-08-10, and one
+corpus file (`session-management-policy.md`) has no record in it. The matrix follows
+`docs/policies/`, which ADR-009 makes authoritative, so the JSON is now a superset with one
+gap rather than a one-to-one source. Row 34 was written by hand against live code and is
+labelled MEASURED for that reason; the other 43 rows are unchanged in provenance.
+
 **Post-plugin plan vocabulary** is V2-005's set, spelled exactly as V2-005 spells it:
 `keep-as-is` / `port-to-plugin` / `port-to-MCP` / `demote-to-advisory` / `delete`. A value
-outside that set fails V2-005's review, so no other token appears in that column. **All 46
-cells are now populated.** 42 were decided from evidence on disk; the final 4 were closed by
-owner and architect rulings on 2026-08-02 and are labelled as rulings, not as findings --
-see section 1.2.2.
+outside that set fails V2-005's review, so no other token appears in that column. **All 44
+cells are now populated.** 39 were decided from evidence on disk; 4 were closed by owner and
+architect rulings on 2026-08-02 and are labelled as rulings, not as findings (section 1.2.2);
+1 -- row 34 -- was decided by the 2026-08-10 consolidation (section 1.4).
 
 Sorted alphabetically by policy filename, case-insensitive.
 
@@ -95,19 +110,17 @@ Sorted alphabetically by policy filename, case-insensitive.
 | 31 | `prompt-generation-policy.md` | ENFORCED | `langgraph_engine/sdlc_pipeline/architecture/prompt_gen_expert_caller.py:159` `_build_filled_prompt`, `:253` `main` (reach=True) | keep-as-is | judged: no hook coupling; enforcement is pipeline code de-hooking does not touch | CITED |
 | 32 | `quality-gate-policy.md` | ENFORCED | `langgraph_engine/sdlc_pipeline/quality_gate.py:637` `evaluate_quality_gate` (reach=True, cc=9), with `_evaluate_sonar_gate:142`, `_evaluate_coverage_gate:248` | keep-as-is | judged: no hook coupling; enforcement is pipeline code de-hooking does not touch | CITED |
 | 33 | `recovery-policy.md` | ENFORCED | `langgraph_engine/preflight_guard/recovery.py:234` `fix_preflight_guard_issues` (reach=True, cc=45) | keep-as-is | judged: no hook coupling; enforcement is pipeline code de-hooking does not touch | CITED |
-| 34 | `session-chaining-policy.md` | PARTIAL | `src/mcp/session_hooks.py`, `src/mcp/session_mcp_server.py` (`session_link`-adjacent surface, module reach=True); `clear-session-handler.py` named by the policy not found | keep-as-is | judged: no hook coupling; enforcement is pipeline code de-hooking does not touch | CITED |
-| 35 | `session-memory-policy.md` | CONTRADICTED | `hooks/stop_notifier/core.py:104-127` spawns `scripts/architecture/01-sync-system/session-management/auto-save-session.py`, which does not exist | delete | OAQ 2 row 11 -- deleted on the same root cause and evidence as `git-auto-commit-policy.md`, and independently scored CONTRADICTED as a confirmed no-op, with the capability loss recorded in the NFR-4 ledger | MEASURED |
-| 36 | `session-pruning-policy.md` | CONTRADICTED | `hooks/stop_notifier/core.py:131-181` spawns `archive-old-sessions.py` and `session-pruner.py` under `scripts/architecture/01-sync-system/`; neither exists | delete | OAQ 2 row 12 -- deleted on the same root cause and evidence as the other two Stop-hook maintenance policies, its spawn target being absent repo-wide, with the capability loss recorded in the NFR-4 ledger | MEASURED |
-| 37 | `task-phase-enforcement-policy.md` | ENFORCED | `hooks/pre_tool_enforcer/policies/task_breakdown.py:12` `check_task_breakdown_pending` -- same point as row 3 | demote-to-advisory | OAQ 2 row 13 -- demoted because phase ordering is a planning concern the pipeline already sequences, so enforcing it per tool call was always the wrong altitude | CITED |
-| 38 | `task-progress-tracking-policy.md` | PARTIAL | `hooks/post_tool_tracker/policies/task_tracking.py`, `.../task_breakdown_clear.py` (both present; reach not individually traced -- LOW confidence) | port-to-MCP | OAQ 2 row 14 -- ported because it is OAQ 1's (B) replacement, namely `mcp-post-tool-tracker.increment_progress` called explicitly instead of fired by a hook | CITED |
-| 39 | `test-case-policy.md` | DOCUMENTED-ONLY | NONE found as a distinct gate | demote-to-advisory | `as-built-prd.md` SS 4.2: a behavioural instruction to the calling agent, not a pipeline gate -- OAQ 2 row 2's criterion for the plugin's agent-instruction layer | CITED |
-| 40 | `test-generation-policy.md` | ENFORCED | `langgraph_engine/sdlc_pipeline/test_generator.py` `detect_language:39`, `detect_test_framework:61`, `_generate_python_tests:544` | keep-as-is | judged: no hook coupling; enforcement is pipeline code de-hooking does not touch | CITED |
-| 41 | `tool-optimization-policy.md` | ENFORCED | `hooks/pre_tool_enforcer/policies/read_opt.py:8` `check_read_opt`, `grep_opt.py:8` `check_grep_opt`, registered `core.py:466-467` | port-to-MCP | OAQ 2 row 4 -- ported because `mcp-token-optimizer` already implements the deterministic half, with the read-in-chunks guidance demoting to advisory as the judgement-shaped remainder | MEASURED |
-| 42 | `tool-usage-optimization-policy.md` | CONTRADICTED | No distinct point. Shares row 41's registration: `hooks/pre_tool_enforcer/policies/read_opt.py:8` `check_read_opt` and `grep_opt.py:8` `check_grep_opt`, registered once at `hooks/pre_tool_enforcer/core.py:466-467`, while this policy's own text claims "NO DUPLICATION" | delete | OAQ 2 row 15 -- deleted and merged into `tool-optimization-policy.md`'s disposition because it self-claims NO DUPLICATION while sharing that policy's single enforcement point, so keeping both would preserve a documented false claim | MEASURED |
-| 43 | `unicode-fix-policy.md` | ENFORCED | `langgraph_engine/preflight_guard/nodes.py:62-147` `node_unicode_fix`, wired `orchestrator.py:657`, on the `START` edge at `:663` | keep-as-is | judged: no hook coupling; enforcement is pipeline code de-hooking does not touch | MEASURED |
-| 44 | `user-preferences-policy.md` | DOCUMENTED-ONLY | `langgraph_engine/sdlc_pipeline/nodes/pre_nodes.py:191` `result['user_preferences_context']` -- a passthrough state field, not a learning function | port-to-MCP | OWNER RULING 2026-08-02: preference learning is in v2.0.0 scope. Its mechanism is deterministic rather than model-judged -- a 3-occurrence learning threshold -- which is why it ports to a tool surface instead of demoting to advisory like rows 16, 28 and 39. **PRECONDITION, MEASURED 2026-08-02: `track-preference.py` is absent repo-wide, and `pre_nodes.py:191` carries only a passthrough state field, not a learning function. The port is a BUILD, not a move** | CITED |
-| 45 | `version-release-policy.md` | ENFORCED | `hooks/pre_tool_enforcer/policies/push_gate.py:354` `check_push_version`, `:408` `check_push_clean_tree`, registered `core.py:464-465` | port-to-MCP | OAQ 2 row 5 -- this is `push_gate.py`, and PRD FR-23 fixes it at MANDATORY `port-to-MCP` plus ADR-017's CI-gate ordering assertion rather than leaving it to generic classification, because once FR-4 deletes the hook the version-push bypass closed by commit 1bb4303 has NEITHER preventive NOR detective cover until both `register-mcp` and that CI assertion exist, and both are DESIGNED, NOT BUILT | CITED |
-| 46 | `windows-path-policy.md` | ENFORCED | `langgraph_engine/preflight_guard/nodes.py:240-323` `node_windows_path_check` (reach=True, cc=17) | keep-as-is | judged: no hook coupling; enforcement is pipeline code de-hooking does not touch | CITED |
+| 34 | `session-management-policy.md` | PARTIAL | `langgraph_engine/context_sync/session_loader.py:137` reads `PREVIOUS_SESSION_ID` for chaining, but nothing writes that variable before this point in the same process, so the chain link the policy's SS 2 requires is only made when an outside caller happens to have exported it; `src/mcp/session_mcp_server.py:41` roots session state at `get_config_dir()` rather than the logs location the policy's SS 5 declares canonical; `langgraph_engine/context_sync/architecture/session_pruner.py:170` skips every directory entry while a session is a directory, so retention collects nothing | keep-as-is | CONSOLIDATION 2026-08-10 (PR #308), not an evidence finding: this row replaces pre-consolidation rows 34-36, whose findings are preserved in section 1.4. `keep-as-is` because the merged policy is the corpus's current active session spec and its live enforcement points are pipeline and MCP code that de-hooking does not touch. **It is NOT counted under Rule 1** -- `hooks/session_context.py` is the identity authority the Stop hook imports, so residual hook coupling exists -- and is recorded as a fifth provenance class rather than as `judged:`. **PRECONDITION, MEASURED 2026-08-10: 4 of the 7 components the policy's own SS 7 lists are Planned, Partial, non-functional or being retired, so `keep-as-is` keeps a spec its own text declares incompletely implemented** | MEASURED |
+| 35 | `task-phase-enforcement-policy.md` | ENFORCED | `hooks/pre_tool_enforcer/policies/task_breakdown.py:12` `check_task_breakdown_pending` -- same point as row 3 | demote-to-advisory | OAQ 2 row 13 -- demoted because phase ordering is a planning concern the pipeline already sequences, so enforcing it per tool call was always the wrong altitude | CITED |
+| 36 | `task-progress-tracking-policy.md` | PARTIAL | `hooks/post_tool_tracker/policies/task_tracking.py`, `.../task_breakdown_clear.py` (both present; reach not individually traced -- LOW confidence) | port-to-MCP | OAQ 2 row 14 -- ported because it is OAQ 1's (B) replacement, namely `mcp-post-tool-tracker.increment_progress` called explicitly instead of fired by a hook | CITED |
+| 37 | `test-case-policy.md` | DOCUMENTED-ONLY | NONE found as a distinct gate | demote-to-advisory | `as-built-prd.md` SS 4.2: a behavioural instruction to the calling agent, not a pipeline gate -- OAQ 2 row 2's criterion for the plugin's agent-instruction layer | CITED |
+| 38 | `test-generation-policy.md` | ENFORCED | `langgraph_engine/sdlc_pipeline/test_generator.py` `detect_language:39`, `detect_test_framework:61`, `_generate_python_tests:544` | keep-as-is | judged: no hook coupling; enforcement is pipeline code de-hooking does not touch | CITED |
+| 39 | `tool-optimization-policy.md` | ENFORCED | `hooks/pre_tool_enforcer/policies/read_opt.py:8` `check_read_opt`, `grep_opt.py:8` `check_grep_opt`, registered `core.py:466-467` | port-to-MCP | OAQ 2 row 4 -- ported because `mcp-token-optimizer` already implements the deterministic half, with the read-in-chunks guidance demoting to advisory as the judgement-shaped remainder | MEASURED |
+| 40 | `tool-usage-optimization-policy.md` | CONTRADICTED | No distinct point. Shares row 39's registration: `hooks/pre_tool_enforcer/policies/read_opt.py:8` `check_read_opt` and `grep_opt.py:8` `check_grep_opt`, registered once at `hooks/pre_tool_enforcer/core.py:466-467`, while this policy's own text claims "NO DUPLICATION" | delete | OAQ 2 row 15 -- deleted and merged into `tool-optimization-policy.md`'s disposition because it self-claims NO DUPLICATION while sharing that policy's single enforcement point, so keeping both would preserve a documented false claim | MEASURED |
+| 41 | `unicode-fix-policy.md` | ENFORCED | `langgraph_engine/preflight_guard/nodes.py:62-147` `node_unicode_fix`, wired `orchestrator.py:657`, on the `START` edge at `:663` | keep-as-is | judged: no hook coupling; enforcement is pipeline code de-hooking does not touch | MEASURED |
+| 42 | `user-preferences-policy.md` | DOCUMENTED-ONLY | `langgraph_engine/sdlc_pipeline/nodes/pre_nodes.py:191` `result['user_preferences_context']` -- a passthrough state field, not a learning function | port-to-MCP | OWNER RULING 2026-08-02: preference learning is in v2.0.0 scope. Its mechanism is deterministic rather than model-judged -- a 3-occurrence learning threshold -- which is why it ports to a tool surface instead of demoting to advisory like rows 16, 28 and 37. **PRECONDITION, MEASURED 2026-08-02: `track-preference.py` is absent repo-wide, and `pre_nodes.py:191` carries only a passthrough state field, not a learning function. The port is a BUILD, not a move** | CITED |
+| 43 | `version-release-policy.md` | ENFORCED | `hooks/pre_tool_enforcer/policies/push_gate.py:354` `check_push_version`, `:408` `check_push_clean_tree`, registered `core.py:464-465` | port-to-MCP | OAQ 2 row 5 -- this is `push_gate.py`, and PRD FR-23 fixes it at MANDATORY `port-to-MCP` plus ADR-017's CI-gate ordering assertion rather than leaving it to generic classification, because once FR-4 deletes the hook the version-push bypass closed by commit 1bb4303 has NEITHER preventive NOR detective cover until both `register-mcp` and that CI assertion exist, and both are DESIGNED, NOT BUILT | CITED |
+| 44 | `windows-path-policy.md` | ENFORCED | `langgraph_engine/preflight_guard/nodes.py:240-323` `node_windows_path_check` (reach=True, cc=17) | keep-as-is | judged: no hook coupling; enforcement is pipeline code de-hooking does not touch | CITED |
 
 ### 1.1 Matrix integrity checks
 
@@ -115,61 +128,77 @@ All MEASURED by re-counting the table above.
 
 | Check | Result |
 |---|---|
-| Data rows | **46** |
-| Rows with a non-empty Evidence cell | **46 of 46**, zero blanks (AC2) |
-| Evidence citing a real code `file:line` | **37** |
-| Evidence stating an explicit NONE / no runtime mechanism | **9** |
-| Status values summing to the corpus | 18 + 11 + 8 + 8 + 1 + 0 = **46** |
-| Post-plugin plan cells populated | **46 of 46**; **0 empty** |
+| Data rows | **44** (was 46 before 2026-08-10; section 1.4) |
+| Rows with a non-empty Evidence cell | **44 of 44**, zero blanks (AC2) |
+| Evidence citing a real code `file:line` | **35** (was 37: 3 removed, 1 added) |
+| Evidence stating an explicit NONE / no runtime mechanism | **9** (unchanged; none of the consolidated rows was a NONE row) |
+| Status values summing to the corpus | 18 + 11 + 6 + 8 + 1 + 0 = **44** |
+| Post-plugin plan cells populated | **44 of 44**; **0 empty** |
 | Post-plugin values outside V2-005's vocabulary | **0** |
-| Basis cells populated | **46 of 46**, including all 4 ruling-decided rows |
-| Verification cells populated | **46 of 46** (9 MEASURED, 37 CITED, 0 INFERRED) |
+| Basis cells populated | **44 of 44**, including all 4 ruling-decided rows and the 1 consolidation row |
+| Verification cells populated | **44 of 44** (8 MEASURED, 36 CITED, 0 INFERRED) |
 
-**The 9 rows whose evidence is an explicit NONE** (rows 2, 15, 16, 22, 23, 24, 28, 30, 39):
+**The 9 rows whose evidence is an explicit NONE** (rows 2, 15, 16, 22, 23, 24, 28, 30, 37):
 `architecture-script-mapping-policy.md`, `EXECUTION-SYSTEM-FIXES-SUMMARY.md`,
 `file-management-policy.md`, `intelligent-decision-engine-policy.md`,
 `intelligent-model-selection-policy.md`, `INTELLIGENT-PROMPT-GENERATION-UPGRADE.md`,
 `parallel-execution-policy.md`, `proactive-consultation-policy.md`, `test-case-policy.md`.
-Count of names listed: 9. Evidence density is therefore **37/46 (80.4%) real citations**.
+Count of names listed: 9. Evidence density is therefore **35/44 (79.5%) real citations**, down
+from 37/46 (80.4%): all three consolidated rows carried real citations and the one row
+replacing them carries one, so the numerator fell by 2 and the denominator by 2.
 "NONE found" is a populated evidence cell under AC2; an empty cell would not be.
 
 ### 1.2 Post-plugin plan: distribution, decision rules, and the 4 remaining empty cells
 
 | Value | Count | Source |
 |---|---|---|
-| `keep-as-is` | 19 | 18 from the non-hook-coupled rule below; 1 (row 4) decided at V2-005 |
+| `keep-as-is` | 19 | 17 from the non-hook-coupled rule below; 1 (row 4) decided at V2-005; 1 (row 34) by the 2026-08-10 consolidation |
 | `port-to-plugin` | 1 | row 2, owner ruling 2026-08-02 |
-| `port-to-MCP` | 6 | 5 from `hld.md` SS 12 OAQ 2 (RESOLVED); 1 (row 44) owner ruling |
+| `port-to-MCP` | 6 | 5 from `hld.md` SS 12 OAQ 2 (RESOLVED); 1 (row 42) owner ruling |
 | `demote-to-advisory` | 9 | 5 from OAQ 2; 3 at V2-005; 1 (row 23) architect ruling |
-| `delete` | 11 | 5 from OAQ 2; 5 at V2-005; 1 (row 1) owner ruling |
+| `delete` | 9 | 3 from OAQ 2; 5 at V2-005; 1 (row 1) owner ruling |
 | *(empty)* | 0 | none remain |
-| **Total** | **46** | |
+| **Total** | **44** | |
 
-**Provenance split: 15 rows from OAQ 2, 18 from the non-hook-coupled rule, 9 decided at
-V2-005, 4 by owner or architect ruling.** 15 + 18 + 9 + 4 = 46. The `Basis` column makes the
-split machine-readable per row: OAQ-2-sourced rows **open** with `OAQ 2 row N` followed by a
-one-sentence rationale, rows from the non-hook-coupled rule are prefixed `judged:`, V2-005 rows
-name the artifact that determined them, and the 4 ruling rows are prefixed `OWNER RULING` or
-`ARCHITECT RULING` with the date. That prefix is deliberate: those four are DECISIONS, not
-evidence findings, and a reader must be able to tell the difference.
+**What changed on 2026-08-10.** `keep-as-is` stayed at **19** -- the consolidated row took
+`keep-as-is`, and the `keep-as-is` row it replaced left the non-hook-coupled set, so 18 became
+17 + 1. `delete` fell from **11 to 9**, because both consolidated CONTRADICTED rows carried
+`delete` from OAQ 2, taking OAQ 2's `delete` contribution from 5 to 3. The other three values
+are untouched. 19 + 1 + 6 + 9 + 9 = 44.
 
-**Match on the opening, not on a substring search.** MEASURED 2026-08-02: **19** rows contain
-the string `OAQ 2 row` somewhere in `Basis`, but only **15** open with it. The other four are
-rows 16, 26, 28 and 39, which *quote* an OAQ 2 criterion (row 1's or row 2's) as the reasoning
-they borrow while being dispositioned at V2-005, not by OAQ 2. A grep for `OAQ 2` returns 19 and
-would overstate the OAQ-2-sourced set by four; the anchored form `^OAQ 2 row \d+` returns exactly
-the 15. Both figures are enumerable from the matrix above.
+**Provenance split: 13 rows from OAQ 2, 17 from the non-hook-coupled rule, 9 decided at
+V2-005, 4 by owner or architect ruling, 1 by the 2026-08-10 consolidation.**
+13 + 17 + 9 + 4 + 1 = 44; before the consolidation it read 15 + 18 + 9 + 4 = 46. The `Basis`
+column makes the split machine-readable per row: OAQ-2-sourced rows **open** with `OAQ 2 row N`
+followed by a one-sentence rationale, rows from the non-hook-coupled rule are prefixed
+`judged:`, V2-005 rows name the artifact that determined them, the 4 ruling rows are prefixed
+`OWNER RULING` or `ARCHITECT RULING` with the date, and row 34 is prefixed `CONSOLIDATION` with
+the date. Those prefixes are deliberate: those five are DECISIONS, not evidence findings, and a
+reader must be able to tell the difference.
+
+**Match on the opening, not on a substring search.** MEASURED 2026-08-02, recounted
+2026-08-10: **17** rows contain the string `OAQ 2 row` somewhere in `Basis`, but only **13**
+open with it. The other four are rows 16, 26, 28 and 37, which *quote* an OAQ 2 criterion (row
+1's or row 2's) as the reasoning they borrow while being dispositioned at V2-005, not by OAQ 2.
+A grep for `OAQ 2` returns 17 and would overstate the OAQ-2-sourced set by four; the anchored
+form `^OAQ 2 row \d+` returns exactly the 13. Both figures were 19 and 15 before the
+consolidation removed two rows that opened with the token. Both are enumerable from the matrix
+above.
 
 **Where a `Basis` cell carries a `MEASURED` tag, that tag qualifies the disposition's
-evidence, not the row's `Verification` value.** No row was upgraded to MEASURED by this
-pass; the 9 MEASURED / 37 CITED split of section 1.1 is unchanged.
+evidence, not the row's `Verification` value.** No row was upgraded to MEASURED by the
+2026-08-02 pass; the 8 MEASURED / 36 CITED split of section 1.1 is the 9 / 37 split of that
+pass less the two consolidated MEASURED rows, plus row 34, which was measured on 2026-08-10.
 
-**The 15 OAQ-2 rows are exactly the 15 hook-coupled policies.** MEASURED: filtering
-`policy_enforcement_raw.json` on `hook_coupled_by_implementation == true` returns 15 records,
-and that set is **identical** to OAQ 2's 15 table rows -- asserted by set equality at
-generation time, so neither set contains a policy absent from the other. OAQ 2's totals
-(5 port-to-MCP, 5 demote-to-advisory, 5 delete) reconcile with the per-row values
-transcribed here.
+**The 13 OAQ-2 rows in the matrix were 15 before the consolidation, and were exactly the 15
+hook-coupled policies.** MEASURED: filtering `policy_enforcement_raw.json` on
+`hook_coupled_by_implementation == true` returns 15 records, and that set was **identical** to
+OAQ 2's 15 table rows -- asserted by set equality at generation time, so neither set contained a
+policy absent from the other. Two of the 15 (`session-memory-policy.md` and
+`session-pruning-policy.md`, OAQ 2 rows 11 and 12) left the corpus on 2026-08-10; section 1.4
+records their findings. The surviving 13 still reconcile with OAQ 2's per-row values, but OAQ
+2's own totals now transcribe as 5 `port-to-MCP` / 5 `demote-to-advisory` / **3** `delete`
+rather than 5 / 5 / 5, the two missing `delete`s being exactly those two rows.
 
 **Rule 1 -- the non-hook-coupled `keep-as-is` rule.** Stated so it can be checked rather
 than trusted:
@@ -180,8 +209,15 @@ than trusted:
 > continues to behave exactly as it does today. That is a real decision backed by the
 > Evidence cell, not a neutral filler.
 
-This yields **18 `keep-as-is`** (12 ENFORCED, 6 PARTIAL). It reaches no CONTRADICTED,
+This yields **17 `keep-as-is`** (12 ENFORCED, 5 PARTIAL). It reaches no CONTRADICTED,
 STALE-TOPOLOGY or DOCUMENTED-ONLY row, which is why 13 cells stood empty until V2-005.
+
+It yielded **18** (12 ENFORCED, 6 PARTIAL) until 2026-08-10. The row it lost is the PARTIAL
+`session-chaining-policy.md`; its successor, row 34, also carries `keep-as-is` but is
+**excluded from this rule** rather than silently inherited into it, because
+`hooks/session_context.py` gives the merged policy residual hook coupling that Rule 1's
+precondition does not admit. Counting row 34 here would let a `keep-as-is` that Rule 1 does not
+license borrow Rule 1's justification.
 
 #### 1.2.1 The 9 dispositions decided at V2-005, and the evidence for each
 
@@ -198,7 +234,7 @@ rests on plausibility.
 | 22 | `intelligent-decision-engine-policy.md` | `delete` | MEASURED 2026-08-02: the script path it names (`scripts/architecture/03-execution-system/04-model-selection/`) does not exist, and `OpenRouter` -- its declared and only LLM provider -- has zero references in `langgraph_engine/`, `src/` or `scripts/`. All four systems it claims to unify were removed in v1.13, and the provider chain was cut to two in v1.15.3. This is `prd-v2.md` SS 8's own delete rationale applied to the row it did not reach: porting it forward resurrects governance over a step that no longer exists |
 | 26 | `mcp-plugin-discovery-policy.md` | `delete` | The sharpest case in the earlier revision, and it resolves against ADR-019 rather than for `port-to-plugin`. Its Step 1 imports `MCPPluginLoader` from `mcp_plugin_loader`, which is absent repo-wide with zero importers (MEASURED 2026-08-02; a stale `.pyc` is the only trace). Its AUTO-ROUTE mode configures `pre-tool-enforcer.py`, which ADR-010 and FR-4 delete. Its discovery model -- scan and auto-enable -- is exactly what ADR-019 replaces with explicit opt-in `register-mcp`, guarded refuse-by-default by ADR-020. Keeping it guarantees the permanent contradiction with shipped behaviour that OAQ 2 row 1 gives as its stated reason to delete `hook-system` |
 | 30 | `proactive-consultation-policy.md` | `delete` | The policy's own header: `Status: DEPRECATED (2026-03-17)`, with the reason (`AskUserQuestion` is unavailable in subprocess execution) and three named replacements. No external artifact is needed |
-| 16, 28, 39 | `file-management`, `parallel-execution`, `test-case` | `demote-to-advisory` | All three are model-judged conduct with no gate anywhere in the codebase -- `as-built-prd.md` SS 4.2 says so in as many words for two of them ("calling-agent behavior ... not a pipeline capability"; "a behavioral instruction to the calling agent, not a pipeline gate"). OAQ 2 row 2 states the criterion this pass applies: conduct that is model-judged "belongs in the plugin's agent-instruction layer, not a gate." That criterion is not hook-specific, which is why it transfers; OAQ 2 simply never reached these rows. `keep-as-is` is excluded by Rule 1 (no enforcement point exists to keep), and `delete` would drop live rules with nothing recording the loss |
+| 16, 28, 37 | `file-management`, `parallel-execution`, `test-case` | `demote-to-advisory` | All three are model-judged conduct with no gate anywhere in the codebase -- `as-built-prd.md` SS 4.2 says so in as many words for two of them ("calling-agent behavior ... not a pipeline capability"; "a behavioral instruction to the calling agent, not a pipeline gate"). OAQ 2 row 2 states the criterion this pass applies: conduct that is model-judged "belongs in the plugin's agent-instruction layer, not a gate." That criterion is not hook-specific, which is why it transfers; OAQ 2 simply never reached these rows. `keep-as-is` is excluded by Rule 1 (no enforcement point exists to keep), and `delete` would drop live rules with nothing recording the loss |
 
 **On the transfer in the last row, stated so it can be rejected cleanly.** OAQ 2 row 2's
 criterion is applied to three policies OAQ 2 did not disposition. That is a deliberate
@@ -221,7 +257,7 @@ options is a product or architecture ruling, and no artifact on disk makes it.
 | 1 | `anti-hallucination-enforcement.md` | Whether v2.0.0 wants a prompt-quality gate at all. The module is on disk with zero importers, so wiring it up costs about what deleting it costs; `as-built-prd.md` SS 4.2 declined to map it to any FR because the mapping would be manufactured | Product owner, as a new FR or an explicit decision not to have one |
 | 2 | `architecture-script-mapping-policy.md` | Whether `scripts/architecture/` survives v2.0.0. MEASURED 2026-08-02: 0 of the 3 scripts it maps exist, and `03-execution-system/00-code-graph-analysis/code-graph-analyzer.py`, which does exist, is unlisted -- the inventory is wrong in both directions, so correcting it is as available as deleting it. FR-9a's 17-site enumeration keeps that file alive as a live-but-non-binding cap, so nothing schedules the tree's removal | Owner, on the tree; the policy's disposition follows mechanically |
 | 23 | `intelligent-model-selection-policy.md` | A retranslation against the current topology. Only one of its five inputs (plan-mode decision) was deleted in v1.13; model selection itself is live (`langgraph_engine/version_selector.py` exists, MEASURED), so the policy is stale rather than obsolete and rewriting it around the remaining four inputs is a real option | Architect. No OAQ covers it; unlike OAQ 4 for row 4, there is no resolved fix to point at |
-| 44 | `user-preferences-policy.md` | Whether preference learning is in v2.0.0 scope. Unlike rows 16/28/39 this policy specifies a *deterministic* mechanism -- a 3-occurrence threshold and a `track-preference.py` that is absent repo-wide (MEASURED 2026-08-02) -- so `port-to-MCP` (OAQ 2 row 7's lookup-table criterion) and `delete` are both live. `prd-v2.md` FR-10 calls its selection ad hoc but scopes its own fix to KG-driven agent/skill selection, not preference persistence | Product owner |
+| 42 | `user-preferences-policy.md` | Whether preference learning is in v2.0.0 scope. Unlike rows 16/28/37 this policy specifies a *deterministic* mechanism -- a 3-occurrence threshold and a `track-preference.py` that is absent repo-wide (MEASURED 2026-08-02) -- so `port-to-MCP` (OAQ 2 row 7's lookup-table criterion) and `delete` are both live. `prd-v2.md` FR-10 calls its selection ad hoc but scopes its own fix to KG-driven agent/skill selection, not preference persistence | Product owner |
 
 Count check: 9 decided from evidence + 4 decided by ruling = 13, matching the earlier
 revision's empty set.
@@ -230,29 +266,34 @@ revision's empty set.
 rulings rather than as findings.** They stayed empty until then rather than being filled with
 a placeholder, and the AC7 gate failed on them for exactly that period -- which is how they
 reached a decider instead of passing review unnoticed. PRD FR-2 and FR-20 are now satisfied
-for all 46 rows.
+for all 44 rows.
 
 **Two carry preconditions that the disposition alone does not convey**, recorded on the rows
 themselves: row 2's mapping is wrong in both directions, so porting it as written would carry
-a broken inventory into the plugin; and row 44's `track-preference.py` is absent repo-wide, so
+a broken inventory into the plugin; and row 42's `track-preference.py` is absent repo-wide, so
 its port is a BUILD rather than a move.
 
-### 1.3 Status counts, unchanged
+### 1.3 Status counts
 
-| Status | Count |
-|---|---|
-| ENFORCED | 18 |
-| PARTIAL | 11 |
-| CONTRADICTED | 8 |
-| DOCUMENTED-ONLY | 8 |
-| STALE-TOPOLOGY | 1 |
-| DEAD | 0 |
-| **Total** | **46** |
+| Status | Count | Approved 2026-08-02 |
+|---|---|---|
+| ENFORCED | 18 | 18 |
+| PARTIAL | 11 | 11 |
+| CONTRADICTED | 6 | 8 |
+| DOCUMENTED-ONLY | 8 | 8 |
+| STALE-TOPOLOGY | 1 | 1 |
+| DEAD | 0 | 0 |
+| **Total** | **44** | **46** |
 
-Unchanged from the approved figures. `18 + 11 + 8 + 8 + 1 + 0 = 46`. Re-derived by grouping
-the 46 matrix rows by their Status column and re-counting; the group sizes match the approved
-values exactly. No policy was reclassified by this pass, and assigning post-plugin plans
-changed no status.
+`18 + 11 + 6 + 8 + 1 + 0 = 44`. Re-derived by grouping the 44 matrix rows by their Status
+column and re-counting.
+
+**One group moved, and only by subtraction.** The consolidation removed one PARTIAL
+(`session-chaining`) and two CONTRADICTED (`session-memory`, `session-pruning`) rows and added
+one PARTIAL row (`session-management`), so PARTIAL is unchanged at 11 and CONTRADICTED falls
+from 8 to 6. **No policy was reclassified**, by the 2026-08-02 pass or by this one: no row's
+Status cell was edited, and assigning post-plugin plans changed no status. The two CONTRADICTED
+findings are not withdrawn -- see section 1.4.
 
 **Zero DEAD is deliberate.** CITED: Class Hierarchy Analysis seeds every module's own
 `__main__` block as an entry point, so a module can report `reachable_cha: true` purely from
@@ -260,12 +301,55 @@ being a standalone CLI script. Given that confound, ambiguous cases were classif
 CONTRADICTED (positive evidence of a mismatch) or PARTIAL, reserving DEAD for a confidently
 unreachable case that did not arise. Row 1 is first-hand confirmation of the confound.
 
+### 1.4 Consolidation record: three session rows became one, 2026-08-10
+
+PR #308 (commit `dce75e3`) deleted `session-chaining-policy.md`, `session-memory-policy.md` and
+`session-pruning-policy.md` from `docs/policies/` and added one `session-management-policy.md`
+in their place. The matrix enumerates that corpus, so three rows became one and the row count
+fell from 46 to 44.
+
+**The three rows' findings survive the merge and are recorded here in full.** Rewriting a
+policy does not make a measurement of the old policy's implementation false. What follows is
+what those rows said on 2026-08-02, transcribed unaltered.
+
+| Pre-consolidation row | Status | Plan | Verification | Finding, as recorded 2026-08-02 |
+|---|---|---|---|---|
+| 34 `session-chaining-policy.md` | PARTIAL | keep-as-is | CITED | Enforcement surface is `src/mcp/session_hooks.py` and `src/mcp/session_mcp_server.py` (`session_link`-adjacent, module reach=True); the `clear-session-handler.py` the policy names was not found. Basis: `judged:` -- no hook coupling |
+| 35 `session-memory-policy.md` | CONTRADICTED | delete | MEASURED | `hooks/stop_notifier/core.py:104-127` spawned `scripts/architecture/01-sync-system/session-management/auto-save-session.py`, which did not exist. Same root cause and evidence as `git-auto-commit-policy.md`; scored CONTRADICTED as a confirmed no-op. Basis: OAQ 2 row 11, capability loss in the NFR-4 ledger |
+| 36 `session-pruning-policy.md` | CONTRADICTED | delete | MEASURED | `hooks/stop_notifier/core.py:131-181` spawned `archive-old-sessions.py` and `session-pruner.py` under `scripts/architecture/01-sync-system/`; neither existed. Basis: OAQ 2 row 12, capability loss in the NFR-4 ledger |
+
+Four things follow, and none of them is "the finding went away":
+
+1. **The spawns were removed, not repaired.** MEASURED 2026-08-10: V2-034 retired all seven
+   dead end-of-response maintenance spawns from `hooks/stop_notifier/core.py` on 2026-08-05 --
+   three days after this audit, five before the consolidation -- and the file now records that
+   at `hooks/stop_notifier/core.py:57`. The capability each spawn gave up carries a disposition
+   in `docs/reports/capability-disposition-ledger.md`. **Sections 3.1 and 5 below still describe
+   those spawn sites in the present tense and are deliberately left unedited**, because they are
+   dated 2026-08-02 findings; the line numbers they cite no longer contain the code they
+   describe. A reader checking them against today's tree will find nothing, and that is the
+   correct outcome of a remediation, not a defect in the finding.
+2. **The successor policy makes the same finding about itself.** Its SS 0 states the three
+   superseded policies "described a system that was never built" and names fourteen scripts that
+   were not on disk. The consolidation is this audit's finding being acted on, not contradicted.
+3. **The hook-coupled set is 13, not 15.** OAQ 2 rows 11 and 12 have no matrix row to attach
+   to. Their disposition -- `delete` on both -- is satisfied in the strongest available sense:
+   the policies are gone from the corpus.
+4. **Row 34 is not a re-verification of the merged policy.** It is one row measured against
+   three live modules on 2026-08-10 (section 1's matrix). The successor's remaining
+   implementation gaps are its own SS 7's claim, marked there as Planned or Partial, and are
+   carried onto the row as a stated precondition rather than re-audited here.
+
+**Renumbering.** Rows 37-46 became 35-44 so the enumeration stays contiguous. Every
+cross-reference in this document uses the current numbering; the indices 34, 35 and 36 in the
+table above are pre-consolidation indices and are labelled as such wherever they appear.
+
 ---
 
 ## 2. Correction record: the "46/46 orphan policies" figure was FALSE
 
 **An earlier pass reported "46 of 46 orphan policies". That figure is retracted. The correct
-figure is 14 of 46.** CITED.
+figure was 14 of 46, and is 12 of 44 after the 2026-08-10 consolidation.** CITED.
 
 Stated explicitly here so that anyone who saw the earlier number finds its retraction.
 
@@ -276,16 +360,25 @@ correlate against. Every policy matched nothing, and "matched nothing" was recor
 `docs/REVIEW-INDEX.md` correction #1; `as-built-prd.md` notes it replaces the false
 `orphan_policies_count: 46` in `codebase_kg/kg_report.json`.
 
-**Corrected figure: 14 of 46 (30.4%) are genuine orphans.** CITED, not re-derived by this
-pass -- re-deriving it means re-running the SRS correlation, which is the re-analysis this
-work was scoped out of. The figure carries its source's confidence, not this pass's.
+**Corrected figure: 12 of 44 (27.3%) are genuine orphans**, from a CITED 14 of 46. CITED, not
+re-derived by this pass -- re-deriving it means re-running the SRS correlation, which is the
+re-analysis this work was scoped out of. The figure carries its source's confidence, not this
+pass's.
 
-**Six of the 14 would stay orphaned under perfect SRS coverage.** CITED:
-`anti-hallucination-enforcement`, `architecture-script-mapping`, `git-auto-commit`,
-`intelligent-decision-engine`, `session-pruning`, and `cross-project-patterns`. The first
-five are independently CONTRADICTED; the sixth is a live ENFORCED capability the current SRS
-never states as a requirement. The remaining eight are orphaned because of the ingestion gap
-and form the addressable population.
+**The change from 14 to 12 is arithmetic, not a new correlation.** `as-built-prd.md` SS 4.2
+named `session-chaining-policy.md` and `session-pruning-policy.md` as orphans, and SS 4.1
+mapped `session-memory-policy.md` to NFR-3. The one policy that replaced all three inherits
+that NFR-3 mapping -- it is the state-persistence layer NFR-3 covers -- so it is a mapped
+policy, and the orphan list loses two names without gaining one. Section 4.1 stays at 32 and
+section 4.2 falls to 12. No policy's mapping was re-decided.
+
+**Five of the 12 would stay orphaned under perfect SRS coverage**, from a CITED six of the 14.
+CITED: `anti-hallucination-enforcement`, `architecture-script-mapping`, `git-auto-commit`,
+`intelligent-decision-engine`, and `cross-project-patterns`. The first four are independently
+CONTRADICTED; the fifth is a live ENFORCED capability the current SRS never states as a
+requirement. `session-pruning` was the sixth and left the corpus on 2026-08-10; section 1.4
+preserves its finding. The remaining seven are orphaned because of the ingestion gap and form
+the addressable population.
 
 The gap between 46 and 14 changes the conclusion from "the policy corpus is entirely
 disconnected from requirements" to "about a third is, and half of that third is disconnected
@@ -296,18 +389,22 @@ a briefing artifact.
 
 ## 3. Spot-verification against live code
 
-**Sample: 9 policies of 46, across 3 of the 6 status categories.** The 9 MEASURED rows in
-the matrix are exactly this sample.
+**Sample: 9 policies of 46, across 3 of the 6 status categories**, taken on 2026-08-02 when
+the corpus was 46. **7 of the 9 are still matrix rows**, carrying MEASURED; the other 2
+(`session-memory`, `session-pruning`) left the corpus on 2026-08-10 and their verification is
+preserved in section 1.4. The matrix's 8th MEASURED row is row 34, measured on 2026-08-10 and
+**not part of this sample** -- the sample and the MEASURED column stopped being the same set on
+that date, and are listed separately here so neither is read as evidence for the other.
 
 **Selection basis.** Not random. All 3 policies previously reported as silent no-ops, since
 they are the highest-consequence operational claim; 2 ENFORCED chosen for *different
 enforcement mechanisms* (hook dispatch table, LangGraph node) so a pass would not confirm one
 code path twice; 3 CONTRADICTED chosen for different contradiction *kinds* (configuration
 cap, unreferenced module, duplicated enforcement point); and 1 further ENFORCED
-(`tool-optimization`) verified incidentally, because the duplication check for row 42
-necessarily established row 41's enforcement point at the same time.
+(`tool-optimization`) verified incidentally, because the duplication check for row 40
+necessarily established row 39's enforcement point at the same time.
 
-**37 of 46 classifications were NOT verified by this pass.** PARTIAL, DOCUMENTED-ONLY and
+**36 of the 44 current rows are not verified against live code.** PARTIAL, DOCUMENTED-ONLY and
 STALE-TOPOLOGY were not sampled at all, so no claim is made that any individual policy in
 those three groups is correctly classified. Their Verification cells read CITED.
 
@@ -316,10 +413,15 @@ those three groups is correctly classified. Their Verification cells read CITED.
 > policies plus 3 no-op checks" -- 8 distinct policies, which implies 38 unverified, not 41.
 > The summary count disagreed with its own enumeration, this project's most-caught defect
 > class, committed in the section disclosing verification limits. Counted against the
-> Verification column above, the figure is **37 unverified (CITED) / 9 MEASURED**, and
+> Verification column above, the figure was **37 unverified (CITED) / 9 MEASURED**, and
 > 9 + 37 = 46. The disclosure's substance is unchanged and if anything understated: most rows
 > rest on citation, not measurement. **The figure 41 should not be reintroduced** -- it
 > reconciles with no enumeration in this document.
+>
+> **Restated for the 44-row matrix, 2026-08-10:** **36 unverified (CITED) / 8 MEASURED**, and
+> 8 + 36 = 44. The two MEASURED rows that left are `session-memory` and `session-pruning`; the
+> one that arrived is row 34. The figures 37 / 9 remain correct for the 46-row matrix and are
+> the ones to quote when reading the 2026-08-02 revision.
 
 ### 3.1 The three maintenance no-ops
 
@@ -356,15 +458,15 @@ is registered as `("context_read", check_context_read_complete)` in `_BLOCKING_P
 `hooks/pre_tool_enforcer/core.py:453-469`. That list is what `_evaluate_tool_call` iterates,
 so registration is the reachability evidence, not mere presence.
 
-**Row 43, `unicode-fix-policy.md`: REACHABLE, CONFIRMED.** MEASURED. Defined at
+**Row 41, `unicode-fix-policy.md`: REACHABLE, CONFIRMED.** MEASURED. Defined at
 `preflight_guard/nodes.py:62`, added to the graph at `orchestrator.py:657` as
 `preflight_guard_unicode`. The decisive evidence is the edge, not the node registration:
 `orchestrator.py:663` adds `graph.add_edge(START, "preflight_guard_unicode")`, making it the
 first node after `START` and therefore unconditionally reachable on every run. Outbound edge
 to `preflight_guard_encoding` at `:664`; re-entry from `fix_preflight_guard` at `:693`.
 
-**Row 41, `tool-optimization-policy.md`: REACHABLE, CONFIRMED.** MEASURED incidentally via
-the row 42 duplication check. `check_read_opt` and `check_grep_opt` are registered at
+**Row 39, `tool-optimization-policy.md`: REACHABLE, CONFIRMED.** MEASURED incidentally via
+the row 40 duplication check. `check_read_opt` and `check_grep_opt` are registered at
 `core.py:466-467`.
 
 ### 3.3 CONTRADICTED, does the contradiction still hold
@@ -383,7 +485,7 @@ and `:118` (`if len(found) >= self.max_files: break`). Repo `.py` files on disk,
 first: `parsers/graph_model.py:43` `DEFAULT_MAX_PATHS = 500`, truncating path traversal
 regardless of file count.
 
-**Row 42, `tool-usage-optimization-policy.md`: HOLDS.** MEASURED. Exactly one pair of check
+**Row 40, `tool-usage-optimization-policy.md`: HOLDS.** MEASURED. Exactly one pair of check
 functions exists, defined once in `policies/read_opt.py` and `grep_opt.py`, aliased at
 `core.py:193-194`, re-exported at `:373-374`, registered once each at `:466-467`. Both
 policies resolve to that single registration; there is no second gate for the second policy
@@ -406,11 +508,19 @@ count, and no row was reclassified, but it bounds what the matrix describes.
 | Shape | flat | nested tree: `01-sync-system/`, `02-standards-system/`, `03-execution-system/`, `failure-prevention/`, `testing/` |
 | Policy `.md` files | 46 | 34 (plus 1 `README.md`, 35 `.md` total) |
 
+**Both columns are a 2026-08-02 snapshot and both have moved since.** The repository corpus is
+44 as of 2026-08-10 (section 1.4). The runtime tree has also changed, and re-measuring it is a
+re-analysis this pass is scoped out of: it is an unversioned per-machine directory, so a figure
+taken today would describe one developer's laptop and not a reproducible artifact. The
+enumerations below are therefore left as recorded and should be read as dated, not current.
+What does not change with the date is the finding: the two corpora are different sets, and
+neither the repository nor CI has anything that would notice them diverging further.
+
 - **6 policies exist only at runtime and were never audited**:
   `adaptive-skill-registry.md`, `auto-plan-mode-suggestion-policy.md`,
   `auto-skill-agent-selection-policy.md`, `core-skills-mandate.md`,
   `github-branch-pr-policy.md`, `recommendations-policy.md`. Count listed: 6. **These are
-  outside the 46-row matrix entirely** -- no status, evidence, post-plugin plan or
+  outside the matrix entirely** -- no status, evidence, post-plugin plan or
   verification exists for them.
 - **18 audited policies do not exist in the runtime tree**, including 10 of the 18 ENFORCED
   rows (`hook-system`, `metrics-monitoring`, `quality-gate`, `unicode-fix`, `windows-path`,
@@ -529,49 +639,61 @@ CITED except where section 3 measured it.
 - **4 of 4 match.** Every policy naming a hook in its own text (`hook-system`,
   `implementation-execution`, `metrics-monitoring`, `tool-optimization`) is confirmed
   hook-coupled. No policy overclaims a hook it does not have.
-- **11 are hook-coupled without saying so**: `automatic-task-breakdown`,
+- **11 were hook-coupled without saying so**: `automatic-task-breakdown`,
   `common-failures-prevention`, `context-management`, `context-reading`, `git-auto-commit`,
   `session-memory`, `session-pruning`, `task-phase-enforcement`, `task-progress-tracking`,
   `tool-usage-optimization`, `version-release`. Count listed: 11. With the 4 above this is
-  the 15-policy hook-coupled set that OAQ 2 dispositions, and it is exactly the 15 rows whose
+  the 15-policy hook-coupled set that OAQ 2 dispositions, and it was exactly the 15 rows whose
   Basis cell **opens with** `OAQ 2 row N`. **MEASURED 2026-08-02, derived independently:** the
   set was re-enumerated from `as-built-prd.md` SS 6.3 (4 self-declaring + 11 undeclared),
   resolved to corpus filenames, and compared to the 15 anchored-`OAQ 2 row N` rows as a
-  symmetric difference in both directions. **Empty both ways -- the two sets are identical.**
+  symmetric difference in both directions. **Empty both ways -- the two sets were identical.**
   Their OAQ 2 row numbers also map one-to-one, and every disposition transcribed here matches
   OAQ 2's, reproducing its 5 `port-to-MCP` / 5 `demote-to-advisory` / 5 `delete` split.
-- **All 15 now carry a one-sentence rationale alongside the citation.** Before this pass all 15
-  `Basis` cells read the bare token `OAQ 2 row N` and none carried a rationale, so **15 of 15
-  genuinely needed one added**; none was a duplicate of an existing sentence. The rationales are
-  CITED from `hld.md` SS 12 OAQ 2's own `Rationale` column, condensed to one sentence each, not
-  newly reasoned here.
+- **The set is 15 policies but 13 matrix rows since 2026-08-10.** `session-memory` and
+  `session-pruning` left the corpus (section 1.4), so the symmetric-difference assertion above
+  now holds between `as-built-prd.md` SS 6.3's 15 names and 13 rows plus 2 recorded absences,
+  not between two 15-member sets. The absences are not silent: both are named here, in section
+  1.2 and in section 1.4, and OAQ 2's `delete` disposition for each is satisfied by the removal.
+  Every count below is the 13-row figure with the 15-policy figure given alongside it.
+- **All 15 carry a one-sentence rationale alongside the citation, 13 of them still on a matrix
+  row.** Before the 2026-08-02 pass all 15 `Basis` cells read the bare token `OAQ 2 row N` and
+  none carried a rationale, so **15 of 15 genuinely needed one added**; none was a duplicate of
+  an existing sentence. The rationales are CITED from `hld.md` SS 12 OAQ 2's own `Rationale`
+  column, condensed to one sentence each, not newly reasoned here.
 - **The set is right but the usual shorthand for it is wrong, and the shorthand should not be
-  reused.** These 15 are often described as the policies "whose sole enforcement mechanism is a
-  PreToolUse block". Counted against this matrix's own `Evidence` cells (MEASURED 2026-08-02),
-  only **8** of the 15 are PreToolUse *blocks* (rows 3, 9, 10, 20, 37, 41, 42, 45). Of the
-  remaining 7: row 7 is PreToolUse but its own Evidence records it as called **non-blocking**;
-  rows 18, 35 and 36 are **Stop**-hook coupled; row 38 is **PostToolUse** (`hooks/post_tool_tracker/`);
-  and rows 21 and 27 cite no `hooks/` path at all, their Evidence resolving to pipeline code.
-  8 + 1 + 3 + 1 + 2 = 15. `as-built-prd.md` SS 6.3 itself says "hook-coupled", never "PreToolUse",
-  so the membership of the set is not in doubt -- only the descriptor is. Anyone scoping work
-  from the PreToolUse phrasing rather than from the enumeration will scope it to roughly half
-  the set.
+  reused.** These are often described as the policies "whose sole enforcement mechanism is a
+  PreToolUse block". Counted against this matrix's own `Evidence` cells (MEASURED 2026-08-02,
+  recounted 2026-08-10), only **8** of the 13 surviving rows are PreToolUse *blocks* (rows 3, 9,
+  10, 20, 35, 39, 40, 43). Of the remaining 5: row 7 is PreToolUse but its own Evidence records
+  it as called **non-blocking**; row 18 is **Stop**-hook coupled; row 36 is **PostToolUse**
+  (`hooks/post_tool_tracker/`); and rows 21 and 27 cite no `hooks/` path at all, their Evidence
+  resolving to pipeline code. 8 + 1 + 1 + 1 + 2 = 13. The two consolidated rows were both
+  Stop-hook coupled, which is why that bucket fell from 3 to 1 and the total from 15 to 13.
+  `as-built-prd.md` SS 6.3 itself says "hook-coupled", never "PreToolUse", so the membership of
+  the set is not in doubt -- only the descriptor is. Anyone scoping work from the PreToolUse
+  phrasing rather than from the enumeration will scope it to roughly half the set.
 - **Coupling to a hook is not the same as the hook's target running.** Three of the 15
-  (`git-auto-commit`, `session-memory`, `session-pruning`) are genuinely hook-coupled and
-  still no-op, because the coupled path spawns a script that is not on disk. MEASURED,
-  section 3.1. All three are dispositioned `delete` by OAQ 2.
+  (`git-auto-commit`, `session-memory`, `session-pruning`) were genuinely hook-coupled and
+  still no-op, because the coupled path spawned a script that was not on disk. MEASURED,
+  section 3.1. All three are dispositioned `delete` by OAQ 2. **Two of the three have since
+  been acted on** -- their policies were consolidated away on 2026-08-10 -- and the spawn sites
+  for all three were removed from `hooks/stop_notifier/core.py` by V2-034 on 2026-08-05. The
+  finding stands as a dated finding; section 1.4 states what happened to it and why that is not
+  the same as its being wrong.
 
 ---
 
 ## 8. What this pass could NOT determine
 
-1. **37 of 46 classifications were not independently verified.** Counts are MEASURED; the
+1. **36 of the 44 current classifications are not independently verified** (37 of 46 before
+   the 2026-08-10 consolidation). Counts are MEASURED; the
    per-policy status decisions are CITED. PARTIAL, DOCUMENTED-ONLY and STALE-TOPOLOGY were
    not sampled at all.
 2. **AC3 is not satisfied.** No line-by-line read of `~/.claude/policies/` was performed by
    this pass, and the underlying analysis read `docs/policies/`. Recorded as open rather than
    asserted. See the header and section 4.
-3. **4 of 46 post-plugin plan cells are empty** because the choice between two available
+3. **4 post-plugin plan cells were empty** because the choice between two available
    options was a product or architecture ruling no artifact on disk made. All four were
    ruled on 2026-08-02 and are recorded as rulings in section 1.2.2.
 4. **`port-to-plugin` is assigned to zero rows.** No source assigns it, and this pass did not
@@ -579,7 +701,9 @@ CITED except where section 3 measured it.
    ADR-019 replaces auto-discovery with opt-in registration, so the row is `delete` on
    evidence rather than `port-to-plugin` on plausibility (section 1.2.1). A zero count here
    is a finding, not an omission.
-5. **The 14-of-46 orphan figure is CITED, not re-derived.**
+5. **The orphan figure is CITED, not re-derived.** 14 of 46 as cited; 12 of 44 after the
+   2026-08-10 consolidation removed two orphan names, which is arithmetic on the cited list
+   rather than a fresh correlation (section 2).
 6. **25 of the 28 shared runtime/repo policy files were not content-compared.** The
    "cosmetic, not semantic" characterisation rests on a 3-file sample.
 7. **Whether `voice-notifier.py` resolves in production is undetermined** (section 5, row 9).
@@ -603,34 +727,44 @@ CITED except where section 3 measured it.
 
 ## 9. Summary
 
-- **46-row matrix. Evidence cell populated in all 46, zero blanks** -- 37 real `file:line`
-  citations, 9 explicit NONE.
-- **Status counts unchanged and reconciling: 18 / 11 / 8 / 8 / 1 / 0 = 46.**
+- **44-row matrix. Evidence cell populated in all 44, zero blanks** -- 35 real `file:line`
+  citations, 9 explicit NONE. It was a 46-row matrix with 37 citations until 2026-08-10;
+  section 1.4 records the three rows that became one and what they found.
+- **Status counts reconciling: 18 / 11 / 6 / 8 / 1 / 0 = 44**, from 18 / 11 / 8 / 8 / 1 / 0 = 46.
+  CONTRADICTED fell by 2 purely by row removal; **no policy was reclassified**.
 - **Post-plugin plan uses V2-005's vocabulary exactly**, zero out-of-vocabulary values:
-  19 `keep-as-is`, 6 `port-to-MCP`, 9 `demote-to-advisory`, 11 `delete`, 1 `port-to-plugin`,
-  **0 empty**. Provenance: 15 from OAQ 2, 18 from the non-hook-coupled rule, 9 decided at
-  V2-005 against named evidence, 4 by owner or architect ruling on 2026-08-02.
+  19 `keep-as-is`, 6 `port-to-MCP`, 9 `demote-to-advisory`, 9 `delete`, 1 `port-to-plugin`,
+  **0 empty**. `delete` was 11 before the consolidation removed two `delete` rows. Provenance:
+  13 from OAQ 2, 17 from the non-hook-coupled rule, 9 decided at V2-005 against named evidence,
+  4 by owner or architect ruling on 2026-08-02, 1 by the consolidation on 2026-08-10.
 - **The final 4 cells were closed by ruling on 2026-08-02, not by evidence**, and are
   labelled as such so the distinction survives; section 1.2.2
   names the missing input and the deciding role for each.
-- **All 15 hook-coupled rows now carry a disposition AND a one-sentence rationale.** All 15
-  previously held the bare token `OAQ 2 row N`, so 15 of 15 genuinely needed one; the rationales
-  are condensed from `hld.md` SS 12 OAQ 2's own `Rationale` column, not newly reasoned. The
-  15-row set was re-derived independently from `as-built-prd.md` SS 6.3 and matched the
-  OAQ-2-sourced rows exactly, symmetric difference empty in both directions (section 7).
-- **`push_gate.py`'s row (row 45, `version-release-policy.md`) reads `port-to-MCP`**, fixed
+- **All 15 hook-coupled policies carry a disposition AND a one-sentence rationale; 13 are still
+  matrix rows.** All 15 previously held the bare token `OAQ 2 row N`, so 15 of 15 genuinely
+  needed one; the rationales are condensed from `hld.md` SS 12 OAQ 2's own `Rationale` column,
+  not newly reasoned. The 15-row set was re-derived independently from `as-built-prd.md` SS 6.3
+  and matched the OAQ-2-sourced rows exactly, symmetric difference empty in both directions
+  (section 7). Two of the 15 left the corpus on 2026-08-10, both dispositioned `delete`.
+- **`push_gate.py`'s row (row 43, `version-release-policy.md`) reads `port-to-MCP`**, fixed
   there by PRD FR-23 rather than open to generic classification. **It already read `port-to-MCP`
   before this pass and its value was not changed**; only its rationale was added, recording that
   after FR-4 the bypass closed by commit 1bb4303 has neither preventive nor detective cover until
   `register-mcp` and the ADR-017 CI assertion exist, and that both are DESIGNED, NOT BUILT.
-- **"Sole enforcement mechanism is a PreToolUse block" is the wrong descriptor for the 15** --
-  only 8 of them are, by this matrix's own Evidence. The enumeration in `as-built-prd.md` SS 6.3
-  is authoritative; the shorthand is not. Section 7 carries the breakdown.
-- **"46/46 orphan policies" retracted**; real figure 14 of 46, six beyond any SRS fix.
-- **Three maintenance policies are dead paths today**, before any hook change; all three are
-  `delete` under OAQ 2.
-- **7 of 9 Stop-hook target scripts absent**; an 8th exists but not where the hook looks.
+- **"Sole enforcement mechanism is a PreToolUse block" is the wrong descriptor for the set** --
+  only 8 of the 13 surviving rows are, by this matrix's own Evidence. The enumeration in
+  `as-built-prd.md` SS 6.3 is authoritative; the shorthand is not. Section 7 carries the
+  breakdown.
+- **"46/46 orphan policies" retracted**; real figure 14 of 46 as cited, 12 of 44 after the
+  consolidation, five beyond any SRS fix.
+- **Three maintenance policies were dead paths on 2026-08-02**, before any hook change; all
+  three are `delete` under OAQ 2. Their spawn sites were removed by V2-034 on 2026-08-05 and
+  two of the three policies were consolidated away on 2026-08-10; the finding is preserved in
+  section 1.4 rather than deleted with the rows.
+- **7 of 9 Stop-hook target scripts absent**; an 8th exists but not where the hook looks. Dated
+  2026-08-02; see the note in section 1.4 on what has since changed in that file.
 - **The audited corpus is not the runtime corpus**: 6 runtime policies never audited, 18
-  audited policies absent at runtime.
+  audited policies absent at runtime. Both figures are a 2026-08-02 snapshot of two sets that
+  have each moved since, and nothing in CI would notice them diverging further.
 - **AC3 not satisfied**, and not claimed.
-- **37 of 46 classifications remain CITED.** Best available, not verified.
+- **36 of 44 classifications remain CITED.** Best available, not verified.

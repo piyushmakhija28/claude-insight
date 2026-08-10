@@ -182,7 +182,7 @@ That is an absence-of-literal-token finding, not an absence-of-relationship find
 semantic-intent correlation (`docs/policies/*.md` intent field vs. SRS.md's 9 FR + 6 NFR = 15 entries),
 each mapping backed by the specific evidence already gathered in `policy_enforcement_raw.json`.
 
-### 4.1 Mapped policies (32 of 46)
+### 4.1 Mapped policies (32 of 44)
 
 | Policy | Status | Maps to |
 |---|---|---|
@@ -209,7 +209,7 @@ each mapping backed by the specific evidence already gathered in `policy_enforce
 | prompt-generation-policy.md | ENFORCED | FR-2 (Step 1) |
 | quality-gate-policy.md | ENFORCED | FR-2 (Step 5) |
 | recovery-policy.md | ENFORCED | FR-1 (Level 0) |
-| session-memory-policy.md | CONTRADICTED | NFR-3 |
+| session-management-policy.md | PARTIAL | NFR-3 |
 | task-phase-enforcement-policy.md | ENFORCED | FR-9 |
 | task-progress-tracking-policy.md | PARTIAL | NFR-3 |
 | test-generation-policy.md | ENFORCED | FR-2 (Step 5) |
@@ -227,7 +227,7 @@ rather than evidenced. Treated as a genuine orphan for that reason, not merely b
 CONTRADICTED (compare `callgraph-analysis-policy.md`, also CONTRADICTED, which *does* map cleanly to
 FR-3's explicit text).
 
-### 4.2 Genuine orphans (14 of 46) -- policies supporting no SRS FR/NFR
+### 4.2 Genuine orphans (12 of 44) -- policies supporting no SRS FR/NFR
 
 | Policy | Status | Reason it maps to NONE |
 |---|---|---|
@@ -241,17 +241,31 @@ FR-3's explicit text).
 | intelligent-decision-engine-policy.md | CONTRADICTED | Describes a consolidation that was never built (systems it claims to unify were deleted in v1.13); no current-topology equivalent exists to map to any FR. |
 | parallel-execution-policy.md | DOCUMENTED-ONLY | Describes calling-agent behavior (multiple Task/Agent tool calls), not a pipeline capability; no SRS FR covers subagent parallelism. |
 | proactive-consultation-policy.md | DOCUMENTED-ONLY | Self-declared deprecated; its stated replacement is two other Steps, not a distinct capability. |
-| session-chaining-policy.md | PARTIAL | Session parent/child/related chaining is a session-mgr MCP-server feature (external repo); no SRS FR in this repo's 15-entry corpus addresses it. |
-| session-pruning-policy.md | CONTRADICTED | No SRS FR governs session retention windows; NFR-3 covers checkpoint recovery, not pruning, and the mechanism is a no-op regardless. |
 | test-case-policy.md | DOCUMENTED-ONLY | Describes a manual-testing-mandatory-vs-optional distinction that is a behavioral instruction to the calling agent, not a pipeline gate; no SRS FR addresses it. |
 | user-preferences-policy.md | DOCUMENTED-ONLY | Describes a 3+-occurrence learning threshold with no SRS FR counterpart; only a passthrough context field exists in code. |
 
-**Genuine orphan count: 14 of 46 (30.4%)** -- not 46 of 46. Six of the 14 (anti-hallucination,
-architecture-script-mapping, git-auto-commit, intelligent-decision-engine, session-pruning, plus
+**Genuine orphan count: 12 of 44 (27.3%)** -- not 46 of 46. Five of the 12 (anti-hallucination,
+architecture-script-mapping, git-auto-commit, intelligent-decision-engine, plus
 cross-project-patterns as the one live-but-unmapped exception) are independently CONTRADICTED or
 ENFORCED-but-unmapped for reasons unrelated to the SRS-ingestion gap -- i.e., even a perfect SRS
 correlation pass would still classify them as NONE, because the capability they describe is either
 broken or genuinely out of the current SRS's stated scope.
+
+**Adjusted 2026-08-10 from 14 of 46; six of the 14 became five of the 12.** PR #308 replaced
+`session-chaining-policy.md`, `session-memory-policy.md` and `session-pruning-policy.md` with one
+`session-management-policy.md`. Two of the three (`session-chaining`, `session-pruning`) were
+orphans in the table above; the third was mapped to NFR-3 in section 4.1. **The one policy that
+replaced all three is mapped, not an orphan**: it is the state-persistence layer NFR-3
+(Reliability) covers, and it inherits that mapping directly -- so section 4.1 stays at 32 and the
+orphan list loses two names without gaining one. `session-pruning` was one of the six that would
+have stayed orphaned under perfect SRS coverage, which is why that sub-count falls to five.
+
+**This is arithmetic on the existing correlation, not a new one.** No surviving policy's mapping
+was re-decided, and the SRS correlation that produced the 14 figure was not re-run. The findings
+recorded for the three superseded policies are preserved in
+`docs/reports/policy-implementation-audit-v2.md` section 1.4, not withdrawn: the two CONTRADICTED
+classifications rested on measured absences of spawn targets, and a policy being rewritten does
+not make that measurement false.
 
 ---
 
