@@ -9,13 +9,26 @@ Each repo:
   - Is private, with main as default branch
 
 Usage:
-    python scripts/create_mcp_repos.py
+    python scripts/tools/create_mcp_repos.py --dry-run   # report only, write nothing
+    python scripts/tools/create_mcp_repos.py             # bootstrap missing repos only
+    python scripts/tools/create_mcp_repos.py --force     # also overwrite existing repos
+
+Safety:
+    This script was written as a one-time bootstrap and is destructive when re-run.
+    Writing into an existing repo replaces server.py and base/, rewrites the
+    generated docs, commits the result as "initial commit", and pushes it to
+    origin. History survives (it is an ordinary commit on top, not a force-push)
+    but HEAD moves to the stale generated version.
+
+    Existing repos are therefore skipped unless --force is passed, and repos in
+    CANONICAL_REPOS are never written to at all. See _guard_existing_repo.
 
 Prerequisites:
     - gh CLI authenticated (gh auth status)
     - Git configured with user name/email
 """
 
+import argparse
 import shlex
 import shutil
 import subprocess
@@ -440,6 +453,23 @@ SERVERS = [
 # -- Shared utility files to copy into each server repo -----------------------
 SHARED_UTILS = ["mcp_errors.py", "input_validator.py", "rate_limiter.py"]
 
+# -- Regeneration safety -------------------------------------------------------
+# Measured 2026-08-10: all 13 target repos have evolved past their generated
+# state -- 75 commits and roughly 29 merged PRs between them. Regeneration is
+# therefore a destructive operation against real work, not a refresh.
+#
+# CANONICAL_REPOS are never written to, with or without --force, because the
+# repo is ahead of the source this script would copy from. Removing a name from
+# this set means asserting that src/mcp/ is once again the better version.
+CANONICAL_REPOS = {
+    # Authority for the session MCP surface. It is what settings.json runs, and
+    # it leads the in-engine copy by mcp 2.x support, an O_CREAT|O_EXCL
+    # claim-file mutex, and a merged path-traversal fix. Regenerating it from
+    # src/mcp/session_mcp_server.py would silently revert all three.
+    # See docs/policies/session-management-policy.md.
+    "mcp-session-mgr",
+}
+
 # -- .gitignore template -------------------------------------------------------
 GITIGNORE = """__pycache__/
 *.py[cod]
@@ -758,13 +788,89 @@ def write_file(path, content):
     path.write_text(content, encoding="utf-8")
 
 
+def _commit_count(repo_dir):
+    """Count commits on the current branch of a repo.
+
+    Args:
+        repo_dir: Path to a directory that may or may not be a git repo.
+
+    Returns:
+        int: Commit count, or 0 when the directory is not a readable git repo.
+    """
+    result = subprocess.run(
+        ["git", "rev-list", "--count", "HEAD"],
+        shell=False,
+        cwd=str(repo_dir),
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode != 0:
+        return 0
+    try:
+        return int(result.stdout.strip())
+    except ValueError:
+        return 0
+
+
+def _guard_existing_repo(repo_name, repo_dir, force):
+    """Decide whether this run may write into a target repo.
+
+    Bootstrapping a repo that does not exist yet is always safe. Writing into
+    one that does is not: it replaces server.py and base/, rewrites the
+    generated docs, commits the result, and pushes it. The default is therefore
+    to refuse, so that a routine run cannot silently revert downstream work.
+
+    Args:
+        repo_name: Repo name, matched against CANONICAL_REPOS.
+        repo_dir: Path the repo would be written to.
+        force: True when the caller passed --force.
+
+    Returns:
+        bool: True when the caller may proceed, False when it must skip.
+    """
+    if repo_name in CANONICAL_REPOS:
+        print(f"  REFUSED: {repo_name} is canonical -- it leads src/mcp/ and is never regenerated.")
+        print("           Remove it from CANONICAL_REPOS only if src/mcp/ is genuinely ahead.")
+        return False
+
+    if not repo_dir.exists():
+        return True
+
+    commits = _commit_count(repo_dir)
+    if not force:
+        print(f"  REFUSED: {repo_dir.name} already exists ({commits} commits).")
+        print("           Overwriting replaces server.py and base/, then commits and pushes.")
+        print("           Pass --force if you intend to discard what is there.")
+        return False
+
+    print(f"  FORCED: overwriting existing {repo_dir.name} ({commits} commits will be superseded).")
+    return True
+
+
 # -- Main ----------------------------------------------------------------------
-def create_repo(server):
+def create_repo(server, force=False, dry_run=False):
+    """Generate one MCP server repo, refusing to overwrite existing work.
+
+    Args:
+        server: Entry from SERVERS describing the repo to generate.
+        force: Allow writing into a repo that already exists.
+        dry_run: Report the decision and write nothing.
+
+    Returns:
+        bool: True when the repo was written, False when it was skipped.
+    """
     repo_name = server["repo"]
     repo_dir = WORKSPACE / repo_name
     print(f"\n{'='*60}")
     print(f"Creating: {repo_name}")
     print(f"{'='*60}")
+
+    if not _guard_existing_repo(repo_name, repo_dir, force):
+        return False
+
+    if dry_run:
+        print(f"  DRY RUN: would generate into {repo_dir}")
+        return False
 
     # 1. Create directory
     if repo_dir.exists():
@@ -841,13 +947,28 @@ def create_repo(server):
     return True
 
 
-def create_mcp_base_repo():
-    """Create the shared mcp-base repo."""
+def create_mcp_base_repo(force=False, dry_run=False):
+    """Create the shared mcp-base repo, refusing to overwrite existing work.
+
+    Args:
+        force: Allow writing into a repo that already exists.
+        dry_run: Report the decision and write nothing.
+
+    Returns:
+        bool: True when the repo was written, False when it was skipped.
+    """
     repo_name = "mcp-base"
     repo_dir = WORKSPACE / repo_name
     print(f"\n{'='*60}")
     print(f"Creating: {repo_name} (shared base package)")
     print(f"{'='*60}")
+
+    if not _guard_existing_repo(repo_name, repo_dir, force):
+        return False
+
+    if dry_run:
+        print(f"  DRY RUN: would generate into {repo_dir}")
+        return False
 
     repo_dir.mkdir(parents=True, exist_ok=True)
 
@@ -1028,38 +1149,76 @@ To update shared code: edit here, then re-copy to affected server repos.
 
 
 def main():
+    """Generate the MCP server repos, skipping any that already exist.
+
+    Returns:
+        int: 0 when every target was written or the run was a dry run, 1 when
+            any target was refused or failed. A plain run against an already
+            bootstrapped workspace refuses everything and exits 1 on purpose,
+            so that re-running this script cannot look like a success.
+    """
+    parser = argparse.ArgumentParser(description="Create the techdeveloper-org MCP server repos.")
+    parser.add_argument(
+        "--force",
+        action="store_true",
+        help="Overwrite repos that already exist. Discards downstream work; see the module docstring.",
+    )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Report what each target would do and write nothing.",
+    )
+    args = parser.parse_args()
+
     print("Claude Workflow Engine -- MCP Repos Creator")
     print(f"Organization: {ORG}")
     print(f"Workspace: {WORKSPACE}")
-    print(f"Total repos to create: {len(SERVERS) + 1} (1 base + {len(SERVERS)} servers)")
+    print(f"Targets: {len(SERVERS) + 1} (1 base + {len(SERVERS)} servers)")
+    if args.dry_run:
+        print("Mode: DRY RUN -- nothing will be written")
+    elif args.force:
+        print("Mode: FORCE -- existing repos will be overwritten, committed and pushed")
+    else:
+        print("Mode: bootstrap only -- existing repos will be skipped")
 
-    # Create mcp-base first
-    create_mcp_base_repo()
-
-    # Create all server repos
-    success_count = 0
+    written = []
+    skipped = []
     failed = []
+
+    if create_mcp_base_repo(force=args.force, dry_run=args.dry_run):
+        written.append("mcp-base")
+    else:
+        skipped.append("mcp-base")
+
     for server in SERVERS:
         try:
-            create_repo(server)
-            success_count += 1
+            if create_repo(server, force=args.force, dry_run=args.dry_run):
+                written.append(server["repo"])
+            else:
+                skipped.append(server["repo"])
         except Exception as exc:
             print(f"  FAILED {server['repo']}: {exc}")
             failed.append(server["repo"])
 
     print(f"\n{'='*60}")
-    print(f"COMPLETE: {success_count + 1}/{len(SERVERS) + 1} repos created")
+    print(f"written: {len(written)}   skipped: {len(skipped)}   failed: {len(failed)}")
+    if skipped:
+        print(f"SKIPPED: {skipped}")
     if failed:
         print(f"FAILED: {failed}")
-    else:
-        print("All repos created successfully!")
 
-    # Print settings.json update instructions
-    print("\n--- settings.json paths to update ---")
-    for server in SERVERS:
-        new_path = str(WORKSPACE / server["repo"] / "server.py").replace("\\", "/")
-        print(f'  "{server["repo"].replace("mcp-", "")}": "{new_path}"')
+    if written:
+        print("\n--- settings.json paths to update ---")
+        for server in SERVERS:
+            if server["repo"] not in written:
+                continue
+            new_path = str(WORKSPACE / server["repo"] / "server.py").replace("\\", "/")
+            print(f'  "{server["repo"].replace("mcp-", "")}": "{new_path}"')
+
+    if args.dry_run:
+        return 0
+    return 1 if (skipped or failed) else 0
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
