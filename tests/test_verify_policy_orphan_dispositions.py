@@ -20,6 +20,7 @@ originals by SHA-256 before use.
 from __future__ import annotations
 
 import hashlib
+import re
 import shutil
 import subprocess
 import sys
@@ -36,8 +37,10 @@ SANDBOX_FILES = (SCRIPT_REL, GATE_REL, AUDIT_REL, PRD_REL)
 
 MATRIX_WIDTH = 7
 ORPHAN_HEADING = "### 4.2"
-SAMPLE_ORPHAN = "session-pruning-policy.md"
+SAMPLE_ORPHAN = "git-auto-commit-policy.md"
 SAMPLE_MAPPED = "quality-gate-policy.md"
+
+ORPHAN_HEADING_COUNT = re.compile(r"^### 4\.2 Genuine orphans \((\d+) of (\d+)\)", re.MULTILINE)
 
 
 def digest(path: Path) -> str:
@@ -197,7 +200,7 @@ def test_ac1_fails_when_an_orphan_disposition_is_emptied(sandbox: Path) -> None:
 
 
 def test_ac1_ignores_an_emptied_disposition_on_a_non_orphan_row(sandbox: Path) -> None:
-    """AC1 is scoped to the 14 orphans, not to every row that happens to be empty.
+    """AC1 is scoped to the section 4.2 orphans, not to every row that happens to be empty.
 
     Without this control, an AC1 that failed on any empty cell anywhere would
     be indistinguishable from one that reads the section 4.2 name list at all.
@@ -210,7 +213,7 @@ def test_ac1_ignores_an_emptied_disposition_on_a_non_orphan_row(sandbox: Path) -
 
 def test_ac2_direction_a_fails_when_a_named_orphan_has_no_matrix_row(sandbox: Path) -> None:
     """Renaming an orphan's matrix row leaves its section 4.2 name unmatched."""
-    rewrite_matrix_cell(sandbox / AUDIT_REL, SAMPLE_ORPHAN, 1, "`session-pruning-policy-renamed.md`")
+    rewrite_matrix_cell(sandbox / AUDIT_REL, SAMPLE_ORPHAN, 1, f"`renamed-{SAMPLE_ORPHAN}`")
     status, report = run_gate(sandbox)
     assert status == 1, report
     assert "[FAIL] AC2" in report
@@ -245,12 +248,21 @@ def test_ac2_fails_when_a_policy_is_claimed_by_both_sections(sandbox: Path) -> N
 
 
 def test_sup1_fails_when_the_declared_count_disagrees_with_the_table(sandbox: Path) -> None:
-    """Editing the section 4.2 heading count alone fails SUP1 and only SUP1."""
+    """Editing the section 4.2 heading count alone fails SUP1 and only SUP1.
+
+    The declared count is read out of the heading rather than written into this
+    test. A literal here pins the test to one corpus size, and the corpus is
+    edited by unrelated work: consolidating three policies into one on
+    2026-08-10 broke this assertion while the gate it guards stayed correct. A
+    test that fails when the document is right is worse than no test.
+    """
     path = sandbox / PRD_REL
     text = path.read_text(encoding="utf-8")
-    assert "### 4.2 Genuine orphans (14 of 46)" in text
+    match = ORPHAN_HEADING_COUNT.search(text)
+    assert match is not None, "section 4.2 heading does not declare a '(<n> of <n>)' count"
+    enumerated, corpus = int(match.group(1)), int(match.group(2))
     path.write_text(
-        text.replace("### 4.2 Genuine orphans (14 of 46)", "### 4.2 Genuine orphans (13 of 46)", 1),
+        text.replace(match.group(0), f"### 4.2 Genuine orphans ({enumerated - 1} of {corpus})", 1),
         encoding="utf-8",
     )
     status, report = run_gate(sandbox)
@@ -258,7 +270,7 @@ def test_sup1_fails_when_the_declared_count_disagrees_with_the_table(sandbox: Pa
     assert "[PASS] AC1" in report
     assert "[PASS] AC2" in report
     assert "[FAIL] SUP1" in report
-    assert "declares 13 policies but its table enumerates 14" in report
+    assert f"declares {enumerated - 1} policies but its table enumerates {enumerated}" in report
     assert "RESULT: FAIL (SUP1)" in report
 
 

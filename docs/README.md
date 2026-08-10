@@ -19,7 +19,7 @@ permits: `README.md`, `CLAUDE.md`, `SRS.md`, `CHANGELOG.md` and `VERSION`.
 | [`phase-6-sprint/`](phase-6-sprint/) | Sprint plan and issue drafts | 4 |
 | [`phase-7-routing/`](phase-7-routing/) | Issue-to-agent routing | 4 |
 | [`phase-8-alignment/`](phase-8-alignment/) | Pre-implementation alignment | 4 |
-| [`policies/`](policies/) | Pipeline policies | 46 |
+| [`policies/`](policies/) | Pipeline policies | 44 |
 | [`releases/`](releases/) | Per-release design notes | 7 |
 | [`reports/`](reports/) | Investigations and audits | 26 |
 | [`standards/`](standards/) | Coding and testing standards | 52 |
@@ -89,9 +89,12 @@ Numbered rules 01-46 plus per-language standards. These mirror `~/.claude/rules/
 
 ## `policies/` -- Pipeline policies
 
-One document per policy the SDLC pipeline enforces. These mirror `~/.claude/policies/`, which is the directory `get_policies_dir()` actually reads.
+One document per policy the SDLC pipeline enforces. `~/.claude/policies/` is the directory
+`get_policies_dir()` actually reads; it is **not** a mirror of this one -- the two are different
+sets and nothing keeps them in step. See `docs/reports/policy-implementation-audit-v2.md`
+section 4.
 
-<details><summary>46 file(s)</summary>
+<details><summary>44 file(s)</summary>
 
 - [EXECUTION-SYSTEM-FIXES-SUMMARY.md](policies/EXECUTION-SYSTEM-FIXES-SUMMARY.md)
 - [INTELLIGENT-PROMPT-GENERATION-UPGRADE.md](policies/INTELLIGENT-PROMPT-GENERATION-UPGRADE.md)
@@ -126,9 +129,7 @@ One document per policy the SDLC pipeline enforces. These mirror `~/.claude/poli
 - [prompt-generation-policy.md](policies/prompt-generation-policy.md)
 - [quality-gate-policy.md](policies/quality-gate-policy.md)
 - [recovery-policy.md](policies/recovery-policy.md)
-- [session-chaining-policy.md](policies/session-chaining-policy.md)
-- [session-memory-policy.md](policies/session-memory-policy.md)
-- [session-pruning-policy.md](policies/session-pruning-policy.md)
+- [session-management-policy.md](policies/session-management-policy.md)
 - [task-phase-enforcement-policy.md](policies/task-phase-enforcement-policy.md)
 - [task-progress-tracking-policy.md](policies/task-progress-tracking-policy.md)
 - [test-case-policy.md](policies/test-case-policy.md)
