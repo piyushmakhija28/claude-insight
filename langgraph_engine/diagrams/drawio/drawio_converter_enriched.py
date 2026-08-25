@@ -168,6 +168,7 @@ class DrawioConverter(_BaseDrawioConverter):
         "communication",
         "composite",
         "interaction",
+        "call_graph",
         "timing",
         "call_graph_rich",
     ]  # type: List[str]

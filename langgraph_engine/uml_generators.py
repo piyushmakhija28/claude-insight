@@ -9,6 +9,7 @@ Windows-safe: ASCII only, no Unicode characters.
 from .diagrams import DiagramFactory  # noqa: F401
 from .diagrams.ast_analyzer import UMLAstAnalyzer  # noqa: F401
 from .diagrams.kroki_renderer import KrokiRenderer  # noqa: F401
+from .diagrams.legacy_generator import UDM_PRIMARY_KEY  # noqa: F401
 from .diagrams.legacy_generator import UMLDiagramGenerator  # noqa: F401
 from .diagrams.legacy_generator import (  # noqa: F401
     _clean_mermaid,

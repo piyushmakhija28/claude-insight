@@ -100,6 +100,7 @@ class DrawioConverter:
         "communication",
         "composite",
         "interaction",
+        "call_graph",
     ]
 
     def convert(self, diagram_type, analysis_data):
@@ -128,6 +129,7 @@ class DrawioConverter:
             "communication": self._communication_diagram,
             "composite": self._composite_diagram,
             "interaction": self._interaction_diagram,
+            "call_graph": self._call_graph_diagram,
         }
 
         gen = _generators.get(diagram_type, self._generic_diagram)
@@ -1119,6 +1121,102 @@ class DrawioConverter:
                     cells.append(_edge(nid(), "", S_IO_ARROW, prev, ref_id))
                 prev = ref_id
                 y += RH + GAP
+
+        return cells
+
+    # ------------------------------------------------------------------
+    # 13. CALL GRAPH DIAGRAM
+    # ------------------------------------------------------------------
+    # Mirrors legacy_generator.generate_call_graph_diagram: one swimlane per
+    # parent class, methods as child rows, call edges between them. Standalone
+    # functions group under "Functions". Entry points (public, never a callee)
+    # get a bold border; methods with cyclomatic >= 5 get a red fill.
+
+    def _call_graph_diagram(self, data, nid):
+        cells = []
+        methods = data.get("methods") or []
+        edges = [e for e in (data.get("edges") or []) if e.get("type") != "inheritance"]
+
+        if not methods:
+            return [_vertex(nid(), "No call graph data", S_ACT_ACTION, 100, 100, 240, 50)]
+
+        by_class = {}
+        standalone = []
+        for m in methods[:40]:
+            fqn = m.get("fqn", "")
+            if not fqn:
+                continue
+            parent = m.get("parent_class")
+            if parent:
+                cls_name = parent.split("::")[-1] if "::" in parent else parent
+                by_class.setdefault(cls_name, []).append(m)
+            else:
+                standalone.append(m)
+
+        callee_fqns = set(e.get("to", "") for e in edges)
+
+        MAX_COLS = 4
+        BOX_W = 220
+        HDR_H = 26
+        ROW_H = 20
+        GAP_X = 70
+        GAP_Y = 80
+        ORIGIN_X = 40
+        ORIGIN_Y = 40
+
+        fqn_to_row = {}
+        groups = list(sorted(by_class.items()))
+        if standalone:
+            groups.append(("Functions", standalone))
+
+        for idx, (group_name, group_methods) in enumerate(groups):
+            rows_h = max(len(group_methods) * ROW_H, ROW_H) + 4
+            total_h = HDR_H + rows_h
+
+            col = idx % MAX_COLS
+            row = idx // MAX_COLS
+            x = ORIGIN_X + col * (BOX_W + GAP_X)
+            y = ORIGIN_Y + row * (total_h + GAP_Y)
+
+            cid = nid()
+            cells.append(_vertex(cid, group_name, S_CLASS_HDR, x, y, BOX_W, total_h))
+
+            for k, m in enumerate(group_methods):
+                fqn = m.get("fqn", "")
+                name = m.get("name", "")
+                params = m.get("params", [])
+                params_str = ", ".join(str(p).split(":")[0].strip() for p in params[:3])
+                cyclomatic = m.get("cyclomatic", 1)
+                is_entry = not name.startswith("_") and fqn not in callee_fqns
+
+                row_style = S_CLASS_ROW
+                if cyclomatic >= 5:
+                    row_style = row_style + ";fillColor=#ff6666"
+                if is_entry:
+                    row_style = row_style + ";strokeWidth=3"
+
+                rid = nid()
+                fqn_to_row[fqn] = rid
+                cells.append(
+                    _vertex_child(
+                        rid,
+                        "%s(%s)" % (name, params_str),
+                        row_style,
+                        0,
+                        HDR_H + k * ROW_H,
+                        BOX_W,
+                        ROW_H,
+                        cid,
+                    )
+                )
+
+        edge_count = 0
+        for e in edges[:60]:
+            from_id = fqn_to_row.get(e.get("from", ""))
+            to_id = fqn_to_row.get(e.get("to", ""))
+            if from_id and to_id and from_id != to_id:
+                cells.append(_edge(nid(), "", S_COMP_DEP, from_id, to_id))
+                edge_count += 1
 
         return cells
 

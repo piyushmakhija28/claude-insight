@@ -50,6 +50,616 @@ def _make_attr_info(name, type_hint="", visibility="+"):
 
 
 # ======================================================================
+# UDM (UML Data Model) v1 -- caller-supplied structured diagram data
+#
+# generate_from_data() and the _render_* methods on UMLDiagramGenerator let
+# a caller supply pre-built structural facts for a diagram instead of this
+# class scanning project_root. Field names match
+# langgraph_engine.diagrams.drawio.converter.DrawioConverter.convert()'s
+# analysis_data exactly, so one JSON payload renders on both the
+# Mermaid/PlantUML side (here) and the draw.io side with the same content.
+# See ADR-001 (ADR text lives with the implementing commits, not in-repo).
+# ======================================================================
+
+UDM_PRIMARY_KEY = {
+    "class": "classes",
+    "package": "packages",
+    "component": "components",
+    "sequence": "call_chains",
+    "state": "states",
+    "activity": "steps",
+    "deployment": "nodes",
+    "usecase": "use_cases",
+    "object": "objects",
+    "communication": "participants",
+    "composite": "components",
+    "interaction": "steps",
+    "call_graph": "methods",
+}
+
+_MM_ID_RE = re.compile(r"[^0-9A-Za-z_]")
+
+
+def _mm_id(label, seen):
+    """Return a unique, Mermaid-safe node id for a display label.
+
+    Non-alphanumeric characters become underscores; a leading digit gets an
+    'n' prefix; a label already seen returns its existing id. `seen` is a
+    dict of label -> id, mutated in place, so repeat calls for the same
+    label return the same id.
+    """
+    if label in seen:
+        return seen[label]
+    base = _MM_ID_RE.sub("_", str(label)) or "n"
+    if base[0].isdigit():
+        base = "n" + base
+    existing_ids = set(seen.values())
+    candidate = base
+    suffix = 1
+    while candidate in existing_ids:
+        suffix += 1
+        candidate = "%s_%d" % (base, suffix)
+    seen[label] = candidate
+    return candidate
+
+
+def _mm_label(text):
+    """Quote a label for Mermaid: wrap in double quotes, escape inner quotes."""
+    return '"%s"' % str(text).replace('"', "#quot;")
+
+
+def _pu_alias(label, seen):
+    """Return a unique PlantUML alias for a display label (same rules as _mm_id)."""
+    return _mm_id(label, seen)
+
+
+def _udm_edge_ends(edge, keys_a, keys_b, label_keys=("label",)):
+    """Resolve an edge's two endpoints and label from a dict, tuple, or list.
+
+    Args:
+        edge: A dict with one key from `keys_a`, one from `keys_b`, and
+            optionally one from `label_keys`; or a 2/3-element tuple/list
+            (endpoint, endpoint, [label]).
+        keys_a: Candidate dict keys for the first endpoint, tried in order.
+        keys_b: Candidate dict keys for the second endpoint, tried in order.
+        label_keys: Candidate dict keys for the label, tried in order.
+
+    Returns:
+        (first, second, label) with label "" when absent. (None, None, "")
+        when edge is neither shape or an endpoint is unresolved.
+    """
+    if isinstance(edge, dict):
+        first = ""
+        for k in keys_a:
+            first = edge.get(k, "")
+            if first:
+                break
+        second = ""
+        for k in keys_b:
+            second = edge.get(k, "")
+            if second:
+                break
+        label = ""
+        for k in label_keys:
+            label = edge.get(k, "")
+            if label:
+                break
+        if not first or not second:
+            return None, None, ""
+        return first, second, label
+    if isinstance(edge, (list, tuple)) and len(edge) >= 2:
+        label = str(edge[2]) if len(edge) > 2 else ""
+        return edge[0], edge[1], label
+    return None, None, ""
+
+
+class _DictCallGraph:
+    """Adapt a plain UDM call_graph dict to the CallGraph object interface.
+
+    Exposes only the two members generate_call_graph_diagram() reads: a
+    .methods dict keyed by FQN, and get_edges().
+    """
+
+    def __init__(self, data):
+        self.methods = {m["fqn"]: m for m in (data.get("methods") or []) if m.get("fqn")}
+        self.classes = {}  # not read by the renderer; present for parity
+        self._edges = list(data.get("edges") or [])
+
+    def get_edges(self):
+        return self._edges
+
+
+# ----------------------------------------------------------------------
+# UDM deterministic renderers.
+#
+# One function per diagram type not already served by an existing
+# generate_* override whose parameter shape matches UDM exactly (class via
+# classes=, call_graph via _DictCallGraph). package/component/sequence get
+# dedicated renderers here rather than reusing generate_package_diagram/
+# generate_component_diagram/generate_sequence_diagram's dep_graph=/
+# call_chains= overrides: those methods' existing parameter shapes predate
+# UDM and do not match it (flat {module: set(deps)} adjacency, not UDM's
+# packages/imports or components/dependencies+provides/requires; literal
+# caller/callee keys only, not UDM's caller|from|source aliases) -- reusing
+# them here would silently drop caller-supplied structure or KeyError on
+# valid UDM input. None of these functions touch self, the filesystem, an
+# LLM, or the network -- purity is what makes them provably deterministic.
+# ----------------------------------------------------------------------
+
+
+def _render_package_mermaid(data):
+    # type: (dict) -> str
+    """Render a UDM package payload as a Mermaid flowchart.
+
+    Mirrors DrawioConverter._package_diagram's field reading: packages
+    (name, contents) as boxes, imports/dependencies as edges between
+    declared packages only.
+    """
+    packages = (data.get("packages") or [])[:18]
+    if not packages:
+        return "flowchart LR\n    note[No packages found]"
+
+    seen = {}
+    lines = ["flowchart LR"]
+    for pkg in packages:
+        name = pkg.get("name", str(pkg)) if isinstance(pkg, dict) else str(pkg)
+        contents = pkg.get("contents", [])[:4] if isinstance(pkg, dict) else []
+        pid = _mm_id(name, seen)
+        label = name
+        if contents:
+            label = "%s: %s" % (name, ", ".join(str(c) for c in contents))
+        lines.append("    %s[%s]" % (pid, _mm_label(label)))
+
+    imports = data.get("imports") or data.get("dependencies") or []
+    for imp in imports[:25]:
+        src, tgt, label = _udm_edge_ends(imp, ("from",), ("to", "import"))
+        if src is None or src not in seen or tgt not in seen:
+            continue
+        arrow = "-->|%s|" % label if label else "-->"
+        lines.append("    %s %s %s" % (seen[src], arrow, seen[tgt]))
+
+    return "\n".join(lines)
+
+
+def _render_component_mermaid(data):
+    # type: (dict) -> str
+    """Render a UDM component payload as a Mermaid flowchart.
+
+    Mirrors DrawioConverter._component_diagram's field reading: components
+    (name, provides) as boxes, dependencies as edges. Additionally renders
+    each component's `requires` list as dashed edges to a synthetic
+    interface node -- draw.io reads `requires` but never renders it
+    (ADR-001 SS A.1); this keeps the Mermaid side from silently dropping it.
+    """
+    components = (data.get("components") or [])[:15]
+    if not components:
+        return "flowchart TB\n    note[No components found]"
+
+    seen = {}
+    lines = ["flowchart TB"]
+    for comp in components:
+        name = comp.get("name", str(comp)) if isinstance(comp, dict) else str(comp)
+        provides = comp.get("provides", [])[:3] if isinstance(comp, dict) else []
+        cid = _mm_id(name, seen)
+        label = "<<component>> %s" % name
+        if provides:
+            label = "%s: %s" % (label, ", ".join(str(p) for p in provides))
+        lines.append("    %s[%s]" % (cid, _mm_label(label)))
+
+    for dep in (data.get("dependencies") or [])[:20]:
+        src, tgt, label = _udm_edge_ends(dep, ("from", "source"), ("to", "target"))
+        if src is None or src not in seen or tgt not in seen:
+            continue
+        arrow = "-->|%s|" % label if label else "-->|uses|"
+        lines.append("    %s %s %s" % (seen[src], arrow, seen[tgt]))
+
+    for comp in components:
+        if not isinstance(comp, dict):
+            continue
+        name = comp.get("name", "")
+        requires = comp.get("requires", [])[:3]
+        if not name or name not in seen or not requires:
+            continue
+        for iface in requires:
+            iid = _mm_id("iface:%s:%s" % (name, iface), seen)
+            lines.append("    %s([%s])" % (iid, _mm_label(iface)))
+            lines.append("    %s -.->|requires| %s" % (seen[name], iid))
+
+    return "\n".join(lines)
+
+
+def _render_sequence_mermaid(data):
+    # type: (dict) -> str
+    """Render a UDM sequence payload as a Mermaid sequenceDiagram.
+
+    Resolves participant/message aliases the way DrawioConverter
+    ._sequence_diagram does (caller|from|source, callee|to|target,
+    method|label|message) -- broader than
+    UMLDiagramGenerator.generate_sequence_diagram's legacy path, which
+    reads only literal 'caller'/'callee' keys.
+    """
+    call_chains = data.get("call_chains") or []
+    participants = data.get("participants") or []
+
+    if not participants:
+        order = []
+        for chain in call_chains:
+            src, tgt, _label = _udm_edge_ends(chain, ("caller", "from", "source"), ("callee", "to", "target"))
+            if src and src not in order:
+                order.append(src)
+            if tgt and tgt not in order:
+                order.append(tgt)
+        participants = order
+
+    participants = participants[:8]
+    if not participants:
+        return "sequenceDiagram\n    Note over System: No call chains found"
+
+    lines = ["sequenceDiagram"]
+    ids = {}
+    for p in participants:
+        pname = p if isinstance(p, str) else p.get("name", str(p))
+        pid = _mm_id(pname, ids)
+        if pid != pname:
+            lines.append("    participant %s as %s" % (pid, pname))
+        else:
+            lines.append("    participant %s" % pid)
+
+    part_set = set(ids.keys())
+    for chain in call_chains[:25]:
+        src, tgt, label = _udm_edge_ends(
+            chain,
+            ("caller", "from", "source"),
+            ("callee", "to", "target"),
+            label_keys=("method", "label", "message"),
+        )
+        if src is None or src not in part_set or tgt not in part_set:
+            continue
+        is_return = isinstance(chain, dict) and chain.get("is_return")
+        arrow = "-->>" if is_return else "->>"
+        lines.append("    %s%s%s: %s" % (ids[src], arrow, ids[tgt], label or tgt))
+
+    return "\n".join(lines)
+
+
+def _render_state_mermaid(data):
+    # type: (dict) -> str
+    """Render a UDM state payload as a Mermaid stateDiagram-v2.
+
+    `[*] --> first` and `last --> [*]` anchor to the first and last entries
+    of the `states` list, matching DrawioConverter._state_diagram -- keep
+    this identical rather than "improving" it to graph topology, or the two
+    renderings diverge (ADR-001 SS A.4.2).
+    """
+    states = (data.get("states") or [])[:18]
+    transitions = data.get("transitions") or []
+    if not states:
+        return "stateDiagram-v2\n    [*] --> Idle\n    Idle --> [*]"
+
+    lines = ["stateDiagram-v2"]
+    ids = {}
+    first_id = None
+    last_id = None
+    for s in states:
+        name = s if isinstance(s, str) else s.get("name", str(s))
+        sid = _mm_id(name, ids)
+        if first_id is None:
+            first_id = sid
+        last_id = sid
+        if sid != name:
+            lines.append('    state "%s" as %s' % (name, sid))
+        if isinstance(s, dict) and s.get("is_composite"):
+            lines.append("    state %s {" % sid)
+            for ss in s.get("sub_states", [])[:4]:
+                ss_name = ss if isinstance(ss, str) else ss.get("name", str(ss))
+                ss_id = _mm_id("%s.%s" % (name, ss_name), ids)
+                lines.append("        %s" % ss_id)
+            lines.append("    }")
+
+    lines.append("    [*] --> %s" % first_id)
+
+    state_set = set(ids.keys())
+    for t in transitions[:30]:
+        src, tgt, label = _udm_edge_ends(
+            t,
+            ("from", "source"),
+            ("to", "target"),
+            label_keys=("label", "event", "guard"),
+        )
+        if src is None or src not in state_set or tgt not in state_set:
+            continue
+        line = "    %s --> %s" % (ids[src], ids[tgt])
+        lines.append(line + ((" : %s" % label) if label else ""))
+
+    lines.append("    %s --> [*]" % last_id)
+    return "\n".join(lines)
+
+
+def _render_activity_mermaid(data):
+    # type: (dict) -> str
+    """Render a UDM activity payload as a Mermaid flowchart TD.
+
+    A `decision` step's outgoing edge carries a |yes| guard label instead of
+    draw.io's synthetic follow-on action node -- converter.py's
+    _activity_diagram emits a "[yes] ... ok" node per decision, which is a
+    layout artefact, not data (ADR-001 SS B.5); reproducing it here would
+    bake the defect into a second renderer.
+    """
+    steps = (data.get("steps") or data.get("activities") or [])[:15]
+    if not steps:
+        return "flowchart TD\n    Start([Start]) --> End([End])"
+
+    lines = ["flowchart TD"]
+    ids = {}
+    init_id = _mm_id("__start__", ids)
+    lines.append("    %s((( )))" % init_id)
+    prev_id = init_id
+    prev_was_decision = False
+
+    for step in steps:
+        name = step.get("name", str(step)) if isinstance(step, dict) else str(step)
+        stype = step.get("type", "action") if isinstance(step, dict) else "action"
+        sid = _mm_id(name, ids)
+
+        if stype in ("decision", "condition", "check"):
+            lines.append("    %s{%s}" % (sid, _mm_label(name)))
+        elif stype in ("fork", "join"):
+            lines.append('    %s[" "]' % sid)
+        else:
+            lines.append("    %s[%s]" % (sid, _mm_label(name)))
+
+        arrow = "-->|yes|" if prev_was_decision else "-->"
+        lines.append("    %s %s %s" % (prev_id, arrow, sid))
+
+        prev_id = sid
+        prev_was_decision = stype in ("decision", "condition", "check")
+
+    final_id = _mm_id("__end__", ids)
+    lines.append("    %s((( )))" % final_id)
+    arrow = "-->|yes|" if prev_was_decision else "-->"
+    lines.append("    %s %s %s" % (prev_id, arrow, final_id))
+
+    return "\n".join(lines)
+
+
+def _render_usecase_plantuml(data):
+    # type: (dict) -> str
+    """Render a UDM usecase payload as a PlantUML use-case diagram.
+
+    `left to right direction` reproduces DrawioConverter._usecase_diagram's
+    actors-left / system-right layout. `relationships` entries must be
+    dicts (a tuple is skipped, matching converter.py L859).
+    """
+    actors = (data.get("actors") or [])[:6]
+    use_cases = (data.get("use_cases") or data.get("usecases") or [])[:14]
+    system_name = data.get("system_name", "System")
+    if not use_cases:
+        return _plantuml_stub("usecase", "No use cases supplied")
+
+    seen = {}
+    lines = ["@startuml", "left to right direction"]
+    actor_names = []
+    for a in actors:
+        aname = a if isinstance(a, str) else a.get("name", str(a))
+        actor_names.append(aname)
+        alias = _pu_alias(aname, seen)
+        lines.append('actor "%s" as %s' % (aname, alias))
+
+    lines.append('rectangle "%s" {' % system_name)
+    uc_names = []
+    for uc in use_cases:
+        ucname = uc if isinstance(uc, str) else uc.get("name", str(uc))
+        uc_names.append(ucname)
+        alias = _pu_alias(ucname, seen)
+        lines.append('  usecase "%s" as %s' % (ucname, alias))
+    lines.append("}")
+
+    associations = data.get("associations") or []
+    if associations:
+        for assoc in associations[:30]:
+            actor_name, uc_name, label = _udm_edge_ends(assoc, ("actor",), ("use_case", "usecase"))
+            if actor_name is None or actor_name not in seen or uc_name not in seen:
+                continue
+            line = "%s --> %s" % (seen[actor_name], seen[uc_name])
+            lines.append(line + ((" : %s" % label) if label else ""))
+    elif actor_names and uc_names:
+        first_alias = seen[actor_names[0]]
+        for ucname in uc_names[:4]:
+            lines.append("%s --> %s" % (first_alias, seen[ucname]))
+
+    for rel in (data.get("relationships") or [])[:15]:
+        if not isinstance(rel, dict):
+            continue
+        src_n = rel.get("from", "")
+        tgt_n = rel.get("to", "")
+        rtype = rel.get("type", "include").lower()
+        if not src_n or not tgt_n or src_n not in seen or tgt_n not in seen:
+            continue
+        lines.append("%s ..> %s : <<%s>>" % (seen[src_n], seen[tgt_n], rtype))
+
+    lines.append("@enduml")
+    return "\n".join(lines)
+
+
+def _render_object_plantuml(data):
+    # type: (dict) -> str
+    """Render a UDM object payload as a PlantUML object diagram."""
+    objects = (data.get("objects") or data.get("instances") or [])[:20]
+    if not objects:
+        return _plantuml_stub("object", "No objects supplied")
+
+    seen = {}
+    lines = ["@startuml"]
+    for obj in objects:
+        oname = obj.get("name", "obj") if isinstance(obj, dict) else str(obj)
+        oclass = obj.get("class", "") if isinstance(obj, dict) else ""
+        values = obj.get("values", {}) if isinstance(obj, dict) else {}
+        alias = _pu_alias(oname, seen)
+        header = ("%s : %s" % (oname, oclass)) if oclass else oname
+        lines.append('object "%s" as %s {' % (header, alias))
+        for k, v in list(values.items())[:8]:
+            lines.append("  %s = %s" % (k, v))
+        lines.append("}")
+
+    for link in (data.get("links") or [])[:15]:
+        src, tgt, label = _udm_edge_ends(link, ("from",), ("to",))
+        if src is None or src not in seen or tgt not in seen:
+            continue
+        line = "%s -- %s" % (seen[src], seen[tgt])
+        lines.append(line + ((" : %s" % label) if label else ""))
+
+    lines.append("@enduml")
+    return "\n".join(lines)
+
+
+def _render_deployment_plantuml(data):
+    # type: (dict) -> str
+    """Render a UDM deployment payload as a PlantUML deployment diagram.
+
+    The database-vs-node keyword split mirrors DrawioConverter
+    ._deployment_diagram's S_DEP_DEVICE / S_DEP_NODE choice.
+    """
+    nodes = (data.get("nodes") or data.get("deployments") or [])[:12]
+    if not nodes:
+        return _plantuml_stub("deployment", "No nodes supplied")
+
+    seen = {}
+    lines = ["@startuml"]
+    for node in nodes:
+        name = node.get("name", str(node)) if isinstance(node, dict) else str(node)
+        ntype = node.get("type", "server") if isinstance(node, dict) else "server"
+        artifacts = node.get("artifacts", [])[:6] if isinstance(node, dict) else []
+        alias = _pu_alias(name, seen)
+        kw = "database" if ntype == "database" else "node"
+        lines.append('%s "%s" <<%s>> as %s {' % (kw, name, ntype, alias))
+        for art in artifacts:
+            art_alias = _pu_alias("%s:%s" % (name, art), seen)
+            lines.append('  artifact "%s" as %s' % (art, art_alias))
+        lines.append("}")
+
+    for conn in (data.get("connections") or data.get("links") or [])[:15]:
+        src, tgt, label = _udm_edge_ends(
+            conn,
+            ("from", "source"),
+            ("to", "target"),
+            label_keys=("protocol", "label"),
+        )
+        if src is None or src not in seen or tgt not in seen:
+            continue
+        line = "%s --> %s" % (seen[src], seen[tgt])
+        lines.append(line + ((" : %s" % label) if label else ""))
+
+    lines.append("@enduml")
+    return "\n".join(lines)
+
+
+def _render_communication_plantuml(data):
+    # type: (dict) -> str
+    """Render a UDM communication payload as a numbered-message PlantUML diagram.
+
+    The counter increments only on an emitted edge, matching
+    DrawioConverter._communication_diagram's j+1 over the enumerated-and
+    -filtered message list -- numbering must agree across both renderings.
+    """
+    participants = (data.get("participants") or [])[:8]
+    messages = data.get("messages") or data.get("call_chains") or []
+    if not participants:
+        return _plantuml_stub("communication", "No participants supplied")
+
+    seen = {}
+    lines = ["@startuml"]
+    for p in participants:
+        pname = p if isinstance(p, str) else p.get("name", str(p))
+        alias = _pu_alias(pname, seen)
+        lines.append('object "%s" as %s' % (pname, alias))
+
+    part_set = set(seen.keys())
+    n = 0
+    for msg in messages[:15]:
+        src, tgt, label = _udm_edge_ends(msg, ("caller", "from"), ("callee", "to"), label_keys=("method", "label"))
+        if src is None or src not in part_set or tgt not in part_set:
+            continue
+        n += 1
+        lines.append("%s --> %s : %d: %s" % (seen[src], seen[tgt], n, label))
+
+    lines.append("@enduml")
+    return "\n".join(lines)
+
+
+def _render_composite_plantuml(data):
+    # type: (dict) -> str
+    """Render a UDM composite payload as a PlantUML composite-structure diagram.
+
+    Ports render as `interface` plus a plain connector -- the closest
+    PlantUML analogue to draw.io's border square plus adjacent label.
+    PlantUML's native `port` keyword is rejected: it is only valid inside a
+    component in recent releases and would make output version-dependent.
+    """
+    components = (data.get("components") or [])[:8]
+    if not components:
+        return _plantuml_stub("composite", "No components supplied")
+
+    seen = {}
+    lines = ["@startuml"]
+    for comp in components:
+        name = comp.get("name", str(comp)) if isinstance(comp, dict) else str(comp)
+        parts = comp.get("parts", [])[:4] if isinstance(comp, dict) else []
+        ports = comp.get("ports", [])[:3] if isinstance(comp, dict) else []
+        alias = _pu_alias(name, seen)
+        lines.append('component "%s" as %s {' % (name, alias))
+        for part in parts:
+            part_alias = _pu_alias("%s:%s" % (name, part), seen)
+            lines.append('  component "%s" as %s' % (part, part_alias))
+        lines.append("}")
+        for port in ports:
+            port_alias = _pu_alias("%s:%s" % (name, port), seen)
+            lines.append('interface "%s" as %s' % (port, port_alias))
+            lines.append("%s -- %s" % (port_alias, alias))
+
+    lines.append("@enduml")
+    return "\n".join(lines)
+
+
+def _render_interaction_plantuml(data):
+    # type: (dict) -> str
+    """Render a UDM interaction payload as a PlantUML activity-beta diagram.
+
+    Every `if` opened by a `decision` step is closed, in reverse order,
+    before `stop` -- an unclosed `if` is the single most likely way to
+    produce invalid PlantUML here.
+    """
+    steps = (data.get("steps") or data.get("interactions") or [])[:15]
+    if not steps:
+        return _plantuml_stub("interaction", "No steps supplied")
+
+    lines = ["@startuml", "start"]
+    open_ifs = 0
+    for step in steps:
+        stype = step.get("type", "ref") if isinstance(step, dict) else "ref"
+        label = ""
+        if isinstance(step, dict):
+            label = step.get("name") or step.get("label", "")
+        else:
+            label = str(step)
+
+        if stype in ("init", "start"):
+            continue
+        if stype in ("end", "final"):
+            break
+        if stype == "decision":
+            lines.append("if (%s) then (yes)" % (label or "?"))
+            open_ifs += 1
+        else:
+            lines.append(":ref %s;" % (label or stype))
+
+    for _unused in range(open_ifs):
+        lines.append("endif")
+    lines.append("stop")
+    lines.append("@enduml")
+    return "\n".join(lines)
+
+
+# ======================================================================
 # AST Analyzer
 # ======================================================================
 
@@ -346,8 +956,24 @@ class UMLDiagramGenerator:
 
         return "\n".join(lines)
 
-    def generate_component_diagram(self, dep_graph=None):
-        """Generate Mermaid flowchart representing components."""
+    def generate_component_diagram(self, dep_graph=None, groups=None):
+        # type: (dict, dict) -> str
+        """Generate Mermaid flowchart representing components.
+
+        Args:
+            dep_graph: {module: set(deps)}. None triggers CallGraph/AST
+                derivation.
+            groups: Optional {module: group_name} assignment. When
+                supplied, no filesystem scan is performed -- the fix for a
+                source-free repository. When omitted, groups are resolved
+                by locating each module's .py file under project_root, as
+                before. In both cases, a module that resolves to no group
+                is placed in a single "ungrouped" subgraph rather than
+                being silently dropped (previously: a manually-supplied
+                dep_graph on a repo with no matching .py files produced
+                zero groups, so no node was ever declared for an isolated
+                module -- it simply vanished, with no diagnostic).
+        """
         if dep_graph is None:
             cg = self._get_call_graph()
             dep_graph = self._dep_graph_from_call_graph(cg)
@@ -357,23 +983,36 @@ class UMLDiagramGenerator:
 
         lines = ["flowchart TB"]
 
-        # Group by top-level directories
-        groups = {}
-        for module in dep_graph:
-            # Try to find the file to determine its directory
-            for py_file in self.project_root.rglob("%s.py" % module):
-                try:
-                    rel = py_file.relative_to(self.project_root)
-                    parts = rel.parts
-                    group = parts[0] if len(parts) > 1 else "root"
-                    if group not in groups:
-                        groups[group] = []
-                    groups[group].append(module)
-                except ValueError:
-                    pass
-                break
+        if groups is not None:
+            resolved = {}
+            for module, group in groups.items():
+                resolved.setdefault(group, []).append(module)
+        else:
+            resolved = {}
+            for module in dep_graph:
+                for py_file in self.project_root.rglob("%s.py" % module):
+                    try:
+                        rel = py_file.relative_to(self.project_root)
+                        parts = rel.parts
+                        group = parts[0] if len(parts) > 1 else "root"
+                        resolved.setdefault(group, []).append(module)
+                    except ValueError:
+                        pass
+                    break
+            if not resolved and dep_graph:
+                logger.warning(
+                    "component diagram: no .py file found for any of %d modules; " "all placed in 'ungrouped'",
+                    len(dep_graph),
+                )
 
-        for group, modules in sorted(groups.items()):
+        grouped_modules = set()
+        for modules in resolved.values():
+            grouped_modules.update(modules)
+        ungrouped = [m for m in dep_graph if m not in grouped_modules]
+        if ungrouped:
+            resolved.setdefault("ungrouped", []).extend(ungrouped)
+
+        for group, modules in sorted(resolved.items()):
             safe_group = group.replace("-", "_").replace(".", "_")
             lines.append("    subgraph %s[%s]" % (safe_group, group))
             for mod in sorted(set(modules)):
@@ -542,8 +1181,18 @@ class UMLDiagramGenerator:
 
         return "\n".join(lines)
 
-    def generate_activity_diagram(self, function_code="", context=""):
-        """Generate Mermaid flowchart TD from function logic."""
+    def generate_activity_diagram(self, function_code="", context="", data=None):
+        """Generate Mermaid flowchart TD from function logic.
+
+        Args:
+            data: Optional UDM activity payload ({"steps": [...]}). When
+                supplied, rendered deterministically via
+                _render_activity_mermaid -- function_code/context and the
+                LLM are never reached.
+        """
+        if data is not None:
+            return _render_activity_mermaid(data)
+
         if not function_code and not context:
             return "flowchart TD\n    Start([Start]) --> End([End])"
 
@@ -560,8 +1209,18 @@ class UMLDiagramGenerator:
         # Fallback: basic structure
         return "flowchart TD\n    Start([Start]) --> Process[Process] --> End([End])"
 
-    def generate_state_diagram(self, state_info="", context=""):
-        """Generate Mermaid stateDiagram-v2."""
+    def generate_state_diagram(self, state_info="", context="", data=None):
+        """Generate Mermaid stateDiagram-v2.
+
+        Args:
+            data: Optional UDM state payload ({"states": [...],
+                "transitions": [...]}). When supplied, rendered
+                deterministically via _render_state_mermaid --
+                state_info/context and the LLM are never reached.
+        """
+        if data is not None:
+            return _render_state_mermaid(data)
+
         if not state_info and not context:
             return "stateDiagram-v2\n    [*] --> Idle\n    Idle --> [*]"
 
@@ -581,8 +1240,18 @@ class UMLDiagramGenerator:
     # Tier 3: LLM-powered
     # ------------------------------------------------------------------
 
-    def generate_usecase_diagram(self, srs_content="", readme_content=""):
-        """Generate PlantUML use case diagram from requirements docs."""
+    def generate_usecase_diagram(self, srs_content="", readme_content="", data=None):
+        """Generate PlantUML use case diagram from requirements docs.
+
+        Args:
+            data: Optional UDM usecase payload ({"use_cases": [...], ...}).
+                When supplied, rendered deterministically via
+                _render_usecase_plantuml -- SRS.md/README.md and the LLM
+                are never reached.
+        """
+        if data is not None:
+            return _render_usecase_plantuml(data)
+
         if not srs_content:
             srs_path = self.project_root / "SRS.md"
             if srs_path.is_file():
@@ -608,8 +1277,18 @@ class UMLDiagramGenerator:
 
         return _plantuml_stub("usecase", "LLM generation unavailable")
 
-    def generate_object_diagram(self, classes=None, context=""):
-        """Generate PlantUML object diagram showing class instances."""
+    def generate_object_diagram(self, classes=None, context="", data=None):
+        """Generate PlantUML object diagram showing class instances.
+
+        Args:
+            data: Optional UDM object payload ({"objects": [...], ...}).
+                When supplied, rendered deterministically via
+                _render_object_plantuml -- classes/context and the LLM
+                are never reached.
+        """
+        if data is not None:
+            return _render_object_plantuml(data)
+
         if classes is None:
             cg = self._get_call_graph()
             classes = self._classes_from_call_graph(cg)
@@ -633,10 +1312,34 @@ class UMLDiagramGenerator:
 
         return _plantuml_stub("object", "LLM generation unavailable")
 
-    def generate_deployment_diagram(self, infra_files=None):
-        """Generate PlantUML deployment diagram from infrastructure files."""
+    def generate_deployment_diagram(self, infra_files=None, data=None):
+        """Generate PlantUML deployment diagram from infrastructure files.
+
+        Args:
+            infra_files: Optional list of file paths whose content is used
+                directly instead of auto-detecting Dockerfile/compose/K8s
+                files. Previously a dead parameter: passing it made this
+                method ignore it AND skip auto-detection, falling through
+                to the "Python project with modules: ..." string. Fixed
+                here so passing it is strictly better than omitting it,
+                never worse.
+            data: Optional UDM deployment payload ({"nodes": [...], ...}).
+                When supplied, rendered deterministically via
+                _render_deployment_plantuml -- infra_files and the LLM
+                are never reached. Checked before infra_files.
+        """
+        if data is not None:
+            return _render_deployment_plantuml(data)
+
         infra_content = ""
-        if infra_files is None:
+        if infra_files:
+            for f in infra_files:
+                try:
+                    infra_content += "\n--- %s ---\n" % Path(f).name
+                    infra_content += Path(f).read_text(encoding="utf-8", errors="replace")[:1000]
+                except OSError:
+                    pass
+        elif infra_files is None:
             # Auto-detect infrastructure files
             patterns = [
                 "Dockerfile",
@@ -673,8 +1376,18 @@ class UMLDiagramGenerator:
 
         return _plantuml_stub("deployment", "LLM generation unavailable")
 
-    def generate_communication_diagram(self, dep_graph=None, context=""):
-        """Generate PlantUML communication diagram."""
+    def generate_communication_diagram(self, dep_graph=None, context="", data=None):
+        """Generate PlantUML communication diagram.
+
+        Args:
+            data: Optional UDM communication payload ({"participants": [...],
+                "messages": [...]}). When supplied, rendered
+                deterministically via _render_communication_plantuml --
+                dep_graph/context and the LLM are never reached.
+        """
+        if data is not None:
+            return _render_communication_plantuml(data)
+
         if dep_graph is None:
             cg = self._get_call_graph()
             dep_graph = self._dep_graph_from_call_graph(cg)
@@ -695,8 +1408,18 @@ class UMLDiagramGenerator:
 
         return _plantuml_stub("communication", "LLM generation unavailable")
 
-    def generate_composite_structure_diagram(self, classes=None, context=""):
-        """Generate PlantUML composite structure diagram."""
+    def generate_composite_structure_diagram(self, classes=None, context="", data=None):
+        """Generate PlantUML composite structure diagram.
+
+        Args:
+            data: Optional UDM composite payload ({"components": [{"name",
+                "parts", "ports"}]}). When supplied, rendered
+                deterministically via _render_composite_plantuml --
+                classes/context and the LLM are never reached.
+        """
+        if data is not None:
+            return _render_composite_plantuml(data)
+
         if classes is None:
             cg = self._get_call_graph()
             classes = self._classes_from_call_graph(cg)
@@ -725,8 +1448,18 @@ class UMLDiagramGenerator:
 
         return _plantuml_stub("composite", "LLM generation unavailable")
 
-    def generate_interaction_overview(self, call_chains=None, context=""):
-        """Generate PlantUML interaction overview diagram."""
+    def generate_interaction_overview(self, call_chains=None, context="", data=None):
+        """Generate PlantUML interaction overview diagram.
+
+        Args:
+            data: Optional UDM interaction payload ({"steps": [{"type",
+                "name"}]}). When supplied, rendered deterministically via
+                _render_interaction_plantuml -- call_chains/context and
+                the LLM are never reached.
+        """
+        if data is not None:
+            return _render_interaction_plantuml(data)
+
         if call_chains is None:
             # Try CallGraph first; fall back to per-file extraction
             cg = self._get_call_graph()
@@ -875,6 +1608,69 @@ class UMLDiagramGenerator:
         except Exception as e:
             logger.warning("Call graph diagram generation failed: %s", e)
             return "flowchart LR\n    note[Call graph not available]"
+
+    # ------------------------------------------------------------------
+    # UDM dispatch
+    # ------------------------------------------------------------------
+
+    def generate_from_data(self, diagram_type, data):
+        # type: (str, dict) -> str
+        """Render one diagram from a caller-supplied UDM payload, with no LLM call.
+
+        Dispatches to the deterministic renderer for diagram_type. Unlike
+        the generate_* methods, this never falls back to AST scanning or
+        the LLM: a payload that cannot be rendered raises rather than
+        silently producing a plausible diagram from canned example data.
+
+        Args:
+            diagram_type: One of UDM_PRIMARY_KEY's keys.
+            data: UDM v1 payload. Must contain the primary key for
+                diagram_type.
+
+        Returns:
+            Mermaid or PlantUML syntax string, matching the format the
+            corresponding generate_* method returns.
+
+        Raises:
+            ValueError: diagram_type is unknown, or data lacks its primary
+                key.
+        """
+        if diagram_type not in UDM_PRIMARY_KEY:
+            raise ValueError(
+                "Unknown diagram_type for generate_from_data: %s (expected one of %s)"
+                % (diagram_type, sorted(UDM_PRIMARY_KEY))
+            )
+        primary_key = UDM_PRIMARY_KEY[diagram_type]
+        if not data.get(primary_key):
+            raise ValueError("UDM payload for '%s' must contain a non-empty '%s' list" % (diagram_type, primary_key))
+
+        if diagram_type == "class":
+            return self.generate_class_diagram(classes=data["classes"])
+        if diagram_type == "package":
+            return _render_package_mermaid(data)
+        if diagram_type == "component":
+            return _render_component_mermaid(data)
+        if diagram_type == "sequence":
+            return _render_sequence_mermaid(data)
+        if diagram_type == "state":
+            return _render_state_mermaid(data)
+        if diagram_type == "activity":
+            return _render_activity_mermaid(data)
+        if diagram_type == "deployment":
+            return _render_deployment_plantuml(data)
+        if diagram_type == "usecase":
+            return _render_usecase_plantuml(data)
+        if diagram_type == "object":
+            return _render_object_plantuml(data)
+        if diagram_type == "communication":
+            return _render_communication_plantuml(data)
+        if diagram_type == "composite":
+            return _render_composite_plantuml(data)
+        if diagram_type == "interaction":
+            return _render_interaction_plantuml(data)
+        if diagram_type == "call_graph":
+            return self.generate_call_graph_diagram(call_graph=_DictCallGraph(data))
+        raise ValueError("Unhandled diagram_type: %s" % diagram_type)  # pragma: no cover
 
     # ------------------------------------------------------------------
     # Orchestration
