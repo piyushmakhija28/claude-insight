@@ -3,6 +3,8 @@
 # and block persona spawns that name the agent but never actually carry its skills.
 # Windows-safe: ASCII only, no Unicode characters.
 
+import json
+import os
 import re
 
 _GENERIC_TYPES = ("general-purpose", "claude", "")
@@ -38,6 +40,15 @@ _SKILLS_FIELD_RE = re.compile(r"skills\s*:\s*(.*?)(?:\n[ \t]*[A-Za-z_][\w-]*\s*:
 # library is named like 'ai-agents-core' / 'system-design') -- this avoids
 # matching stray single words or YAML punctuation inside the skills: value.
 _SKILL_TOKEN_RE = re.compile(r"[a-z][a-z0-9]*(?:-[a-z0-9]+)+")
+
+# 'agent: <name>' line inside the persona block.
+_AGENT_NAME_RE = re.compile(r"^\s*agent\s*:\s*([a-z0-9][a-z0-9\-]*)\s*$", re.IGNORECASE | re.MULTILINE)
+
+# The mandated 'WORKING DIRECTORY & LIBRARY PATH: <path>. ...' line every
+# dispatch prompt is supposed to start with (ORCHESTRATION_TEMPLATE.md GLOBAL
+# LIBRARY PATH MANDATE). Captures the path up to the first '. ' sentence
+# break -- real library paths never contain a literal '. ' sequence.
+_LIBRARY_PATH_LINE_RE = re.compile(r"WORKING DIRECTORY\s*&\s*LIBRARY PATH\s*:\s*([^\n]+?)(?:\.\s|\n|$)", re.IGNORECASE)
 
 _BLOCK_MSG_NO_PERSONA = (
     "[PRE-TOOL BLOCKED] Generic subagent spawned without a library persona!\n"
@@ -75,6 +86,80 @@ _BLOCK_MSG_HOLLOW_PERSONA = (
     "               agent.md Skill Dependencies section first)."
 )
 
+_BLOCK_MSG_INCOMPLETE_SKILLS = (
+    "[PRE-TOOL BLOCKED] Persona's declared skills do not match its real mandatory set!\n"
+    "  Tool       : Agent/Task spawn with subagent_type=general-purpose (or unset)\n"
+    "  Agent      : {agent_name}\n"
+    "  Problem    : knowledge-graph/_master/agents_all.json lists this agent's mandatory\n"
+    "               skills as: {mandatory}\n"
+    "               but the persona block's 'skills:' field is missing: {missing}\n"
+    "  Required   : The 'skills:' field must include EVERY mandatory skill for this\n"
+    "               agent (plus any task-relevant optional ones) -- a self-consistent\n"
+    "               but incomplete or wrong skill list is still a hollow dispatch, just\n"
+    "               one that passes a naive format check. Copy the mandatory list above\n"
+    "               into 'skills:' and add a matching 'skills/<name>/SKILL.md' read\n"
+    "               instruction for each.\n"
+    "  Escape hatch: prefix the prompt/description with [GENERIC-OK] only if this is a\n"
+    "               deliberate, reduced-scope dispatch that genuinely does not need the\n"
+    "               full mandatory set for this specific subtask."
+)
+
+
+def _resolve_agents_registry(prompt):
+    """Best-effort locate and parse knowledge-graph/_master/agents_all.json.
+
+    Tries the GLOBAL_LIBRARY_PATH environment variable first, then the
+    'WORKING DIRECTORY & LIBRARY PATH: <path>' line ORCHESTRATION_TEMPLATE.md
+    mandates at the top of every dispatch prompt. Returns the parsed list of
+    agent records, or None if no candidate path resolves to a readable,
+    parseable registry.
+
+    This hook runs globally across every project, not just projects that use
+    claude-global-library -- callers MUST treat None as fail-open (skip the
+    ground-truth check entirely), never as a reason to block. A project that
+    does not use this library, or whose library copy is unreachable for some
+    incidental reason, must not have its dispatches blocked by an
+    infrastructure lookup failure.
+    """
+    candidates = []
+    env_path = os.environ.get("GLOBAL_LIBRARY_PATH")
+    if env_path:
+        candidates.append(env_path)
+    path_match = _LIBRARY_PATH_LINE_RE.search(prompt)
+    if path_match:
+        candidates.append(path_match.group(1).strip().strip('"').strip("'"))
+
+    for base in candidates:
+        try:
+            registry_path = os.path.join(base, "knowledge-graph", "_master", "agents_all.json")
+            if not os.path.isfile(registry_path):
+                continue
+            with open(registry_path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+        except Exception:
+            continue
+        agents = data.get("agents") if isinstance(data, dict) else data
+        if isinstance(agents, list) and agents:
+            return agents
+    return None
+
+
+def _find_agent_record(agents, name):
+    """Return the agent record whose 'name' field matches (case-insensitive),
+    or None if not found. `agents` is the list _resolve_agents_registry returns.
+    """
+    lowered = name.strip().lower()
+    for record in agents:
+        if isinstance(record, dict) and str(record.get("name", "")).strip().lower() == lowered:
+            return record
+    return None
+
+
+def _extract_agent_name(persona_block_text):
+    """Return the 'agent: <name>' value from a persona block, or None."""
+    match = _AGENT_NAME_RE.search(persona_block_text)
+    return match.group(1).strip().lower() if match else None
+
 
 def _extract_declared_skills(persona_block_text):
     """Return the deduped, lowercased skill slugs listed in a persona block's
@@ -105,8 +190,8 @@ def check_agent_persona(tool_name, tool_input):
     A general-purpose (or unset) subagent_type must carry a library agent
     persona injected as a '---persona---' YAML block at the top of its
     prompt, per the Subagent Dispatch Contract -- and that block must
-    actually carry the agent's skills, not just its name. Two failure modes
-    are gated:
+    actually carry the agent's skills, not just its name. Three failure
+    modes are gated:
       1. No '---persona---' block at all (the original check).
       2. A '---persona---' block present but hollow -- no 'skills:' field,
          an empty one, or skills declared with no matching
@@ -114,6 +199,20 @@ def check_agent_persona(tool_name, tool_input):
          persona shell without its skill knowledge defeats the whole point
          of persona injection: the subagent never actually reads the
          domain skill it is supposed to apply.
+      3. A '---persona---' block that is internally self-consistent (every
+         declared skill has a matching read path) but still WRONG -- it
+         names a real library agent yet omits one or more of that agent's
+         actual mandatory skills per knowledge-graph/_master/agents_all.json.
+         Checks 1-2 only prove the block is well-formed; this check proves
+         the skill list is the agent's real one, not just a plausible-looking
+         one. This check is fail-open: if the agents_all.json registry
+         cannot be located for the current project (see
+         _resolve_agents_registry), or the named agent is not found in it
+         (e.g. a legitimate project-local custom persona this library does
+         not track), the dispatch is allowed through on checks 1-2 alone --
+         this hook runs globally across every project, not just ones that
+         use claude-global-library, and a registry-lookup failure must never
+         become a false-positive block.
 
     Named built-in subagent types (e.g. Explore, Plan) are never gated. An
     explicit '[GENERIC-OK]' marker in the prompt/description is an escape
@@ -181,5 +280,22 @@ def check_agent_persona(tool_name, tool_input):
             detail="skills declared in the persona block have no matching "
             "'skills/<name>/SKILL.md' read instruction in the prompt: " + ", ".join(missing)
         )
+
+    agents = _resolve_agents_registry(prompt)
+    if agents is not None:
+        agent_name = _extract_agent_name(block_match.group(1))
+        if agent_name is not None:
+            record = _find_agent_record(agents, agent_name)
+            if record is not None:
+                mandatory = record.get("mandatory_skills")
+                if isinstance(mandatory, list) and mandatory:
+                    declared_set = set(declared_skills)
+                    missing_mandatory = [s for s in mandatory if s.lower() not in declared_set]
+                    if missing_mandatory:
+                        return True, _BLOCK_MSG_INCOMPLETE_SKILLS.format(
+                            agent_name=agent_name,
+                            mandatory=", ".join(mandatory),
+                            missing=", ".join(missing_mandatory),
+                        )
 
     return False, ""

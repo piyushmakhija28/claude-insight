@@ -6,8 +6,13 @@ Covers check_agent_persona: blocks general-purpose (or unset) subagent_type
 spawns that lack an injected library persona, blocks a '---persona---'
 block that names an agent but never actually carries its skills (empty
 skills: field, or declared skills with no matching SKILL.md read path),
-allows named built-in subagent types, allows the '[GENERIC-OK]' escape
-hatch, and never raises on malformed input.
+blocks a self-consistent-but-incomplete persona block that omits a real
+mandatory skill for a known library agent (ground-truth cross-check
+against a knowledge-graph/_master/agents_all.json registry, fail-open when
+that registry cannot be located -- this hook runs globally, not just in
+projects that use claude-global-library), allows named built-in
+subagent types, allows the '[GENERIC-OK]' escape hatch, and never raises
+on malformed input.
 
 Windows-safe: ASCII only, no Unicode characters.
 """
@@ -274,3 +279,145 @@ class TestCheckAgentPersona:
         )
         assert blocked is False
         assert msg == ""
+
+
+_FAKE_REGISTRY = [
+    {
+        "name": "hallucination-detector",
+        "mandatory_skills": ["hallucination-detection-core", "uncertainty-quantification-core"],
+    },
+    {
+        "name": "orchestrator-agent",
+        "mandatory_skills": ["ai-agents-core", "prompt-engineering-core", "system-design"],
+    },
+]
+
+
+def _compliant_prompt_for(agent_name, skills):
+    skills_yaml = ", ".join(skills)
+    reads = "\n".join("- skills/{0}/SKILL.md".format(s) for s in skills)
+    return (
+        "---persona---\n"
+        "agent: {0}\n"
+        "skills: [{1}]\n"
+        "---\n"
+        "READ these skill files first:\n"
+        "{2}\n"
+        "TASK: do the thing"
+    ).format(agent_name, skills_yaml, reads)
+
+
+class TestGroundTruthMandatorySkillCheck:
+    """Covers failure mode 3: a persona block that is internally
+    self-consistent (checks 1-2 pass) but omits a real mandatory skill for
+    a known library agent, per a (monkeypatched) agents_all.json registry.
+    """
+
+    def test_blocks_when_registry_agent_missing_a_mandatory_skill(self, monkeypatch):
+        monkeypatch.setattr(agent_persona, "_resolve_agents_registry", lambda prompt: _FAKE_REGISTRY)
+        prompt = _compliant_prompt_for("hallucination-detector", ["hallucination-detection-core"])
+        blocked, msg = agent_persona.check_agent_persona(
+            "Agent", {"subagent_type": "general-purpose", "prompt": prompt}
+        )
+        assert blocked is True
+        assert "uncertainty-quantification-core" in msg
+        assert "hallucination-detector" in msg
+
+    def test_allows_when_registry_agent_has_all_mandatory_skills(self, monkeypatch):
+        monkeypatch.setattr(agent_persona, "_resolve_agents_registry", lambda prompt: _FAKE_REGISTRY)
+        prompt = _compliant_prompt_for(
+            "hallucination-detector", ["hallucination-detection-core", "uncertainty-quantification-core"]
+        )
+        blocked, msg = agent_persona.check_agent_persona(
+            "Agent", {"subagent_type": "general-purpose", "prompt": prompt}
+        )
+        assert blocked is False
+        assert msg == ""
+
+    def test_allows_extra_optional_skills_beyond_mandatory_set(self, monkeypatch):
+        monkeypatch.setattr(agent_persona, "_resolve_agents_registry", lambda prompt: _FAKE_REGISTRY)
+        prompt = _compliant_prompt_for(
+            "hallucination-detector",
+            ["hallucination-detection-core", "uncertainty-quantification-core", "rag-faithfulness-core"],
+        )
+        blocked, msg = agent_persona.check_agent_persona(
+            "Agent", {"subagent_type": "general-purpose", "prompt": prompt}
+        )
+        assert blocked is False
+        assert msg == ""
+
+    def test_fails_open_when_agent_name_not_in_registry(self, monkeypatch):
+        monkeypatch.setattr(agent_persona, "_resolve_agents_registry", lambda prompt: _FAKE_REGISTRY)
+        prompt = _compliant_prompt_for("some-project-local-custom-agent", ["some-custom-skill-core"])
+        blocked, msg = agent_persona.check_agent_persona(
+            "Agent", {"subagent_type": "general-purpose", "prompt": prompt}
+        )
+        assert blocked is False
+        assert msg == ""
+
+    def test_fails_open_when_registry_cannot_be_resolved(self, monkeypatch):
+        monkeypatch.setattr(agent_persona, "_resolve_agents_registry", lambda prompt: None)
+        prompt = _compliant_prompt_for("hallucination-detector", ["hallucination-detection-core"])
+        blocked, msg = agent_persona.check_agent_persona(
+            "Agent", {"subagent_type": "general-purpose", "prompt": prompt}
+        )
+        assert blocked is False
+        assert msg == ""
+
+    def test_escape_hatch_bypasses_mandatory_skill_check_too(self, monkeypatch):
+        monkeypatch.setattr(agent_persona, "_resolve_agents_registry", lambda prompt: _FAKE_REGISTRY)
+        prompt = "[GENERIC-OK] " + _compliant_prompt_for("hallucination-detector", ["hallucination-detection-core"])
+        blocked, msg = agent_persona.check_agent_persona(
+            "Agent", {"subagent_type": "general-purpose", "prompt": prompt}
+        )
+        assert blocked is False
+        assert msg == ""
+
+    def test_real_filesystem_lookup_with_no_env_var_or_path_line_fails_open(self):
+        # No monkeypatch here -- exercises the real _resolve_agents_registry
+        # against the compliant prompt fixture, which carries neither
+        # GLOBAL_LIBRARY_PATH nor a WORKING DIRECTORY & LIBRARY PATH line.
+        blocked, msg = agent_persona.check_agent_persona(
+            "Agent", {"subagent_type": "general-purpose", "prompt": _COMPLIANT_PROMPT}
+        )
+        assert blocked is False
+        assert msg == ""
+
+
+class TestResolveAgentsRegistry:
+    def test_resolves_via_env_var(self, tmp_path, monkeypatch):
+        kg_dir = tmp_path / "knowledge-graph" / "_master"
+        kg_dir.mkdir(parents=True)
+        (kg_dir / "agents_all.json").write_text(
+            '{"agents": [{"name": "foo-agent", "mandatory_skills": ["bar-core"]}]}',
+            encoding="utf-8",
+        )
+        monkeypatch.setenv("GLOBAL_LIBRARY_PATH", str(tmp_path))
+        agents = agent_persona._resolve_agents_registry("irrelevant prompt text")
+        assert agents == [{"name": "foo-agent", "mandatory_skills": ["bar-core"]}]
+
+    def test_resolves_via_working_directory_line(self, tmp_path, monkeypatch):
+        monkeypatch.delenv("GLOBAL_LIBRARY_PATH", raising=False)
+        kg_dir = tmp_path / "knowledge-graph" / "_master"
+        kg_dir.mkdir(parents=True)
+        (kg_dir / "agents_all.json").write_text(
+            '{"agents": [{"name": "foo-agent", "mandatory_skills": ["bar-core"]}]}',
+            encoding="utf-8",
+        )
+        prompt = "WORKING DIRECTORY & LIBRARY PATH: {0}. Read from here.\nTASK: x".format(str(tmp_path))
+        agents = agent_persona._resolve_agents_registry(prompt)
+        assert agents == [{"name": "foo-agent", "mandatory_skills": ["bar-core"]}]
+
+    def test_returns_none_when_nothing_resolves(self, monkeypatch):
+        monkeypatch.delenv("GLOBAL_LIBRARY_PATH", raising=False)
+        agents = agent_persona._resolve_agents_registry("no path info here at all")
+        assert agents is None
+
+    def test_returns_none_on_malformed_registry_json(self, tmp_path, monkeypatch):
+        monkeypatch.delenv("GLOBAL_LIBRARY_PATH", raising=False)
+        kg_dir = tmp_path / "knowledge-graph" / "_master"
+        kg_dir.mkdir(parents=True)
+        (kg_dir / "agents_all.json").write_text("{not valid json", encoding="utf-8")
+        prompt = "WORKING DIRECTORY & LIBRARY PATH: {0}. Read from here.\nTASK: x".format(str(tmp_path))
+        agents = agent_persona._resolve_agents_registry(prompt)
+        assert agents is None
