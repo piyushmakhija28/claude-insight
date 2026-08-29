@@ -287,7 +287,17 @@ def check_agent_persona(tool_name, tool_input):
         if agent_name is not None:
             record = _find_agent_record(agents, agent_name)
             if record is not None:
-                mandatory = record.get("mandatory_skills")
+                # In-domain mandatory skills live in "mandatory_skills"; a skill whose
+                # SKILL.md sits in a different domain's KG (no local graph edge to draw)
+                # is instead recorded under "cross_domain_mandatory_skills" -- both are
+                # equally mandatory and must both be enforced here, or a persona can
+                # silently omit a cross-domain skill its own agent.md requires.
+                in_domain = record.get("mandatory_skills")
+                cross_domain = record.get("cross_domain_mandatory_skills")
+                mandatory = list(in_domain or [])
+                for skill in cross_domain or []:
+                    if skill not in mandatory:
+                        mandatory.append(skill)
                 if isinstance(mandatory, list) and mandatory:
                     declared_set = set(declared_skills)
                     missing_mandatory = [s for s in mandatory if s.lower() not in declared_set]

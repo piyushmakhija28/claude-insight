@@ -290,6 +290,11 @@ _FAKE_REGISTRY = [
         "name": "orchestrator-agent",
         "mandatory_skills": ["ai-agents-core", "prompt-engineering-core", "system-design"],
     },
+    {
+        "name": "iam-security-engineer",
+        "mandatory_skills": ["iam-security-core", "zero-trust-architecture-core"],
+        "cross_domain_mandatory_skills": ["authentication-core"],
+    },
 ]
 
 
@@ -339,6 +344,33 @@ class TestGroundTruthMandatorySkillCheck:
         prompt = _compliant_prompt_for(
             "hallucination-detector",
             ["hallucination-detection-core", "uncertainty-quantification-core", "rag-faithfulness-core"],
+        )
+        blocked, msg = agent_persona.check_agent_persona(
+            "Agent", {"subagent_type": "general-purpose", "prompt": prompt}
+        )
+        assert blocked is False
+        assert msg == ""
+
+    def test_blocks_when_persona_omits_a_cross_domain_mandatory_skill(self, monkeypatch):
+        """authentication-core lives in a different domain's KG than
+        iam-security-engineer, so it is recorded under
+        cross_domain_mandatory_skills rather than mandatory_skills -- the
+        ground-truth check must still treat it as mandatory.
+        """
+        monkeypatch.setattr(agent_persona, "_resolve_agents_registry", lambda prompt: _FAKE_REGISTRY)
+        prompt = _compliant_prompt_for("iam-security-engineer", ["iam-security-core", "zero-trust-architecture-core"])
+        blocked, msg = agent_persona.check_agent_persona(
+            "Agent", {"subagent_type": "general-purpose", "prompt": prompt}
+        )
+        assert blocked is True
+        assert "authentication-core" in msg
+        assert "iam-security-engineer" in msg
+
+    def test_allows_when_persona_includes_the_cross_domain_mandatory_skill(self, monkeypatch):
+        monkeypatch.setattr(agent_persona, "_resolve_agents_registry", lambda prompt: _FAKE_REGISTRY)
+        prompt = _compliant_prompt_for(
+            "iam-security-engineer",
+            ["iam-security-core", "zero-trust-architecture-core", "authentication-core"],
         )
         blocked, msg = agent_persona.check_agent_persona(
             "Agent", {"subagent_type": "general-purpose", "prompt": prompt}
