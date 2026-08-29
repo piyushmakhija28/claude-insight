@@ -36,10 +36,16 @@ _PERSONA_BLOCK_RE = re.compile(r"---persona---(.*?)^-{3,}\s*$", re.DOTALL | re.M
 # ('skills:\n  - a\n  - b') forms used across real dispatch prompts.
 _SKILLS_FIELD_RE = re.compile(r"skills\s*:\s*(.*?)(?:\n[ \t]*[A-Za-z_][\w-]*\s*:|\Z)", re.DOTALL | re.IGNORECASE)
 
-# A skill slug: lowercase, at least one hyphen (every real skill in this
-# library is named like 'ai-agents-core' / 'system-design') -- this avoids
-# matching stray single words or YAML punctuation inside the skills: value.
-_SKILL_TOKEN_RE = re.compile(r"[a-z][a-z0-9]*(?:-[a-z0-9]+)+")
+# A skill slug: lowercase, hyphen-separated words with zero or more hyphens.
+# Most real skills in this library are named like 'ai-agents-core' /
+# 'system-design', but a few genuinely have no hyphen at all (e.g. 'docker',
+# 'kubernetes') -- the quantifier below must be zero-or-more ('*'), not
+# one-or-more ('+'), or those skills are silently dropped from the parsed
+# declared-skills list even when present verbatim in the skills: field. This
+# regex is only ever applied to the already-isolated skills: field capture
+# (via _SKILLS_FIELD_RE), so broadening it does not risk matching stray
+# words elsewhere in a dispatch prompt.
+_SKILL_TOKEN_RE = re.compile(r"[a-z][a-z0-9]*(?:-[a-z0-9]+)*")
 
 # 'agent: <name>' line inside the persona block.
 _AGENT_NAME_RE = re.compile(r"^\s*agent\s*:\s*([a-z0-9][a-z0-9\-]*)\s*$", re.IGNORECASE | re.MULTILINE)

@@ -295,7 +295,55 @@ _FAKE_REGISTRY = [
         "mandatory_skills": ["iam-security-core", "zero-trust-architecture-core"],
         "cross_domain_mandatory_skills": ["authentication-core"],
     },
+    {
+        "name": "python-backend-engineer",
+        # 'docker' has zero hyphens -- this is the exact real-library shape
+        # that regressed _SKILL_TOKEN_RE (issue: single-word skill names were
+        # silently dropped from the parsed declared-skills list).
+        "mandatory_skills": ["fastapi-core", "docker", "rdbms-core"],
+    },
 ]
+
+
+class TestHyphenLessSkillNamesAreNotDropped:
+    """Regression coverage for a real bug: _SKILL_TOKEN_RE required at least
+    one hyphen in every skill token, so single-word skill names like
+    'docker' or 'kubernetes' -- both real, currently-shipping skills in
+    claude-global-library -- were silently dropped from the parsed
+    declared-skills list even when present verbatim in the persona block's
+    skills: field, causing a false INCOMPLETE_SKILLS block. See the fixed
+    _SKILL_TOKEN_RE quantifier ('*' not '+') above.
+    """
+
+    def test_extract_declared_skills_includes_hyphen_less_token(self):
+        block_text = "\nagent: python-backend-engineer\nskills: [fastapi-core, docker, rdbms-core]\n"
+        declared = agent_persona._extract_declared_skills(block_text)
+        assert "docker" in declared, "hyphen-less skill token 'docker' must not be dropped"
+        assert declared == ["fastapi-core", "docker", "rdbms-core"]
+
+    def test_extract_declared_skills_includes_kubernetes(self):
+        block_text = "\nskills: [nosql-core, kubernetes, redis-core]\n"
+        declared = agent_persona._extract_declared_skills(block_text)
+        assert "kubernetes" in declared
+
+    def test_allows_dispatch_when_hyphen_less_mandatory_skill_is_declared(self, monkeypatch):
+        monkeypatch.setattr(agent_persona, "_resolve_agents_registry", lambda prompt: _FAKE_REGISTRY)
+        prompt = _compliant_prompt_for("python-backend-engineer", ["fastapi-core", "docker", "rdbms-core"])
+        blocked, msg = agent_persona.check_agent_persona(
+            "Agent", {"subagent_type": "general-purpose", "prompt": prompt}
+        )
+        assert blocked is False, "correctly-declared hyphen-less mandatory skill must not block dispatch: " + msg
+        assert msg == ""
+
+    def test_still_blocks_when_hyphen_less_mandatory_skill_is_genuinely_missing(self, monkeypatch):
+        monkeypatch.setattr(agent_persona, "_resolve_agents_registry", lambda prompt: _FAKE_REGISTRY)
+        # 'docker' genuinely omitted this time -- must still correctly block.
+        prompt = _compliant_prompt_for("python-backend-engineer", ["fastapi-core", "rdbms-core"])
+        blocked, msg = agent_persona.check_agent_persona(
+            "Agent", {"subagent_type": "general-purpose", "prompt": prompt}
+        )
+        assert blocked is True
+        assert "docker" in msg
 
 
 def _compliant_prompt_for(agent_name, skills):
