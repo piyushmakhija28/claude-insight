@@ -398,6 +398,29 @@ class TestAC2Staleness:
         assert outcome.status == ss.STATUS_AHEAD
         assert outcome.fires is True
 
+    def test_auto_discovers_sibling_library_two_levels_up(self, tmp_path):
+        """REGRESSION (#315): the no-flag auto-discovery path must find the
+        library beside the ENGINE repo, not beside the plugin subdirectory.
+
+        The real workspace layout is ``<workspace>/claude-workflow-engine/plugin``
+        and ``<workspace>/claude-global-library`` as siblings of the engine repo.
+        Every other test in this class passes ``library_root=`` explicitly and so
+        never exercises ``locate_library_root``'s ``search_from`` branch at all;
+        this is the one test that does, with a layout that mirrors reality
+        instead of a flat tmp_path.
+        """
+        workspace = tmp_path / "workspace"
+        engine_root = workspace / "claude-workflow-engine"
+        plugin_root = engine_root / "plugin"
+        library = _make_library(workspace / "claude-global-library", version="1.2.3")
+        _make_plugin(plugin_root, snapshot_from=library, snapshot_version="1.0.0")
+
+        outcome = ss.check_snapshot(plugin_root=plugin_root, library_root=None)
+
+        assert outcome.status == ss.STATUS_BEHIND
+        assert outcome.fires is True
+        assert "1.0.0" in outcome.detail and "1.2.3" in outcome.detail
+
     @pytest.mark.parametrize(
         "pinned,live,expected",
         [
