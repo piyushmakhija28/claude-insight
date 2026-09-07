@@ -155,7 +155,10 @@ def locate_library_root(explicit=None, search_from=None):
 
     Args:
         explicit: Caller-supplied path that wins when given.
-        search_from: Directory whose siblings are searched.
+        search_from: The plugin root, whose grandparent's siblings are
+            searched -- the plugin root's parent is the engine repository
+            root, and the library checkout sits beside that, not beside the
+            plugin subdirectory itself.
 
     Returns:
         Path or None.
@@ -167,7 +170,7 @@ def locate_library_root(explicit=None, search_from=None):
     if from_env:
         candidates.append(Path(from_env))
     if search_from:
-        candidates.append(Path(search_from).parent / LIBRARY_DIR_NAME)
+        candidates.append(Path(search_from).parent.parent / LIBRARY_DIR_NAME)
     for candidate in candidates:
         if (candidate / "VERSION").is_file():
             return candidate.resolve()

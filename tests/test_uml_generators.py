@@ -906,3 +906,67 @@ class TestSequenceDiagramFQN:
             # CallGraph build failed; verify fallback still works
             syntax = gen.generate_sequence_diagram()
             assert "sequenceDiagram" in syntax
+
+
+# ==================================================================
+# TestSequenceDiagramEntryFunctionFilter
+# ==================================================================
+
+
+class TestSequenceDiagramEntryFunctionFilter:
+    """Regression coverage for #312: entry_function must be a real AST
+    filter, never an LLM-enrichment hint. Previously this parameter was
+    passed straight into `_llm_enrich()` under the name `context`,
+    silently replacing the deterministic rendering with LLM output
+    whenever it was non-empty - despite this being a labelled Tier 2
+    AST tool.
+    """
+
+    LEGACY_CHAINS = [
+        {"caller": "main", "callee": "handler", "file": "app.py", "line": 1},
+        {"caller": "handler", "callee": "validate", "file": "app.py", "line": 2},
+        {"caller": "handler", "callee": "save", "file": "app.py", "line": 3},
+        # Unrelated branch, must NOT appear when filtering from "handler"
+        {"caller": "unrelated_entry", "callee": "cleanup", "file": "app.py", "line": 4},
+    ]
+
+    def test_entry_function_never_reaches_an_llm_call(self, tmp_project, monkeypatch):
+        """A non-empty entry_function must not trigger any LLM path."""
+
+        class LLMCalled(AssertionError):
+            pass
+
+        def _boom(*args, **kwargs):
+            raise LLMCalled("entry_function filtering reached an LLM call: args=%r kwargs=%r" % (args, kwargs))
+
+        monkeypatch.setattr(UMLDiagramGenerator, "_llm_enrich", _boom)
+
+        gen = UMLDiagramGenerator(str(tmp_project))
+        syntax = gen.generate_sequence_diagram(call_chains=self.LEGACY_CHAINS, entry_function="handler")
+        assert "sequenceDiagram" in syntax
+
+    def test_entry_function_filters_to_reachable_calls_only(self, tmp_project):
+        """Only calls transitively reachable from entry_function are rendered."""
+        gen = UMLDiagramGenerator(str(tmp_project))
+        syntax = gen.generate_sequence_diagram(call_chains=self.LEGACY_CHAINS, entry_function="handler")
+        assert "validate" in syntax
+        assert "save" in syntax
+        assert "unrelated_entry" not in syntax
+        assert "cleanup" not in syntax
+
+    def test_entry_function_matching_nothing_says_so_explicitly(self, tmp_project):
+        """A named entry_function with no matching caller gets its own
+        message, distinct from the generic 'no call chains found' stub -
+        so a caller can tell 'wrong function name' from 'nothing scanned'.
+        """
+        gen = UMLDiagramGenerator(str(tmp_project))
+        syntax = gen.generate_sequence_diagram(call_chains=self.LEGACY_CHAINS, entry_function="does_not_exist")
+        assert "does_not_exist" in syntax
+        assert "No calls found" in syntax
+
+    def test_empty_entry_function_renders_everything_unfiltered(self, tmp_project):
+        """No entry_function (the default) must not filter anything."""
+        gen = UMLDiagramGenerator(str(tmp_project))
+        syntax = gen.generate_sequence_diagram(call_chains=self.LEGACY_CHAINS)
+        assert "unrelated_entry" in syntax
+        assert "cleanup" in syntax
