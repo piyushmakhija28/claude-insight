@@ -1032,13 +1032,25 @@ class UMLDiagramGenerator:
     # Tier 2: AST + LLM hybrid
     # ------------------------------------------------------------------
 
-    def generate_sequence_diagram(self, call_chains=None, context=""):
+    def generate_sequence_diagram(self, call_chains=None, entry_function=""):
         """Generate Mermaid sequenceDiagram from call chains.
 
         When CallGraph is available, uses class-aware participants:
         - Class names become participants (not raw function names)
         - Method calls show Class.method() notation
         - Call paths are followed for proper sequencing
+
+        Args:
+            entry_function: When given, filters call_chains to only the
+                calls transitively reachable from this function (BFS on
+                caller->callee), instead of rendering the whole project.
+                This is a real filter, not an LLM-enrichment hint -
+                issue #312 found this parameter was previously passed
+                straight into an `_llm_enrich()` call under the name
+                `context`, silently replacing the deterministic AST
+                rendering with LLM output whenever it was non-empty,
+                despite this being documented and labelled a Tier 2 AST
+                tool at the MCP tool layer.
         """
         if call_chains is None:
             # Try CallGraph first; fall back to per-file extraction
@@ -1058,12 +1070,20 @@ class UMLDiagramGenerator:
         if not call_chains:
             return "sequenceDiagram\n    Note over System: No call chains found"
 
+        if entry_function:
+            call_chains = self._filter_chains_from_entry(call_chains, entry_function)
+            if not call_chains:
+                return (
+                    "sequenceDiagram\n    Note over System: No calls found "
+                    "reachable from entry_function '%s'" % entry_function
+                )
+
         # Build class-aware participant mapping from FQN data
         # If call_chains have caller_fqn/callee_fqn, use class context
         has_fqn = any(c.get("caller_fqn") for c in call_chains)
 
         if has_fqn:
-            return self._sequence_from_fqn_chains(call_chains, context)
+            return self._sequence_from_fqn_chains(call_chains)
 
         # Legacy path: flat caller/callee names
         lines = ["sequenceDiagram"]
@@ -1079,14 +1099,45 @@ class UMLDiagramGenerator:
             if count >= 30:
                 break
 
-        if context:
-            enriched = self._llm_enrich("\n".join(lines), "sequence diagram", context)
-            if enriched:
-                return enriched
-
         return "\n".join(lines)
 
-    def _sequence_from_fqn_chains(self, call_chains, context=""):
+    @staticmethod
+    def _filter_chains_from_entry(call_chains, entry_function):
+        """Keep only the call chains transitively reachable from entry_function.
+
+        BFS on caller->callee (matched by the flat, non-FQN name every
+        chain dict carries, per ast_analyzer.extract_call_chains's own
+        docstring) - a chain is included once its caller is known
+        reachable, which may in turn make its callee reachable too.
+
+        Args:
+            call_chains: List of chain dicts, each with at least
+                caller/callee keys.
+            entry_function: Name to trace the call chain from.
+
+        Returns:
+            Filtered list, in original relative order, or empty if
+            entry_function calls nothing in call_chains.
+        """
+        reachable = {entry_function}
+        included_keys = set()
+        filtered = []
+        changed = True
+        while changed:
+            changed = False
+            for chain in call_chains:
+                key = (chain.get("caller"), chain.get("callee"), chain.get("line"))
+                if key in included_keys:
+                    continue
+                if chain.get("caller") in reachable:
+                    filtered.append(chain)
+                    included_keys.add(key)
+                    if chain.get("callee") not in reachable:
+                        reachable.add(chain.get("callee"))
+                    changed = True
+        return filtered
+
+    def _sequence_from_fqn_chains(self, call_chains):
         """Build class-aware sequence diagram from FQN call chains.
 
         Uses caller_fqn/callee_fqn to extract class participants and
@@ -1173,11 +1224,6 @@ class UMLDiagramGenerator:
             count += 1
             if count >= 40:
                 break
-
-        if context:
-            enriched = self._llm_enrich("\n".join(lines), "sequence diagram", context)
-            if enriched:
-                return enriched
 
         return "\n".join(lines)
 
